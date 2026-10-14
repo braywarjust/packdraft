@@ -102,10 +102,11 @@ export function autoLineup(l: League, teamId: number) {
   const players = roster(teamId);
   const today = etDate();
   const locked = new Set(players.filter((p) => isLocked(l, p)).map((p) => p.id));
+  // Healthy players with a game today first, then the best of the rest (the lineup carries forward).
   const value = (p: RosterPlayer) => {
     let v = projFor(p, l.scoring);
-    if (isOut(p)) return v - 1000;
-    if (l.mode !== "sim" && !realGames(p, today, today).length) v -= 500; // no game today
+    if (isOut(p)) return v - 2000;
+    if (l.mode !== "sim" && realGames(p, today, today).length) v += 1000;
     return v;
   };
   const assign = new Map<number, string>();
@@ -115,7 +116,7 @@ export function autoLineup(l: League, teamId: number) {
   // Fill the most restrictive slots first so UTIL takes whoever's left.
   for (const slot of [...STARTERS].sort((a, b) => (slotLabel(a) === "UTIL" ? 1 : 0) - (slotLabel(b) === "UTIL" ? 1 : 0))) {
     if (taken.has(slot)) continue;
-    const pick = pool.find((p) => !assign.has(p.id) && eligible(slot, p.pos) && value(p) > -400);
+    const pick = pool.find((p) => !assign.has(p.id) && eligible(slot, p.pos) && !isOut(p));
     if (pick) { assign.set(pick.id, slot); taken.add(slot); }
   }
   for (const p of players) if (!assign.has(p.id)) assign.set(p.id, "BN");
