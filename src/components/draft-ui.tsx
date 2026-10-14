@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Headshot, InjuryTag } from "./Headshot";
 
 export type BoardTeam = { id: number; name: string; owner: string; color: string; cpu?: boolean };
 export type BoardPick = { overall: number; round: number; team_id: number; name: string; pos: string; team: string; is_keeper?: number };
-export type PoolPlayer = { id: number; name: string; pos: string; team: string; adp: number; proj: number };
+export type PoolPlayer = { id: number; name: string; pos: string; team: string; adp: number; proj: number; headshot?: string | null; injury?: string | null };
 
 const POS_BG: Record<string, string> = {
-  QB: "bg-rose-500/25 border-rose-400/40", RB: "bg-emerald-500/25 border-emerald-400/40", WR: "bg-sky-500/25 border-sky-400/40",
-  TE: "bg-amber-500/25 border-amber-400/40", DST: "bg-violet-500/25 border-violet-400/40",
+  G: "bg-sky-500/25 border-sky-400/40", F: "bg-emerald-500/25 border-emerald-400/40", C: "bg-amber-500/25 border-amber-400/40",
 };
 
 export function DraftBoard({ order, picks, rounds, currentOverall, myTeamId }: {
@@ -61,7 +61,7 @@ export function PlayerPool({ players, canPick, onPick, queue, onQueue, busy }: {
   return (
     <div className="card flex h-[520px] flex-col p-3">
       <div className="mb-2 flex flex-wrap gap-1">
-        {["ALL", "QB", "RB", "WR", "TE", "DST"].map((p) => (
+        {["ALL", "G", "F", "C"].map((p) => (
           <button key={p} onClick={() => setPos(p)} className={`tab px-2 py-1 text-xs ${pos === p ? "tab-active" : ""}`}>{p}</button>
         ))}
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" className="input ml-auto w-32 py-1 text-xs" />
@@ -70,8 +70,9 @@ export function PlayerPool({ players, canPick, onPick, queue, onQueue, busy }: {
         {list.map((p) => (
           <li key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-panel2">
             <span className="w-7 text-xs text-slate-500">{p.adp}</span>
+            <Headshot src={p.headshot ?? null} name={p.name} size={28} />
             <span className={`pos pos-${p.pos}`}>{p.pos}</span>
-            <span className="flex-1 truncate font-medium">{p.name} <span className="text-xs text-slate-500">{p.team}</span></span>
+            <span className="flex-1 truncate font-medium">{p.name} <InjuryTag injury={p.injury ?? null} /> <span className="text-xs text-slate-500">{p.team}</span></span>
             <span className="font-mono text-xs text-slate-400">{p.proj.toFixed(1)}</span>
             {onQueue && (
               <button title="Queue" onClick={() => onQueue(p.id, !queue?.includes(p.id))} className={`text-xs ${queue?.includes(p.id) ? "text-amber-300" : "text-slate-500 hover:text-slate-300"}`}>★</button>

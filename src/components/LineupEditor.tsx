@@ -3,20 +3,17 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { LivePlayer } from "@/lib/league";
+import { Headshot, InjuryTag } from "./Headshot";
 
-const STARTERS = ["QB", "RB1", "RB2", "WR1", "WR2", "TE", "FLEX", "DST"];
-const eligible = (slot: string, pos: string) =>
-  slot === "BN" ? true : slot === "FLEX" ? ["RB", "WR", "TE"].includes(pos) : slot.replace(/\d$/, "") === pos;
-const gradeColor = (g: string) => (g.startsWith("A") ? "text-emerald-300" : g === "B" ? "text-lime-300" : g === "C" ? "text-slate-300" : g === "D" ? "text-amber-300" : "text-rose-300");
-
-type Row = LivePlayer & { locked: boolean };
+const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
+const lbl = (s: string) => s.replace(/\d$/, "");
+const eligible = (slot: string, pos: string) => slot === "BN" || lbl(slot) === "UTIL" || lbl(slot) === pos;
 
 export function LineupEditor({
-  players, editable, live, setSlot, autoSet, drop,
+  players, editable, setSlot, autoSet, drop,
 }: {
-  players: Row[];
+  players: LivePlayer[];
   editable: boolean;
-  live: boolean;
   setSlot?: (playerId: number, slot: string) => Promise<{ error?: string } | unknown>;
   autoSet?: () => Promise<unknown>;
   drop?: (playerId: number) => Promise<{ error?: string } | unknown>;
@@ -37,24 +34,31 @@ export function LineupEditor({
   const bySlot = new Map(players.filter((p) => p.slot !== "BN").map((p) => [p.slot, p]));
   const bench = players.filter((p) => p.slot === "BN");
   const sel = players.find((p) => p.id === selected);
-  const total = players.filter((p) => p.slot !== "BN").reduce((s, p) => s + (live ? p.pts : p.proj), 0);
+  const weekPts = players.reduce((s, p) => s + p.pts, 0);
 
-  const row = (slot: string, p: Row | undefined) => {
+  const row = (slot: string, p: LivePlayer | undefined) => {
     const canTarget = editable && sel && sel.id !== p?.id && eligible(slot, sel.pos) && !(p && p.locked) && !sel.locked;
+    const today = p?.now;
     return (
       <tr key={slot + (p?.id ?? "")} className={`border-t border-line/60 ${selected === p?.id ? "bg-brand/10" : ""} ${canTarget ? "bg-lime-400/5" : ""}`}>
-        <td className="py-2 pl-3"><span className={`pos pos-${slot.replace(/\d$/, "")}`}>{slot.replace(/\d$/, "")}</span></td>
+        <td className="py-2 pl-3"><span className={`pos pos-${lbl(slot)}`}>{lbl(slot)}</span></td>
         <td className="py-2">
           {p ? (
-            <div>
-              <p className="font-semibold">{p.name} {p.locked && <span title="Game started" className="text-xs">🔒</span>}</p>
-              <p className="text-xs text-slate-400">{p.pos} · {p.team} · <span className={gradeColor(p.grade)}>Matchup {p.grade}</span> · {p.clock}</p>
-              {live && p.g > 0 && <p className="text-xs text-slate-500">{p.line}</p>}
+            <div className="flex items-center gap-2">
+              <Headshot src={p.headshot} name={p.name} size={36} />
+              <div className="min-w-0">
+                <p className="font-semibold">{p.name} <span className="text-xs font-normal text-slate-500">{p.pos} · {p.team}</span> <InjuryTag injury={p.injury} /> {p.locked && <span title="Locked: game started" className="text-xs">🔒</span>}</p>
+                <p className="truncate text-xs text-slate-400">
+                  {today ? (today.state === "in" ? <span className="text-rose-300">● {today.clock} {today.label} </span> : `${today.label} · ${today.clock} `) : "No games this week "}
+                  {today?.line && today.state !== "pre" ? `· ${today.line}` : ""}
+                </p>
+              </div>
             </div>
           ) : <span className="text-slate-500">Empty</span>}
         </td>
+        <td className="text-center text-xs text-slate-400">{p ? `${p.played}/${p.total}` : ""}</td>
         <td className="text-right font-mono text-slate-400">{p ? p.proj.toFixed(1) : ""}</td>
-        {live && <td className="text-right font-mono font-bold">{p ? p.pts.toFixed(1) : ""}</td>}
+        <td className="pr-3 text-right font-mono font-bold">{p ? p.pts.toFixed(1) : ""}</td>
         {editable && (
           <td className="py-2 pr-3 text-right">
             {canTarget ? (
@@ -72,7 +76,7 @@ export function LineupEditor({
     <div className="space-y-3">
       {editable && (
         <div className="flex flex-wrap items-center gap-2">
-          <button className="btn-primary" disabled={pending} onClick={() => act(() => autoSet!())}>⚡ Auto-set best lineup</button>
+          <button className="btn-primary" disabled={pending} onClick={() => act(() => autoSet!())}>⚡ Start my active players</button>
           {sel && (
             <>
               <span className="text-sm text-slate-300">Moving <b>{sel.name}</b>: pick a highlighted slot</span>
@@ -83,15 +87,17 @@ export function LineupEditor({
           {err && <span className="text-sm text-rose-300">{err}</span>}
         </div>
       )}
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="card overflow-x-auto">
+        <table className="w-full min-w-[560px] text-sm">
           <thead className="bg-panel2 text-xs uppercase text-slate-400">
-            <tr><th className="py-2 pl-3 text-left">Slot</th><th className="text-left">Player</th><th className="text-right">Proj</th>{live && <th className="text-right">Pts</th>}{editable && <th />}</tr>
+            <tr><th className="py-2 pl-3 text-left">Slot</th><th className="text-left">Player</th><th>GP</th><th className="text-right">Proj/g</th><th className="pr-3 text-right">Wk pts</th>{editable && <th />}</tr>
           </thead>
           <tbody>
             {STARTERS.map((s) => row(s, bySlot.get(s)))}
-            <tr className="border-t border-line bg-panel2/60"><td colSpan={2} className="py-2 pl-3 text-xs font-bold uppercase text-slate-400">Starters total</td>
-              <td colSpan={1 + (live ? 1 : 0) + (editable ? 1 : 0)} className="pr-3 text-right font-mono font-bold">{total.toFixed(1)}</td></tr>
+            <tr className="border-t border-line bg-panel2/60">
+              <td colSpan={4} className="py-2 pl-3 text-xs font-bold uppercase text-slate-400">Week total (starters only count)</td>
+              <td className="pr-3 text-right font-mono font-bold">{weekPts.toFixed(1)}</td>{editable && <td />}
+            </tr>
             {bench.map((p) => row("BN", p))}
           </tbody>
         </table>

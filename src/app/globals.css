@@ -23,12 +23,10 @@ body { background: radial-gradient(1200px 600px at 20% -10%, #12213f 0%, transpa
 @utility input { @apply w-full rounded-xl border border-line bg-ink px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-brand; }
 @utility label { @apply mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400; }
 @utility pos { @apply inline-flex w-9 justify-center rounded-md px-1 py-0.5 text-[10px] font-bold; }
-@utility pos-QB { @apply bg-rose-500/20 text-rose-300; }
-@utility pos-RB { @apply bg-emerald-500/20 text-emerald-300; }
-@utility pos-WR { @apply bg-sky-500/20 text-sky-300; }
-@utility pos-TE { @apply bg-amber-500/20 text-amber-300; }
-@utility pos-DST { @apply bg-violet-500/20 text-violet-300; }
-@utility pos-FLEX { @apply bg-slate-500/20 text-slate-300; }
+@utility pos-G { @apply bg-sky-500/20 text-sky-300; }
+@utility pos-F { @apply bg-emerald-500/20 text-emerald-300; }
+@utility pos-C { @apply bg-amber-500/20 text-amber-300; }
+@utility pos-UTIL { @apply bg-violet-500/20 text-violet-300; }
 @utility pos-BN { @apply bg-slate-700/40 text-slate-400; }
 @utility tab { @apply whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-slate-400 hover:bg-panel2 hover:text-white; }
 @utility tab-active { @apply bg-panel2 text-white; }

@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+import { Headshot, InjuryTag } from "@/components/Headshot";
 
-type P = { id: number; name: string; pos: string; team: string; salary: number; proj: number; grade: string };
-const eligible = (slot: string, pos: string) => (slot === "FLEX" ? ["RB", "WR", "TE"].includes(pos) : slot.replace(/\d$/, "") === pos);
+type P = { id: number; name: string; pos: string; team: string; headshot: string | null; injury: string | null; salary: number; proj: number; opp: string };
+const lbl = (s: string) => s.replace(/\d$/, "");
+const eligible = (slot: string, pos: string) => lbl(slot) === "UTIL" || lbl(slot) === pos;
 const money = (n: number) => `$${n.toLocaleString()}`;
 
 export function LineupBuilder({ players, slots, cap, initial, submit, fee }: {
@@ -24,8 +26,8 @@ export function LineupBuilder({ players, slots, cap, initial, submit, fee }: {
 
   const add = (p: P) => {
     if (lineup.includes(p.id)) return;
-    // Prefer the exact position slot, then FLEX.
-    let i = slots.findIndex((s, idx) => lineup[idx] === null && s !== "FLEX" && eligible(s, p.pos));
+    // Prefer the exact position slot, then UTIL.
+    let i = slots.findIndex((s, idx) => lineup[idx] === null && lbl(s) !== "UTIL" && eligible(s, p.pos));
     if (i < 0) i = slots.findIndex((s, idx) => lineup[idx] === null && eligible(s, p.pos));
     if (i < 0) return setMsg({ t: `No open slot for a ${p.pos}`, bad: true });
     setMsg(null);
@@ -37,7 +39,7 @@ export function LineupBuilder({ players, slots, cap, initial, submit, fee }: {
     <div className="grid gap-4 md:grid-cols-2">
       <div className="card flex h-[560px] flex-col p-3">
         <div className="mb-2 flex flex-wrap gap-1">
-          {["ALL", "QB", "RB", "WR", "TE", "DST"].map((p) => <button key={p} onClick={() => setPos(p)} className={`tab px-2 py-1 text-xs ${pos === p ? "tab-active" : ""}`}>{p}</button>)}
+          {["ALL", "G", "F", "C"].map((p) => <button key={p} onClick={() => setPos(p)} className={`tab px-2 py-1 text-xs ${pos === p ? "tab-active" : ""}`}>{p}</button>)}
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" className="input ml-auto w-28 py-1 text-xs" />
         </div>
         <ul className="flex-1 space-y-1 overflow-y-auto pr-1 scrollbar-thin">
@@ -45,8 +47,9 @@ export function LineupBuilder({ players, slots, cap, initial, submit, fee }: {
             const inL = lineup.includes(p.id);
             return (
               <li key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-panel2">
+                <Headshot src={p.headshot} name={p.name} size={28} />
                 <span className={`pos pos-${p.pos}`}>{p.pos}</span>
-                <span className="flex-1 truncate">{p.name} <span className="text-xs text-slate-500">{p.team} · {p.grade}</span></span>
+                <span className="flex-1 truncate">{p.name} <InjuryTag injury={p.injury} /> <span className="text-xs text-slate-500">{p.team} {p.opp}</span></span>
                 <span className="font-mono text-xs text-slate-400">{p.proj.toFixed(1)}</span>
                 <span className="w-16 text-right font-mono text-xs">{money(p.salary)}</span>
                 <button disabled={inL || p.salary > left} onClick={() => add(p)} className="btn-lime px-2 py-0.5 text-xs">+</button>
@@ -66,7 +69,7 @@ export function LineupBuilder({ players, slots, cap, initial, submit, fee }: {
             const p = lineup[i] ? byId.get(lineup[i]!) : null;
             return (
               <li key={s} className="flex items-center gap-2 rounded-lg bg-ink/60 px-2 py-2 text-sm">
-                <span className={`pos pos-${s.replace(/\d$/, "")}`}>{s.replace(/\d$/, "")}</span>
+                <span className={`pos pos-${lbl(s)}`}>{lbl(s)}</span>
                 <span className="flex-1">{p ? p.name : <span className="text-slate-600">—</span>}</span>
                 {p && <><span className="font-mono text-xs">{money(p.salary)}</span><button onClick={() => setLineup((l) => l.map((x, idx) => (idx === i ? null : x)))} className="text-xs text-rose-300">✕</button></>}
               </li>

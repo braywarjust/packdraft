@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { Contest, maybeSettle } from "@/lib/dfs";
-import { getLeague, maybeFinalize, teamWeek, weekProgress } from "@/lib/league";
+import { getLeague, maybeFinalize, teamWeek } from "@/lib/league";
 import { unopenedPacks } from "@/lib/packs-server";
 import { PACK_BY_ID, RARITIES, Rarity, fmtCoins } from "@/lib/packs";
 import { ActionButton } from "@/components/ActionButton";
@@ -65,13 +65,12 @@ export default async function Home() {
             const l = getLeague(t.league_id)!;
             const m = all<{ id: number; home_team_id: number; away_team_id: number }>(
               "SELECT * FROM matchups WHERE league_id = ? AND week = ? AND (home_team_id = ? OR away_team_id = ?)", l.id, l.current_week, t.id, t.id)[0];
-            const p = weekProgress(l);
             const oppId = m ? (m.home_team_id === t.id ? m.away_team_id : m.home_team_id) : null;
             const opp = oppId ? all<{ name: string }>("SELECT name FROM teams WHERE id = ?", oppId)[0] : null;
-            const mine = m ? teamWeek(l, t.id, l.current_week, p) : null;
-            const theirs = m && oppId ? teamWeek(l, oppId, l.current_week, p) : null;
+            const mine = m ? teamWeek(l, t.id, l.current_week) : null;
+            const theirs = m && oppId ? teamWeek(l, oppId, l.current_week) : null;
             return (
-              <Link key={t.id} href={m && l.week_started_at ? `/league/${l.id}/matchup/${m.id}` : `/league/${l.id}`} className="card block p-4 hover:border-brand/60">
+              <Link key={t.id} href={m && l.draft_status === "done" ? `/league/${l.id}/matchup/${m.id}` : `/league/${l.id}`} className="card block p-4 hover:border-brand/60">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs uppercase tracking-wider text-slate-400">{l.name} · {l.draft_status === "done" ? `Week ${l.current_week}` : l.draft_status === "live" ? "Drafting now" : "Pre-draft"}</p>
@@ -82,9 +81,9 @@ export default async function Home() {
                 </div>
                 {mine && theirs && opp && (
                   <div className="mt-3 flex items-center justify-between rounded-xl bg-ink/60 px-4 py-3">
-                    <div><p className="text-xs text-slate-400">You</p><p className="text-2xl font-black">{(l.week_started_at ? mine.score : mine.projected).toFixed(1)}</p></div>
-                    <p className="text-xs text-slate-500">{l.week_started_at ? "live" : "projected"}</p>
-                    <div className="text-right"><p className="text-xs text-slate-400">{opp.name}</p><p className="text-2xl font-black">{(l.week_started_at ? theirs.score : theirs.projected).toFixed(1)}</p></div>
+                    <div><p className="text-xs text-slate-400">You</p><p className="text-2xl font-black">{mine.score.toFixed(1)}</p></div>
+                    <p className="text-xs text-slate-500">proj {(mine.score + mine.remain).toFixed(0)} – {(theirs.score + theirs.remain).toFixed(0)}</p>
+                    <div className="text-right"><p className="text-xs text-slate-400">{opp.name}</p><p className="text-2xl font-black">{theirs.score.toFixed(1)}</p></div>
                   </div>
                 )}
               </Link>

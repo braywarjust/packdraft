@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { one, Team } from "@/lib/db";
-import { getLeague, isLocked, teamWeek, weekProgress, roster } from "@/lib/league";
+import { getLeague, teamWeek } from "@/lib/league";
 import { LineupEditor } from "@/components/LineupEditor";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { autoSet, dropPlayer, renameTeam, setSlot } from "../../../actions";
@@ -9,19 +9,18 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
   const l = getLeague(leagueId)!;
   const t = one<Team>("SELECT * FROM teams WHERE id = ? AND league_id = ?", teamId, leagueId);
   if (!t) return <p>Team not found.</p>;
-  const live = !!l.week_started_at;
-  const tw = teamWeek(l, t.id, l.current_week, weekProgress(l));
-  const lockMap = new Map(roster(t.id).map((p) => [p.id, isLocked(l, p)]));
-  const players = tw.players.map((p) => ({ ...p, locked: !!lockMap.get(p.id) }));
+  const tw = teamWeek(l, t.id, l.current_week);
+  const players = tw.players;
+  const live = players.some((p) => p.now?.state === "in");
 
   return (
     <div className="space-y-4">
-      {live && <AutoRefresh ms={5000} />}
+      <AutoRefresh ms={live ? 10000 : 60000} />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-xl font-black">{t.name}</h2>
           <p className="text-sm text-slate-400">
-            {t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""} · {t.points_for.toFixed(1)} PF · ${t.faab} FAAB left · {players.length}/14 roster
+            {t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""} · {t.points_for.toFixed(1)} PF · ${t.faab} FAAB left · {players.length}/13 roster · week {tw.score.toFixed(1)} pts
           </p>
         </div>
         {editable ? (
@@ -39,13 +38,12 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         <LineupEditor
           players={players}
           editable={editable}
-          live={live}
           setSlot={editable ? setSlot.bind(null, leagueId) : undefined}
           autoSet={editable ? autoSet.bind(null, leagueId) : undefined}
           drop={editable ? dropPlayer.bind(null, leagueId) : undefined}
         />
       )}
-      <p className="text-xs text-slate-500">Lineups are weekly. Each player locks individually when his game kicks off, so you can still swap late-game guys mid-week.</p>
+      <p className="text-xs text-slate-500">Lineups are daily. Each player locks at his own tip-off, so you can still swap guys who play later tonight. Points count for whatever slot a player was in when his game started.</p>
     </div>
   );
 }

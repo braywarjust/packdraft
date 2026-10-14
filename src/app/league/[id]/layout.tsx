@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { canView, getLeague, maybeFinalize, userTeam } from "@/lib/league";
 import { LeagueTabs } from "@/components/LeagueTabs";
+import { SCORING } from "@/lib/scoring";
 
 export default async function LeagueLayout({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,7 +16,7 @@ export default async function LeagueLayout({ children, params }: { children: Rea
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-widest text-slate-400">
-            {l.is_public ? "Public" : "Private"} league · {l.scoring.toUpperCase()} · {l.champion_team_id ? "Season over" : l.draft_status === "done" ? `Week ${l.current_week} of ${l.season_weeks}` : l.draft_status === "live" ? "Draft in progress" : "Pre-draft"}
+            {l.is_public ? "Public" : "Private"} league · {l.mode === "sim" ? "Simulated" : "Real NBA"} · {SCORING[l.scoring]?.label ?? l.scoring} · {l.champion_team_id ? "Season over" : l.draft_status === "done" ? `Week ${l.current_week} of ${l.season_weeks}` : l.draft_status === "live" ? "Draft in progress" : "Pre-draft"}
           </p>
           <h1 className="text-2xl font-black">{l.name}</h1>
         </div>

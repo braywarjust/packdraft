@@ -205,7 +205,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell }: {
                   const isUp = flipped.has(c.id);
                   return (
                     <button key={c.id} onClick={() => !isUp && flip(c)} className={`flip anim-deal ${isUp ? "flipped" : ""}`} style={{ animationDelay: `${i * 120}ms` }}>
-                      <div className="flip-inner relative h-[223px] w-44">
+                      <div className="flip-inner relative h-[280px] w-44">
                         <div className="flip-face absolute inset-0 grid place-items-center rounded-xl border-2 border-slate-600 bg-gradient-to-br from-slate-800 to-slate-950">
                           <div className="text-center">
                             <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-brand to-brand2 text-xl font-black text-ink">P</div>

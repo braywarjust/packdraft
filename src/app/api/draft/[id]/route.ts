@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/auth";
 import { all } from "@/lib/db";
-import { advanceDraft, availablePlayers, canView, draftOrder, getLeague, leagueTeams, picksMade, pickTeam, ROUNDS, userTeam } from "@/lib/league";
+import { advanceDraft, availablePlayers, canView, draftOrder, getLeague, leagueTeams, picksMade, pickTeam, projFor, ROUNDS, userTeam } from "@/lib/league";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +38,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     myTeamId: me?.id ?? null,
     autodraft: !!me?.autodraft,
     isCommish: l.commissioner_id === u.id,
-    available: availablePlayers(l.id).slice(0, 200).map((p) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team, adp: p.adp, proj: p.proj })),
+    available: availablePlayers(l.id).sort((a, b) => projFor(b, l.scoring) - projFor(a, l.scoring)).slice(0, 250).map((p, i) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team, adp: i + 1, proj: projFor(p, l.scoring), headshot: p.headshot, injury: p.injury })),
     queue: me ? all<{ player_id: number }>("SELECT player_id FROM draft_queue WHERE team_id = ? ORDER BY rank", me.id).map((q) => q.player_id) : [],
   });
 }

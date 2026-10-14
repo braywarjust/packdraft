@@ -3,17 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { BoardPick, DraftBoard, PlayerPool, PoolPlayer } from "@/components/draft-ui";
 
-const ROUNDS = 14;
-const LIMITS: Record<string, number> = { QB: 2, RB: 6, WR: 6, TE: 2, DST: 1 };
+const ROUNDS = 13;
+const LIMITS: Record<string, number> = { G: 7, F: 7, C: 4 };
 
 function botChoice(pool: PoolPlayer[], mine: PoolPlayer[], round: number) {
   const count = (pos: string) => mine.filter((p) => p.pos === pos).length;
   const ok = (p: PoolPlayer) => {
     if (count(p.pos) >= LIMITS[p.pos]) return false;
-    if (p.pos === "DST") return round >= ROUNDS - 2;
-    if (p.pos === "QB" && count("QB") >= 1) return round >= 10;
-    if (p.pos === "TE" && count("TE") >= 1) return round >= 11;
-    if (round >= ROUNDS - 1 && count("DST") === 0) return p.pos === "DST";
+    if (round >= ROUNDS - 1 && count("C") === 0) return p.pos === "C";
     return true;
   };
   const c = pool.filter(ok).slice(0, 4);

@@ -30,14 +30,16 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
         <div><label className="label">Name</label><input name="name" defaultValue={l.name} className="input" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Scoring</label>
-            <select name="scoring" defaultValue={l.scoring} className="input"><option value="ppr">PPR</option><option value="half">Half PPR</option><option value="std">Standard</option></select></div>
+            <select name="scoring" defaultValue={l.scoring} className="input"><option value="espn">ESPN points</option><option value="dk">DraftKings style</option></select></div>
+          <div><label className="label">Games {pre ? "" : "(locked)"}</label>
+            <select name="mode" defaultValue={l.mode} disabled={!pre} className="input"><option value="real">Real NBA</option><option value="sim">Simulated</option></select></div>
           <div><label className="label">Waivers</label>
             <select name="waiver_type" defaultValue={l.waiver_type} className="input"><option value="faab">FAAB</option><option value="free">Free agency</option></select></div>
           <div><label className="label">Pick clock (seconds)</label><input name="pick_seconds" type="number" min={10} defaultValue={l.pick_seconds} className="input" /></div>
-          <div><label className="label">Week length (minutes)</label><input name="sim_minutes" type="number" step="0.5" min={0.5} defaultValue={l.sim_minutes} className="input" /></div>
+          <div><label className="label">Sim week length (minutes)</label><input name="sim_minutes" type="number" step="0.5" min={0.5} defaultValue={l.sim_minutes} className="input" /></div>
           <div><label className="label">FAAB budget {pre ? "" : "(locked)"}</label><input name="faab_budget" type="number" min={0} defaultValue={l.faab_budget} disabled={!pre} className="input" /></div>
           <div><label className="label">Keepers per team {pre ? "" : "(locked)"}</label><input name="keeper_count" type="number" min={0} max={5} defaultValue={l.keeper_count} disabled={!pre} className="input" /></div>
-          <div><label className="label">Regular season weeks {pre ? "" : "(locked)"}</label><input name="season_weeks" type="number" min={1} max={17} defaultValue={l.season_weeks} disabled={!pre} className="input" /></div>
+          <div><label className="label">Regular season weeks {pre ? "" : "(locked)"}</label><input name="season_weeks" type="number" min={1} max={24} defaultValue={l.season_weeks} disabled={!pre} className="input" /></div>
         </div>
         <h3 className="pt-2 font-bold">🎰 Pack rewards</h3>
         <div className="grid gap-3 sm:grid-cols-3">

@@ -11,7 +11,8 @@ import {
 } from "@/lib/league";
 import { PACK_BY_ID, BUYBACK_RATE } from "@/lib/packs";
 import { openPack } from "@/lib/packs-server";
-import { validateLineup, addBots, Contest } from "@/lib/dfs";
+import { validateLineup, addBots, Contest, tickContest } from "@/lib/dfs";
+import { ensureSchedule } from "@/lib/nba/sync";
 
 type Result = { error?: string; ok?: boolean };
 const wrap = async <T,>(fn: () => Promise<T> | T): Promise<T | { error: string }> => {
@@ -75,9 +76,10 @@ export async function createLeague(_: Result | undefined, form: FormData): Promi
     if (maxTeams > 8) run("UPDATE users SET coins = coins - 2500 WHERE id = ?", u.id);
     const faab = Number(form.get("faab_budget") ?? 100);
     const r = run(
-      `INSERT INTO leagues (name, commissioner_id, is_public, max_teams, scoring, waiver_type, faab_budget, keeper_count, pick_seconds, sim_minutes, invite_code, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      name, u.id, form.get("is_public") ? 1 : 0, maxTeams, String(form.get("scoring") ?? "ppr"), String(form.get("waiver_type") ?? "faab"),
+      `INSERT INTO leagues (name, commissioner_id, is_public, max_teams, scoring, mode, season_weeks, waiver_type, faab_budget, keeper_count, pick_seconds, sim_minutes, invite_code, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      name, u.id, form.get("is_public") ? 1 : 0, maxTeams, String(form.get("scoring") ?? "espn"), form.get("mode") === "sim" ? "sim" : "real",
+      Math.min(24, Math.max(1, Number(form.get("season_weeks") ?? 20))), String(form.get("waiver_type") ?? "faab"),
       faab, Number(form.get("keeper_count") ?? 0), Number(form.get("pick_seconds") ?? 60), Number(form.get("sim_minutes") ?? 5), code(), Date.now(),
     );
     const lid = Number(r.lastInsertRowid);
@@ -152,13 +154,14 @@ export async function updateSettings(leagueId: number, form: FormData) {
     const pre = l.draft_status === "pre";
     const num = (k: string, d: number) => (form.get(k) != null ? Number(form.get(k)) : d);
     run(
-      `UPDATE leagues SET name = ?, is_public = ?, scoring = ?, waiver_type = ?, pick_seconds = ?, sim_minutes = ?,
+      `UPDATE leagues SET name = ?, is_public = ?, scoring = ?, mode = ?, waiver_type = ?, pick_seconds = ?, sim_minutes = ?,
        reward_win = ?, reward_loss = ?, reward_top = ?, keeper_count = ?, faab_budget = ?, season_weeks = ? WHERE id = ?`,
       String(form.get("name") || l.name).slice(0, 40), form.get("is_public") ? 1 : 0, String(form.get("scoring") || l.scoring),
+      pre && form.get("mode") ? (form.get("mode") === "sim" ? "sim" : "real") : l.mode,
       String(form.get("waiver_type") || l.waiver_type), num("pick_seconds", l.pick_seconds), Math.max(0.5, num("sim_minutes", l.sim_minutes)),
       String(form.get("reward_win") || l.reward_win), String(form.get("reward_loss") || l.reward_loss), String(form.get("reward_top") || l.reward_top),
       pre ? num("keeper_count", l.keeper_count) : l.keeper_count, pre ? num("faab_budget", l.faab_budget) : l.faab_budget,
-      pre ? Math.min(17, Math.max(1, num("season_weeks", l.season_weeks))) : l.season_weeks, l.id,
+      pre ? Math.min(24, Math.max(1, num("season_weeks", l.season_weeks))) : l.season_weeks, l.id,
     );
     if (pre) run("UPDATE teams SET faab = ? WHERE league_id = ?", num("faab_budget", l.faab_budget), l.id);
     revalidatePath(`/league/${leagueId}`, "layout");
@@ -385,6 +388,7 @@ export async function startWeekAction(leagueId: number) {
 export async function finishWeekNow(leagueId: number) {
   return wrap(async () => {
     const { l } = await commish(leagueId);
+    if (l.mode !== "sim") throw new Error("Real-NBA weeks finish when the games do");
     if (!l.week_started_at) throw new Error("Week hasn't started");
     run("UPDATE leagues SET week_started_at = ? WHERE id = ?", Date.now() - l.sim_minutes * 60_000 - 1000, l.id);
     finalizeWeek(getLeague(l.id)!);
@@ -459,22 +463,34 @@ export async function sellCards(cardIds: number[]) {
 
 export async function createContest(_: Result | undefined, form: FormData): Promise<Result> {
   const u = await requireUser();
-  const name = String(form.get("name") ?? "").trim().slice(0, 40) || "Friday Night Slate";
+  const name = String(form.get("name") ?? "").trim().slice(0, 40) || "Tonight's Slate";
   const prize = String(form.get("prize_pack") ?? "pro");
   if (!PACK_BY_ID[prize]) return { error: "Unknown prize" };
-  const r = run("INSERT INTO dfs_contests (name, creator_id, entry_fee, prize_pack, max_entries, sim_minutes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+  const mode = form.get("mode") === "sim" ? "sim" : "real";
+  const slate = String(form.get("slate_date") ?? "");
+  if (mode === "real") {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(slate)) return { error: "Pick a slate date" };
+    await ensureSchedule(slate, slate);
+    const games = all<{ start_ts: number; state: string }>("SELECT start_ts, state FROM games WHERE date_et = ?", slate);
+    if (!games.length) return { error: "No NBA games that day" };
+    if (games.some((g) => g.state !== "pre" || g.start_ts <= Date.now())) return { error: "That slate already tipped off. Pick a later date." };
+  }
+  const r = run("INSERT INTO dfs_contests (name, creator_id, entry_fee, prize_pack, max_entries, sim_minutes, mode, slate_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     name, u.id, Math.max(0, Number(form.get("entry_fee") ?? 0)), prize, Math.min(50, Math.max(2, Number(form.get("max_entries") ?? 10))),
-    Math.max(0.5, Number(form.get("sim_minutes") ?? 3)), Date.now());
+    Math.max(0.5, Number(form.get("sim_minutes") ?? 3)), mode, mode === "real" ? slate : null, Date.now());
   redirect(`/dfs/${r.lastInsertRowid}`);
 }
 
 export async function enterContest(contestId: number, lineup: number[]) {
   return wrap(async () => {
     const u = await requireUser();
-    validateLineup(lineup);
+    const c0 = one<Contest>("SELECT * FROM dfs_contests WHERE id = ?", contestId);
+    if (!c0) throw new Error("Contest not found");
+    tickContest(c0);
+    validateLineup(c0, lineup);
     tx(() => {
       const c = one<Contest>("SELECT * FROM dfs_contests WHERE id = ?", contestId);
-      if (!c || c.status !== "open") throw new Error("Contest is closed");
+      if (!c || c.status !== "open") throw new Error("Contest is locked: games have tipped off");
       const n = all("SELECT id FROM dfs_entries WHERE contest_id = ?", contestId).length;
       const mine = one<{ id: number }>("SELECT id FROM dfs_entries WHERE contest_id = ? AND user_id = ?", contestId, u.id);
       if (mine) {
@@ -508,6 +524,7 @@ export async function startContest(contestId: number) {
     const u = await requireUser();
     const c = one<Contest>("SELECT * FROM dfs_contests WHERE id = ?", contestId);
     if (!c || c.creator_id !== u.id || c.status !== "open") throw new Error("Only the host can lock the contest");
+    if (c.mode !== "sim") throw new Error("Real slates lock automatically at the first tip-off");
     if (all("SELECT id FROM dfs_entries WHERE contest_id = ?", contestId).length < 2) throw new Error("Need at least 2 entries");
     run("UPDATE dfs_contests SET status = 'live', started_at = ? WHERE id = ?", Date.now(), contestId);
     revalidatePath(`/dfs/${contestId}`);

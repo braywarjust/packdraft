@@ -4,6 +4,7 @@ import { MockDraft } from "./MockDraft";
 
 export default async function MockDraftPage() {
   const u = await requireUser();
-  const players = all<{ id: number; name: string; pos: string; team: string; adp: number; proj: number }>("SELECT id, name, pos, team, adp, proj FROM players ORDER BY adp");
+  const players = all<{ id: number; name: string; pos: string; team: string; adp: number; proj: number; headshot: string | null; injury: string | null }>(
+    "SELECT id, name, pos, team, adp, proj, headshot, injury FROM players WHERE active = 1 ORDER BY adp");
   return <MockDraft players={players} userName={u.name} />;
 }

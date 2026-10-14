@@ -5,18 +5,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Msg = { id: number; user_id: number | null; kind: string; body: string | null; image_url: string | null; created_at: number; name: string | null; color: string | null };
 
 const SMACK = [
-  "{t}'s lineup looks like it was set by autocorrect.",
-  "I've seen better depth charts on a kiddie pool, {t}.",
-  "{t}, your waiver strategy is just vibes and regret.",
-  "Hey {t}, the trade deadline isn't the only thing you're going to miss.",
-  "{t} drafts like they're reading the board upside down.",
+  "{t}'s lineup has more bricks than a Home Depot.",
+  "{t}, your bench is the only thing in this league getting buckets.",
+  "{t} drafted like the board was sorted alphabetically.",
   "Scoreboard check for {t}: still loading… still losing.",
-  "{t}'s bench outscored their starters again. Iconic.",
+  "{t}, even the 76ers' load management plan has more upside than your roster.",
+  "{t}'s waiver strategy is just vibes and DNP-CDs.",
+  "Hey {t}, set your lineup. Oh wait, you did. Yikes.",
+  "{t} is the only manager who could turn a triple-double into a loss.",
+  "{t}, I'd trash talk you but your box score already did it for me.",
   "If losing were a pack, {t} would pull a Grail every week.",
-  "{t}, I'd trash talk you but your roster already did it for me.",
-  "Bold strategy {t}, starting a guy on bye in spirit.",
 ];
-const EMOJI = ["🔥", "😂", "💀", "🗑️", "🐐", "😤", "🫡", "📉", "📈", "🏈"];
+const EMOJI = ["🔥", "😂", "💀", "🗑️", "🐐", "😤", "🫡", "📉", "📈", "🏀"];
 
 function render(text: string) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
@@ -33,7 +33,7 @@ export function Chat({ leagueId, rivals, send, canPost }: {
   const [image, setImage] = useState<string | null>(null);
   const [err, setErr] = useState("");
   const [gifOpen, setGifOpen] = useState(false);
-  const [gifQ, setGifQ] = useState("touchdown");
+  const [gifQ, setGifQ] = useState("dunk");
   const [gifs, setGifs] = useState<{ id: string; url: string; preview: string }[]>([]);
   const [gifDisabled, setGifDisabled] = useState(false);
   const [gifUrl, setGifUrl] = useState("");

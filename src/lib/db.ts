@@ -1,7 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
-import { seedPlayers } from "./players";
 
 export const DATA_DIR = path.join(process.cwd(), "data");
 
@@ -11,14 +10,28 @@ CREATE TABLE IF NOT EXISTS users (
   coins INTEGER NOT NULL DEFAULT 1000, last_bonus TEXT, created_at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS players (
-  id INTEGER PRIMARY KEY, name TEXT NOT NULL, pos TEXT NOT NULL, team TEXT NOT NULL,
-  proj REAL NOT NULL, adp INTEGER NOT NULL, pos_rank INTEGER NOT NULL
+  id INTEGER PRIMARY KEY, name TEXT NOT NULL, pos TEXT NOT NULL, team TEXT NOT NULL, jersey TEXT, headshot TEXT,
+  injury TEXT, avg TEXT, proj REAL NOT NULL DEFAULT 0, proj_dk REAL NOT NULL DEFAULT 0, adp INTEGER NOT NULL DEFAULT 999,
+  pos_rank INTEGER NOT NULL DEFAULT 99, active INTEGER NOT NULL DEFAULT 1
 );
+CREATE TABLE IF NOT EXISTS nba_teams (
+  abbr TEXT PRIMARY KEY, espn_id TEXT NOT NULL, name TEXT NOT NULL, short TEXT NOT NULL, color TEXT, alt TEXT, logo TEXT
+);
+CREATE TABLE IF NOT EXISTS games (
+  id TEXT PRIMARY KEY, date_et TEXT NOT NULL, start_ts INTEGER NOT NULL, home TEXT NOT NULL, away TEXT NOT NULL,
+  home_score INTEGER NOT NULL DEFAULT 0, away_score INTEGER NOT NULL DEFAULT 0, state TEXT NOT NULL, detail TEXT,
+  period INTEGER NOT NULL DEFAULT 0, clock TEXT, season_type INTEGER NOT NULL DEFAULT 2, box_at INTEGER, updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS player_games (game_id TEXT NOT NULL, player_id INTEGER NOT NULL, stats TEXT NOT NULL, PRIMARY KEY (game_id, player_id));
+CREATE TABLE IF NOT EXISTS daily_slots (
+  team_id INTEGER NOT NULL, date_et TEXT NOT NULL, player_id INTEGER NOT NULL, slot TEXT NOT NULL, PRIMARY KEY (team_id, date_et, player_id)
+);
+CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE IF NOT EXISTS leagues (
   id INTEGER PRIMARY KEY, name TEXT NOT NULL, commissioner_id INTEGER NOT NULL, is_public INTEGER NOT NULL DEFAULT 0,
-  max_teams INTEGER NOT NULL DEFAULT 8, scoring TEXT NOT NULL DEFAULT 'ppr', waiver_type TEXT NOT NULL DEFAULT 'faab',
+  max_teams INTEGER NOT NULL DEFAULT 8, scoring TEXT NOT NULL DEFAULT 'espn', mode TEXT NOT NULL DEFAULT 'real', start_date TEXT, waiver_type TEXT NOT NULL DEFAULT 'faab',
   faab_budget INTEGER NOT NULL DEFAULT 100, keeper_count INTEGER NOT NULL DEFAULT 0, pick_seconds INTEGER NOT NULL DEFAULT 60,
-  sim_minutes REAL NOT NULL DEFAULT 5, season_weeks INTEGER NOT NULL DEFAULT 14, invite_code TEXT NOT NULL,
+  sim_minutes REAL NOT NULL DEFAULT 5, season_weeks INTEGER NOT NULL DEFAULT 20, invite_code TEXT NOT NULL,
   reward_win TEXT NOT NULL DEFAULT 'pro', reward_loss TEXT NOT NULL DEFAULT 'rookie', reward_top TEXT NOT NULL DEFAULT 'hof',
   draft_status TEXT NOT NULL DEFAULT 'pre', draft_order TEXT, pick_deadline INTEGER, last_pick_at INTEGER,
   current_week INTEGER NOT NULL DEFAULT 1, week_started_at INTEGER, champion_team_id INTEGER, created_at INTEGER NOT NULL
@@ -70,7 +83,7 @@ CREATE TABLE IF NOT EXISTS cards (
 CREATE TABLE IF NOT EXISTS dfs_contests (
   id INTEGER PRIMARY KEY, name TEXT NOT NULL, creator_id INTEGER NOT NULL, entry_fee INTEGER NOT NULL DEFAULT 0,
   prize_pack TEXT NOT NULL DEFAULT 'pro', max_entries INTEGER NOT NULL DEFAULT 20, status TEXT NOT NULL DEFAULT 'open',
-  started_at INTEGER, sim_minutes REAL NOT NULL DEFAULT 3, created_at INTEGER NOT NULL
+  started_at INTEGER, sim_minutes REAL NOT NULL DEFAULT 3, mode TEXT NOT NULL DEFAULT 'real', slate_date TEXT, created_at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS dfs_entries (
   id INTEGER PRIMARY KEY, contest_id INTEGER NOT NULL, user_id INTEGER, bot_name TEXT, lineup TEXT NOT NULL,
@@ -79,22 +92,52 @@ CREATE TABLE IF NOT EXISTS dfs_entries (
 CREATE INDEX IF NOT EXISTS idx_roster_team ON roster(team_id);
 CREATE INDEX IF NOT EXISTS idx_msgs ON messages(league_id, id);
 CREATE INDEX IF NOT EXISTS idx_picks ON draft_picks(league_id, overall);
+CREATE INDEX IF NOT EXISTS idx_games_date ON games(date_et);
+CREATE INDEX IF NOT EXISTS idx_pg_player ON player_games(player_id);
 `;
 
 function open(): DatabaseSync {
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  const db = new DatabaseSync(path.join(DATA_DIR, "packdraft.db"));
+  const file = path.join(DATA_DIR, "packdraft-nba.db");
+  const fresh = !fs.existsSync(file);
+  const db = new DatabaseSync(file);
   db.exec("PRAGMA busy_timeout = 10000;");
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("BEGIN IMMEDIATE");
   db.exec(SCHEMA);
   const { n } = db.prepare("SELECT COUNT(*) n FROM players").get() as { n: number };
-  if (n === 0) {
-    const ins = db.prepare("INSERT INTO players (name, pos, team, proj, adp, pos_rank) VALUES (?, ?, ?, ?, ?, ?)");
-    for (const p of seedPlayers()) ins.run(p.name, p.pos, p.team, p.proj, p.adp, p.posRank);
-  }
+  if (n === 0) seedFromSnapshot(db);
+  if (fresh) carryOverUsers(db);
   db.exec("COMMIT");
   return db;
+}
+
+// Bundled snapshot of NBA rosters/averages so the app works before the first live sync.
+function seedFromSnapshot(db: DatabaseSync) {
+  const snap = path.join(process.cwd(), "src", "lib", "nba", "seed.json");
+  if (!fs.existsSync(snap)) return;
+  const { teams, players } = JSON.parse(fs.readFileSync(snap, "utf8")) as { teams: Record<string, unknown>[]; players: Record<string, unknown>[] };
+  const t = db.prepare("INSERT OR REPLACE INTO nba_teams (abbr, espn_id, name, short, color, alt, logo) VALUES (?, ?, ?, ?, ?, ?, ?)");
+  for (const x of teams) t.run(x.abbr as string, x.espn_id as string, x.name as string, x.short as string, x.color as string, x.alt as string, x.logo as string);
+  const p = db.prepare("INSERT OR REPLACE INTO players (id, name, pos, team, jersey, headshot, injury, avg, proj, proj_dk, adp, pos_rank, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
+  for (const x of players)
+    p.run(x.id as number, x.name as string, x.pos as string, x.team as string, (x.jersey as string) ?? null, (x.headshot as string) ?? null,
+      (x.injury as string) ?? null, (x.avg as string) ?? null, x.proj as number, x.proj_dk as number, x.adp as number, x.pos_rank as number);
+}
+
+// Accounts from the original football build come along so nobody has to re-register.
+function carryOverUsers(db: DatabaseSync) {
+  const old = path.join(DATA_DIR, "packdraft.db");
+  if (!fs.existsSync(old)) return;
+  try {
+    const o = new DatabaseSync(old, { readOnly: true });
+    const rows = o.prepare("SELECT name, pin_hash, color, created_at FROM users").all() as { name: string; pin_hash: string | null; color: string; created_at: number }[];
+    const ins = db.prepare("INSERT OR IGNORE INTO users (name, pin_hash, color, created_at) VALUES (?, ?, ?, ?)");
+    for (const r of rows) ins.run(r.name, r.pin_hash, r.color, r.created_at);
+    o.close();
+  } catch {
+    // Old file unreadable: start fresh.
+  }
 }
 
 const g = globalThis as unknown as { __pdDb?: DatabaseSync };
@@ -128,9 +171,16 @@ export function tx<T>(fn: () => T): T {
 }
 
 export type User = { id: number; name: string; color: string; coins: number; last_bonus: string | null; pin_hash: string | null };
-export type Player = { id: number; name: string; pos: string; team: string; proj: number; adp: number; pos_rank: number };
+export type Player = {
+  id: number; name: string; pos: string; team: string; jersey: string | null; headshot: string | null; injury: string | null;
+  avg: string | null; proj: number; proj_dk: number; adp: number; pos_rank: number; active: number;
+};
+export type Game = {
+  id: string; date_et: string; start_ts: number; home: string; away: string; home_score: number; away_score: number;
+  state: string; detail: string | null; period: number; clock: string | null; season_type: number; box_at: number | null; updated_at: number;
+};
 export type League = {
-  id: number; name: string; commissioner_id: number; is_public: number; max_teams: number; scoring: string;
+  id: number; name: string; commissioner_id: number; is_public: number; max_teams: number; scoring: string; mode: string; start_date: string | null;
   waiver_type: string; faab_budget: number; keeper_count: number; pick_seconds: number; sim_minutes: number;
   season_weeks: number; invite_code: string; reward_win: string; reward_loss: string; reward_top: string;
   draft_status: string; draft_order: string | null; pick_deadline: number | null; last_pick_at: number | null;

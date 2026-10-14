@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: "PackDraft",
-  description: "Fantasy football with your friends, plus mystery packs to rip.",
+  description: "Fantasy NBA with your friends, plus mystery packs to rip.",
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

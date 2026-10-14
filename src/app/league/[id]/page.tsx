@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all, Matchup } from "@/lib/db";
-import { getLeague, leagueTeams, standings, teamWeek, userTeam, weekProgress } from "@/lib/league";
+import { getLeague, leagueTeams, standings, teamWeek, userTeam, weekProgress, weekRange } from "@/lib/league";
+import { dayLabel } from "@/lib/nba/espn";
 import { winProb } from "@/lib/sim";
 import { PACK_BY_ID } from "@/lib/packs";
 import { ActionButton } from "@/components/ActionButton";
@@ -23,7 +24,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
-      {l.week_started_at && <AutoRefresh ms={4000} />}
+      {l.draft_status === "done" && <AutoRefresh ms={l.week_started_at ? 4000 : 30000} />}
       <div className="space-y-6 lg:col-span-2">
         {l.draft_status === "pre" && (
           <section className="card space-y-4 p-5">
@@ -63,7 +64,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
           <section className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-lg font-bold">Week {l.current_week} matchups</h2>
-              {isCommish && !l.champion_team_id && (
+              {isCommish && !l.champion_team_id && l.mode === "sim" && (
                 <div className="flex gap-2">
                   {!l.week_started_at ? (
                     <ActionButton action={startWeekAction.bind(null, l.id)} className="btn-lime">▶ Kick off Week {l.current_week}</ActionButton>
@@ -73,30 +74,32 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 </div>
               )}
             </div>
+            {l.mode !== "sim" && !l.champion_team_id && (
+              <p className="text-sm text-slate-400">
+                Real NBA games · {(() => { const [s, e] = weekRange(l, l.current_week); return `${dayLabel(s)} – ${dayLabel(e)}`; })()}. Set your lineup daily; each player locks at his tip-off. Scores update live during games.
+              </p>
+            )}
             {l.week_started_at && (
               <div className="h-2 overflow-hidden rounded-full bg-panel2">
                 <div className="h-full bg-gradient-to-r from-brand to-brand2 transition-all" style={{ width: `${progress * 100}%` }} />
               </div>
             )}
-            {!l.week_started_at && !l.champion_team_id && (
-              <p className="text-sm text-slate-400">Set your lineup, then the commish kicks off the week. Games run live for {l.sim_minutes} min. Lineups lock per game as they start.</p>
+            {l.mode === "sim" && !l.week_started_at && !l.champion_team_id && (
+              <p className="text-sm text-slate-400">Simulated league: set your lineup, then the commish tips off the week. Every team plays 3–4 sim games over {l.sim_minutes} min.</p>
             )}
             <div className="grid gap-3 sm:grid-cols-2">
               {matchups.map((m) => {
-                const h = teamWeek(l, m.home_team_id, l.current_week, progress);
-                const a = teamWeek(l, m.away_team_id, l.current_week, progress);
-                const live = !!l.week_started_at;
-                const wp = winProb(
-                  live ? h : { score: 0, remain: h.projected, variance: h.variance },
-                  live ? a : { score: 0, remain: a.projected, variance: a.variance },
-                );
+                const h = teamWeek(l, m.home_team_id, l.current_week);
+                const a = teamWeek(l, m.away_team_id, l.current_week);
+                const live = l.mode === "sim" ? !!l.week_started_at : h.score + a.score > 0;
+                const wp = winProb(h, a);
                 const mine = me && (m.home_team_id === me.id || m.away_team_id === me.id);
                 return (
                   <Link key={m.id} href={`/league/${l.id}/matchup/${m.id}`} className={`card block p-4 hover:border-brand/60 ${mine ? "border-brand/40" : ""}`}>
                     {[{ t: m.home_team_id, s: h }, { t: m.away_team_id, s: a }].map(({ t, s }) => (
                       <div key={t} className="flex items-center justify-between py-1">
                         <span className="truncate font-semibold">{teamName.get(t)}</span>
-                        <span className="font-mono text-lg font-bold">{live ? s.score.toFixed(1) : <span className="text-sm text-slate-400">proj {s.projected.toFixed(1)}</span>}</span>
+                        <span className="font-mono text-lg font-bold">{live ? s.score.toFixed(1) : <span className="text-sm text-slate-400">proj {(s.score + s.remain).toFixed(1)}</span>}</span>
                       </div>
                     ))}
                     <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-panel2">
@@ -115,7 +118,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                   {lastWeek.map((m) => (
                     <li key={m.id} className="flex justify-between">
                       <span>{teamName.get(m.home_team_id)} vs {teamName.get(m.away_team_id)}</span>
-                      <span className="font-mono">{m.home_score?.toFixed(2)} – {m.away_score?.toFixed(2)}</span>
+                      <span className="font-mono">{m.home_score?.toFixed(1)} – {m.away_score?.toFixed(1)}</span>
                     </li>
                   ))}
                 </ul>

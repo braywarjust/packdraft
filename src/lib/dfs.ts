@@ -1,37 +1,46 @@
-import { all, one, run, tx, Player } from "./db";
-import { finalStats, liveStats, score, rng, weekProj } from "./sim";
+import { all, one, run, tx, Player, Game } from "./db";
+import { hash, rng, simGame, partial, gameProgress, simClock } from "./sim";
+import { fpts, Line, eligible, statLine } from "./scoring";
 import { PACKS, PACK_BY_ID } from "./packs";
-import { eligible, awardPack } from "./league";
+import { awardPack } from "./league";
 
 export const SALARY_CAP = 50_000;
-export const DFS_SLOTS = ["QB", "RB1", "RB2", "WR1", "WR2", "WR3", "TE", "FLEX", "DST"];
+export const DFS_SLOTS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
+const DFS_SCORING = "dk";
 
 export type Contest = {
   id: number; name: string; creator_id: number; entry_fee: number; prize_pack: string; max_entries: number;
-  status: string; started_at: number | null; sim_minutes: number; created_at: number;
+  status: string; started_at: number | null; sim_minutes: number; mode: string; slate_date: string | null; created_at: number;
 };
 export type Entry = { id: number; contest_id: number; user_id: number | null; bot_name: string | null; lineup: string; points: number | null; rank: number | null; user_name?: string };
 
-export const contestSeed = (id: number) => `D${id}`;
-// Salary scales with where a player sits in his position's projection range.
-const SAL_RANGE: Record<string, [lo: number, hi: number, top: number]> = {
-  QB: [14, 24, 8600], RB: [6, 20, 9400], WR: [6, 19, 9200], TE: [5, 14, 7400], DST: [5, 9.5, 5000],
-};
-export function salary(p: { proj: number; pos: string }) {
-  const [lo, hi, top] = SAL_RANGE[p.pos] ?? [5, 20, 9000];
-  const t = Math.min(1, Math.max(0, (p.proj - lo) / (hi - lo)));
-  return Math.round((3000 + t * (top - 3000)) / 100) * 100;
+export function salary(p: { proj_dk: number }) {
+  // ~$3.5k for end-of-bench guys up to ~$11k for MVP types.
+  const t = Math.min(1, Math.max(0, (p.proj_dk - 8) / 50));
+  return Math.round((3500 + Math.pow(t, 1.15) * 7600) / 100) * 100;
 }
+
+export const slateGames = (c: Contest) =>
+  c.slate_date ? all<Game>("SELECT * FROM games WHERE date_et = ? ORDER BY start_ts", c.slate_date) : [];
+
+/** Players available for a contest: everyone on a team playing that day (real) or the whole pool (sim). */
+export function contestPlayers(c: Contest) {
+  if (c.mode === "sim") return all<Player>("SELECT * FROM players WHERE active = 1 ORDER BY proj_dk DESC LIMIT 300");
+  const teams = new Set(slateGames(c).flatMap((g) => [g.home, g.away]));
+  return all<Player>("SELECT * FROM players WHERE active = 1 ORDER BY proj_dk DESC").filter((p) => teams.has(p.team));
+}
+
 export function contestProgress(c: Contest) {
-  if (!c.started_at) return 0;
+  if (c.mode !== "sim" || !c.started_at) return 0;
   return Math.min(1, (Date.now() - c.started_at) / (c.sim_minutes * 60_000));
 }
 
-export function validateLineup(lineup: number[]) {
+export function validateLineup(c: Contest, lineup: number[]) {
   if (lineup.length !== DFS_SLOTS.length || new Set(lineup).size !== lineup.length) throw new Error("Fill every slot with different players");
-  const players = lineup.map((id) => one<Player>("SELECT * FROM players WHERE id = ?", id));
+  const pool = new Map(contestPlayers(c).map((p) => [p.id, p]));
   let total = 0;
-  players.forEach((p, i) => {
+  lineup.forEach((id, i) => {
+    const p = pool.get(id);
     if (!p || !eligible(DFS_SLOTS[i], p.pos)) throw new Error(`Invalid player for ${DFS_SLOTS[i]}`);
     total += salary(p);
   });
@@ -39,46 +48,60 @@ export function validateLineup(lineup: number[]) {
 }
 
 const BOT_NAMES = ["SharpShooter99", "GrinderGary", "StackMaster", "ChalkEater", "TiltedTom", "LateSwapLarry", "PuntGod", "OptimizerBot"];
-export function botLineup(seed: string): number[] {
+export function botLineup(c: Contest, seed: string): number[] {
   const r = rng(seed);
-  const players = all<Player>("SELECT * FROM players ORDER BY adp");
-  for (let attempt = 0; attempt < 200; attempt++) {
+  const players = contestPlayers(c);
+  for (let attempt = 0; attempt < 300; attempt++) {
     const picked: number[] = [];
     let spent = 0;
     for (let i = 0; i < DFS_SLOTS.length; i++) {
       const slotsLeft = DFS_SLOTS.length - i - 1;
-      const opts = players.filter((p) => eligible(DFS_SLOTS[i], p.pos) && !picked.includes(p.id) && spent + salary(p) + slotsLeft * 3000 <= SALARY_CAP);
+      const opts = players.filter((p) => eligible(DFS_SLOTS[i], p.pos) && !picked.includes(p.id) && spent + salary(p) + slotsLeft * 3500 <= SALARY_CAP);
       if (!opts.length) break;
-      const p = opts[Math.floor(Math.pow(r(), 1.8) * Math.min(opts.length, 30))];
+      const p = opts[Math.floor(Math.pow(r(), 1.6) * Math.min(opts.length, 40))];
       picked.push(p.id);
       spent += salary(p);
     }
     if (picked.length === DFS_SLOTS.length) return picked;
   }
-  throw new Error("Could not build bot lineup");
+  throw new Error("Could not build a bot lineup for this slate");
 }
 
 export function addBots(c: Contest, count: number) {
   const existing = all<Entry>("SELECT * FROM dfs_entries WHERE contest_id = ?", c.id).length;
   const n = Math.min(count, c.max_entries - existing);
   for (let i = 0; i < n; i++) {
-    const name = BOT_NAMES[(existing + i) % BOT_NAMES.length] + (existing + i >= BOT_NAMES.length ? `_${existing + i}` : "");
+    const k = existing + i;
     run("INSERT INTO dfs_entries (contest_id, user_id, bot_name, lineup, created_at) VALUES (?, NULL, ?, ?, ?)",
-      c.id, name, JSON.stringify(botLineup(`bot:${c.id}:${existing + i}`)), Date.now());
+      c.id, BOT_NAMES[k % BOT_NAMES.length] + (k >= BOT_NAMES.length ? `_${k}` : ""), JSON.stringify(botLineup(c, `bot:${c.id}:${k}`)), Date.now());
   }
 }
 
-export function entryLive(c: Contest, e: Entry, progress: number) {
-  const seed = contestSeed(c.id);
+/** One player's line in a contest right now. */
+function playerNow(c: Contest, p: Player): { line: Line | null; g: number; clock: string } {
+  if (c.mode === "sim") {
+    const start = [0, 0.25, 0.5][hash(`k:${p.team}:${c.id}`) % 3];
+    const g = gameProgress(start, contestProgress(c) * 0.72);
+    return { line: g > 0 ? partial(simGame(p, `D${c.id}`), g, `${p.id}:D${c.id}`) : null, g, clock: simClock(g) };
+  }
+  const game = one<Game>("SELECT * FROM games WHERE date_et = ? AND (home = ? OR away = ?)", c.slate_date, p.team, p.team);
+  if (!game) return { line: null, g: 0, clock: "No game" };
+  const row = one<{ stats: string }>("SELECT stats FROM player_games WHERE game_id = ? AND player_id = ?", game.id, p.id);
+  const g = game.state === "post" ? 1 : game.state === "in" ? Math.min(0.99, (game.period - 1 + 0.5) / 4) : 0;
+  const clock = game.state === "pre" ? new Date(game.start_ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) + " ET" : game.detail ?? "";
+  return { line: row ? (JSON.parse(row.stats) as Line) : game.state === "post" ? null : null, g, clock };
+}
+
+export function entryLive(c: Contest, e: Entry) {
   const ids: number[] = JSON.parse(e.lineup);
   let pts = 0, remain = 0;
   const players = ids.map((id, i) => {
     const p = one<Player>("SELECT * FROM players WHERE id = ?", id)!;
-    const { stats, g } = liveStats(p, seed, progress);
-    const s = score(stats, p.pos, "ppr");
+    const now = playerNow(c, p);
+    const s = now.line ? fpts(now.line, DFS_SCORING) : 0;
     pts += s;
-    remain += weekProj(p, seed) * (1 - g);
-    return { slot: DFS_SLOTS[i], id: p.id, name: p.name, pos: p.pos, team: p.team, pts: s, g, salary: salary(p) };
+    remain += p.proj_dk * (1 - now.g);
+    return { slot: DFS_SLOTS[i], id: p.id, name: p.name, pos: p.pos, team: p.team, headshot: p.headshot, pts: s, g: now.g, clock: now.clock, line: now.line ? statLine(now.line) : "", salary: salary(p) };
   });
   return { pts: Math.round(pts * 100) / 100, remain, players };
 }
@@ -87,15 +110,7 @@ export function settleContest(contestId: number) {
   tx(() => {
     const c = one<Contest>("SELECT * FROM dfs_contests WHERE id = ?", contestId)!;
     if (c.status !== "live") return;
-    const seed = contestSeed(c.id);
-    const entries = all<Entry>("SELECT * FROM dfs_entries WHERE contest_id = ?", c.id).map((e) => {
-      const ids: number[] = JSON.parse(e.lineup);
-      const pts = ids.reduce((s, id) => {
-        const p = one<Player>("SELECT * FROM players WHERE id = ?", id)!;
-        return s + score(finalStats(p, seed), p.pos, "ppr");
-      }, 0);
-      return { ...e, points: Math.round(pts * 100) / 100 };
-    });
+    const entries = all<Entry>("SELECT * FROM dfs_entries WHERE contest_id = ?", c.id).map((e) => ({ ...e, points: entryLive(c, e).pts }));
     entries.sort((a, b) => b.points - a.points);
     const idx = PACKS.findIndex((p) => p.id === c.prize_pack);
     const prizes = [c.prize_pack, PACKS[Math.max(0, idx - 1)].id, "rookie"];
@@ -107,9 +122,23 @@ export function settleContest(contestId: number) {
   });
 }
 
-export function maybeSettle(c: Contest) {
-  if (c.status === "live" && contestProgress(c) >= 1) settleContest(c.id);
+/** Lock real contests at the first tip-off and settle them once every game (and box score) is final. */
+export function tickContest(c: Contest) {
+  if (c.mode === "sim") {
+    if (c.status === "live" && contestProgress(c) >= 1) settleContest(c.id);
+    return;
+  }
+  const games = slateGames(c);
+  if (!games.length) return;
+  if (c.status === "open" && games.some((g) => g.state !== "pre" || g.start_ts <= Date.now())) {
+    const n = one<{ n: number }>("SELECT COUNT(*) n FROM dfs_entries WHERE contest_id = ?", c.id)?.n ?? 0;
+    if (n < 2) addBots(c, 2 - n);
+    run("UPDATE dfs_contests SET status = 'live', started_at = ? WHERE id = ?", Date.now(), c.id);
+    c = { ...c, status: "live" };
+  }
+  if (c.status === "live" && games.every((g) => g.state === "post" && g.box_at)) settleContest(c.id);
 }
+export const maybeSettle = tickContest;
 
 export const prizeLadder = (c: Contest) => {
   const idx = PACKS.findIndex((p) => p.id === c.prize_pack);

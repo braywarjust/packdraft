@@ -6,7 +6,7 @@ export async function GET(req: Request) {
   if (!(await currentUser())) return NextResponse.json({ gifs: [] }, { status: 401 });
   const key = process.env.GIPHY_API_KEY;
   if (!key) return NextResponse.json({ gifs: [], disabled: true });
-  const q = new URL(req.url).searchParams.get("q") || "football";
+  const q = new URL(req.url).searchParams.get("q") || "nba dunk";
   const r = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${key}&q=${encodeURIComponent(q)}&limit=18&rating=pg-13`);
   if (!r.ok) return NextResponse.json({ gifs: [] });
   const j = (await r.json()) as { data: { id: string; images: { fixed_height: { url: string }; fixed_height_small: { url: string } } }[] };

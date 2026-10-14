@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
-import { getLeague, roster, userTeam, weekProgress, isLocked } from "@/lib/league";
-import { leagueSeed, matchupGrade, oppRank, weekProj } from "@/lib/sim";
+import { getLeague, roster, userTeam, isLocked, playerGames, projFor } from "@/lib/league";
+import { Player } from "@/lib/db";
+import { Headshot, InjuryTag } from "@/components/Headshot";
 import { ActionButton } from "@/components/ActionButton";
 import { AddPlayer } from "./AddPlayer";
 import { addPlayer, cancelClaim, runWaivers } from "../../../actions";
@@ -13,13 +14,12 @@ export default async function Players({ params, searchParams }: { params: Promis
   const u = await requireUser();
   const l = getLeague(Number(id))!;
   const me = userTeam(l.id, u.id);
-  const seed = leagueSeed(l.id, l.current_week);
   const pos = sp.pos ?? "ALL";
   const q = (sp.q ?? "").trim();
   const view = sp.view ?? "fa";
   const owners = new Map(all<{ player_id: number; team: string }>("SELECT r.player_id, t.name team FROM roster r JOIN teams t ON t.id = r.team_id WHERE r.league_id = ?", l.id).map((r) => [r.player_id, r.team]));
-  const players = all<{ id: number; name: string; pos: string; team: string; proj: number; adp: number }>(
-    `SELECT * FROM players WHERE (? = 'ALL' OR pos = ?) AND name LIKE ? ORDER BY adp LIMIT 400`, pos, pos, `%${q}%`)
+  const players = all<Player>(
+    `SELECT * FROM players WHERE active = 1 AND (? = 'ALL' OR pos = ?) AND name LIKE ? ORDER BY ${l.scoring === "dk" ? "proj_dk" : "proj"} DESC LIMIT 400`, pos, pos, `%${q}%`)
     .filter((p) => (view === "fa" ? !owners.has(p.id) : true))
     .slice(0, 80);
   const myRoster = me ? roster(me.id).map((p) => ({ id: p.id, name: p.name, pos: p.pos })) : [];
@@ -27,8 +27,6 @@ export default async function Players({ params, searchParams }: { params: Promis
     `SELECT c.id, a.name "add", d.name "drop", c.bid, c.status FROM waiver_claims c JOIN players a ON a.id = c.add_player_id LEFT JOIN players d ON d.id = c.drop_player_id
      WHERE c.team_id = ? ORDER BY c.id DESC LIMIT 10`, me.id) : [];
   const faab = l.waiver_type === "faab";
-  const progress = weekProgress(l);
-  void progress;
   const qs = (o: Record<string, string>) => `?${new URLSearchParams({ q, pos, view, ...o })}`;
 
   return (
@@ -41,7 +39,7 @@ export default async function Players({ params, searchParams }: { params: Promis
             ))}
           </div>
           <div className="flex gap-1">
-            {["ALL", "QB", "RB", "WR", "TE", "DST"].map((p) => (
+            {["ALL", "G", "F", "C"].map((p) => (
               <Link key={p} href={qs({ pos: p })} className={`tab ${pos === p ? "tab-active" : ""}`}>{p}</Link>
             ))}
           </div>
@@ -51,24 +49,33 @@ export default async function Players({ params, searchParams }: { params: Promis
           </form>
         </div>
         <p className="text-xs text-slate-400">
-          {faab ? `FAAB waivers: put in blind bids. Claims process when the commish kicks off the week and after each week ends. Highest bid wins; ties go to the worse record.` : "Free agency: adds are instant."}
+          {faab ? `FAAB waivers: put in blind bids. Claims process every night at midnight ET (sim leagues: at each tip-off). Highest bid wins; ties go to the worse record.` : "Free agency: adds are instant."}
         </p>
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-panel2 text-xs uppercase text-slate-400">
-              <tr><th className="py-2 pl-3 text-left">Player</th><th>ADP</th><th>Avg</th><th>Wk proj</th><th>Matchup</th><th className="text-left">Status</th><th /></tr>
+              <tr><th className="py-2 pl-3 text-left">Player</th><th>Last season</th><th>Proj/g</th><th>Games wk</th><th className="text-left">Status</th><th /></tr>
             </thead>
             <tbody>
               {players.map((p) => {
                 const owner = owners.get(p.id);
-                const grade = matchupGrade(oppRank(p, seed));
+                const avg = p.avg ? (JSON.parse(p.avg) as Record<string, number>) : null;
+                const games = l.draft_status === "done" ? playerGames(l, p, l.current_week) : [];
+                const left = games.filter((g) => g.state === "pre").length;
                 return (
                   <tr key={p.id} className="border-t border-line/60">
-                    <td className="py-2 pl-3"><span className={`pos pos-${p.pos} mr-2`}>{p.pos}</span><span className="font-semibold">{p.name}</span> <span className="text-xs text-slate-500">{p.team}</span>{isLocked(l, p) && " 🔒"}</td>
-                    <td className="text-center text-slate-400">{p.adp}</td>
-                    <td className="text-center">{p.proj.toFixed(1)}</td>
-                    <td className="text-center">{weekProj(p, seed).toFixed(1)}</td>
-                    <td className="text-center">{grade}</td>
+                    <td className="py-2 pl-3">
+                      <div className="flex items-center gap-2">
+                        <Headshot src={p.headshot} name={p.name} size={32} />
+                        <div>
+                          <p><span className="font-semibold">{p.name}</span> <InjuryTag injury={p.injury} />{l.draft_status === "done" && isLocked(l, p) && " 🔒"}</p>
+                          <p className="text-xs text-slate-500"><span className={`pos pos-${p.pos} mr-1`}>{p.pos}</span>{p.team}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="text-center text-xs text-slate-400">{avg ? `${avg.pts.toFixed(1)}/${avg.reb.toFixed(1)}/${avg.ast.toFixed(1)}` : "Rookie"}</td>
+                    <td className="text-center font-mono">{projFor(p, l.scoring).toFixed(1)}</td>
+                    <td className="text-center text-xs">{games.length ? `${left} of ${games.length} left` : "—"}</td>
                     <td className="text-slate-400">{owner ?? (faab ? "Waivers" : "FA")}</td>
                     <td className="py-1 pr-3 text-right">
                       {!owner && me && l.draft_status === "done" && (

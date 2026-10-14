@@ -1,5 +1,5 @@
-// Deterministic stat simulator. Every (player, seed) pair produces the same final stat line,
-// and a "progress" value (0..1 through the week) reveals it gradually for live scoring.
+// Deterministic basketball simulator used by "simulated" leagues and DFS contests (handy between real games).
+import { EMPTY, Line, fpts } from "./scoring";
 
 export function hash(s: string): number {
   let h = 2166136261;
@@ -26,167 +26,90 @@ function normal(r: () => number) {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r());
 }
 function poisson(r: () => number, lambda: number) {
+  if (lambda > 30) return Math.max(0, Math.round(lambda + normal(r) * Math.sqrt(lambda)));
   const L = Math.exp(-Math.max(lambda, 0));
-  let k = 0;
-  let p = 1;
-  do {
-    k++;
-    p *= r();
-  } while (p > L && k < 12);
+  let k = 0, p = 1;
+  do { k++; p *= r(); } while (p > L && k < 80);
   return k - 1;
 }
 
-export type Stats = {
-  passYds: number; passTD: number; int: number; rushYds: number; rushTD: number;
-  rec: number; recYds: number; recTD: number; fum: number;
-  sacks: number; defInt: number; fumRec: number; defTD: number; ptsAllowed: number;
-};
-const ZERO: Stats = { passYds: 0, passTD: 0, int: 0, rushYds: 0, rushTD: 0, rec: 0, recYds: 0, recTD: 0, fum: 0, sacks: 0, defInt: 0, fumRec: 0, defTD: 0, ptsAllowed: 0 };
+type SimPlayer = { id: number; team: string; avg: string | null; proj: number };
 
-type P = { id: number; pos: string; team: string; proj: number };
-
-/** Opponent defensive strength vs. this position for a week: 1 = toughest, 32 = easiest. */
-export function oppRank(p: { pos: string; team: string }, seed: string) {
-  return (hash(`opp:${p.team}:${p.pos}:${seed}`) % 32) + 1;
-}
-export function matchupGrade(rank: number) {
-  if (rank >= 28) return "A+";
-  if (rank >= 23) return "A";
-  if (rank >= 18) return "B";
-  if (rank >= 12) return "C";
-  if (rank >= 6) return "D";
-  return "F";
-}
-export function weekProj(p: P, seed: string) {
-  return +(p.proj * (1 + (oppRank(p, seed) - 16.5) / 110)).toFixed(1);
+function averages(p: SimPlayer): Line {
+  if (p.avg) return { ...EMPTY, ...JSON.parse(p.avg) };
+  // No history: back into a plausible line from the projection.
+  const k = Math.max(p.proj, 4) / 25;
+  return { min: 24 * k, pts: 12 * k, fgm: 4.5 * k, fga: 10 * k, tpm: 1.2 * k, tpa: 3.4 * k, ftm: 1.8 * k, fta: 2.3 * k, reb: 4.5 * k, ast: 2.5 * k, stl: 0.8 * k, blk: 0.5 * k, to: 1.3 * k };
 }
 
-export function finalStats(p: P, seed: string): Stats {
-  const r = rng(`stats:${p.id}:${seed}`);
-  const m = Math.exp(normal(r) * 0.42 - 0.09); // game script multiplier, mean ~1
-  const wp = weekProj(p, seed);
-  const s = { ...ZERO };
-  const yds = (mean: number) => Math.max(0, Math.round(mean * m + normal(r) * mean * 0.18));
-  switch (p.pos) {
-    case "QB": {
-      const k = wp / 20;
-      s.passYds = yds(245 * k);
-      s.passTD = poisson(r, 1.7 * k * m);
-      s.int = poisson(r, 0.8 / Math.max(0.6, m));
-      s.rushYds = yds(18 * k);
-      s.rushTD = poisson(r, 0.15 * k * m);
-      s.fum = poisson(r, 0.12);
-      break;
-    }
-    case "RB": {
-      const k = wp / 14;
-      s.rushYds = yds(66 * k);
-      s.rushTD = poisson(r, 0.5 * k * m);
-      s.rec = poisson(r, 3 * k);
-      s.recYds = s.rec ? yds(7.5 * s.rec) : 0;
-      s.recTD = poisson(r, 0.12 * k * m);
-      s.fum = poisson(r, 0.08);
-      break;
-    }
-    case "WR":
-    case "TE": {
-      const k = wp / (p.pos === "WR" ? 14 : 10);
-      s.rec = poisson(r, (p.pos === "WR" ? 5.5 : 4.5) * k * m);
-      s.recYds = s.rec ? yds((p.pos === "WR" ? 13 : 10.5) * s.rec) : 0;
-      s.recTD = poisson(r, (p.pos === "WR" ? 0.45 : 0.35) * k * m);
-      s.rushYds = p.pos === "WR" && r() < 0.25 ? Math.round(r() * 18) : 0;
-      s.fum = poisson(r, 0.04);
-      break;
-    }
-    case "DST": {
-      const k = wp / 7;
-      s.sacks = poisson(r, 2.5 * k * m);
-      s.defInt = poisson(r, 0.9 * k * m);
-      s.fumRec = poisson(r, 0.6 * k);
-      s.defTD = poisson(r, 0.12 * k * m);
-      s.ptsAllowed = Math.max(0, Math.round(22 / (k * m) + normal(r) * 6));
-      break;
-    }
-  }
-  return s;
+/** One simulated game for a player. */
+export function simGame(p: SimPlayer, seed: string): Line {
+  const r = rng(`g:${p.id}:${seed}`);
+  const a = averages(p);
+  const m = Math.exp(normal(r) * 0.3 - 0.045); // hot/cold night
+  const tpm = poisson(r, a.tpm * m), fgm2 = poisson(r, Math.max(0, a.fgm - a.tpm) * m), ftm = poisson(r, a.ftm * m);
+  const fgm = fgm2 + tpm;
+  const miss = (made: number, avgM: number, avgA: number) => made + poisson(r, Math.max(0, avgA - avgM) * (0.8 + r() * 0.5));
+  return {
+    min: Math.round(a.min * (0.85 + r() * 0.3)), pts: fgm2 * 2 + tpm * 3 + ftm, fgm, fga: miss(fgm, a.fgm, a.fga), tpm, tpa: miss(tpm, a.tpm, a.tpa),
+    ftm, fta: miss(ftm, a.ftm, a.fta), reb: poisson(r, a.reb * m), ast: poisson(r, a.ast * m), stl: poisson(r, a.stl), blk: poisson(r, a.blk), to: poisson(r, a.to),
+  };
 }
 
-export function score(s: Stats, pos: string, scoring: string): number {
-  if (pos === "DST") {
-    const pa = s.ptsAllowed;
-    const paPts = pa === 0 ? 10 : pa <= 6 ? 7 : pa <= 13 ? 4 : pa <= 20 ? 1 : pa <= 27 ? 0 : pa <= 34 ? -1 : -4;
-    return s.sacks + 2 * s.defInt + 2 * s.fumRec + 6 * s.defTD + paPts;
-  }
-  const ppr = scoring === "ppr" ? 1 : scoring === "half" ? 0.5 : 0;
-  const pts = s.passYds * 0.04 + s.passTD * 4 - s.int * 2 + s.rushYds * 0.1 + s.rushTD * 6 + s.rec * ppr + s.recYds * 0.1 + s.recTD * 6 - s.fum * 2;
-  return Math.round(pts * 100) / 100;
+const GAME_LEN = 0.22;
+/** A simulated week: each NBA team plays 3 or 4 games spread across the week's progress. */
+export function simSchedule(team: string, seed: string) {
+  const n = 3 + (hash(`n:${team}:${seed}`) % 2);
+  const offset = (hash(`o:${team}:${seed}`) % 100) / 1000;
+  return Array.from({ length: n }, (_, i) => ({ i, start: Math.min(1 - GAME_LEN, offset + (i * (1 - GAME_LEN)) / n) }));
 }
+export const gameProgress = (start: number, progress: number) => Math.min(1, Math.max(0, (progress - start) / GAME_LEN));
 
-/** When this player's game kicks off, as a fraction of the week's progress. */
-export function kickoff(p: { team: string }, seed: string) {
-  const slots = [0, 0.04, 0.3, 0.3, 0.3, 0.56, 0.62];
-  return slots[hash(`ko:${p.team}:${seed}`) % slots.length];
-}
-const GAME_LEN = 0.38;
-export function gameProgress(p: { team: string }, seed: string, progress: number) {
-  return Math.min(1, Math.max(0, (progress - kickoff(p, seed)) / GAME_LEN));
-}
-
-export function liveStats(p: P, seed: string, progress: number): { stats: Stats; g: number } {
-  const g = gameProgress(p, seed, progress);
-  const f = finalStats(p, seed);
-  if (g >= 1) return { stats: f, g: 1 };
-  if (g <= 0) return { stats: { ...ZERO }, g: 0 };
-  const r = rng(`live:${p.id}:${seed}`);
-  const s = { ...ZERO };
-  for (const key of Object.keys(f) as (keyof Stats)[]) {
-    const total = f[key];
-    if (key === "ptsAllowed") {
-      s[key] = Math.round(total * Math.pow(g, 0.9 + r() * 0.3));
-      continue;
-    }
-    if (total <= 6) {
-      // Discrete events (TDs, catches, sacks): each happens at its own random moment.
+/** Reveal part of a stat line as a game progresses (0..1). Monotonic in g. */
+export function partial(full: Line, g: number, seed: string): Line {
+  if (g >= 1) return full;
+  if (g <= 0) return { ...EMPTY };
+  const r = rng(`live:${seed}`);
+  const out = { ...EMPTY };
+  for (const k of Object.keys(full) as (keyof Line)[]) {
+    const total = full[k];
+    if (total <= 8) {
       let c = 0;
       for (let i = 0; i < total; i++) if (r() < g) c++;
-      s[key] = c;
-    } else {
-      s[key] = Math.round(total * Math.pow(g, 0.8 + r() * 0.45));
-    }
+      out[k] = c;
+    } else out[k] = Math.round(total * Math.pow(g, 0.8 + r() * 0.4));
   }
-  return { stats: s, g };
+  // Keep the line internally consistent.
+  out.fgm = Math.min(out.fgm, out.fga); out.tpm = Math.min(out.tpm, out.tpa, out.fgm); out.ftm = Math.min(out.ftm, out.fta);
+  out.pts = (out.fgm - out.tpm) * 2 + out.tpm * 3 + out.ftm;
+  return out;
 }
 
-export function gameClock(g: number, p: { team: string }, seed: string, progress: number) {
+export function simClock(g: number) {
   if (g >= 1) return "Final";
-  if (g <= 0) {
-    const ko = kickoff(p, seed);
-    return progress <= 0 ? (ko === 0 ? "Thu" : ko < 0.3 ? "Sun 1:00" : ko < 0.5 ? "Sun 4:25" : "SNF") : "Pregame";
-  }
+  if (g <= 0) return "Upcoming";
   const q = Math.min(4, Math.floor(g * 4) + 1);
-  const left = Math.max(0, 15 - Math.floor(((g * 4) % 1) * 15));
-  return `Q${q} ${left}:00`.replace(/^Q(\d) 15:00$/, "Q$1 15:00");
+  const left = 12 - Math.floor(((g * 4) % 1) * 12);
+  return `Q${q} ${left}:00`;
 }
 
-export function statLine(s: Stats, pos: string) {
-  const parts: string[] = [];
-  if (pos === "DST") {
-    parts.push(`${s.ptsAllowed} PA`);
-    if (s.sacks) parts.push(`${s.sacks} SCK`);
-    if (s.defInt) parts.push(`${s.defInt} INT`);
-    if (s.fumRec) parts.push(`${s.fumRec} FR`);
-    if (s.defTD) parts.push(`${s.defTD} TD`);
-    return parts.join(", ");
+/** Simulated week for one player: points scored so far, games played/left, latest line. */
+export function simWeek(p: SimPlayer, seed: string, progress: number, scoring: string) {
+  let pts = 0, done = 0, live: { g: number; line: Line } | null = null, lastLine: Line | null = null;
+  const games = simSchedule(p.team, seed);
+  for (const gm of games) {
+    const g = gameProgress(gm.start, progress);
+    if (g <= 0) continue;
+    const line = partial(simGame(p, `${seed}:${gm.i}`), g, `${p.id}:${seed}:${gm.i}`);
+    pts += fpts(line, scoring);
+    lastLine = line;
+    if (g >= 1) done++;
+    else live = { g, line };
   }
-  if (s.passYds || s.passTD) parts.push(`${s.passYds} PaYd${s.passTD ? `, ${s.passTD} PaTD` : ""}${s.int ? `, ${s.int} INT` : ""}`);
-  if (s.rushYds || s.rushTD) parts.push(`${s.rushYds} RuYd${s.rushTD ? `, ${s.rushTD} RuTD` : ""}`);
-  if (s.rec || s.recYds) parts.push(`${s.rec} Rec, ${s.recYds} ReYd${s.recTD ? `, ${s.recTD} ReTD` : ""}`);
-  if (s.fum) parts.push(`${s.fum} FUM`);
-  return parts.join(" · ") || "—";
+  return { pts: Math.round(pts * 100) / 100, games: games.length, done, live, lastLine };
 }
 
 function phi(x: number) {
-  // Abramowitz-Stegun approximation of the standard normal CDF.
   const t = 1 / (1 + 0.2316419 * Math.abs(x));
   const d = 0.3989423 * Math.exp((-x * x) / 2);
   const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
@@ -201,6 +124,4 @@ export function winProb(a: { score: number; remain: number; variance: number }, 
   return phi(diff / sd);
 }
 
-export function leagueSeed(leagueId: number, week: number) {
-  return `L${leagueId}W${week}`;
-}
+export const leagueSeed = (leagueId: number, week: number) => `L${leagueId}W${week}`;

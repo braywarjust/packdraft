@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-type Entry = { id: number; name: string; mine: boolean; pts: number; remain: number; rank: number | null;
-  players: { slot: string; name: string; pos: string; pts: number; g: number; salary: number }[] };
+type Entry = { id: number; name: string; mine: boolean; pts: number; remain: number;
+  players: { slot: string; name: string; pos: string; team: string; pts: number; g: number; clock: string; line: string; salary: number }[] };
+type G = { id: string; away: string; home: string; as: number; hs: number; state: string; detail: string | null };
 
 export function Leaderboard({ contestId }: { contestId: number }) {
-  const [d, setD] = useState<{ status: string; progress: number; entries: Entry[] } | null>(null);
+  const [d, setD] = useState<{ status: string; progress: number | null; entries: Entry[]; games: G[] } | null>(null);
   const [open, setOpen] = useState<number | null>(null);
   useEffect(() => {
     let stop = false;
@@ -15,7 +16,7 @@ export function Leaderboard({ contestId }: { contestId: number }) {
       if (!r.ok || stop) return;
       const j = await r.json();
       setD(j);
-      if (j.status === "live") setTimeout(load, 2000);
+      if (j.status === "live") setTimeout(load, j.progress != null ? 2000 : 15000);
     };
     load();
     return () => { stop = true; };
@@ -23,8 +24,19 @@ export function Leaderboard({ contestId }: { contestId: number }) {
   if (!d) return <p className="text-slate-400">Loading…</p>;
   return (
     <div className="space-y-3">
-      {d.status === "live" && (
-        <div className="h-2 overflow-hidden rounded-full bg-panel2"><div className="h-full bg-gradient-to-r from-brand to-brand2" style={{ width: `${d.progress * 100}%` }} /></div>
+      {d.games.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          {d.games.map((g) => (
+            <div key={g.id} className="card shrink-0 px-3 py-2 text-xs">
+              <p className="flex justify-between gap-3"><span>{g.away}</span><span className="font-mono font-bold">{g.state === "pre" ? "" : g.as}</span></p>
+              <p className="flex justify-between gap-3"><span>{g.home}</span><span className="font-mono font-bold">{g.state === "pre" ? "" : g.hs}</span></p>
+              <p className={g.state === "in" ? "text-rose-300" : "text-slate-500"}>{g.detail}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {d.status === "live" && d.progress != null && (
+        <div className="h-2 overflow-hidden rounded-full bg-panel2"><div className="h-full bg-gradient-to-r from-brand to-brand2" style={{ width: `${(d.progress ?? 0) * 100}%` }} /></div>
       )}
       {d.status === "final" && <p className="text-sm text-lime-300">Final! Prize packs are in the winners&apos; vending machine inventory.</p>}
       <div className="card divide-y divide-line/60">
@@ -40,8 +52,9 @@ export function Leaderboard({ contestId }: { contestId: number }) {
               <ul className="grid gap-1 px-4 pb-3 text-sm sm:grid-cols-3">
                 {e.players.map((p) => (
                   <li key={p.slot} className="flex justify-between rounded bg-ink/60 px-2 py-1">
-                    <span><span className={`pos pos-${p.pos} mr-1`}>{p.slot.replace(/\d$/, "")}</span>{p.name}</span>
-                    <span className="font-mono">{p.pts.toFixed(1)}{p.g < 1 && p.g > 0 ? "•" : ""}</span>
+                    <span className="min-w-0"><span className={`pos pos-${p.pos} mr-1`}>{p.slot.replace(/\d$/, "")}</span>{p.name}
+                      <span className="block truncate text-[10px] text-slate-500">{p.clock}{p.line ? ` · ${p.line}` : ""}</span></span>
+                    <span className="font-mono">{p.pts.toFixed(1)}</span>
                   </li>
                 ))}
               </ul>

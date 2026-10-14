@@ -12,9 +12,9 @@ export default async function LoginPage() {
       <div className="flex flex-col justify-center">
         <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand to-brand2 text-2xl font-black text-ink">P</div>
         <h1 className="text-4xl font-black tracking-tight">Pack<span className="text-brand">Draft</span></h1>
-        <p className="mt-3 text-slate-300">Fantasy football for the group chat. Draft, trash talk, win your matchup, and rip mystery packs from the vending machine.</p>
+        <p className="mt-3 text-slate-300">Fantasy NBA for the group chat, powered by real live stats. Draft, trash talk, win your matchup, and rip mystery packs from the vending machine.</p>
         <ul className="mt-6 space-y-2 text-sm text-slate-400">
-          <li>🏈 Live drafts, keepers, FAAB waivers and trades</li>
+          <li>🏀 Live drafts, keepers, FAAB waivers and trades</li>
           <li>📈 Live scoring with win probability</li>
           <li>🎰 Weekly wins earn mystery packs to rip</li>
           <li>💬 League chat with GIFs and smack talk</li>

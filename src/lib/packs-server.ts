@@ -6,7 +6,10 @@ import { postSystem } from "./league";
 export type Card = {
   id: number; player_id: number; name: string; pos: string; team: string; rarity: Rarity; grade: number;
   serial: number; print_run: number; value: number; sold: number; created_at: number;
+  headshot: string | null; jersey: string | null; color: string | null; alt: string | null; logo: string | null;
 };
+const CARD_SELECT = `SELECT c.*, p.name, p.pos, p.team, p.headshot, p.jersey, t.color, t.alt, t.logo
+  FROM cards c JOIN players p ON p.id = c.player_id LEFT JOIN nba_teams t ON t.abbr = p.team`;
 
 const GRADE_MULT: Record<number, number> = { 10: 1.5, 9.5: 1.15, 9: 1, 8.5: 0.9, 8: 0.8 };
 const rand = () => crypto.randomInt(0, 1_000_000) / 1_000_000;
@@ -19,12 +22,12 @@ export function openPack(userId: number, packId: number): Card[] {
     if (!up) throw new Error("Pack not found");
     if (up.opened_at) throw new Error("Already opened");
     const pack = PACK_BY_ID[up.pack_type];
-    const players = all<Player>("SELECT * FROM players ORDER BY adp");
+    const players = all<Player>("SELECT * FROM players WHERE active = 1 ORDER BY adp");
     const scale = valueScale(pack);
     const ids: number[] = [];
     for (let i = 0; i < pack.cards; i++) {
       const rarity = rollRarity(pack.odds, rand());
-      const poolSize = rarity === "grail" || rarity === "legendary" ? 40 : rarity === "epic" ? 100 : players.length;
+      const poolSize = rarity === "grail" || rarity === "legendary" ? 40 : rarity === "epic" ? 100 : Math.min(300, players.length);
       const player = players[Math.floor(Math.pow(rand(), 1.3) * poolSize)];
       const grade = gradeFor(rand());
       const [lo, hi] = RARITIES[rarity].mult;
@@ -41,7 +44,7 @@ export function openPack(userId: number, packId: number): Card[] {
     return ids;
   });
   const cards = all<Card>(
-    `SELECT c.*, p.name, p.pos, p.team FROM cards c JOIN players p ON p.id = c.player_id WHERE c.id IN (${created.map(() => "?").join(",")}) ORDER BY c.id`,
+    `${CARD_SELECT} WHERE c.id IN (${created.map(() => "?").join(",")}) ORDER BY c.id`,
     ...created,
   );
   // Brag about big pulls in every league the user is in.
@@ -58,7 +61,7 @@ export function openPack(userId: number, packId: number): Card[] {
 
 export function userCards(userId: number) {
   return all<Card>(
-    "SELECT c.*, p.name, p.pos, p.team FROM cards c JOIN players p ON p.id = c.player_id WHERE c.user_id = ? AND c.sold = 0 ORDER BY c.value DESC",
+    `${CARD_SELECT} WHERE c.user_id = ? AND c.sold = 0 ORDER BY c.value DESC`,
     userId,
   );
 }

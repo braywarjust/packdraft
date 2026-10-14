@@ -39,7 +39,7 @@ export default async function LeaguesPage() {
             <div key={l.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
               <div>
                 <p className="font-bold">{l.name}</p>
-                <p className="text-sm text-slate-400">Commish {l.commish} · {l.humans}/{l.max_teams} managers · {l.scoring.toUpperCase()}</p>
+                <p className="text-sm text-slate-400">Commish {l.commish} · {l.humans}/{l.max_teams} managers · {l.scoring === "dk" ? "DK scoring" : "ESPN scoring"}</p>
               </div>
               <ActionForm action={joinLeague} submit="Join" className="flex gap-2" submitClass="btn-primary">
                 <input type="hidden" name="league_id" value={l.id} />
