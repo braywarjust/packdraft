@@ -23,6 +23,9 @@ if [ ! -d node_modules ]; then
   npm install || { read -n 1 -s -r -p "Install failed. Press any key to close..."; exit 1; }
 fi
 
+# Start from a clean build cache so a stale .next folder can never break the app.
+rm -rf .next
+
 # Open the browser once the server answers.
 ( until curl -s -o /dev/null "$URL"; do sleep 1; done; open "$URL" ) &
 
