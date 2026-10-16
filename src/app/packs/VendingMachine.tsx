@@ -180,7 +180,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell }: {
 
       {/* Rip modal */}
       {(stage === "ready" || stage === "tearing" || stage === "cards") && rp && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-zinc-100/95 p-4 backdrop-blur-sm">
           {stage !== "cards" ? (
             <div className="flex flex-col items-center gap-6">
               <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{stage === "tearing" ? "Ripping…" : "Click the pack to rip it"}</p>
@@ -206,14 +206,14 @@ export function VendingMachine({ coins, inventory, buy, rip, sell }: {
                   const isUp = flipped.has(c.id);
                   return (
                     <button key={c.id} onClick={() => !isUp && flip(c)} className={`flip anim-deal ${isUp ? "flipped" : ""}`} style={{ animationDelay: `${i * 120}ms` }}>
-                      <div className="flip-inner relative h-[300px] w-48">
+                      <div className="flip-inner relative h-[330px] w-44">
                         <div className="flip-face absolute inset-0 grid place-items-center rounded-xl border border-zinc-200 bg-white shadow-lg">
                           <div className="text-center">
                             <Logo height={56} className="mx-auto mb-3" />
                             <p className="text-[10px] font-semibold tracking-[0.3em] text-zinc-400">TAP TO REVEAL</p>
                           </div>
                         </div>
-                        <div className={`flip-face flip-back absolute inset-0 rounded-xl ${isUp && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
+                        <div className={`flip-face flip-back absolute inset-0 rounded-xl ${isUp && !c.slab_id && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
                           <PlayerCard c={c} />
                           {sold.has(c.id) && <div className="absolute inset-0 grid place-items-center rounded-xl bg-white/85 text-sm font-bold text-zinc-900">SOLD</div>}
                         </div>

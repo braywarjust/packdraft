@@ -8,11 +8,12 @@ export type CardData = {
   s_company?: string | null; s_grade?: string | null; s_cert?: string | null; s_flags?: string | null; s_source?: string | null;
 };
 
-const RING: Record<Rarity, string> = {
-  common: "border-zinc-200", rare: "border-sky-400", epic: "border-fuchsia-500", legendary: "border-amber-400", grail: "border-emerald-400",
+// Coloured glow under the slab instead of a frame, so the slab itself is the tile.
+export const SLAB_GLOW: Record<Rarity, string> = {
+  common: "rgba(24,24,27,0.22)", rare: "rgba(14,165,233,0.55)", epic: "rgba(192,38,211,0.6)", legendary: "rgba(245,158,11,0.7)", grail: "rgba(16,185,129,0.8)",
 };
-const RARITY_CHIP: Record<Rarity, string> = {
-  common: "bg-zinc-100 text-zinc-600", rare: "bg-sky-100 text-sky-700", epic: "bg-fuchsia-100 text-fuchsia-700", legendary: "bg-amber-100 text-amber-700", grail: "bg-emerald-100 text-emerald-700",
+export const RARITY_TEXT: Record<Rarity, string> = {
+  common: "text-zinc-500", rare: "text-sky-600", epic: "text-fuchsia-600", legendary: "text-amber-600", grail: "text-emerald-600",
 };
 
 export function slabBadges(flags: string | null | undefined) {
@@ -22,29 +23,33 @@ export function slabBadges(flags: string | null | undefined) {
     .filter(Boolean) as string[];
 }
 
-/** A real graded slab: photo, rarity frame, card line and value. */
-export function SlabCard({ c, small }: { c: CardData; small?: boolean }) {
-  const r = RARITIES[c.rarity];
-  const badges = slabBadges(c.s_flags).slice(0, 3);
+/** The slab photo on its own (transparent background), cropped to the slab. */
+export function SlabImage({ id, alt, height, rarity, className = "" }: { id: number; alt: string; height: number; rarity: Rarity; className?: string }) {
   return (
-    <div className={`flex flex-col overflow-hidden rounded-xl border-2 bg-white ${RING[c.rarity]} ${small ? "h-[250px] w-40" : "h-[300px] w-48"}`}>
-      <div className="relative flex-1 overflow-hidden bg-white">
-        <img src={`/api/slabs/${c.slab_id}`} alt={`${c.s_year} ${c.s_set} ${c.name}`} className="absolute inset-0 h-full w-full scale-[1.3] object-contain" loading="lazy" />
-        {(c.rarity === "legendary" || c.rarity === "grail") && <div className="foil pointer-events-none absolute inset-0 opacity-60" />}
-        <span className={`absolute left-1.5 top-1.5 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${RARITY_CHIP[c.rarity]}`}>{r.label}</span>
-      </div>
-      <div className="border-t border-zinc-100 px-2 py-1.5">
+    <div className={`relative ${className}`} style={{ height, width: Math.round(height * 0.6) }}>
+      <img
+        src={`/api/slabs/${id}`}
+        alt={alt}
+        loading="lazy"
+        className="absolute inset-0 h-full w-full object-cover object-center"
+        style={{ filter: `drop-shadow(0 10px 14px ${SLAB_GLOW[rarity]})` }}
+      />
+    </div>
+  );
+}
+
+/** A real graded slab: the slab itself is the tile, with a short caption underneath. */
+export function SlabCard({ c, small }: { c: CardData; small?: boolean }) {
+  const h = small ? 230 : 260;
+  return (
+    <div className="flex flex-col items-center" style={{ width: Math.round(h * 0.6) + 16 }}>
+      <SlabImage id={c.slab_id!} alt={`${c.s_year} ${c.s_set} ${c.name}`} height={h} rarity={c.rarity} />
+      <div className="mt-2 w-full text-center">
+        <p className={`text-[10px] font-bold uppercase tracking-wider ${RARITY_TEXT[c.rarity]}`}>{RARITIES[c.rarity].label}</p>
         <p className="truncate text-xs font-semibold text-zinc-900">{c.name}</p>
-        <p className="truncate text-[10px] text-zinc-500">{c.s_year} {c.s_set}{c.s_no ? ` #${c.s_no}` : ""}{c.s_variant ? ` · ${c.s_variant}` : ""}</p>
-        <div className="mt-1 flex items-center justify-between gap-1">
-          <span className="flex min-w-0 gap-1 overflow-hidden">
-            <span className="shrink-0 rounded bg-zinc-900 px-1 text-[9px] font-bold text-white">{c.s_company} {c.s_grade}</span>
-            {badges.map((b) => <span key={b} className="shrink-0 rounded bg-zinc-100 px-1 text-[9px] font-semibold text-zinc-600">{b}</span>)}
-          </span>
-          <span className="shrink-0 font-mono text-[11px] font-bold text-emerald-600" title={c.s_source === "ebay" ? "eBay market value" : "Estimated value"}>
-            {fmtCoins(c.value)}{c.s_source === "ebay" ? "" : "*"}
-          </span>
-        </div>
+        <p className="font-mono text-xs font-bold text-emerald-600" title={c.s_source === "ebay" ? "eBay market value" : "Estimated value"}>
+          {fmtCoins(c.value)}{c.s_source === "ebay" ? "" : "*"}
+        </p>
       </div>
     </div>
   );
