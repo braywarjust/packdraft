@@ -18,7 +18,7 @@ export default async function PacksPage() {
     <div className="space-y-6">
       <PageHeader eyebrow="Mystery packs" title="Pack Shop"
         description={<>Buy a pack, rip it open and collect graded, serial-numbered player cards. Don&apos;t love a pull? Instant buyback at 90% of its value.</>} />
-      <VendingMachine coins={u.coins} inventory={inventory} buy={buyPack} rip={ripPack} sell={sellCards} />
+      <VendingMachine coins={u.is_tester ? 1_000_000_000 : u.coins} tester={!!u.is_tester} inventory={inventory} buy={buyPack} rip={ripPack} sell={sellCards} />
       <details className="card p-4 text-sm">
         <summary className="cursor-pointer font-semibold">Pack odds</summary>
         <div className="mt-3 overflow-x-auto">

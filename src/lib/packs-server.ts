@@ -44,7 +44,8 @@ export async function openPack(userId: number, packId: number): Promise<Card[]> 
         "INSERT INTO cards (user_id, pack_id, player_id, slab_id, rarity, grade, serial, print_run, value, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?)",
         userId, packId, slab.player_id ?? 0, slab.id, slab.rarity, gradeNum, slabValue(slab), Date.now());
       const cardId = Number(r.lastInsertRowid);
-      run("UPDATE slabs SET card_id = ? WHERE id = ?", cardId, slab.id);
+      // Test accounts don't take slabs out of the vault.
+      if (!user.is_tester) run("UPDATE slabs SET card_id = ? WHERE id = ?", cardId, slab.id);
       out.push({ cardId, slabId: slab.id });
     }
     run("UPDATE user_packs SET opened_at = ? WHERE id = ?", Date.now(), packId);
@@ -61,7 +62,7 @@ export async function openPack(userId: number, packId: number): Promise<Card[]> 
   const ids = picked.map((p) => p.cardId);
   const cards = all<Card>(`${CARD_SELECT} WHERE c.id IN (${ids.map(() => "?").join(",")}) ORDER BY c.id`, ...ids);
   const big = cards.filter((c) => c.rarity === "legendary" || c.rarity === "grail" || c.rarity === "epic");
-  if (big.length) {
+  if (big.length && !user.is_tester) {
     const leagues = all<{ league_id: number }>("SELECT DISTINCT league_id FROM teams WHERE user_id = ?", userId);
     for (const c of big) {
       const msg = `🔥 ${user.name} pulled a ${RARITIES[c.rarity].label.toUpperCase()}: ${c.s_year} ${c.s_set} ${c.name}${c.s_variant ? ` ${c.s_variant}` : ""} ${c.s_company} ${c.s_grade} worth ${fmtCoins(c.value)}!`;

@@ -42,8 +42,8 @@ function Confetti() {
   );
 }
 
-export function VendingMachine({ coins, inventory, buy, rip, sell }: {
-  coins: number; inventory: Inv[];
+export function VendingMachine({ coins, inventory, buy, rip, sell, tester = false }: {
+  coins: number; inventory: Inv[]; tester?: boolean;
   buy: (type: string) => Act<{ ok: boolean; packId: number }>;
   rip: (packId: number) => Act<{ ok: boolean; cards: CardData[] }>;
   sell: (ids: number[]) => Act<{ ok: boolean; total: number }>;
@@ -117,7 +117,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell }: {
         <div className="relative rounded-[28px] border border-zinc-200 bg-zinc-100 p-4">
           <div className="mb-3 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-2">
             <Logo height={26} />
-            <span className="font-mono text-sm font-semibold text-zinc-700">CREDIT {fmtCoins(coins)}</span>
+            <span className="font-mono text-sm font-semibold text-zinc-700">{tester ? "TEST MODE · FREE PACKS" : `CREDIT ${fmtCoins(coins)}`}</span>
           </div>
           <div className="flex gap-4">
             <div className="relative flex-1 rounded-2xl border-2 border-zinc-200 bg-white p-3 shadow-inner">

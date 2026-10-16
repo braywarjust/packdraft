@@ -424,9 +424,12 @@ export async function buyPack(packType: string) {
     if (!pack) throw new Error("Unknown pack");
     const id = tx(() => {
       const fresh = one<User>("SELECT * FROM users WHERE id = ?", u.id)!;
-      if (fresh.coins < pack.price) throw new Error("Not enough PackBucks");
-      run("UPDATE users SET coins = coins - ? WHERE id = ?", pack.price, u.id);
-      return Number(run("INSERT INTO user_packs (user_id, pack_type, source, created_at) VALUES (?, ?, 'Vending machine', ?)", u.id, packType, Date.now()).lastInsertRowid);
+      // Test accounts open packs for free.
+      if (!fresh.is_tester) {
+        if (fresh.coins < pack.price) throw new Error("Not enough PackBucks");
+        run("UPDATE users SET coins = coins - ? WHERE id = ?", pack.price, u.id);
+      }
+      return Number(run("INSERT INTO user_packs (user_id, pack_type, source, created_at) VALUES (?, ?, ?, ?)", u.id, packType, fresh.is_tester ? "Test pack" : "Vending machine", Date.now()).lastInsertRowid);
     });
     return { ok: true, packId: id };
   });
@@ -457,6 +460,18 @@ export async function sellCards(cardIds: number[]) {
     });
     revalidatePath("/", "layout");
     return { ok: true, total };
+  });
+}
+
+/** Test accounts can wipe their pulls and start over. */
+export async function clearTestCards() {
+  return wrap(async () => {
+    const u = await requireUser();
+    if (!u.is_tester) throw new Error("Only test accounts can do that");
+    run("DELETE FROM cards WHERE user_id = ?", u.id);
+    run("DELETE FROM user_packs WHERE user_id = ? AND opened_at IS NOT NULL", u.id);
+    revalidatePath("/", "layout");
+    return { ok: true };
   });
 }
 

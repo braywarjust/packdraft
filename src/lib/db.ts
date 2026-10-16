@@ -118,6 +118,8 @@ function open(): DatabaseSync {
   // Migrations for databases created before slabs existed.
   const cardCols = (db.prepare("PRAGMA table_info(cards)").all() as { name: string }[]).map((c) => c.name);
   if (!cardCols.includes("slab_id")) db.exec("ALTER TABLE cards ADD COLUMN slab_id INTEGER");
+  const userCols = (db.prepare("PRAGMA table_info(users)").all() as { name: string }[]).map((c) => c.name);
+  if (!userCols.includes("is_tester")) db.exec("ALTER TABLE users ADD COLUMN is_tester INTEGER NOT NULL DEFAULT 0");
   if (fresh) carryOverUsers(db);
   db.exec("COMMIT");
   return db;
@@ -181,7 +183,7 @@ export function tx<T>(fn: () => T): T {
   }
 }
 
-export type User = { id: number; name: string; color: string; coins: number; last_bonus: string | null; pin_hash: string | null };
+export type User = { id: number; name: string; color: string; coins: number; last_bonus: string | null; pin_hash: string | null; is_tester: number };
 export type Player = {
   id: number; name: string; pos: string; team: string; jersey: string | null; headshot: string | null; injury: string | null;
   avg: string | null; proj: number; proj_dk: number; adp: number; pos_rank: number; active: number;

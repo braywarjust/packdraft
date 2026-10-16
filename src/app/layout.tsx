@@ -35,7 +35,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <Sidebar
-          user={{ name: user.name, color: user.color, coins: fmtCoins(user.coins) }}
+          user={{ name: user.name, color: user.color, coins: user.is_tester ? "Unlimited" : fmtCoins(user.coins) }}
           packs={packs}
           leagues={leagues.map((l) => ({ id: l.id, name: l.name, live: !!l.live }))}
           logout={logout}

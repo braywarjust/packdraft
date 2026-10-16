@@ -4,7 +4,7 @@ import { all } from "@/lib/db";
 import { userCards } from "@/lib/packs-server";
 import { BUYBACK_RATE, RARITIES, Rarity, fmtCoins } from "@/lib/packs";
 import { ActionButton } from "@/components/ActionButton";
-import { sellCards } from "../actions";
+import { clearTestCards, sellCards } from "../actions";
 import { PageHeader } from "@/components/PageHeader";
 import { CollectionGrid } from "./CollectionGrid";
 
@@ -43,6 +43,9 @@ export default async function Collection({ searchParams }: { searchParams: Promi
         <span className="mx-2 h-5 w-px bg-line" />
         <Link href={qs({ sort: undefined })} className={`tab ${!sp.sort ? "tab-active" : ""}`}>Top value</Link>
         <Link href={qs({ sort: "new" })} className={`tab ${sp.sort === "new" ? "tab-active" : ""}`}>Newest</Link>
+        {mine && !!me.is_tester && (
+          <ActionButton action={clearTestCards} className="btn-ghost" confirm="Delete all test pulls?">Clear test pulls</ActionButton>
+        )}
         {mine && commons.length > 0 && (
           <span className="ml-auto">
             <ActionButton action={sellCards.bind(null, commons.map((c) => c.id))} confirm={`Sell ${commons.length} commons for ${fmtCoins(commons.reduce((s, c) => s + Math.floor(c.value * BUYBACK_RATE), 0))}?`}>
