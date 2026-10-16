@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { all, one } from "@/lib/db";
-import { Contest, DFS_SLOTS, SALARY_CAP, contestPlayers, prizeLadder, salary, tickContest, slateGames } from "@/lib/dfs";
+import { Contest, DFS_SLOTS, SALARY_CAP, ceilings, contestPlayers, ensureSolo, prizeLadder, salary, tickContest, slateGames } from "@/lib/dfs";
+import { CeilingLadder } from "../CeilingLadder";
 import { dayLabel } from "@/lib/nba/espn";
 import { ActionButton } from "@/components/ActionButton";
 import { LineupBuilder } from "./LineupBuilder";
@@ -12,6 +13,7 @@ import { Coins } from "@/components/Coins";
 export default async function ContestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const u = await requireUser();
+  ensureSolo();
   let c = one<Contest>("SELECT * FROM dfs_contests WHERE id = ?", Number(id));
   if (!c) notFound();
   tickContest(c);
@@ -25,24 +27,31 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
   const opp = new Map<string, string>();
   for (const g of games) { opp.set(g.home, `vs ${g.away}`); opp.set(g.away, `@ ${g.home}`); }
   const lock = games.length ? Math.min(...games.map((g) => g.start_ts)) : null;
+  const solo = !!c.solo;
+  const ladder = solo && c.par ? ceilings(c.par) : null;
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-widest text-zinc-500">
-            DFS · {c.mode === "sim" ? "Simulated slate" : `${dayLabel(c.slate_date!)} · ${games.length} games`} · {c.status === "open" ? "Open for entries" : c.status === "live" ? "● Live" : "Final"}
+            {solo ? "Daily Fantasy · Solo run" : "DFS"} · {c.mode === "sim" ? "Simulated slate" : `${dayLabel(c.slate_date!)} · ${games.length} games`} · {c.status === "open" ? (solo ? "Build your lineup" : "Open for entries") : c.status === "live" ? "● Live" : "Final"}
           </p>
           <h1 className="text-3xl font-black">{c.name}</h1>
-          <p className="text-sm text-zinc-500">
+          {solo ? (
+            <p className="text-sm text-zinc-500">
+              Slate par {Math.round(c.par ?? 0)} pts (best projected lineup).
+              {c.status === "open" && lock && <> Locks at first tip, {new Date(lock).toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })} ET.</>}
+            </p>
+          ) : <p className="text-sm text-zinc-500">
             Entry {c.entry_fee ? <Coins n={c.entry_fee} /> : "FREE"} · {entries.length}/{c.max_entries} entries · 🥇 {prizes[0].name} · 🥈 {prizes[1].name} · 🥉 {prizes[2].name}
             {c.status === "open" && lock && <> · Locks at first tip, {new Date(lock).toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })} ET</>}
-          </p>
+          </p>}
         </div>
         {isHost && c.status === "open" && (
           <div className="flex gap-2">
-            <ActionButton action={contestBots.bind(null, c.id, 3)}>🤖 Add 3 bots</ActionButton>
-            {c.mode === "sim" && <ActionButton action={startContest.bind(null, c.id)} className="btn-lime" confirm="Lock lineups and start the slate?">Lock & start slate</ActionButton>}
+            {!solo && <ActionButton action={contestBots.bind(null, c.id, 3)}>🤖 Add 3 bots</ActionButton>}
+            {c.mode === "sim" && <ActionButton action={startContest.bind(null, c.id)} className="btn-lime" confirm={solo ? "Lock your lineup and play the slate?" : "Lock lineups and start the slate?"}>{solo ? "Lock lineup & play" : "Lock & start slate"}</ActionButton>}
           </div>
         )}
       </div>
@@ -60,6 +69,7 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
               initial={mine ? JSON.parse(mine.lineup) : null}
               submit={enterContest.bind(null, c.id)}
               fee={mine ? 0 : c.entry_fee}
+              solo={solo}
             />
           </div>
           <div className="space-y-4">
@@ -74,7 +84,16 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
                 </ul>
               </div>
             )}
-            <div className="card p-4">
+            {ladder && (
+              <div className="card p-4">
+                <p className="label">Pack Point ceilings</p>
+                <CeilingLadder rows={ladder} />
+                <p className="mt-3 text-xs text-zinc-400">
+                  {c.mode === "sim" ? "Save your lineup, then lock it to play the simulated slate." : "Save your lineup before the first tip-off. It locks automatically and pays out when every game is final."} DraftKings-style scoring.
+                </p>
+              </div>
+            )}
+            {!solo && <div className="card p-4">
               <p className="label">Entries</p>
               <ul className="space-y-1 text-sm">
                 {entries.map((e) => <li key={e.id}>{e.name ?? `🤖 ${e.bot_name}`}{e.user_id === u.id && " (you)"}</li>)}
@@ -83,11 +102,11 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
               <p className="mt-3 text-xs text-zinc-400">
                 {c.mode === "sim" ? "The host locks the contest to start the simulated slate. Need at least 2 entries; bots count." : "Lineups lock automatically at the first tip-off and the contest settles when every game is final. DraftKings-style scoring."}
               </p>
-            </div>
+            </div>}
           </div>
         </div>
       ) : (
-        <Leaderboard contestId={c.id} />
+        <Leaderboard contestId={c.id} ladder={ladder} />
       )}
     </div>
   );

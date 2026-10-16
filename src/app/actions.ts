@@ -11,7 +11,8 @@ import {
 } from "@/lib/league";
 import { PACK_BY_ID, BUYBACK_RATE } from "@/lib/packs";
 import { openPack, releaseSlab } from "@/lib/packs-server";
-import { validateLineup, addBots, Contest, tickContest } from "@/lib/dfs";
+import { validateLineup, addBots, Contest, tickContest, ensureSolo, slatePar, todaysRun } from "@/lib/dfs";
+import { etDate } from "@/lib/nba/espn";
 import { ensureSchedule } from "@/lib/nba/sync";
 
 type Result = { error?: string; ok?: boolean };
@@ -497,6 +498,28 @@ export async function createContest(_: Result | undefined, form: FormData): Prom
   redirect(`/dfs/${r.lastInsertRowid}`);
 }
 
+/** Start today's solo Daily Fantasy run: tonight's real slate, or an instant simulated one. One run per day. */
+export async function startRun(mode: "real" | "sim") {
+  const u = await requireUser();
+  ensureSolo();
+  const today = etDate();
+  const existing = todaysRun(u.id);
+  if (existing) redirect(`/dfs/${existing.id}`);
+  if (mode === "real") {
+    await ensureSchedule(today, today);
+    const games = all<{ start_ts: number; state: string }>("SELECT start_ts, state FROM games WHERE date_et = ?", today);
+    if (!games.length || games.some((g) => g.state !== "pre" || g.start_ts <= Date.now())) redirect("/dfs?err=slate");
+  }
+  const base = { id: 0, mode, slate_date: mode === "real" ? today : null };
+  const r = run(
+    `INSERT INTO dfs_contests (name, creator_id, entry_fee, prize_pack, max_entries, sim_minutes, mode, slate_date, solo, par, created_at)
+     VALUES (?, ?, 0, '', 1, 2, ?, ?, 1, 0, ?)`,
+    mode === "real" ? "Tonight's slate" : "Instant sim slate", u.id, mode, base.slate_date, Date.now());
+  const id = Number(r.lastInsertRowid);
+  run("UPDATE dfs_contests SET par = ? WHERE id = ?", slatePar({ ...base, id }), id);
+  redirect(`/dfs/${id}`);
+}
+
 export async function enterContest(contestId: number, lineup: number[]) {
   return wrap(async () => {
     const u = await requireUser();
@@ -541,7 +564,7 @@ export async function startContest(contestId: number) {
     const c = one<Contest>("SELECT * FROM dfs_contests WHERE id = ?", contestId);
     if (!c || c.creator_id !== u.id || c.status !== "open") throw new Error("Only the host can lock the contest");
     if (c.mode !== "sim") throw new Error("Real slates lock automatically at the first tip-off");
-    if (all("SELECT id FROM dfs_entries WHERE contest_id = ?", contestId).length < 2) throw new Error("Need at least 2 entries");
+    if (all("SELECT id FROM dfs_entries WHERE contest_id = ?", contestId).length < (c.solo ? 1 : 2)) throw new Error(c.solo ? "Save your lineup first" : "Need at least 2 entries");
     run("UPDATE dfs_contests SET status = 'live', started_at = ? WHERE id = ?", Date.now(), contestId);
     revalidatePath(`/dfs/${contestId}`);
     return { ok: true };

@@ -1,69 +1,111 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { all } from "@/lib/db";
-import { Contest, maybeSettle } from "@/lib/dfs";
-import { PACKS, PACK_BY_ID } from "@/lib/packs";
-import { ActionForm } from "@/components/ActionForm";
-import { addDays, dayLabel, etDate } from "@/lib/nba/espn";
+import { all, one, run } from "@/lib/db";
+import { Contest, ceilings, ensureSolo, maybeSettle, slatePar, todaysRun } from "@/lib/dfs";
+import { PACK_BY_ID } from "@/lib/packs";
+import { dayLabel, etDate } from "@/lib/nba/espn";
 import { ensureSchedule } from "@/lib/nba/sync";
-import { createContest } from "../actions";
+import { startRun } from "../actions";
 import { PageHeader } from "@/components/PageHeader";
-import { Coins } from "@/components/Coins";
+import { CeilingLadder } from "./CeilingLadder";
 
-export default async function DfsPage() {
-  await requireUser();
+/** Par of the instant sim slate (same player pool every time), cached so the landing page stays fast. */
+function simPar() {
+  const k = one<{ value: string }>("SELECT value FROM meta WHERE key = 'dfs_sim_par'");
+  if (k) return Number(k.value);
+  const par = slatePar({ id: 0, mode: "sim", slate_date: null });
+  run("INSERT OR REPLACE INTO meta (key, value) VALUES ('dfs_sim_par', ?)", String(par));
+  return par;
+}
+
+export default async function DfsPage({ searchParams }: { searchParams: Promise<{ err?: string }> }) {
+  const u = await requireUser();
+  const { err } = await searchParams;
+  ensureSolo();
   const today = etDate();
-  await ensureSchedule(today, addDays(today, 7));
-  const slates = all<{ date_et: string; n: number; first: number }>(
-    "SELECT date_et, COUNT(*) n, MIN(start_ts) first FROM games WHERE date_et BETWEEN ? AND ? GROUP BY date_et ORDER BY date_et", today, addDays(today, 7))
-    .filter((s) => s.first > Date.now());
-  for (const c of all<Contest>("SELECT * FROM dfs_contests WHERE status = 'live'")) maybeSettle(c);
-  const contests = all<{ id: number; name: string; entry_fee: number; prize_pack: string; max_entries: number; status: string; host: string; n: number; mode: string; slate_date: string | null }>(
-    `SELECT c.*, u.name host, (SELECT COUNT(*) FROM dfs_entries e WHERE e.contest_id = c.id) n FROM dfs_contests c JOIN users u ON u.id = c.creator_id ORDER BY c.status = 'final', c.id DESC LIMIT 40`);
+  await ensureSchedule(today, today);
+  const games = all<{ start_ts: number; state: string }>("SELECT start_ts, state FROM games WHERE date_et = ?", today);
+  const tonightOpen = games.length > 0 && games.every((g) => g.state === "pre" && g.start_ts > Date.now());
+  const lock = games.length ? Math.min(...games.map((g) => g.start_ts)) : null;
+  for (const c of all<Contest>("SELECT * FROM dfs_contests WHERE status = 'live' AND solo = 1 AND creator_id = ?", u.id)) maybeSettle(c);
+  const current = todaysRun(u.id);
+  const history = all<Contest>("SELECT * FROM dfs_contests WHERE solo = 1 AND creator_id = ? ORDER BY id DESC LIMIT 20", u.id);
+  const par = simPar();
+
   return (
     <>
-    <PageHeader eyebrow="One-night contests" title="Daily Fantasy"
-      description="Build an 8-player lineup (G, G, F, F, C, 3 UTIL) under a $50,000 cap from one night of real NBA games. DraftKings-style scoring. Top 3 win mystery packs." />
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className="space-y-3 lg:col-span-2">
-        {contests.length === 0 && <p className="card p-6 text-zinc-500">No contests yet. Start one on the right.</p>}
-        {contests.map((c) => (
-          <Link key={c.id} href={`/dfs/${c.id}`} className="card flex flex-wrap items-center justify-between gap-3 p-4 hover:border-brand/60">
-            <div>
-              <p className="font-bold">{c.name}</p>
-              <p className="text-sm text-zinc-500">{c.mode === "sim" ? "Simulated" : dayLabel(c.slate_date!)} · Host {c.host} · {c.n}/{c.max_entries} entries · Entry {c.entry_fee ? <Coins n={c.entry_fee} /> : "FREE"}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm">🥇 {PACK_BY_ID[c.prize_pack]?.name}</p>
-              <p className={`text-xs font-bold ${c.status === "live" ? "text-red-600" : c.status === "open" ? "text-emerald-600" : "text-zinc-400"}`}>{c.status === "live" ? "● LIVE" : c.status === "open" ? "OPEN" : "FINAL"}</p>
-            </div>
-          </Link>
-        ))}
+      <PageHeader eyebrow="Single player" title="Daily Fantasy"
+        description="One run a day. Build an 8-player lineup (G, G, F, F, C, 3 UTIL) under a $50,000 cap. Your players' combined points are Pack Points, and the highest ceiling you reach pays out a pack, or even a Mega Case." />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <section className="card space-y-4 p-5">
+            <h2 className="text-lg font-bold">Today&apos;s run</h2>
+            {err === "slate" && <p className="text-sm text-red-600">Tonight&apos;s slate has already tipped off. Try the instant sim slate.</p>}
+            {current ? (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold">{current.name}</p>
+                  <p className="text-sm text-zinc-500">
+                    {current.status === "open" ? "Lineup not locked yet" : current.status === "live" ? "● Live" : current.reward_pack ? `Final · won a ${PACK_BY_ID[current.reward_pack]?.name}` : "Final · no ceiling reached"}
+                  </p>
+                </div>
+                <Link href={`/dfs/${current.id}`} className="btn-primary">{current.status === "final" ? "See results" : "Continue"}</Link>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <form action={startRun.bind(null, "real")}>
+                  <button disabled={!tonightOpen} className="card flex h-full w-full flex-col items-start gap-1 p-4 text-left transition hover:border-brand/60 disabled:cursor-not-allowed disabled:opacity-50">
+                    <span className="font-bold">Tonight&apos;s slate</span>
+                    <span className="text-sm text-zinc-500">
+                      {tonightOpen && lock ? `${games.length} real NBA games · locks ${new Date(lock).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })} ET` : games.length ? "Already tipped off" : "No NBA games today"}
+                    </span>
+                  </button>
+                </form>
+                <form action={startRun.bind(null, "sim")}>
+                  <button className="card flex h-full w-full flex-col items-start gap-1 p-4 text-left transition hover:border-brand/60">
+                    <span className="font-bold">Instant sim slate</span>
+                    <span className="text-sm text-zinc-500">Simulated games, results in about 2 minutes</span>
+                  </button>
+                </form>
+              </div>
+            )}
+            <p className="text-xs text-zinc-400">You get one run per day, real or simulated. A new one unlocks at midnight ET.</p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-lg font-bold">Your runs</h2>
+            {history.length === 0 && <p className="card p-5 text-sm text-zinc-500">No runs yet.</p>}
+            {history.length > 0 && (
+              <div className="card divide-y divide-line/60">
+                {history.map((c) => (
+                  <Link key={c.id} href={`/dfs/${c.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-panel2">
+                    <span>
+                      <span className="font-semibold">{dayLabel(etDate(c.created_at))}</span>
+                      <span className="text-zinc-500"> · {c.mode === "sim" ? "Sim slate" : "Real slate"}</span>
+                    </span>
+                    <span className="text-right">
+                      {c.status === "final" ? (
+                        <>
+                          <span className="font-mono font-bold">{Math.round(c.points ?? 0)} pts</span>
+                          <span className={`ml-3 ${c.reward_pack ? "font-semibold text-emerald-600" : "text-zinc-400"}`}>{c.reward_pack ? PACK_BY_ID[c.reward_pack]?.name : "No reward"}</span>
+                        </>
+                      ) : <span className="text-zinc-500">{c.status === "live" ? "● Live" : "Building lineup"}</span>}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+        <aside className="card h-fit p-5">
+          <h2 className="mb-1 font-bold">Pack Point ceilings</h2>
+          <p className="mb-3 text-xs text-zinc-500">
+            Hit a ceiling and you win that reward (only the highest one). These are for the sim slate. Each real slate
+            sets its own, scaled to how strong its best possible lineup is.
+          </p>
+          <CeilingLadder rows={ceilings(par)} />
+        </aside>
       </div>
-      <aside className="card h-fit p-5">
-        <h2 className="mb-3 font-bold">Host a contest</h2>
-        <ActionForm action={createContest} submit="Create contest">
-          <div><label className="label">Name</label><input name="name" className="input" placeholder="Tuesday Night Hoops" /></div>
-          <div><label className="label">Slate</label>
-            <select name="slate_date" className="input">
-              {slates.map((s) => <option key={s.date_et} value={s.date_et}>{dayLabel(s.date_et)} · {s.n} games</option>)}
-              {slates.length === 0 && <option value="">No upcoming games found</option>}
-            </select></div>
-          <div><label className="label">Mode</label>
-            <select name="mode" className="input" defaultValue="real">
-              <option value="real">Real NBA games</option><option value="sim">Simulated (play right now)</option>
-            </select></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Entry fee</label><input name="entry_fee" type="number" min={0} defaultValue={0} className="input" /></div>
-            <div><label className="label">Max entries</label><input name="max_entries" type="number" min={2} max={50} defaultValue={10} className="input" /></div>
-          </div>
-          <div><label className="label">1st place prize</label>
-            <select name="prize_pack" defaultValue="pro" className="input">{PACKS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-          <div><label className="label">Sim slate length (minutes)</label><input name="sim_minutes" type="number" step="0.5" min={0.5} defaultValue={3} className="input" /></div>
-          <p className="text-xs text-zinc-400">2nd gets the next pack down, 3rd gets a Rookie Pack.</p>
-        </ActionForm>
-      </aside>
-    </div>
     </>
   );
 }

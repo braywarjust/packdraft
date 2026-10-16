@@ -3,6 +3,7 @@ import { hash, rng, simGame, partial, gameProgress, simClock } from "./sim";
 import { fpts, Line, eligible, statLine } from "./scoring";
 import { PACKS, PACK_BY_ID } from "./packs";
 import { awardPack } from "./league";
+import { etDate } from "./nba/espn";
 
 export const SALARY_CAP = 50_000;
 export const DFS_SLOTS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
@@ -11,7 +12,71 @@ const DFS_SCORING = "dk";
 export type Contest = {
   id: number; name: string; creator_id: number; entry_fee: number; prize_pack: string; max_entries: number;
   status: string; started_at: number | null; sim_minutes: number; mode: string; slate_date: string | null; created_at: number;
+  /** Solo runs: one player vs the slate. `par` is the best projected lineup under the cap; `reward_pack` what they won. */
+  solo: number; par: number | null; reward_pack: string | null; points: number | null;
 };
+
+// ---------- Solo runs ----------
+//
+// Daily Fantasy is single-player: once a day you build a lineup against a slate (tonight's real games, or an
+// instant simulated slate) and the combined points (= Pack Points) pay out the best ceiling you reach.
+// Ceilings are set relative to the slate's par so small and big slates are equally fair. Calibrated on 6,000
+// simulated lineups (actual/par): 0.96 ≈ 40th pct, 1.03 ≈ 60th, 1.08 ≈ 78th, 1.16 ≈ 90th, 1.21 ≈ 96th,
+// 1.29 ≈ 99th, 1.37 ≈ 99.8th. Expected payout ≈ 150 Pack Points a run, so it tops up the league, not replaces it.
+export const CEILINGS: { ratio: number; pack: string }[] = [
+  { ratio: 0.96, pack: "rookie" },
+  { ratio: 1.03, pack: "starter" },
+  { ratio: 1.08, pack: "pro" },
+  { ratio: 1.16, pack: "allpro" },
+  { ratio: 1.21, pack: "hof" },
+  { ratio: 1.29, pack: "goat" },
+  { ratio: 1.37, pack: "megacase" },
+];
+export const ceilings = (par: number) => CEILINGS.map((c) => ({ ...c, points: Math.round((par * c.ratio) / 5) * 5 }));
+export const rewardFor = (par: number, points: number) => [...ceilings(par)].reverse().find((c) => points >= c.points) ?? null;
+
+let soloReady = false;
+/** Adds the solo-run columns to databases created before Daily Fantasy went single-player. */
+export function ensureSolo() {
+  if (soloReady) return;
+  const cols = all<{ name: string }>("PRAGMA table_info(dfs_contests)").map((c) => c.name);
+  if (!cols.includes("solo")) run("ALTER TABLE dfs_contests ADD COLUMN solo INTEGER NOT NULL DEFAULT 0");
+  if (!cols.includes("par")) run("ALTER TABLE dfs_contests ADD COLUMN par REAL");
+  if (!cols.includes("reward_pack")) run("ALTER TABLE dfs_contests ADD COLUMN reward_pack TEXT");
+  if (!cols.includes("points")) run("ALTER TABLE dfs_contests ADD COLUMN points REAL");
+  soloReady = true;
+}
+
+/** The user's solo run started today (ET), if any. */
+export function todaysRun(userId: number) {
+  ensureSolo();
+  const runs = all<Contest>("SELECT * FROM dfs_contests WHERE solo = 1 AND creator_id = ? ORDER BY id DESC LIMIT 5", userId);
+  const today = etDate();
+  return runs.find((c) => etDate(c.created_at) === today) ?? null;
+}
+
+/** Best projected lineup under the cap, by many seeded greedy builds (deterministic per slate). */
+export function slatePar(c: Pick<Contest, "id" | "mode" | "slate_date">): number {
+  const players = contestPlayers(c as Contest);
+  const r = rng(`par:${c.mode}:${c.slate_date ?? c.id}`);
+  // Keep enough cap for the cheapest player who can fill each remaining slot.
+  const cheapest = DFS_SLOTS.map((slot) => Math.min(...players.filter((p) => eligible(slot, p.pos)).map(salary)));
+  const reserveAfter = DFS_SLOTS.map((_, i) => cheapest.slice(i + 1).reduce((a, b) => a + b, 0));
+  let best = 0;
+  for (let attempt = 0; attempt < 2500; attempt++) {
+    const picked: Player[] = [];
+    let spent = 0;
+    for (let i = 0; i < DFS_SLOTS.length; i++) {
+      const opts = players.filter((p) => eligible(DFS_SLOTS[i], p.pos) && !picked.includes(p) && spent + salary(p) + reserveAfter[i] <= SALARY_CAP);
+      if (!opts.length) break;
+      const p = opts[Math.floor(Math.pow(r(), 5) * Math.min(opts.length, 60))];
+      picked.push(p);
+      spent += salary(p);
+    }
+    if (picked.length === DFS_SLOTS.length) best = Math.max(best, picked.reduce((s, p) => s + p.proj_dk, 0));
+  }
+  return Math.round(best * 10) / 10;
+}
 export type Entry = { id: number; contest_id: number; user_id: number | null; bot_name: string | null; lineup: string; points: number | null; rank: number | null; user_name?: string };
 
 export function salary(p: { proj_dk: number }) {
@@ -112,6 +177,14 @@ export function settleContest(contestId: number) {
     if (c.status !== "live") return;
     const entries = all<Entry>("SELECT * FROM dfs_entries WHERE contest_id = ?", c.id).map((e) => ({ ...e, points: entryLive(c, e).pts }));
     entries.sort((a, b) => b.points - a.points);
+    if (c.solo) {
+      const e = entries[0];
+      const won = e && c.par ? rewardFor(c.par, e.points) : null;
+      if (e) run("UPDATE dfs_entries SET points = ?, rank = 1 WHERE id = ?", e.points, e.id);
+      if (e?.user_id && won) awardPack(e.user_id, won.pack, `Daily Fantasy · ${Math.round(e.points)} pts`);
+      run("UPDATE dfs_contests SET status = 'final', points = ?, reward_pack = ? WHERE id = ?", e?.points ?? 0, won?.pack ?? null, c.id);
+      return;
+    }
     const idx = PACKS.findIndex((p) => p.id === c.prize_pack);
     const prizes = [c.prize_pack, PACKS[Math.max(0, idx - 1)].id, "rookie"];
     entries.forEach((e, i) => {
@@ -132,7 +205,7 @@ export function tickContest(c: Contest) {
   if (!games.length) return;
   if (c.status === "open" && games.some((g) => g.state !== "pre" || g.start_ts <= Date.now())) {
     const n = one<{ n: number }>("SELECT COUNT(*) n FROM dfs_entries WHERE contest_id = ?", c.id)?.n ?? 0;
-    if (n < 2) addBots(c, 2 - n);
+    if (!c.solo && n < 2) addBots(c, 2 - n);
     run("UPDATE dfs_contests SET status = 'live', started_at = ? WHERE id = ?", Date.now(), c.id);
     c = { ...c, status: "live" };
   }

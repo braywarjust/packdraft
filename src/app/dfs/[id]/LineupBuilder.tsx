@@ -9,8 +9,8 @@ const lbl = (s: string) => s.replace(/\d$/, "");
 const eligible = (slot: string, pos: string) => lbl(slot) === "UTIL" || lbl(slot) === pos;
 const money = (n: number) => `$${n.toLocaleString()}`;
 
-export function LineupBuilder({ players, slots, cap, initial, submit, fee }: {
-  players: P[]; slots: string[]; cap: number; initial: number[] | null; submit: (lineup: number[]) => Promise<unknown>; fee: number;
+export function LineupBuilder({ players, slots, cap, initial, submit, fee, solo = false }: {
+  players: P[]; slots: string[]; cap: number; initial: number[] | null; submit: (lineup: number[]) => Promise<unknown>; fee: number; solo?: boolean;
 }) {
   const router = useRouter();
   const [lineup, setLineup] = useState<(number | null)[]>(initial ?? slots.map(() => null));
@@ -85,7 +85,7 @@ export function LineupBuilder({ players, slots, cap, initial, submit, fee }: {
             router.refresh();
           })}
         >
-          {initial ? "Update lineup" : `Enter contest${fee ? ` (${money(fee)})` : ""}`}
+          {initial ? "Update lineup" : solo ? "Save lineup" : `Enter contest${fee ? ` (${money(fee)})` : ""}`}
         </button>
         {msg && <p className={`text-sm ${msg.bad ? "text-red-600" : "text-emerald-600"}`}>{msg.t}</p>}
       </div>

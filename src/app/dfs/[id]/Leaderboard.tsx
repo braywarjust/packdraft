@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CeilingLadder } from "../CeilingLadder";
+import { PACK_BY_ID } from "@/lib/packs";
 
 type Entry = { id: number; name: string; mine: boolean; pts: number; remain: number;
   players: { slot: string; name: string; pos: string; team: string; pts: number; g: number; clock: string; line: string; salary: number }[] };
 type G = { id: string; away: string; home: string; as: number; hs: number; state: string; detail: string | null };
 
-export function Leaderboard({ contestId }: { contestId: number }) {
-  const [d, setD] = useState<{ status: string; progress: number | null; entries: Entry[]; games: G[] } | null>(null);
+export function Leaderboard({ contestId, ladder }: { contestId: number; ladder?: { pack: string; points: number }[] | null }) {
+  const [d, setD] = useState<{ status: string; progress: number | null; entries: Entry[]; games: G[]; reward: string | null } | null>(null);
   const [open, setOpen] = useState<number | null>(null);
   useEffect(() => {
     let stop = false;
@@ -38,7 +40,17 @@ export function Leaderboard({ contestId }: { contestId: number }) {
       {d.status === "live" && d.progress != null && (
         <div className="h-2 overflow-hidden rounded-full bg-panel2"><div className="h-full bg-gradient-to-r from-brand to-red-800" style={{ width: `${(d.progress ?? 0) * 100}%` }} /></div>
       )}
-      {d.status === "final" && <p className="text-sm text-emerald-600">Final! Prize packs are in the winners&apos; vending machine inventory.</p>}
+      {d.status === "final" && !ladder && <p className="text-sm text-emerald-600">Final! Prize packs are in the winners&apos; vending machine inventory.</p>}
+      {ladder && (
+        <div className="card space-y-3 p-4">
+          {d.status === "final" ? (
+            <p className={`text-sm font-semibold ${d.reward ? "text-emerald-600" : "text-zinc-500"}`}>
+              {d.reward ? `Final! You won a ${PACK_BY_ID[d.reward]?.name}. It's waiting in the Pack Shop.` : "Final. No ceiling reached this time. Try again tomorrow."}
+            </p>
+          ) : <p className="text-sm text-zinc-500">Live: your points so far against the ceilings.</p>}
+          <CeilingLadder rows={ladder} points={d.entries[0]?.pts ?? 0} />
+        </div>
+      )}
       <div className="card divide-y divide-line/60">
         {d.entries.map((e, i) => (
           <div key={e.id} className={e.mine ? "bg-brand/10" : ""}>

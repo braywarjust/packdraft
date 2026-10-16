@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/auth";
 import { all, one } from "@/lib/db";
-import { Contest, Entry, contestProgress, entryLive, tickContest, slateGames } from "@/lib/dfs";
+import { Contest, Entry, contestProgress, ensureSolo, entryLive, tickContest, slateGames } from "@/lib/dfs";
 import { refreshLive } from "@/lib/nba/sync";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const u = await currentUser();
+  ensureSolo();
   const c0 = one<Contest>("SELECT * FROM dfs_contests WHERE id = ?", Number(id));
   if (!u || !c0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (c0.mode !== "sim") await refreshLive();
@@ -21,5 +22,5 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     })
     .sort((a, b) => b.pts - a.pts);
   const games = slateGames(c).map((g) => ({ id: g.id, away: g.away, home: g.home, as: g.away_score, hs: g.home_score, state: g.state, detail: g.detail }));
-  return NextResponse.json({ status: c.status, mode: c.mode, progress: c.mode === "sim" ? contestProgress(c) : null, entries, games });
+  return NextResponse.json({ status: c.status, mode: c.mode, progress: c.mode === "sim" ? contestProgress(c) : null, entries, games, reward: c.reward_pack ?? null });
 }
