@@ -266,7 +266,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                             revealed slab scan (SlabCard), so the flip swaps back for front without a size jump. */}
                         <div className="flip-face absolute inset-0 flex flex-col items-center">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src="/slab-back.webp" alt="" draggable={false} className="pointer-events-none max-w-none select-none"
+                          <img src="/slab-back.webp?v=2" alt="" draggable={false} className="pointer-events-none max-w-none select-none"
                             style={{ width: 260, height: 260, filter: hit ? "drop-shadow(0 0 14px rgba(251,191,36,.75))" : "drop-shadow(0 8px 12px rgba(0,0,0,.35))" }} />
                           {hit
                             ? <p className="mt-3 animate-pulse rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-black tracking-widest text-black">CASE HIT</p>
