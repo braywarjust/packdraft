@@ -8,7 +8,7 @@ import { Coins } from "./Coins";
 
 const I = {
   home: "M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z",
-  leagues: "M8 21h8M12 17v4M6 3h12v5a6 6 0 0 1-12 0zM6 5H3v2a3 3 0 0 0 3 3M18 5h3v2a3 3 0 0 1-3 3",
+  leagues: "/packdraft-league-icon.svg",
   packs: "/packdraft-pack-icon.svg",
   collection: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
   dfs: "M4 19V9M10 19V5M16 19v-7M22 19H2",
@@ -17,12 +17,14 @@ const I = {
   collapse: "M15 6l-6 6 6 6",
   expand: "M9 6l6 6-6 6",
 };
+/** Optical sizes for the solid image icons so they weigh the same as the 2px line icons. */
+const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/packdraft-league-icon.svg": [9, 18] };
 function Icon({ d }: { d: string }) {
   // Image icons (a public/ SVG path) are drawn as a mask in currentColor so they match the line icons' colour and states.
   if (d.startsWith("/")) {
     return (
       <span aria-hidden className="grid h-[18px] w-[18px] shrink-0 place-items-center">
-        <span className="h-[15px] w-[15px] bg-current" style={{ mask: `url(${d}) center / contain no-repeat`, WebkitMask: `url(${d}) center / contain no-repeat` }} />
+        <span className="bg-current" style={{ width: (MASK_SIZE[d] ?? [15, 15])[0], height: (MASK_SIZE[d] ?? [15, 15])[1], mask: `url(${d}) center / contain no-repeat`, WebkitMask: `url(${d}) center / contain no-repeat` }} />
       </span>
     );
   }
