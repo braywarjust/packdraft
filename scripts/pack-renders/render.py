@@ -82,6 +82,7 @@ if hdr:
 nt.links.new(bg.outputs["Background"], outn.inputs["Surface"])
 
 # 4. Foil wrapper materials.
+CRIMP_SCALE = 38.0
 def setup(mat):
     n = mat.node_tree.nodes
     bsdf = next(x for x in n if x.type == "BSDF_PRINCIPLED")
@@ -103,8 +104,8 @@ def setup(mat):
     hi = node("ShaderNodeMath", "hi", operation="GREATER_THAN"); hi.inputs[1].default_value = 0.834
     lo = node("ShaderNodeMath", "lo", operation="LESS_THAN"); lo.inputs[1].default_value = 0.14
     mask = node("ShaderNodeMath", "mask", operation="MAXIMUM")
-    met = node("ShaderNodeMapRange", "metal"); met.inputs["To Min"].default_value = 0.2; met.inputs["To Max"].default_value = 1.0
-    rough = node("ShaderNodeMapRange", "rough"); rough.inputs["To Min"].default_value = 0.3; rough.inputs["To Max"].default_value = 0.17
+    met = node("ShaderNodeMapRange", "metal"); met.inputs["To Min"].default_value = 0.75; met.inputs["To Max"].default_value = 1.0
+    rough = node("ShaderNodeMapRange", "rough"); rough.inputs["To Min"].default_value = 0.2; rough.inputs["To Max"].default_value = 0.17
     bump = node("ShaderNodeBump", "bump"); bump.inputs["Distance"].default_value = 0.0004
     bstr = node("ShaderNodeMath", "bstr", operation="MULTIPLY"); bstr.inputs[1].default_value = 0.25
     L = nt.links.new
@@ -113,7 +114,14 @@ def setup(mat):
     L(hi.outputs[0], mask.inputs[0]); L(lo.outputs[0], mask.inputs[1])
     L(mask.outputs[0], met.inputs["Value"]); L(mask.outputs[0], rough.inputs["Value"]); L(mask.outputs[0], bstr.inputs[0])
     L(met.outputs["Result"], bsdf.inputs["Metallic"]); L(rough.outputs["Result"], bsdf.inputs["Roughness"])
-    L(bstr.outputs[0], bump.inputs["Strength"]); L(tex.outputs["Color"], bump.inputs["Height"]); L(bump.outputs["Normal"], bsdf.inputs["Normal"])
+    L(bstr.outputs[0], bump.inputs["Strength"]); L(tex.outputs["Color"], bump.inputs["Height"])
+    # Crimp ridges across the whole wrapper: fine vertical bands feeding a second bump.
+    wave = node("ShaderNodeTexWave", "wave", wave_type="BANDS", bands_direction="X", wave_profile="SIN")
+    wave.inputs["Scale"].default_value = CRIMP_SCALE
+    wave.inputs["Distortion"].default_value = 0
+    crimp = node("ShaderNodeBump", "crimp"); crimp.inputs["Strength"].default_value = 0.35; crimp.inputs["Distance"].default_value = 0.0003
+    L(uv.outputs["UV"], wave.inputs["Vector"]); L(wave.outputs["Color"], crimp.inputs["Height"])
+    L(crimp.outputs["Normal"], bump.inputs["Normal"]); L(bump.outputs["Normal"], bsdf.inputs["Normal"])
     return tex
 tf, tb = setup(bpy.data.materials["M_PackFront"]), setup(bpy.data.materials["M_PackBack"])
 
