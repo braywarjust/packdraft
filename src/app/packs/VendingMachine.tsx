@@ -174,31 +174,19 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
 
       <section className="space-y-3">
         <h2 className="text-lg font-bold">Packs</h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 xl:grid-cols-6">
           {PACKS.map((p) => {
             const busy = stage !== "idle";
             const short = !tester && coins < p.price;
             return (
-              <div key={p.id} className="card flex flex-col overflow-hidden">
-                <div className="flex justify-center bg-zinc-50 py-6">
-                  <div className="transition hover:-translate-y-1"><PackArt p={p} md slabs={features[p.id]} /></div>
+              <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
+                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${p.cards} slabs · Legendary ${p.odds.legendary}% · Grail ${p.odds.grail}%`}
+                className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50">
+                <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
+                  <PackArt p={p} md slabs={features[p.id]} />
                 </div>
-                <div className="flex flex-1 flex-col gap-3 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="text-lg font-bold">{p.name}</h3>
-                      <p className="text-sm text-zinc-500">{p.blurb}</p>
-                    </div>
-                    <span className="shrink-0 text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
-                  </div>
-                  <p className="text-xs text-zinc-500">
-                    {p.cards} slabs · Legendary {p.odds.legendary}% · Grail {p.odds.grail}%
-                  </p>
-                  <button onClick={() => doBuy(p.id)} disabled={busy || short} className="btn-primary mt-auto w-full">
-                    {short ? "Need more Pack Points" : busyId === p.id ? "Opening…" : "Buy & open"}
-                  </button>
-                </div>
-              </div>
+                <span className="text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
+              </button>
             );
           })}
         </div>
