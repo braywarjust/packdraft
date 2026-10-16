@@ -114,13 +114,13 @@ export function VendingMachine({ coins, inventory, buy, rip, sell }: {
       {party && <Confetti />}
       {/* Machine */}
       <div className="lg:col-span-3">
-        <div className="relative rounded-[28px] border-4 border-red-800 bg-gradient-to-b from-brand to-red-700 p-4 shadow-2xl shadow-red-500/30">
-          <div className="mb-3 flex items-center justify-between rounded-xl bg-zinc-950 px-4 py-2 shadow-inner">
+        <div className="relative rounded-[28px] border-[6px] border-brand bg-gradient-to-b from-white to-zinc-100 p-4 shadow-xl shadow-zinc-900/10">
+          <div className="mb-3 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-2">
             <Logo height={26} />
-            <span className="font-mono text-sm text-emerald-400">CREDIT {fmtCoins(coins)}</span>
+            <span className="font-mono text-sm font-bold text-brand">CREDIT {fmtCoins(coins)}</span>
           </div>
           <div className="flex gap-4">
-            <div className="relative flex-1 rounded-2xl border-4 border-red-800/40 bg-white p-3 shadow-inner">
+            <div className="relative flex-1 rounded-2xl border-2 border-zinc-200 bg-white p-3 shadow-inner">
               <div className="grid grid-cols-3 gap-x-3 gap-y-5">
                 {PACKS.map((p, i) => (
                   <button key={p.id} onClick={() => setSelected(p.id)} className={`group flex flex-col items-center rounded-xl p-2 transition ${selected === p.id ? "bg-red-50 ring-2 ring-brand" : "hover:bg-zinc-100"}`}>
@@ -134,23 +134,23 @@ export function VendingMachine({ coins, inventory, buy, rip, sell }: {
               <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-white/60 via-transparent to-transparent" />
             </div>
             <div className="flex w-36 flex-col gap-3">
-              <div className="rounded-xl bg-white p-3 text-center shadow">
+              <div className="rounded-xl border border-zinc-200 bg-white p-3 text-center">
                 <p className="text-[10px] uppercase text-zinc-400">Selected</p>
                 <p className="text-sm font-black">{pack.name}</p>
                 <p className="font-mono text-emerald-600">{fmtCoins(pack.price)}</p>
                 <p className="mt-1 text-[10px] text-zinc-500">{pack.blurb}</p>
               </div>
-              <div className="relative grid h-14 place-items-center rounded-xl border-2 border-red-900/40 bg-red-800/40">
+              <div className="relative grid h-14 place-items-center rounded-xl border-2 border-zinc-300 bg-zinc-100">
                 <div className="h-8 w-1.5 rounded bg-zinc-950" />
                 {coinsShown && <span className="anim-coin absolute text-2xl">🪙</span>}
               </div>
-              <button onClick={doBuy} disabled={stage !== "idle" || coins < pack.price} className="btn bg-white py-3 text-base font-black text-brand shadow hover:bg-red-50">
+              <button onClick={doBuy} disabled={stage !== "idle" || coins < pack.price} className="btn-primary py-3 text-base font-black">
                 {coins < pack.price ? "Need more $" : stage === "vending" ? "Vending…" : "BUY"}
               </button>
-              {err && <p className="text-xs font-semibold text-white">{err}</p>}
+              {err && <p className="text-xs font-semibold text-red-600">{err}</p>}
             </div>
           </div>
-          <div className="mt-4 grid h-24 place-items-center rounded-xl border-2 border-red-900/50 bg-zinc-950 shadow-inner">
+          <div className="mt-4 grid h-24 place-items-center rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-100 shadow-inner">
             {stage === "vending" && <div className="anim-drop"><PackArt p={pack} /></div>}
             {stage === "idle" && <span className="text-xs uppercase tracking-widest text-zinc-400">Push to collect</span>}
           </div>

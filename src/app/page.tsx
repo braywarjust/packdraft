@@ -42,13 +42,13 @@ export default async function Home() {
       </div>
 
       {packs.length > 0 && (
-        <Link href="/packs" className="flex items-center justify-between gap-4 overflow-hidden rounded-2xl bg-gradient-to-r from-brand to-red-800 p-5 text-white shadow-lg shadow-red-500/25 transition hover:brightness-110">
+        <Link href="/packs" className="card flex items-center justify-between gap-4 overflow-hidden border-l-8 border-l-brand p-5 transition hover:border-brand/50">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-white/80">Unopened packs</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-brand">Unopened packs</p>
             <p className="text-xl font-black">You have {packs.length} pack{packs.length > 1 ? "s" : ""} waiting to be ripped</p>
-            <p className="text-sm text-white/80">{packs.slice(0, 3).map((p) => `${PACK_BY_ID[p.pack_type]?.name} (${p.source})`).join(" · ")}</p>
+            <p className="text-sm text-zinc-500">{packs.slice(0, 3).map((p) => `${PACK_BY_ID[p.pack_type]?.name} (${p.source})`).join(" · ")}</p>
           </div>
-          <span className="btn shrink-0 whitespace-nowrap bg-white text-brand">Rip now →</span>
+          <span className="btn-primary shrink-0 whitespace-nowrap">Rip now →</span>
         </Link>
       )}
 

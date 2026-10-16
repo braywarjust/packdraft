@@ -14,7 +14,7 @@
 
 html { color-scheme: light; }
 body {
-  background: linear-gradient(180deg, #fff5f6 0, #ffffff 320px), #ffffff;
+  background: #ffffff;
   color: #18181b;
   min-height: 100vh;
 }
@@ -22,7 +22,7 @@ body {
 @utility card { @apply rounded-2xl border border-line bg-white shadow-sm shadow-zinc-900/5; }
 @utility btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50; }
 @utility btn-primary { @apply btn bg-brand text-white shadow-sm shadow-red-500/30 hover:bg-brand-dark; }
-@utility btn-lime { @apply btn bg-brand2 text-white hover:bg-zinc-700; }
+@utility btn-lime { @apply btn border-2 border-brand bg-white text-brand hover:bg-red-50; }
 @utility btn-ghost { @apply btn border border-line bg-white text-zinc-800 hover:border-zinc-400; }
 @utility btn-danger { @apply btn bg-brand text-white hover:bg-brand-dark; }
 @utility input { @apply w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-brand focus:ring-2 focus:ring-brand/15; }
@@ -35,7 +35,7 @@ body {
 @utility pos-BN { @apply bg-zinc-200 text-zinc-500; }
 @utility tab { @apply whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900; }
 @utility tab-active { @apply bg-brand text-white hover:bg-brand hover:text-white; }
-@utility navlink { @apply whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold text-white/85 hover:bg-white/15 hover:text-white; }
+@utility navlink { @apply whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold text-zinc-700 hover:bg-red-50 hover:text-brand; }
 
 /* ----- Pack ripping ----- */
 @keyframes drop { 0% { transform: translateY(-160px) rotate(-8deg); opacity: 0; } 60% { transform: translateY(12px) rotate(3deg); opacity: 1; } 80% { transform: translateY(-6px) rotate(-1deg); } 100% { transform: translateY(0) rotate(0); } }
