@@ -53,8 +53,8 @@ export function SlabCard({ c, small }: { c: CardData; small?: boolean }) {
       <div className="mt-2 w-full text-center">
         <RarityBadge rarity={c.rarity} />
         <p className="mt-1 truncate text-xs font-semibold text-zinc-900">{c.name}</p>
-        <p className="font-mono text-xs font-bold text-emerald-600" title={c.s_source === "ebay" ? "eBay market value" : "Estimated value"}>
-          <Coins n={c.value} />{c.s_source === "ebay" ? "" : "*"}
+        <p className="font-mono text-xs font-bold text-emerald-600" title={c.s_source === "ebay" ? "eBay market value" : c.s_source === "courtyard" ? "Courtyard fair market value" : "Estimated value"}>
+          <Coins n={c.value} />{c.s_source ? "" : "*"}
         </p>
       </div>
     </div>
