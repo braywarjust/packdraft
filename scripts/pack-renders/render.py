@@ -53,6 +53,23 @@ area("Shop_Key", (-0.25, -0.3, 0.22), 6, 0.25)
 area("Shop_Fill", (0.3, -0.25, 0.0), 1.8, 0.35, (0.85, 0.9, 1))
 area("Shop_Rim", (0.12, 0.3, 0.25), 7, 0.2, (1, 0.95, 0.9))
 
+# Soft white reflector cards (hidden from the camera) so the chrome ends mirror something bright.
+def card(name, loc, size, strength):
+    me = bpy.data.meshes.get(name) or bpy.data.meshes.new(name)
+    me.clear_geometry(); me.from_pydata([(-size, -size, 0), (size, -size, 0), (size, size, 0), (-size, size, 0)], [], [(0, 1, 2, 3)])
+    o = obj(name, me)
+    o.location = loc
+    o.rotation_euler = (Vector((0, 0, 0)) - Vector(loc)).to_track_quat("Z", "Y").to_euler()
+    m = bpy.data.materials.get(name) or bpy.data.materials.new(name); m.use_nodes = True
+    mn = m.node_tree.nodes; mn.clear()
+    em, mo = mn.new("ShaderNodeEmission"), mn.new("ShaderNodeOutputMaterial")
+    em.inputs["Strength"].default_value = strength
+    m.node_tree.links.new(em.outputs[0], mo.inputs["Surface"])
+    me.materials.clear(); me.materials.append(m)
+    o.visible_camera = False; o.visible_shadow = False; o.hide_render = False
+card("Shop_Reflector_Top", (0, -0.2, 0.3), 0.2, 2.0)
+card("Shop_Reflector_Low", (-0.1, -0.3, -0.2), 0.2, 1.5)
+
 w = sc.world or bpy.data.worlds.new("World"); sc.world = w
 w.use_nodes = True
 nt = w.node_tree; nt.nodes.clear()
@@ -74,6 +91,29 @@ def setup(mat):
     bsdf.inputs["Roughness"].default_value = 0.3
     if "Coat Weight" in bsdf.inputs: bsdf.inputs["Coat Weight"].default_value = 0.25; bsdf.inputs["Coat Roughness"].default_value = 0.08
     tex.interpolation = "Cubic"
+    # Chrome ends: the tear strip (v > 0.834) and bottom seal (v < 0.14) become polished metal with bumpy crimps.
+    nt = mat.node_tree
+    for x in [x for x in n if x.label.startswith("chrome")]: n.remove(x)
+    def node(t, label, **kw):
+        x = n.new(t); x.label = "chrome " + label
+        for k, v in kw.items(): setattr(x, k, v)
+        return x
+    uv = node("ShaderNodeUVMap", "uv", uv_map="PackUV")
+    sep = node("ShaderNodeSeparateXYZ", "sep")
+    hi = node("ShaderNodeMath", "hi", operation="GREATER_THAN"); hi.inputs[1].default_value = 0.834
+    lo = node("ShaderNodeMath", "lo", operation="LESS_THAN"); lo.inputs[1].default_value = 0.14
+    mask = node("ShaderNodeMath", "mask", operation="MAXIMUM")
+    met = node("ShaderNodeMapRange", "metal"); met.inputs["To Min"].default_value = 0.2; met.inputs["To Max"].default_value = 1.0
+    rough = node("ShaderNodeMapRange", "rough"); rough.inputs["To Min"].default_value = 0.3; rough.inputs["To Max"].default_value = 0.17
+    bump = node("ShaderNodeBump", "bump"); bump.inputs["Distance"].default_value = 0.0004
+    bstr = node("ShaderNodeMath", "bstr", operation="MULTIPLY"); bstr.inputs[1].default_value = 0.25
+    L = nt.links.new
+    L(uv.outputs["UV"], sep.inputs[0]); L(uv.outputs["UV"], tex.inputs["Vector"])
+    L(sep.outputs["Y"], hi.inputs[0]); L(sep.outputs["Y"], lo.inputs[0])
+    L(hi.outputs[0], mask.inputs[0]); L(lo.outputs[0], mask.inputs[1])
+    L(mask.outputs[0], met.inputs["Value"]); L(mask.outputs[0], rough.inputs["Value"]); L(mask.outputs[0], bstr.inputs[0])
+    L(met.outputs["Result"], bsdf.inputs["Metallic"]); L(rough.outputs["Result"], bsdf.inputs["Roughness"])
+    L(bstr.outputs[0], bump.inputs["Strength"]); L(tex.outputs["Color"], bump.inputs["Height"]); L(bump.outputs["Normal"], bsdf.inputs["Normal"])
     return tex
 tf, tb = setup(bpy.data.materials["M_PackFront"]), setup(bpy.data.materials["M_PackBack"])
 
