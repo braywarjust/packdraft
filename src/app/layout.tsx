@@ -8,6 +8,7 @@ import { unopenedPacks } from "@/lib/packs-server";
 import { logout } from "./actions";
 import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
+import { BalancePill } from "@/components/BalancePill";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -44,7 +45,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           logout={logout}
         />
         <div className="flex min-h-screen flex-col transition-[padding] duration-200 lg:pl-[var(--sb)]">
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-8">{children}</main>
+          {/* Pack Points balance on every page (desktop; the mobile top bar shows it too). */}
+          <div className="pointer-events-none sticky top-0 z-30 hidden lg:block">
+            <div className="mx-auto flex max-w-6xl justify-end px-8 pt-4 pr-20 2xl:pr-8">
+              <BalancePill coins={user.coins} tester={!!user.is_tester} />
+            </div>
+          </div>
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-8 lg:pt-2">{children}</main>
           <footer className="border-t border-line bg-zinc-50">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-6 text-sm text-zinc-500 sm:px-8">
               <Logo height={30} />
