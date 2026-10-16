@@ -1,6 +1,6 @@
 # Renders the Mega Case cover from CASE.blend: re-unwraps the inner box into the 3×2 atlas from build-texture.mjs,
 # applies it and renders a transparent square PNG with the file's own camera.
-#   Blender -b CASE.blend -P scripts/mega-case/render.py -- <atlas.png> <out.png> [samples] [--save]
+#   Blender -b CASE.blend -P scripts/mega-case/render.py -- <atlas.png> <out.png> [samples] [--glow 1.2] [--clear-acrylic] [--keep-comp] [--save]
 import bpy, sys, os, glob
 
 argv = sys.argv[sys.argv.index("--") + 1:]
@@ -45,6 +45,10 @@ bsdf = next(n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
 if not bsdf.inputs["Base Color"].is_linked: mat.node_tree.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
 bsdf.inputs["Roughness"].default_value = 0.35
 bsdf.inputs["Metallic"].default_value = 0.1
+# --glow N: let the box art emit a little light so it reads through the original frosted case.
+if "--glow" in argv:
+    mat.node_tree.links.new(tex.outputs["Color"], bsdf.inputs["Emission Color"])
+    bsdf.inputs["Emission Strength"].default_value = float(argv[argv.index("--glow") + 1])
 
 # Clear acrylic shell. The original frosted/dispersion shaders hazed the artwork, and Cycles can't light through
 # refraction cleanly, so the shell also stops casting shadows onto the box.
@@ -62,7 +66,8 @@ def acrylic(name, rough):
     nt.links.new(fr.outputs[0], k.inputs[0]); nt.links.new(k.outputs[0], mix.inputs[0]); nt.links.new(tr.outputs[0], mix.inputs[1]); nt.links.new(gl.outputs[0], mix.inputs[2])
     nt.links.new(mix.outputs[0], out.inputs["Surface"])
     return m
-for name, rough in (("Cube.006", 0.04), ("Card_Slab_v2_Slab_0.002", 0.02)):
+# Off by default: Brayden prefers the file's original frosted case. --clear-acrylic swaps it for clear plastic.
+for name, rough in ((("Cube.006", 0.04), ("Card_Slab_v2_Slab_0.002", 0.02)) if "--clear-acrylic" in argv else ()):
     o = bpy.data.objects[name]
     for slot in o.material_slots: slot.material = acrylic("Case_Acrylic", rough)
     o.visible_shadow = False
@@ -85,7 +90,7 @@ try:
 except Exception as e: print("GPU off:", e)
 r.resolution_x = r.resolution_y = 1400; r.resolution_percentage = 100
 r.film_transparent = True
-r.use_compositing = False
+r.use_compositing = "--keep-comp" in argv
 r.image_settings.file_format = "PNG"; r.image_settings.color_mode = "RGBA"
 sc.frame_current = sc.frame_start
 r.filepath = OUT
