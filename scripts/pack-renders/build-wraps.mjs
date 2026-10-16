@@ -112,7 +112,7 @@ async function front(p) {
     <rect x="0" y="1380" width="${W}" height="5" fill="#fff" opacity=".5"/>
     <rect x="0" y="1625" width="${W}" height="5" fill="#fff" opacity=".5"/>
     <text x="${CX}" y="${1380 + 115 + fs1 * 0.3}" text-anchor="middle" font-family="Arial Black, Helvetica Neue, Arial" font-weight="900" font-size="${fs1}" fill="#fff" letter-spacing="-2">${esc(name)}</text>
-    <text x="${CX}" y="1592" text-anchor="middle" font-family="Helvetica Neue, Arial" font-weight="700" font-size="40" fill="#fff" fill-opacity=".8" letter-spacing="14">${p.cards} GRADED SLABS</text>
+    <text x="${CX}" y="1592" text-anchor="middle" font-family="Helvetica Neue, Arial" font-weight="700" font-size="40" fill="#fff" fill-opacity=".8" letter-spacing="14">${p.cards} GRADED SLAB${p.cards === 1 ? "" : "S"}</text>
   </svg>`;
   return sharp(Buffer.from(base(p.id)))
     .composite([
@@ -146,7 +146,7 @@ async function back(p) {
 }
 
 fs.mkdirSync(OUT, { recursive: true });
-for (const p of PACKS) {
+for (const p of PACKS.filter((p) => p.kind !== "case")) {
   fs.writeFileSync(path.join(OUT, `${p.id}_front.png`), await front(p));
   fs.writeFileSync(path.join(OUT, `${p.id}_back.png`), await back(p));
   console.log("wrap", p.id);

@@ -14,15 +14,19 @@ const isCaseHit = (c: CardData) => c.s_source === "courtyard" || c.rarity === "l
 const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, grail: 4 };
 
 const PACK_SIZE = { sm: [80, 116], md: [156, 226], big: [232, 336] } as const;
+/** The Mega Case render is roughly square, so it gets wider boxes than the packs. */
+const CASE_SIZE = { sm: [116, 116], md: [300, 300], big: [336, 336] } as const;
+const artSize = (p: PackType, size: "sm" | "md" | "big") => (p.kind === "case" ? CASE_SIZE : PACK_SIZE)[size];
+const slabsLabel = (n: number) => `${n} slab${n === 1 ? "" : "s"}`;
 
 /** Pack image rendered in Blender (public/packs/{id}.png, see scripts/pack-renders). Falls back to the CSS wrapper. */
 function PackArt({ p, big, md, slabs }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[] }) {
   const [failed, setFailed] = useState(false);
   if (failed) return <CssPackArt p={p} big={big} md={md} slabs={slabs} />;
-  const [w, h] = PACK_SIZE[big ? "big" : md ? "md" : "sm"];
+  const [w, h] = artSize(p, big ? "big" : md ? "md" : "sm");
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={`/packs/${p.id}.png?v=3`} alt={p.name} width={w} height={h} draggable={false} onError={() => setFailed(true)}
+    <img src={`/packs/${p.id}.png?v=4`} alt={p.name} width={w} height={h} draggable={false} onError={() => setFailed(true)}
       className="block select-none object-contain" style={{ width: w, height: h, filter: "drop-shadow(0 14px 18px rgba(0,0,0,.45))" }} />
   );
 }
@@ -63,7 +67,7 @@ function CssPackArt({ p, big, md, slabs = [] }: { p: PackType; big?: boolean; md
       {/* name band */}
       <div className="absolute inset-x-0 z-10 bg-black/55 text-center backdrop-blur-[2px]" style={{ bottom: h * 0.06, paddingBlock: h * 0.025 }}>
         <p className={`font-black uppercase leading-none tracking-tight text-white ${size === "big" ? "text-2xl" : size === "md" ? "text-base" : "text-[9px]"}`}>{p.name.replace(" Pack", "")}</p>
-        {size !== "sm" && <p className={`mt-0.5 font-semibold uppercase tracking-[0.2em] text-white/75 ${size === "big" ? "text-xs" : "text-[9px]"}`}>{p.cards} slabs</p>}
+        {size !== "sm" && <p className={`mt-0.5 font-semibold uppercase tracking-[0.2em] text-white/75 ${size === "big" ? "text-xs" : "text-[9px]"}`}>{slabsLabel(p.cards)}</p>}
       </div>
     </div>
   );
@@ -184,15 +188,44 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
         </section>
       )}
 
+      {PACKS.filter((p) => p.kind === "case").map((p) => {
+        const busy = stage !== "idle";
+        const short = !tester && coins < p.price;
+        return (
+          <section key={p.id} className="card relative overflow-hidden p-6">
+            <div className="absolute inset-0 opacity-60" style={{ background: "radial-gradient(60% 90% at 25% 50%, rgba(245,193,92,.18), transparent 70%)" }} />
+            <div className="relative flex flex-col items-center gap-6 md:flex-row md:gap-10">
+              <button onClick={() => doBuy(p.id)} disabled={busy || short} title={short ? "Not enough Pack Points" : `Buy the ${p.name}`}
+                className={`group shrink-0 rounded-lg transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50 ${short || busy ? "" : "hover:-translate-y-2"} ${busyId === p.id ? "animate-pulse" : ""}`}>
+                <PackArt p={p} md />
+              </button>
+              <div className="space-y-3 text-center md:text-left">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-600">Featured</p>
+                <h2 className="text-3xl font-black tracking-tight">{p.name}</h2>
+                <p className="text-zinc-500">{p.blurb} {slabsLabel(p.cards)} per case.</p>
+                <div className="flex flex-wrap justify-center gap-2 text-xs md:justify-start">
+                  {(["grail", "legendary", "epic", "rare", "common"] as Rarity[]).filter((r) => p.odds[r] > 0).map((r) => (
+                    <span key={r} className="rounded-full border border-zinc-200 px-2.5 py-1"><span className={`font-semibold ${RARITIES[r].text}`}>{RARITIES[r].label}</span> {p.odds[r]}%</span>
+                  ))}
+                </div>
+                <button onClick={() => doBuy(p.id)} disabled={busy || short} className="btn-primary px-6 text-base">
+                  Buy for <Coins n={p.price} />
+                </button>
+              </div>
+            </div>
+          </section>
+        );
+      })}
+
       <section className="space-y-3">
         <h2 className="text-lg font-bold">Packs</h2>
         <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 xl:grid-cols-6">
-          {PACKS.map((p) => {
+          {PACKS.filter((p) => p.kind !== "case").map((p) => {
             const busy = stage !== "idle";
             const short = !tester && coins < p.price;
             return (
               <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
-                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${p.cards} slabs · Legendary ${p.odds.legendary}% · Grail ${p.odds.grail}%`}
+                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Legendary ${p.odds.legendary}% · Grail ${p.odds.grail}%`}
                 className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50">
                 <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                   <PackArt p={p} md slabs={features[p.id]} />
@@ -209,10 +242,10 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-zinc-100/95 p-4 backdrop-blur-sm">
           {stage !== "cards" ? (
             <div className="flex flex-col items-center gap-6">
-              <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{stage === "tearing" ? "Ripping…" : "Click the pack to rip it"}</p>
+              <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{stage === "tearing" ? "Ripping…" : `Click the ${rp.kind === "case" ? "case" : "pack"} to rip it`}</p>
               <button onClick={doRip} disabled={stage === "tearing"} className={`relative ${stage === "ready" ? "anim-drop hover:anim-shake" : ""}`}>
                 {stage === "tearing" ? (
-                  <div className="relative h-[336px] w-[232px]">
+                  <div className="relative h-[336px]" style={{ width: artSize(rp, "big")[0] }}>
                     <div className="anim-tear-top absolute inset-x-0 top-0 h-16 overflow-hidden"><PackArt p={rp} big slabs={features[rp.id]} /></div>
                     <div className="anim-tear-bottom absolute inset-x-0 bottom-0 h-[272px] overflow-hidden" style={{ clipPath: "inset(0 0 0 0)" }}>
                       <div className="-mt-16"><PackArt p={rp} big slabs={features[rp.id]} /></div>

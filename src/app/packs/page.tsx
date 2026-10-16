@@ -17,13 +17,13 @@ export default async function PacksPage() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Mystery packs" title="Pack Shop"
-        description={<>Buy a pack, rip it open and collect graded, serial-numbered player cards. Don&apos;t love a pull? Instant buyback at 90% of its value.</>} />
+        description={<>Buy a pack or a Mega Case, rip it open and collect real graded slabs. Don&apos;t love a pull? Instant buyback at 90% of its value.</>} />
       <VendingMachine features={packFeatures(PACKS)} coins={u.is_tester ? 1_000_000_000 : u.coins} tester={!!u.is_tester} inventory={inventory} buy={buyPack} rip={ripPack} sell={sellCards} />
       <details className="card p-4 text-sm">
         <summary className="cursor-pointer font-semibold">Pack odds</summary>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full">
-            <thead className="text-xs text-zinc-500"><tr><th className="text-left">Pack</th><th>Price</th><th>Cards</th>{Object.values(RARITIES).map((r) => <th key={r.label} className={r.text}>{r.label}</th>)}</tr></thead>
+            <thead className="text-xs text-zinc-500"><tr><th className="text-left">Pack</th><th>Price</th><th>Slabs</th>{Object.values(RARITIES).map((r) => <th key={r.label} className={r.text}>{r.label}</th>)}</tr></thead>
             <tbody>
               {PACKS.map((p) => (
                 <tr key={p.id} className="border-t border-line/60 text-center">
