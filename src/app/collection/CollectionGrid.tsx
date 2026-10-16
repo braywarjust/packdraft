@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { CardData, PlayerCard, RARITY_TEXT, SlabImage, slabBadges } from "@/components/PlayerCard";
 import { BUYBACK_RATE, RARITIES, fmtCoins } from "@/lib/packs";
+import { Logo, LogoWatermark } from "@/components/Logo";
 
 export type GridCard = CardData & {
   s_factors?: string | null; s_detail?: string | null; s_est?: number | null; s_pop?: number | null; s_pop_higher?: number | null; created_at: number;
@@ -40,16 +41,25 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-4 backdrop-blur-sm" onClick={() => setOpen(null)}>
-          <div className="relative grid max-h-[92vh] w-full max-w-4xl gap-6 overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl md:grid-cols-[auto_1fr]" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setOpen(null)} aria-label="Close" className="absolute right-3 top-3 rounded-md p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900">✕</button>
-            <div className="flex justify-center p-2">
+          <div className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-3">
+              <div className="flex items-center gap-3">
+                <Logo height={34} />
+                <span className="hidden h-5 w-px bg-zinc-200 sm:block" />
+                <span className="hidden text-xs font-semibold uppercase tracking-[0.25em] text-zinc-400 sm:block">Slab Vault</span>
+              </div>
+              <button onClick={() => setOpen(null)} aria-label="Close" className="rounded-md p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900">✕</button>
+            </div>
+            <div className="relative grid gap-6 overflow-hidden p-6 md:grid-cols-[auto_1fr]">
+            <LogoWatermark color="red" opacity={0.06} height={230} className="-bottom-12 -right-10" />
+            <div className="relative flex justify-center p-2">
               {open.slab_id ? (
                 <SlabImage id={open.slab_id} alt={`${open.s_year} ${open.s_set} ${open.name}`} height={Math.min(560, typeof window !== "undefined" ? window.innerHeight * 0.7 : 560)} rarity={open.rarity} />
               ) : (
                 <PlayerCard c={open} />
               )}
             </div>
-            <div className="min-w-0 space-y-4 pr-6">
+            <div className="relative min-w-0 space-y-4">
               <div>
                 <p className={`text-xs font-bold uppercase tracking-widest ${RARITY_TEXT[open.rarity]}`}>{RARITIES[open.rarity].label}</p>
                 <h2 className="text-2xl font-bold tracking-tight">{open.name}</h2>
@@ -107,6 +117,11 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
                   Sell back for {fmtCoins(Math.floor(open.value * BUYBACK_RATE))}
                 </button>
               )}
+            </div>
+            </div>
+            <div className="flex items-center justify-between border-t border-zinc-100 px-6 py-3 text-[11px] text-zinc-400">
+              <span>PackDraft Vault{open.s_cert ? ` · ${open.s_company} cert ${open.s_cert}` : ""}</span>
+              <Logo height={18} />
             </div>
           </div>
         </div>
