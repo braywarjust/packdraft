@@ -188,34 +188,28 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
         </section>
       )}
 
-      {PACKS.filter((p) => p.kind === "case").map((p) => {
-        const busy = stage !== "idle";
-        const short = !tester && coins < p.price;
-        return (
-          <section key={p.id} className="card relative overflow-hidden p-6">
-            <div className="absolute inset-0 opacity-60" style={{ background: "radial-gradient(60% 90% at 25% 50%, rgba(245,193,92,.18), transparent 70%)" }} />
-            <div className="relative flex flex-col items-center gap-6 md:flex-row md:gap-10">
-              <button onClick={() => doBuy(p.id)} disabled={busy || short} title={short ? "Not enough Pack Points" : `Buy the ${p.name}`}
-                className={`group shrink-0 rounded-lg transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50 ${short || busy ? "" : "hover:-translate-y-2"} ${busyId === p.id ? "animate-pulse" : ""}`}>
-                <PackArt p={p} md />
-              </button>
-              <div className="space-y-3 text-center md:text-left">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-600">Featured</p>
-                <h2 className="text-3xl font-black tracking-tight">{p.name}</h2>
-                <p className="text-zinc-500">{p.blurb} {slabsLabel(p.cards)} per case.</p>
-                <div className="flex flex-wrap justify-center gap-2 text-xs md:justify-start">
-                  {(["grail", "legendary", "epic", "rare", "common"] as Rarity[]).filter((r) => p.odds[r] > 0).map((r) => (
-                    <span key={r} className="rounded-full border border-zinc-200 px-2.5 py-1"><span className={`font-semibold ${RARITIES[r].text}`}>{RARITIES[r].label}</span> {p.odds[r]}%</span>
-                  ))}
-                </div>
-                <button onClick={() => doBuy(p.id)} disabled={busy || short} className="btn-primary px-6 text-base">
-                  Buy for <Coins n={p.price} />
+      {/* Cases are presented like the packs: the render is the buy button, price underneath. */}
+      {PACKS.some((p) => p.kind === "case") && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-bold">Cases</h2>
+          <div className="flex flex-wrap justify-center gap-10">
+            {PACKS.filter((p) => p.kind === "case").map((p) => {
+              const busy = stage !== "idle";
+              const short = !tester && coins < p.price;
+              return (
+                <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
+                  title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Legendary ${p.odds.legendary}% · Grail ${p.odds.grail}%`}
+                  className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50">
+                  <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
+                    <PackArt p={p} md />
+                  </div>
+                  <span className="text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
                 </button>
-              </div>
-            </div>
-          </section>
-        );
-      })}
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-3">
         <h2 className="text-lg font-bold">Packs</h2>
