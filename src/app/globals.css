@@ -98,6 +98,14 @@ body {
 @keyframes flash { 0% { background: rgba(2, 83, 164, 0.15); } 100% { background: transparent; } }
 
 .anim-drop { animation: drop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes rumble {
+  0%, 55%, 100% { transform: translate(0, 0) rotate(0); }
+  60% { transform: translate(-3px, 1px) rotate(-2deg); } 65% { transform: translate(3px, -1px) rotate(2deg); }
+  70% { transform: translate(-3px, 0) rotate(-1.5deg); } 75% { transform: translate(3px, 1px) rotate(1.5deg); }
+  80% { transform: translate(-2px, -1px) rotate(-1deg); } 85% { transform: translate(2px, 0) rotate(1deg); }
+  90% { transform: translate(-1px, 0) rotate(0); }
+}
+.anim-rumble { animation: rumble 1.3s ease-in-out infinite; }
 .anim-shake { animation: shake 0.45s ease-in-out infinite; }
 .anim-tear-top { animation: tearTop 0.6s ease-in forwards; }
 .anim-tear-bottom { animation: tearBottom 0.6s ease-in forwards; }

@@ -9,18 +9,22 @@ import { Coins } from "@/components/Coins";
 
 type Inv = { id: number; pack_type: string; source: string; created_at: number };
 type Act<T> = Promise<T | { error: string }>;
+/** Heavy Hitters and the top two rarity tiers count as case hits: their face-down card shakes before the flip. */
+const isCaseHit = (c: CardData) => c.s_source === "courtyard" || c.rarity === "legendary" || c.rarity === "grail";
 const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, grail: 4 };
 
-function PackArt({ p, big }: { p: PackType; big?: boolean }) {
+function PackArt({ p, big, md }: { p: PackType; big?: boolean; md?: boolean }) {
+  const size = big ? "h-80 w-56" : md ? "h-48 w-32" : "h-28 w-20";
+  const title = big ? "text-3xl" : md ? "text-lg" : "text-[10px]";
   return (
-    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${p.color} shadow-xl ${big ? "h-80 w-56" : "h-28 w-20"}`}>
+    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${p.color} shadow-xl ${size}`}>
       <div className="foil absolute inset-0" />
       <div className="absolute inset-x-0 top-0 h-3 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,.35)_0_6px,transparent_6px_12px)]" />
       <div className="absolute inset-x-0 bottom-0 h-3 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,.35)_0_6px,transparent_6px_12px)]" />
       <div className="relative flex h-full flex-col items-center justify-center p-2 text-center">
-        <span className={`font-black uppercase leading-none tracking-tight text-white drop-shadow ${big ? "text-3xl" : "text-[10px]"}`}>{p.name.replace(" Pack", "")}</span>
-        <span className={`mt-1 font-bold text-white/80 ${big ? "text-sm" : "text-[9px]"}`}>{p.cards} CARDS</span>
-        {big && <span className="mt-6 rounded-full bg-black/30 px-3 py-1 text-xs font-bold text-white">PACKDRAFT</span>}
+        <span className={`font-black uppercase leading-none tracking-tight text-white drop-shadow ${title}`}>{p.name.replace(" Pack", "")}</span>
+        <span className={`mt-1 font-bold text-white/80 ${big ? "text-sm" : md ? "text-xs" : "text-[9px]"}`}>{p.cards} CARDS</span>
+        {(big || md) && <span className={`rounded-full bg-black/30 font-bold text-white ${big ? "mt-6 px-3 py-1 text-xs" : "mt-4 px-2 py-0.5 text-[10px]"}`}>PACKDRAFT</span>}
       </div>
     </div>
   );
@@ -50,7 +54,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
   sell: (ids: number[]) => Act<{ ok: boolean; total: number }>;
 }) {
   const router = useRouter();
-  const [selected, setSelected] = useState<string>("pro");
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [stage, setStage] = useState<"idle" | "vending" | "ready" | "tearing" | "cards">("idle");
   const [packId, setPackId] = useState<number | null>(null);
   const [packType, setPackType] = useState<string>("pro");
@@ -59,18 +63,18 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
   const [sold, setSold] = useState<Set<number>>(new Set());
   const [err, setErr] = useState("");
   const [party, setParty] = useState(false);
-  const [coinsShown, setCoinsShown] = useState(false);
-  const pack = PACK_BY_ID[selected];
 
-  const doBuy = async () => {
+  const doBuy = async (type: string) => {
     setErr("");
-    setCoinsShown(true);
+    setBusyId(type);
     setStage("vending");
-    const r = await buy(selected);
-    if ("error" in r) { setErr(r.error); setStage("idle"); setCoinsShown(false); return; }
-    setPackType(selected);
+    const r = await buy(type);
+    setBusyId(null);
+    if ("error" in r) { setErr(r.error); setStage("idle"); return; }
+    setPackType(type);
     setPackId(r.packId);
-    setTimeout(() => { setStage("ready"); setCoinsShown(false); router.refresh(); }, 1100);
+    setStage("ready");
+    router.refresh();
   };
 
   const openFromInventory = (inv: Inv) => {
@@ -111,73 +115,67 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
   const rp = PACK_BY_ID[packType];
 
   return (
-    <div className="grid gap-6 2xl:grid-cols-5">
+    <div className="space-y-8">
       {party && <Confetti />}
-      {/* Machine */}
-      <div className="max-w-3xl 2xl:col-span-3">
-        <div className="relative rounded-[28px] border border-zinc-200 bg-zinc-100 p-4">
-          <div className="mb-3 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-2">
-            <Logo height={26} />
-            <span className="font-mono text-sm font-semibold text-zinc-700">{tester ? "TEST MODE · FREE PACKS" : <>CREDIT <Coins n={coins} /></>}</span>
-          </div>
-          <div className="flex gap-4">
-            <div className="relative flex-1 rounded-2xl border-2 border-zinc-200 bg-white p-3 shadow-inner">
-              <div className="grid grid-cols-3 gap-x-3 gap-y-5">
-                {PACKS.map((p, i) => (
-                  <button key={p.id} onClick={() => setSelected(p.id)} className={`group flex flex-col items-center rounded-xl p-2 transition ${selected === p.id ? "bg-blue-50 ring-2 ring-brand" : "hover:bg-zinc-50"}`}>
-                    <div className="transition group-hover:-translate-y-1"><PackArt p={p} /></div>
-                    <div className="mt-2 h-1 w-full rounded bg-zinc-300" />
-                    <span className="mt-1 text-[10px] font-bold text-zinc-500">{String.fromCharCode(65 + Math.floor(i / 3))}{(i % 3) + 1}</span>
-                    <span className="text-xs font-bold text-emerald-600"><Coins n={p.price} /></span>
-                  </button>
-                ))}
-              </div>
-              <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-white/5 via-transparent to-transparent" />
-            </div>
-            <div className="flex w-36 flex-col gap-3">
-              <div className="rounded-xl border border-zinc-200 bg-white p-3 text-center">
-                <p className="text-[10px] uppercase text-zinc-400">Selected</p>
-                <p className="text-sm font-black">{pack.name}</p>
-                <p className="font-mono text-emerald-600"><Coins n={pack.price} /></p>
-                <p className="mt-1 text-[10px] text-zinc-500">{pack.blurb}</p>
-              </div>
-              <div className="relative grid h-14 place-items-center rounded-xl border-2 border-zinc-300 bg-zinc-100">
-                <div className="h-8 w-1.5 rounded bg-black" />
-                {coinsShown && <span className="anim-coin absolute text-2xl">🪙</span>}
-              </div>
-              <button onClick={doBuy} disabled={stage !== "idle" || coins < pack.price} className="btn-primary py-3 text-base font-black">
-                {coins < pack.price ? "Need more Pack Points" : stage === "vending" ? "Vending…" : "BUY"}
-              </button>
-              {err && <p className="text-xs font-semibold text-red-600">{err}</p>}
-            </div>
-          </div>
-          <div className="mt-4 grid h-24 place-items-center rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-100 shadow-inner">
-            {stage === "vending" && <div className="anim-drop"><PackArt p={pack} /></div>}
-            {stage === "idle" && <span className="text-xs uppercase tracking-widest text-zinc-400">Push to collect</span>}
-          </div>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-zinc-500">
+          {tester ? "Test mode: every pack is free." : <>Your balance: <span className="font-semibold text-zinc-900"><Coins n={coins} /></span></>}
+        </p>
+        {err && <p className="text-sm font-semibold text-red-600">{err}</p>}
       </div>
 
-      {/* Inventory */}
-      <div className="space-y-3 2xl:col-span-2">
-        <h2 className="text-lg font-bold">Your unopened packs ({inventory.length})</h2>
-        {inventory.length === 0 && <p className="text-sm text-zinc-500">Win matchups, top the weekly leaderboard, or place in DFS to earn free packs.</p>}
-        <div className="grid grid-cols-2 gap-3">
-          {inventory.map((inv) => {
-            const p = PACK_BY_ID[inv.pack_type];
+      {inventory.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-bold">Your unopened packs ({inventory.length})</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {inventory.map((inv) => {
+              const p = PACK_BY_ID[inv.pack_type];
+              return (
+                <button key={inv.id} onClick={() => openFromInventory(inv)} disabled={stage !== "idle"} className="card flex items-center gap-3 p-3 text-left transition hover:border-brand/60">
+                  <PackArt p={p} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold">{p.name}</p>
+                    <p className="truncate text-xs text-zinc-500">{inv.source}</p>
+                    <span className="mt-2 inline-block rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-white">Open</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-bold">Packs</h2>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {PACKS.map((p) => {
+            const busy = stage !== "idle";
+            const short = !tester && coins < p.price;
             return (
-              <button key={inv.id} onClick={() => openFromInventory(inv)} disabled={stage !== "idle"} className="card flex items-center gap-3 p-3 text-left hover:border-brand/60">
-                <PackArt p={p} />
-                <div className="min-w-0">
-                  <p className="text-sm font-bold">{p.name}</p>
-                  <p className="text-xs text-zinc-500">{inv.source}</p>
-                  <span className="mt-2 inline-block rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-white">RIP IT</span>
+              <div key={p.id} className="card flex flex-col overflow-hidden">
+                <div className="flex justify-center bg-zinc-50 py-6">
+                  <div className="transition hover:-translate-y-1"><PackArt p={p} md /></div>
                 </div>
-              </button>
+                <div className="flex flex-1 flex-col gap-3 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="text-lg font-bold">{p.name}</h3>
+                      <p className="text-sm text-zinc-500">{p.blurb}</p>
+                    </div>
+                    <span className="shrink-0 text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    {p.cards} slabs · Legendary {p.odds.legendary}% · Grail {p.odds.grail}%
+                  </p>
+                  <button onClick={() => doBuy(p.id)} disabled={busy || short} className="btn-primary mt-auto w-full">
+                    {short ? "Need more Pack Points" : busyId === p.id ? "Opening…" : "Buy & open"}
+                  </button>
+                </div>
+              </div>
             );
           })}
         </div>
-      </div>
+      </section>
 
       {/* Rip modal */}
       {(stage === "ready" || stage === "tearing" || stage === "cards") && rp && (
@@ -205,12 +203,15 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               <div className="flex flex-wrap justify-center gap-4">
                 {cards.map((c, i) => {
                   const isUp = flipped.has(c.id);
+                  const hit = isCaseHit(c);
                   return (
                     <button key={c.id} onClick={() => !isUp && flip(c)} className={`flip anim-deal ${isUp ? "flipped" : ""}`} style={{ animationDelay: `${i * 120}ms` }}>
+                      <div className={hit && !isUp ? "anim-rumble [perspective:1000px]" : ""}>
                       <div className="flip-inner relative h-[330px] w-44">
-                        <div className="flip-face absolute inset-0 grid place-items-center rounded-xl border border-zinc-200 bg-white shadow-lg">
+                        <div className={`flip-face absolute inset-0 grid place-items-center rounded-xl border bg-white shadow-lg ${hit ? "border-amber-400 shadow-amber-500/30" : "border-zinc-200"}`}>
                           <div className="text-center">
                             <Logo height={56} className="mx-auto mb-3" />
+                            {hit && <p className="mb-2 inline-block animate-pulse rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-black tracking-widest text-black">CASE HIT</p>}
                             <p className="text-[10px] font-semibold tracking-[0.3em] text-zinc-400">TAP TO REVEAL</p>
                           </div>
                         </div>
@@ -218,6 +219,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                           <PlayerCard c={c} />
                           {sold.has(c.id) && <div className="absolute inset-0 grid place-items-center rounded-xl bg-white/85 text-sm font-bold text-zinc-900">SOLD</div>}
                         </div>
+                      </div>
                       </div>
                     </button>
                   );
