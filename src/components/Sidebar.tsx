@@ -102,11 +102,11 @@ export function Sidebar({
       <div className={mini ? "space-y-2 p-2.5" : "m-4 space-y-2"}>
         <div className={`rounded-lg border border-zinc-200 bg-white ${mini ? "p-2" : "p-3"}`}>
           <div className={`flex items-center gap-2 ${mini ? "flex-col" : ""}`}>
-            <span className="h-8 w-8 shrink-0 rounded-full" style={{ background: user.color }} title={mini ? `${user.name} · ${user.tester ? "Unlimited" : user.coins.toLocaleString()} PackBucks` : undefined} />
+            <span className="h-8 w-8 shrink-0 rounded-full" style={{ background: user.color }} title={mini ? `${user.name} · ${user.tester ? "Unlimited" : user.coins.toLocaleString()} Pack Points` : undefined} />
             {!mini && (
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{user.name}</p>
-                <p className="text-xs text-zinc-500">{user.tester ? "Unlimited PackBucks" : <Coins n={user.coins} />}</p>
+                <p className="text-xs text-zinc-500">{user.tester ? "Unlimited Pack Points" : <Coins n={user.coins} />}</p>
               </div>
             )}
             <form action={logout}>

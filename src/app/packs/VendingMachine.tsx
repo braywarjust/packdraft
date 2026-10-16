@@ -146,7 +146,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                 {coinsShown && <span className="anim-coin absolute text-2xl">🪙</span>}
               </div>
               <button onClick={doBuy} disabled={stage !== "idle" || coins < pack.price} className="btn-primary py-3 text-base font-black">
-                {coins < pack.price ? "Need more PackBucks" : stage === "vending" ? "Vending…" : "BUY"}
+                {coins < pack.price ? "Need more Pack Points" : stage === "vending" ? "Vending…" : "BUY"}
               </button>
               {err && <p className="text-xs font-semibold text-red-600">{err}</p>}
             </div>

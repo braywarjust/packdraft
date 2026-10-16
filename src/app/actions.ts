@@ -71,7 +71,7 @@ export async function createLeague(_: Result | undefined, form: FormData): Promi
   const maxTeams = Number(form.get("max_teams") ?? 8);
   if (!name) return { error: "League needs a name" };
   if (![4, 6, 8, 10, 12].includes(maxTeams)) return { error: "Pick 4, 6, 8, 10 or 12 teams" };
-  if (maxTeams > 8 && u.coins < 2500) return { error: "Leagues over 8 teams cost 2,500 PackBucks" };
+  if (maxTeams > 8 && u.coins < 2500) return { error: "Leagues over 8 teams cost 2,500 Pack Points" };
   const id = tx(() => {
     if (maxTeams > 8) run("UPDATE users SET coins = coins - 2500 WHERE id = ?", u.id);
     const faab = Number(form.get("faab_budget") ?? 100);
@@ -426,7 +426,7 @@ export async function buyPack(packType: string) {
       const fresh = one<User>("SELECT * FROM users WHERE id = ?", u.id)!;
       // Test accounts open packs for free.
       if (!fresh.is_tester) {
-        if (fresh.coins < pack.price) throw new Error("Not enough PackBucks");
+        if (fresh.coins < pack.price) throw new Error("Not enough Pack Points");
         run("UPDATE users SET coins = coins - ? WHERE id = ?", pack.price, u.id);
       }
       return Number(run("INSERT INTO user_packs (user_id, pack_type, source, created_at) VALUES (?, ?, ?, ?)", u.id, packType, fresh.is_tester ? "Test pack" : "Vending machine", Date.now()).lastInsertRowid);
@@ -515,7 +515,7 @@ export async function enterContest(contestId: number, lineup: number[]) {
       }
       if (n >= c.max_entries) throw new Error("Contest is full");
       const fresh = one<User>("SELECT coins FROM users WHERE id = ?", u.id)!;
-      if (fresh.coins < c.entry_fee) throw new Error("Not enough PackBucks for the entry fee");
+      if (fresh.coins < c.entry_fee) throw new Error("Not enough Pack Points for the entry fee");
       run("UPDATE users SET coins = coins - ? WHERE id = ?", c.entry_fee, u.id);
       run("INSERT INTO dfs_entries (contest_id, user_id, lineup, created_at) VALUES (?, ?, ?, ?)", contestId, u.id, JSON.stringify(lineup), Date.now());
     });

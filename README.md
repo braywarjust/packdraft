@@ -19,9 +19,9 @@ Everything is stored in `data/packdraft-nba.db` (SQLite, built into Node 22.5+).
 
 ## What's in it
 
-- **Accounts**: pick a name (and optional PIN). New accounts start with $1,000 PackBucks and a free Starter Pack. Claim $150 daily.
+- **Accounts**: pick a name (and optional PIN). New accounts start with $1,000 Pack Points and a free Starter Pack. Claim $150 daily.
 - **Real NBA data**: rosters, headshots, injuries, schedules and live box scores come from ESPN's free public endpoints (no key). The app refreshes rosters twice a day and live scores every ~30 seconds while it's running. Projections are last season's averages, blended toward this season as games are played.
-- **Leagues**: public or private (invite code), 4–8 teams free, 10–12 for $2,500 PackBucks. ESPN-style or DraftKings-style points, FAAB or instant free agency, keepers, pick clock, season length and pack rewards are commissioner settings. Empty seats can be filled with CPU teams; a friend who joins later takes over a CPU team.
+- **Leagues**: public or private (invite code), 4–8 teams free, 10–12 for $2,500 Pack Points. ESPN-style or DraftKings-style points, FAAB or instant free agency, keepers, pick clock, season length and pack rewards are commissioner settings. Empty seats can be filled with CPU teams; a friend who joins later takes over a CPU team.
 - **Real vs simulated**: real leagues follow the NBA calendar (week 1 starts the day after the draft, then Monday–Sunday weeks; only regular-season and playoff games count). Simulated leagues are for testing or the offseason: the commish tips off each week and every team plays 3–4 sim games.
 - **Drafts**: live snake draft room with pick clock, autodraft, queue, keepers auto-slotted into their round. Mock drafts against bots any time.
 - **Rosters**: G, G, F, F, C, 3 UTIL + 5 bench. Daily lineups: each player locks at his own tip-off, and points count for the slot he was in when his game started. Add/drop, nightly FAAB waivers, trades (CPU teams answer instantly).

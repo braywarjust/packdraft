@@ -1,4 +1,4 @@
-/** PackBucks amount with the PackDraft currency icon (tinted to the surrounding text colour). */
+/** Pack Points amount with the PackDraft currency icon (tinted to the surrounding text colour). */
 export function CoinIcon({ className = "" }: { className?: string }) {
   const mask = "url(/packbucks.svg) center / contain no-repeat";
   return (
@@ -12,7 +12,7 @@ export function CoinIcon({ className = "" }: { className?: string }) {
 
 export function Coins({ n, className = "" }: { n: number; className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-[0.3em] whitespace-nowrap ${className}`} title={`${Math.round(n).toLocaleString("en-US")} PackBucks`}>
+    <span className={`inline-flex items-center gap-[0.3em] whitespace-nowrap ${className}`} title={`${Math.round(n).toLocaleString("en-US")} Pack Points`}>
       <CoinIcon />
       {Math.round(n).toLocaleString("en-US")}
     </span>

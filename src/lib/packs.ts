@@ -64,5 +64,5 @@ export function gradeFor(r: number) {
   return 8;
 }
 
-/** Plain-text PackBucks (for confirm dialogs, chat messages, titles). In JSX use <Coins n={...} />. */
-export const fmtCoins = (n: number) => `${Math.round(n).toLocaleString("en-US")} PackBucks`;
+/** Plain-text Pack Points (for confirm dialogs, chat messages, titles). In JSX use <Coins n={...} />. */
+export const fmtCoins = (n: number) => `${Math.round(n).toLocaleString("en-US")} Pack Points`;

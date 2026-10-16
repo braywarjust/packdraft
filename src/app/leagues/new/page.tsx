@@ -7,7 +7,7 @@ export default async function NewLeague() {
   await requireUser();
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader eyebrow="Leagues" title="Create a league" description="Up to 8 teams is free. Bigger leagues cost 2,500 PackBucks. You can change everything later in commissioner settings." />
+      <PageHeader eyebrow="Leagues" title="Create a league" description="Up to 8 teams is free. Bigger leagues cost 2,500 Pack Points. You can change everything later in commissioner settings." />
       <ActionForm action={createLeague} submit="Create league" className="card space-y-5 p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div><label className="label">League name</label><input name="name" className="input" placeholder="The Pack Rats" required /></div>
@@ -18,7 +18,7 @@ export default async function NewLeague() {
             <label className="label">Teams</label>
             <select name="max_teams" className="input" defaultValue="8">
               <option value="4">4</option><option value="6">6</option><option value="8">8 (free max)</option>
-              <option value="10">10 · 2,500 PackBucks</option><option value="12">12 · 2,500 PackBucks</option>
+              <option value="10">10 · 2,500 Pack Points</option><option value="12">12 · 2,500 Pack Points</option>
             </select>
           </div>
           <div>

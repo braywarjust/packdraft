@@ -35,7 +35,7 @@ export default async function Home() {
           <h1 className="mt-1 text-3xl font-bold tracking-tight">{user.name}</h1>
           <div className="mt-6 flex flex-wrap gap-3">
             {([
-              ["PackBucks", <Coins key="c" n={user.coins} />],
+              ["Pack Points", <Coins key="c" n={user.coins} />],
               ["Unopened packs", String(packs.length)],
               ["Leagues", String(myTeams.length)],
             ] as [string, React.ReactNode][]).map(([k, v]) => (
@@ -140,7 +140,7 @@ export default async function Home() {
                 </li>
               ))}
             </ol>
-            <p className="mt-2 text-xs text-zinc-400">PackBucks + card vault value</p>
+            <p className="mt-2 text-xs text-zinc-400">Pack Points + card vault value</p>
           </div>
         </aside>
       </div>
