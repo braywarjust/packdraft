@@ -2,7 +2,7 @@ import { all } from "../db";
 import { addDays, etDate } from "./espn";
 import { backfillFinals, ensureSchedule, maybeSyncPlayers, refreshLive } from "./sync";
 import { dailyWaivers, getLeague, tickLeague, weekRange } from "../league";
-import { Contest, tickContest } from "../dfs";
+import { boostPayouts } from "../boost";
 import { ensureCatalog } from "../slabs";
 
 let busy = false;
@@ -25,10 +25,9 @@ export async function tick() {
       }
       tickLeague(id);
     }
-    for (const c of all<Contest>("SELECT * FROM dfs_contests WHERE status != 'final'")) {
-      if (c.mode !== "sim" && c.slate_date) await backfillFinals(c.slate_date, c.slate_date);
-      tickContest(c);
-    }
+    // Pay out Slab Boost picks whose games went final, even if nobody has the page open.
+    await backfillFinals(addDays(today, -2), today);
+    boostPayouts();
   } finally {
     busy = false;
   }

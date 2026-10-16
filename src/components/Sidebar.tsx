@@ -63,7 +63,7 @@ export function Sidebar({
     { href: "/leagues", label: "Leagues", icon: I.leagues },
     { href: "/packs", label: "Packs", icon: I.packs, badge: packs },
     { href: "/collection", label: "Collection", icon: I.collection },
-    { href: "/dfs", label: "Daily Fantasy", icon: I.dfs },
+    { href: "/boost", label: "Slab Boost", icon: I.dfs },
     { href: "/mock-draft", label: "Mock Draft", icon: I.mock },
   ];
   const isActive = (href: string, exact?: boolean) => (exact ? path === href : path === href || path.startsWith(`${href}/`) || (href === "/leagues" && path.startsWith("/league/")));

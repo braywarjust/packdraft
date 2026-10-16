@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
-import { Contest, maybeSettle, todaysRun } from "@/lib/dfs";
+import { boostLive } from "@/lib/boost";
 import { getLeague, maybeFinalize, teamWeek } from "@/lib/league";
 import { unopenedPacks } from "@/lib/packs-server";
 import { PACK_BY_ID, RARITIES, Rarity } from "@/lib/packs";
@@ -22,9 +22,7 @@ export default async function Home() {
   const leaders = all<{ name: string; color: string; coins: number; vault: number }>(
     `SELECT u.name, u.color, u.coins, COALESCE((SELECT SUM(value) FROM cards c WHERE c.user_id = u.id AND c.sold = 0), 0) vault
      FROM users u WHERE u.is_tester = 0 ORDER BY (u.coins + vault) DESC LIMIT 8`);
-  const run = todaysRun(user.id);
-  if (run?.status === "live") maybeSettle(run as Contest);
-  const dfsRun = todaysRun(user.id);
+  const boost = boostLive(user.id);
 
   return (
     <div className="space-y-6">
@@ -105,17 +103,16 @@ export default async function Home() {
             );
           })}
 
-          <h2 className="pt-2 text-lg font-bold">Daily Fantasy</h2>
-          <Link href={dfsRun ? `/dfs/${dfsRun.id}` : "/dfs"} className="card flex items-center justify-between gap-3 p-4 hover:border-brand/60">
+          <h2 className="pt-2 text-lg font-bold">Slab Boost</h2>
+          <Link href="/boost" className="card flex items-center justify-between gap-3 p-4 hover:border-brand/60">
             <div>
-              <p className="font-bold">Today&apos;s solo run</p>
+              <p className="font-bold">Today&apos;s boost</p>
               <p className="text-sm text-zinc-500">
-                {!dfsRun ? "Not played yet. Hit a Pack Point ceiling to win a pack or a Mega Case."
-                  : dfsRun.status === "final" ? (dfsRun.reward_pack ? `Won a ${PACK_BY_ID[dfsRun.reward_pack]?.name} with ${Math.round(dfsRun.points ?? 0)} pts` : `${Math.round(dfsRun.points ?? 0)} pts · no ceiling reached`)
-                  : dfsRun.status === "live" ? "● Live now" : "Lineup in progress"}
+                {boost.picks.length === 0 ? "Back tonight's players with your slabs to earn Pack Points."
+                  : <>{boost.picks.length}/3 slots · {boost.picks.some((p) => p.game?.state === "in") ? "● Live · " : ""}<Coins n={Math.round(boost.total)} /> so far</>}
               </p>
             </div>
-            <span className="btn-lime shrink-0">{dfsRun ? "Open" : "Play"}</span>
+            <span className="btn-lime shrink-0">{boost.picks.length ? "Watch" : "Play"}</span>
           </Link>
         </section>
 
