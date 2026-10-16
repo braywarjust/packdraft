@@ -235,12 +235,15 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                     <button key={c.id} onClick={() => !isUp && flip(c)} className={`flip anim-deal ${isUp ? "flipped" : ""}`} style={{ animationDelay: `${i * 120}ms` }}>
                       <div className={hit && !isUp ? "anim-rumble [perspective:1000px]" : ""}>
                       <div className="flip-inner relative h-[330px] w-44">
-                        <div className={`flip-face absolute inset-0 grid place-items-center rounded-xl border bg-white shadow-lg ${hit ? "border-amber-400 shadow-amber-500/30" : "border-zinc-200"}`}>
-                          <div className="text-center">
-                            <Logo height={56} className="mx-auto mb-3" />
-                            {hit && <p className="mb-2 inline-block animate-pulse rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-black tracking-widest text-black">CASE HIT</p>}
-                            <p className="text-[10px] font-semibold tracking-[0.3em] text-zinc-400">TAP TO REVEAL</p>
-                          </div>
+                        {/* Shared slab back rendered in Blender (scripts/slab-back). Same square framing and 260px height as the
+                            revealed slab scan (SlabCard), so the flip swaps back for front without a size jump. */}
+                        <div className="flip-face absolute inset-0 flex flex-col items-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src="/slab-back.webp" alt="" draggable={false} className="pointer-events-none max-w-none select-none"
+                            style={{ width: 260, height: 260, filter: hit ? "drop-shadow(0 0 14px rgba(251,191,36,.75))" : "drop-shadow(0 8px 12px rgba(0,0,0,.35))" }} />
+                          {hit
+                            ? <p className="mt-3 animate-pulse rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-black tracking-widest text-black">CASE HIT</p>
+                            : <p className="mt-3 text-[10px] font-semibold tracking-[0.3em] text-zinc-400">TAP TO REVEAL</p>}
                         </div>
                         <div className={`flip-face flip-back absolute inset-0 rounded-xl ${isUp && !c.slab_id && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
                           <PlayerCard c={c} />

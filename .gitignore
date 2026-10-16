@@ -51,3 +51,4 @@ data/
 # Blender working files (wraps are rebuilt by scripts/pack-renders/build-wraps.mjs)
 /blender/pack-wraps/
 *_backup.blend
+/blender/slab-back/
