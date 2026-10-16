@@ -60,7 +60,7 @@ export function MockDraft({ players, userName }: { players: PoolPlayer[]; userNa
     return (
       <div className="mx-auto max-w-lg card space-y-4 p-6">
         <h1 className="text-2xl font-black">Mock draft</h1>
-        <p className="text-sm text-slate-400">Practice against bots that draft by ADP. Nothing here counts. Picks come fast.</p>
+        <p className="text-sm text-zinc-500">Practice against bots that draft by ADP. Nothing here counts. Picks come fast.</p>
         <div className="grid grid-cols-2 gap-4">
           <div><label className="label">Teams</label>
             <select className="input" value={teams} onChange={(e) => { setTeams(Number(e.target.value)); setSlot(1); }}>
@@ -79,7 +79,7 @@ export function MockDraft({ players, userName }: { players: PoolPlayer[]; userNa
     <div className="space-y-4">
       <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
-          <p className="text-xs uppercase text-slate-400">Mock draft · {teams} teams · pick {slot}</p>
+          <p className="text-xs uppercase text-zinc-500">Mock draft · {teams} teams · pick {slot}</p>
           <p className="text-xl font-black">{done ? "Draft complete!" : onClock === slot ? "🚨 You're on the clock" : `Bot ${onClock} is picking…`}</p>
         </div>
         <div className="flex gap-2">

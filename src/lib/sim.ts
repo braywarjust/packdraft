@@ -23,7 +23,8 @@ export function rng(seed: string) {
 
 function normal(r: () => number) {
   const u = Math.max(r(), 1e-9);
-  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r());
+  // Clamp to ±2.5σ so a single unlucky draw can't produce a 75-point night.
+  return Math.max(-2.5, Math.min(2.5, Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r())));
 }
 function poisson(r: () => number, lambda: number) {
   if (lambda > 30) return Math.max(0, Math.round(lambda + normal(r) * Math.sqrt(lambda)));
@@ -45,8 +46,9 @@ function averages(p: SimPlayer): Line {
 /** One simulated game for a player. */
 export function simGame(p: SimPlayer, seed: string): Line {
   const r = rng(`g:${p.id}:${seed}`);
+  r(); r(); // the first outputs of a fresh seed are poorly mixed
   const a = averages(p);
-  const m = Math.exp(normal(r) * 0.3 - 0.045); // hot/cold night
+  const m = Math.min(1.6, Math.max(0.55, Math.exp(normal(r) * 0.25 - 0.03))); // hot/cold night
   const tpm = poisson(r, a.tpm * m), fgm2 = poisson(r, Math.max(0, a.fgm - a.tpm) * m), ftm = poisson(r, a.ftm * m);
   const fgm = fgm2 + tpm;
   const miss = (made: number, avgM: number, avgA: number) => made + poisson(r, Math.max(0, avgA - avgM) * (0.8 + r() * 0.5));

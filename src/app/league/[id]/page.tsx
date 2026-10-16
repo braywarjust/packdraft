@@ -31,7 +31,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold">Waiting room · {teams.length}/{l.max_teams} teams</h2>
-                <p className="text-sm text-slate-400">Invite code <span className="rounded bg-ink px-2 py-0.5 font-mono text-lg font-bold tracking-widest text-brand">{l.invite_code}</span></p>
+                <p className="text-sm text-zinc-500">Invite code <span className="rounded bg-ink px-2 py-0.5 font-mono text-lg font-bold tracking-widest text-brand">{l.invite_code}</span></p>
               </div>
               {isCommish && (
                 <div className="flex flex-wrap gap-2">
@@ -45,17 +45,17 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 <li key={t.id} className="flex items-center gap-2 rounded-xl bg-ink/60 px-3 py-2 text-sm">
                   <span className="h-3 w-3 rounded-full" style={{ background: t.user_id ? owners.get(t.user_id)?.color : "#475569" }} />
                   <span className="font-semibold">{t.name}</span>
-                  <span className="text-slate-500">{t.is_cpu ? "CPU (a friend can take this seat)" : owners.get(t.user_id!)?.name}</span>
+                  <span className="text-zinc-400">{t.is_cpu ? "CPU (a friend can take this seat)" : owners.get(t.user_id!)?.name}</span>
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-slate-500">CPU teams draft and set lineups automatically. When a friend joins with the code they take over a CPU seat.</p>
+            <p className="text-xs text-zinc-400">CPU teams draft and set lineups automatically. When a friend joins with the code they take over a CPU seat.</p>
           </section>
         )}
 
         {l.draft_status === "live" && (
           <Link href={`/league/${l.id}/draft`} className="card flex items-center justify-between bg-gradient-to-r from-rose-600/30 to-transparent p-5 hover:border-rose-400/60">
-            <div><p className="text-xs font-bold uppercase tracking-widest text-rose-300">● Live</p><p className="text-xl font-black">The draft is happening right now</p></div>
+            <div><p className="text-xs font-bold uppercase tracking-widest text-red-600">● Live</p><p className="text-xl font-black">The draft is happening right now</p></div>
             <span className="btn-lime">Enter draft room →</span>
           </Link>
         )}
@@ -75,17 +75,17 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
               )}
             </div>
             {l.mode !== "sim" && !l.champion_team_id && (
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-zinc-500">
                 Real NBA games · {(() => { const [s, e] = weekRange(l, l.current_week); return `${dayLabel(s)} – ${dayLabel(e)}`; })()}. Set your lineup daily; each player locks at his tip-off. Scores update live during games.
               </p>
             )}
             {l.week_started_at && (
               <div className="h-2 overflow-hidden rounded-full bg-panel2">
-                <div className="h-full bg-gradient-to-r from-brand to-brand2 transition-all" style={{ width: `${progress * 100}%` }} />
+                <div className="h-full bg-gradient-to-r from-brand to-red-800 transition-all" style={{ width: `${progress * 100}%` }} />
               </div>
             )}
             {l.mode === "sim" && !l.week_started_at && !l.champion_team_id && (
-              <p className="text-sm text-slate-400">Simulated league: set your lineup, then the commish tips off the week. Every team plays 3–4 sim games over {l.sim_minutes} min.</p>
+              <p className="text-sm text-zinc-500">Simulated league: set your lineup, then the commish tips off the week. Every team plays 3–4 sim games over {l.sim_minutes} min.</p>
             )}
             <div className="grid gap-3 sm:grid-cols-2">
               {matchups.map((m) => {
@@ -99,21 +99,21 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                     {[{ t: m.home_team_id, s: h }, { t: m.away_team_id, s: a }].map(({ t, s }) => (
                       <div key={t} className="flex items-center justify-between py-1">
                         <span className="truncate font-semibold">{teamName.get(t)}</span>
-                        <span className="font-mono text-lg font-bold">{live ? s.score.toFixed(1) : <span className="text-sm text-slate-400">proj {(s.score + s.remain).toFixed(1)}</span>}</span>
+                        <span className="font-mono text-lg font-bold">{live ? s.score.toFixed(1) : <span className="text-sm text-zinc-500">proj {(s.score + s.remain).toFixed(1)}</span>}</span>
                       </div>
                     ))}
                     <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-panel2">
                       <div className="bg-brand" style={{ width: `${wp * 100}%` }} />
-                      <div className="flex-1 bg-fuchsia-500" />
+                      <div className="flex-1 bg-zinc-800" />
                     </div>
-                    <p className="mt-1 text-[11px] text-slate-500">Win prob {Math.round(wp * 100)}% – {Math.round((1 - wp) * 100)}%</p>
+                    <p className="mt-1 text-[11px] text-zinc-400">Win prob {Math.round(wp * 100)}% – {Math.round((1 - wp) * 100)}%</p>
                   </Link>
                 );
               })}
             </div>
             {lastWeek.length > 0 && (
               <details className="card p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-slate-300">Week {l.current_week - 1} results</summary>
+                <summary className="cursor-pointer text-sm font-semibold text-zinc-700">Week {l.current_week - 1} results</summary>
                 <ul className="mt-2 space-y-1 text-sm">
                   {lastWeek.map((m) => (
                     <li key={m.id} className="flex justify-between">
@@ -139,11 +139,11 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
         <div className="card p-4">
           <h3 className="mb-3 font-bold">Standings</h3>
           <table className="w-full text-sm">
-            <thead className="text-xs text-slate-500"><tr><th className="text-left">Team</th><th>W-L</th><th className="text-right">PF</th></tr></thead>
+            <thead className="text-xs text-zinc-400"><tr><th className="text-left">Team</th><th>W-L</th><th className="text-right">PF</th></tr></thead>
             <tbody>
               {standings(l.id).map((t, i) => (
                 <tr key={t.id} className={`border-t border-line/60 ${me?.id === t.id ? "text-brand" : ""}`}>
-                  <td className="py-1.5"><span className="mr-2 text-slate-500">{i + 1}</span>
+                  <td className="py-1.5"><span className="mr-2 text-zinc-400">{i + 1}</span>
                     <Link href={`/league/${l.id}/team/${t.id}`} className="hover:underline">{t.name}</Link></td>
                   <td className="text-center">{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""}</td>
                   <td className="text-right font-mono">{t.points_for.toFixed(1)}</td>

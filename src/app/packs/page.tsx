@@ -11,14 +11,14 @@ export default async function PacksPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-black">The Vending Machine</h1>
-        <p className="text-slate-400">Drop PackBucks, pull a pack, rip it open. Every card is graded and serial-numbered. Don&apos;t love a pull? Instant buyback at 90% of its value.</p>
+        <p className="text-zinc-500">Drop PackBucks, pull a pack, rip it open. Every card is graded and serial-numbered. Don&apos;t love a pull? Instant buyback at 90% of its value.</p>
       </div>
       <VendingMachine coins={u.coins} inventory={inventory} buy={buyPack} rip={ripPack} sell={sellCards} />
       <details className="card p-4 text-sm">
         <summary className="cursor-pointer font-semibold">Pack odds</summary>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full">
-            <thead className="text-xs text-slate-400"><tr><th className="text-left">Pack</th><th>Price</th><th>Cards</th>{Object.values(RARITIES).map((r) => <th key={r.label} className={r.text}>{r.label}</th>)}</tr></thead>
+            <thead className="text-xs text-zinc-500"><tr><th className="text-left">Pack</th><th>Price</th><th>Cards</th>{Object.values(RARITIES).map((r) => <th key={r.label} className={r.text}>{r.label}</th>)}</tr></thead>
             <tbody>
               {PACKS.map((p) => (
                 <tr key={p.id} className="border-t border-line/60 text-center">
@@ -28,7 +28,7 @@ export default async function PacksPage() {
               ))}
             </tbody>
           </table>
-          <p className="mt-2 text-xs text-slate-500">Packs return about 92% of their price in card value on average. The fun is in the variance.</p>
+          <p className="mt-2 text-xs text-zinc-400">Packs return about 92% of their price in card value on average. The fun is in the variance.</p>
         </div>
       </details>
     </div>

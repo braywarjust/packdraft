@@ -19,7 +19,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-xl font-black">{t.name}</h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-zinc-500">
             {t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""} · {t.points_for.toFixed(1)} PF · ${t.faab} FAAB left · {players.length}/13 roster · week {tw.score.toFixed(1)} pts
           </p>
         </div>
@@ -33,7 +33,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         )}
       </div>
       {l.draft_status !== "done" ? (
-        <p className="text-slate-400">Rosters fill up during the draft.</p>
+        <p className="text-zinc-500">Rosters fill up during the draft.</p>
       ) : (
         <LineupEditor
           players={players}
@@ -43,7 +43,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
           drop={editable ? dropPlayer.bind(null, leagueId) : undefined}
         />
       )}
-      <p className="text-xs text-slate-500">Lineups are daily. Each player locks at his own tip-off, so you can still swap guys who play later tonight. Points count for whatever slot a player was in when his game started.</p>
+      <p className="text-xs text-zinc-400">Lineups are daily. Each player locks at his own tip-off, so you can still swap guys who play later tonight. Points count for whatever slot a player was in when his game started.</p>
     </div>
   );
 }

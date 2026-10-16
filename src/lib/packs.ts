@@ -6,11 +6,11 @@ export type PackType = {
 export type Rarity = "common" | "rare" | "epic" | "legendary" | "grail";
 
 export const RARITIES: Record<Rarity, { label: string; mult: [number, number]; ring: string; text: string; printRun: number }> = {
-  common: { label: "Common", mult: [0.08, 0.2], ring: "ring-slate-400", text: "text-slate-300", printRun: 999 },
-  rare: { label: "Rare", mult: [0.2, 0.45], ring: "ring-sky-400", text: "text-sky-300", printRun: 299 },
-  epic: { label: "Epic", mult: [0.5, 1.2], ring: "ring-fuchsia-400", text: "text-fuchsia-300", printRun: 99 },
-  legendary: { label: "Legendary", mult: [1.5, 4], ring: "ring-amber-400", text: "text-amber-300", printRun: 25 },
-  grail: { label: "Grail 1/1", mult: [6, 15], ring: "ring-emerald-300", text: "text-emerald-300", printRun: 1 },
+  common: { label: "Common", mult: [0.08, 0.2], ring: "ring-slate-400", text: "text-zinc-700", printRun: 999 },
+  rare: { label: "Rare", mult: [0.2, 0.45], ring: "ring-sky-400", text: "text-sky-700", printRun: 299 },
+  epic: { label: "Epic", mult: [0.5, 1.2], ring: "ring-fuchsia-400", text: "text-fuchsia-600", printRun: 99 },
+  legendary: { label: "Legendary", mult: [1.5, 4], ring: "ring-amber-400", text: "text-amber-600", printRun: 25 },
+  grail: { label: "Grail 1/1", mult: [6, 15], ring: "ring-emerald-300", text: "text-emerald-700", printRun: 1 },
 };
 
 export const PACKS: PackType[] = [

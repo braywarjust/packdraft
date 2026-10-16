@@ -17,7 +17,7 @@ export function ActionForm({
   return (
     <form action={formAction} className={className}>
       {children}
-      {state?.error && <p className="rounded-lg bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{state.error}</p>}
+      {state?.error && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-600">{state.error}</p>}
       <button className={submitClass} disabled={pending}>{pending ? "Working…" : submit}</button>
     </form>
   );

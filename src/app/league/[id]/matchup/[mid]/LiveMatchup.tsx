@@ -65,7 +65,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
     return () => { stop = true; clearTimeout(timer); };
   }, [matchupId]);
 
-  if (!d) return <p className="text-slate-400">Loading matchup…</p>;
+  if (!d) return <p className="text-zinc-500">Loading matchup…</p>;
   const { home, away } = d;
   const hp = Math.round(d.winProb * 100);
 
@@ -75,46 +75,46 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
         <div className={`flex items-center gap-2 ${right ? "flex-row-reverse text-right" : ""}`}>
           <Headshot src={p.headshot} name={p.name} size={38} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">{p.name} <span className="text-xs font-normal text-slate-500">{p.team}</span> <InjuryTag injury={p.injury} /></p>
-            <p className="truncate text-[11px] text-slate-400">
-              {p.now ? (p.now.state === "in" ? <span className="text-rose-300">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
+            <p className="truncate text-sm font-semibold">{p.name} <span className="text-xs font-normal text-zinc-400">{p.team}</span> <InjuryTag injury={p.injury} /></p>
+            <p className="truncate text-[11px] text-zinc-500">
+              {p.now ? (p.now.state === "in" ? <span className="text-red-600">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
               {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
             </p>
-            <p className="text-[10px] text-slate-500">{p.played}/{p.total} games · {p.left} left · {p.proj.toFixed(1)}/g</p>
+            <p className="text-[10px] text-zinc-400">{p.played}/{p.total} games · {p.left} left · {p.proj.toFixed(1)}/g</p>
           </div>
           <p className="font-mono text-lg font-black">{p.pts.toFixed(1)}</p>
         </div>
-      ) : <span className="text-sm text-slate-600">Empty</span>}
+      ) : <span className="text-sm text-zinc-400">Empty</span>}
     </div>
   );
 
   return (
     <div className="space-y-4">
-      <Link href={`/league/${leagueId}`} className="text-sm text-slate-400 hover:text-white">← {d.league}</Link>
+      <Link href={`/league/${leagueId}`} className="text-sm text-zinc-500 hover:text-zinc-900">← {d.league}</Link>
       <div className="card overflow-hidden">
         <div className="grid grid-cols-3 items-center gap-2 p-5">
           <div>
             <p className="text-lg font-black">{home.name}</p>
-            <p className="text-xs text-slate-400">{home.record} · proj {(home.score + home.remain).toFixed(1)}</p>
+            <p className="text-xs text-zinc-500">{home.record} · proj {(home.score + home.remain).toFixed(1)}</p>
             <p className="mt-1 font-mono text-4xl font-black sm:text-5xl">{home.score.toFixed(1)}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs uppercase tracking-widest text-slate-400">Week {d.week}</p>
-            {d.range && <p className="text-[11px] text-slate-500">{d.range}</p>}
-            <p className={`mt-1 text-sm font-bold ${d.final ? "text-slate-300" : d.live ? "text-rose-300" : "text-slate-400"}`}>{d.final ? "FINAL" : d.live ? "● LIVE" : "In progress"}</p>
-            {d.progress != null && d.progress > 0 && !d.final && <p className="text-xs text-slate-500">{Math.round(d.progress * 100)}% of sim week</p>}
+            <p className="text-xs uppercase tracking-widest text-zinc-500">Week {d.week}</p>
+            {d.range && <p className="text-[11px] text-zinc-400">{d.range}</p>}
+            <p className={`mt-1 text-sm font-bold ${d.final ? "text-zinc-700" : d.live ? "text-red-600" : "text-zinc-500"}`}>{d.final ? "FINAL" : d.live ? "● LIVE" : "In progress"}</p>
+            {d.progress != null && d.progress > 0 && !d.final && <p className="text-xs text-zinc-400">{Math.round(d.progress * 100)}% of sim week</p>}
           </div>
           <div className="text-right">
             <p className="text-lg font-black">{away.name}</p>
-            <p className="text-xs text-slate-400">{away.record} · proj {(away.score + away.remain).toFixed(1)}</p>
+            <p className="text-xs text-zinc-500">{away.record} · proj {(away.score + away.remain).toFixed(1)}</p>
             <p className="mt-1 font-mono text-4xl font-black sm:text-5xl">{away.score.toFixed(1)}</p>
           </div>
         </div>
         <div className="px-5 pb-4">
-          <div className="flex justify-between text-xs font-bold"><span className="text-brand">{hp}%</span><span className="text-slate-400">Win probability</span><span className="text-fuchsia-300">{100 - hp}%</span></div>
+          <div className="flex justify-between text-xs font-bold"><span className="text-brand">{hp}%</span><span className="text-zinc-500">Win probability</span><span className="text-zinc-800">{100 - hp}%</span></div>
           <div className="mt-1 flex h-3 overflow-hidden rounded-full bg-panel2">
             <div className="bg-brand transition-all duration-700" style={{ width: `${hp}%` }} />
-            <div className="flex-1 bg-fuchsia-500" />
+            <div className="flex-1 bg-zinc-800" />
           </div>
           <Spark points={history} />
         </div>
@@ -130,8 +130,8 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
             </div>
           ))}
           <details className="mt-2 px-2 pb-2">
-            <summary className="cursor-pointer text-xs font-semibold uppercase text-slate-400">Benches</summary>
-            <div className="mt-2 grid grid-cols-2 gap-4 text-xs text-slate-400">
+            <summary className="cursor-pointer text-xs font-semibold uppercase text-zinc-500">Benches</summary>
+            <div className="mt-2 grid grid-cols-2 gap-4 text-xs text-zinc-500">
               {[home, away].map((s) => (
                 <ul key={s.id} className="space-y-1">
                   {s.players.filter((p) => p.slot === "BN").map((p) => <li key={p.id} className="flex justify-between gap-2"><span className="truncate">{p.name}</span><span className="font-mono">{p.left} left</span></li>)}
@@ -142,10 +142,10 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
         </div>
         <div className="card p-4">
           <p className="label">Live scoring feed</p>
-          {events.length === 0 && <p className="text-sm text-slate-500">{d.final ? "This one's in the books." : "Updates roll in here while games are live."}</p>}
+          {events.length === 0 && <p className="text-sm text-zinc-400">{d.final ? "This one's in the books." : "Updates roll in here while games are live."}</p>}
           <ul className="space-y-2 text-sm">
             {events.map((e) => (
-              <li key={e.key} className={`anim-deal rounded-lg border-l-2 bg-ink/60 px-2 py-1.5 ${e.side === "home" ? "border-brand" : "border-fuchsia-400"}`}>{e.text}</li>
+              <li key={e.key} className={`anim-deal rounded-lg border-l-2 bg-ink/60 px-2 py-1.5 ${e.side === "home" ? "border-brand" : "border-zinc-800"}`}>{e.text}</li>
             ))}
           </ul>
         </div>

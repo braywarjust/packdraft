@@ -3,6 +3,7 @@ import { currentUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { ActionForm } from "@/components/ActionForm";
 import { login } from "../actions";
+import { Logo } from "@/components/Logo";
 
 export default async function LoginPage() {
   if (await currentUser()) redirect("/");
@@ -10,10 +11,10 @@ export default async function LoginPage() {
   return (
     <div className="mx-auto mt-10 grid max-w-4xl gap-8 md:grid-cols-2">
       <div className="flex flex-col justify-center">
-        <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand to-brand2 text-2xl font-black text-ink">P</div>
-        <h1 className="text-4xl font-black tracking-tight">Pack<span className="text-brand">Draft</span></h1>
-        <p className="mt-3 text-slate-300">Fantasy NBA for the group chat, powered by real live stats. Draft, trash talk, win your matchup, and rip mystery packs from the vending machine.</p>
-        <ul className="mt-6 space-y-2 text-sm text-slate-400">
+        <Logo height={110} className="mb-4 -ml-1" />
+        <h1 className="sr-only">PackDraft</h1>
+        <p className="mt-3 text-zinc-700">Fantasy NBA for the group chat, powered by real live stats. Draft, trash talk, win your matchup, and rip mystery packs from the vending machine.</p>
+        <ul className="mt-6 space-y-2 text-sm text-zinc-500">
           <li>🏀 Live drafts, keepers, FAAB waivers and trades</li>
           <li>📈 Live scoring with win probability</li>
           <li>🎰 Weekly wins earn mystery packs to rip</li>
@@ -22,7 +23,7 @@ export default async function LoginPage() {
       </div>
       <div className="card p-6">
         <h2 className="text-lg font-bold">Jump in</h2>
-        <p className="mb-4 text-sm text-slate-400">New name = new account. Add a PIN so your friends can&apos;t log in as you.</p>
+        <p className="mb-4 text-sm text-zinc-500">New name = new account. Add a PIN so your friends can&apos;t log in as you.</p>
         <ActionForm action={login} submit="Let's go">
           <div>
             <label className="label">Name</label>

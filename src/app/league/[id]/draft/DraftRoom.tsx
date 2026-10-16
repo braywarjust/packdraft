@@ -45,7 +45,7 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
     setBusy(false);
   };
 
-  if (!s) return <p className="text-slate-400">Loading draft room…</p>;
+  if (!s) return <p className="text-zinc-500">Loading draft room…</p>;
 
   const myTurn = s.status === "live" && s.current?.teamId === s.myTeamId;
   const onClock = s.order.find((t) => t.id === s.current?.teamId);
@@ -59,7 +59,7 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
         <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
           <div>
             <p className="text-lg font-bold">The draft hasn&apos;t started.</p>
-            <p className="text-sm text-slate-400">Snake draft, {s.rounds} rounds. Order is randomized when the commish starts it. {s.keepers.length > 0 && `${s.keepers.length} keepers are locked in.`}</p>
+            <p className="text-sm text-zinc-500">Snake draft, {s.rounds} rounds. Order is randomized when the commish starts it. {s.keepers.length > 0 && `${s.keepers.length} keepers are locked in.`}</p>
           </div>
           <div className="flex gap-2">
             <Link href="/mock-draft" className="btn-ghost">Warm up with a mock draft</Link>
@@ -74,27 +74,27 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
         </div>
       )}
       {s.status === "live" && s.current && (
-        <div className={`card flex flex-wrap items-center gap-4 p-4 ${myTurn ? "border-lime-300 bg-lime-400/10" : ""}`}>
+        <div className={`card flex flex-wrap items-center gap-4 p-4 ${myTurn ? "border-brand bg-red-500/5" : ""}`}>
           <div className="text-center">
-            <p className="text-xs uppercase text-slate-400">Pick</p>
+            <p className="text-xs uppercase text-zinc-500">Pick</p>
             <p className="text-2xl font-black">{s.current.round}.{String(s.current.pickInRound).padStart(2, "0")}</p>
           </div>
           <div className="flex-1">
-            <p className="text-xs uppercase text-slate-400">On the clock</p>
+            <p className="text-xs uppercase text-zinc-500">On the clock</p>
             <p className="text-xl font-black">{myTurn ? "🚨 YOU'RE UP" : onClock?.name}</p>
-            <p className="text-xs text-slate-400">{onClock?.cpu ? "CPU picking…" : onClock?.auto ? "Autodrafting…" : onClock?.owner}</p>
+            <p className="text-xs text-zinc-500">{onClock?.cpu ? "CPU picking…" : onClock?.auto ? "Autodrafting…" : onClock?.owner}</p>
           </div>
           {!onClock?.cpu && !onClock?.auto && (
-            <div className={`font-mono text-4xl font-black ${left <= 10 ? "text-rose-400" : ""}`}>0:{String(left).padStart(2, "0")}</div>
+            <div className={`font-mono text-4xl font-black ${left <= 10 ? "text-red-600" : ""}`}>0:{String(left).padStart(2, "0")}</div>
           )}
           {s.myTeamId && (
-            <button className={`btn ${s.autodraft ? "bg-amber-400 text-ink" : "btn-ghost"}`} onClick={() => run(toggleAuto)}>
+            <button className={`btn ${s.autodraft ? "bg-brand2 text-white" : "btn-ghost"}`} onClick={() => run(toggleAuto)}>
               {s.autodraft ? "Autodraft ON" : "Autodraft off"}
             </button>
           )}
         </div>
       )}
-      {err && <p className="text-sm text-rose-300">{err}</p>}
+      {err && <p className="text-sm text-red-600">{err}</p>}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
@@ -121,7 +121,7 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
           )}
           <div className="card p-3">
             <p className="label">My picks</p>
-            {myPicks.length === 0 && <p className="text-sm text-slate-500">None yet</p>}
+            {myPicks.length === 0 && <p className="text-sm text-zinc-400">None yet</p>}
             <ul className="space-y-1 text-sm">
               {myPicks.map((p) => <li key={p.overall}><span className={`pos pos-${p.pos} mr-2`}>{p.pos}</span>{p.name}</li>)}
             </ul>
@@ -131,8 +131,8 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
             <ul className="space-y-1 text-sm">
               {recent.map((p) => (
                 <li key={p.overall} className="flex justify-between">
-                  <span>{p.name} <span className="text-xs text-slate-500">{p.pos}</span></span>
-                  <span className="text-xs text-slate-400">{s.order.find((t) => t.id === p.team_id)?.name}</span>
+                  <span>{p.name} <span className="text-xs text-zinc-400">{p.pos}</span></span>
+                  <span className="text-xs text-zinc-500">{s.order.find((t) => t.id === p.team_id)?.name}</span>
                 </li>
               ))}
             </ul>

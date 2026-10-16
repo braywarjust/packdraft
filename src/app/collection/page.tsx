@@ -31,7 +31,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-black">{mine ? "My collection" : `${viewing.name}'s collection`}</h1>
-          <p className="text-slate-400">{cards.length} cards · vault value <span className="font-bold text-lime-300">{fmtCoins(total)}</span></p>
+          <p className="text-zinc-500">{cards.length} cards · vault value <span className="font-bold text-emerald-600">{fmtCoins(total)}</span></p>
         </div>
         <div className="flex flex-wrap gap-2">
           {users.map((x) => (
@@ -56,7 +56,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
         )}
       </div>
       {cards.length === 0 && (
-        <div className="card p-8 text-center text-slate-400">No cards yet. <Link className="text-brand underline" href="/packs">Hit the vending machine</Link>.</div>
+        <div className="card p-8 text-center text-zinc-500">No cards yet. <Link className="text-brand underline" href="/packs">Hit the vending machine</Link>.</div>
       )}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {cards.map((c) => (

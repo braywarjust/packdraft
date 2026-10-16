@@ -44,8 +44,8 @@ export function AddPlayer({
       >
         Go
       </button>
-      <button className="text-xs text-slate-500" onClick={() => setOpen(false)}>✕</button>
-      {msg && <span className="w-full text-right text-xs text-rose-300">{msg}</span>}
+      <button className="text-xs text-zinc-400" onClick={() => setOpen(false)}>✕</button>
+      {msg && <span className="w-full text-right text-xs text-red-600">{msg}</span>}
     </div>
   );
 }

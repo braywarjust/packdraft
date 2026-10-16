@@ -48,12 +48,12 @@ export default async function Players({ params, searchParams }: { params: Promis
             <input name="q" defaultValue={q} placeholder="Search players" className="input w-56" />
           </form>
         </div>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-zinc-500">
           {faab ? `FAAB waivers: put in blind bids. Claims process every night at midnight ET (sim leagues: at each tip-off). Highest bid wins; ties go to the worse record.` : "Free agency: adds are instant."}
         </p>
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-panel2 text-xs uppercase text-slate-400">
+            <thead className="bg-panel2 text-xs uppercase text-zinc-500">
               <tr><th className="py-2 pl-3 text-left">Player</th><th>Last season</th><th>Proj/g</th><th>Games wk</th><th className="text-left">Status</th><th /></tr>
             </thead>
             <tbody>
@@ -69,14 +69,14 @@ export default async function Players({ params, searchParams }: { params: Promis
                         <Headshot src={p.headshot} name={p.name} size={32} />
                         <div>
                           <p><span className="font-semibold">{p.name}</span> <InjuryTag injury={p.injury} />{l.draft_status === "done" && isLocked(l, p) && " 🔒"}</p>
-                          <p className="text-xs text-slate-500"><span className={`pos pos-${p.pos} mr-1`}>{p.pos}</span>{p.team}</p>
+                          <p className="text-xs text-zinc-400"><span className={`pos pos-${p.pos} mr-1`}>{p.pos}</span>{p.team}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="text-center text-xs text-slate-400">{avg ? `${avg.pts.toFixed(1)}/${avg.reb.toFixed(1)}/${avg.ast.toFixed(1)}` : "Rookie"}</td>
+                    <td className="text-center text-xs text-zinc-500">{avg ? `${avg.pts.toFixed(1)}/${avg.reb.toFixed(1)}/${avg.ast.toFixed(1)}` : "Rookie"}</td>
                     <td className="text-center font-mono">{projFor(p, l.scoring).toFixed(1)}</td>
                     <td className="text-center text-xs">{games.length ? `${left} of ${games.length} left` : "—"}</td>
-                    <td className="text-slate-400">{owner ?? (faab ? "Waivers" : "FA")}</td>
+                    <td className="text-zinc-500">{owner ?? (faab ? "Waivers" : "FA")}</td>
                     <td className="py-1 pr-3 text-right">
                       {!owner && me && l.draft_status === "done" && (
                         <AddPlayer player={{ id: p.id, name: p.name }} roster={myRoster} faab={faab ? me.faab : null} action={addPlayer.bind(null, l.id, p.id)} />
@@ -93,15 +93,15 @@ export default async function Players({ params, searchParams }: { params: Promis
         {me && (
           <div className="card p-4">
             <h3 className="font-bold">My claims</h3>
-            {faab && <p className="mb-2 text-xs text-slate-400">${me.faab} FAAB remaining</p>}
-            {claims.length === 0 && <p className="text-sm text-slate-500">No claims yet.</p>}
+            {faab && <p className="mb-2 text-xs text-zinc-500">${me.faab} FAAB remaining</p>}
+            {claims.length === 0 && <p className="text-sm text-zinc-400">No claims yet.</p>}
             <ul className="space-y-2 text-sm">
               {claims.map((c) => (
                 <li key={c.id} className="rounded-lg bg-ink/60 p-2">
-                  <p>+ {c.add}{c.drop && <span className="text-slate-400"> / − {c.drop}</span>}</p>
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>${c.bid} · <span className={c.status === "won" ? "text-lime-300" : c.status === "failed" ? "text-rose-300" : ""}>{c.status}</span></span>
-                    {c.status === "pending" && <ActionButton action={cancelClaim.bind(null, l.id, c.id)} className="text-xs text-rose-300">Cancel</ActionButton>}
+                  <p>+ {c.add}{c.drop && <span className="text-zinc-500"> / − {c.drop}</span>}</p>
+                  <div className="flex items-center justify-between text-xs text-zinc-500">
+                    <span>${c.bid} · <span className={c.status === "won" ? "text-emerald-600" : c.status === "failed" ? "text-red-600" : ""}>{c.status}</span></span>
+                    {c.status === "pending" && <ActionButton action={cancelClaim.bind(null, l.id, c.id)} className="text-xs text-red-600">Cancel</ActionButton>}
                   </div>
                 </li>
               ))}
@@ -110,7 +110,7 @@ export default async function Players({ params, searchParams }: { params: Promis
         )}
         {l.commissioner_id === u.id && faab && l.draft_status === "done" && (
           <div className="card p-4">
-            <p className="mb-2 text-sm text-slate-300">Commish: process all pending claims right now.</p>
+            <p className="mb-2 text-sm text-zinc-700">Commish: process all pending claims right now.</p>
             <ActionButton action={runWaivers.bind(null, l.id)}>Run waivers now</ActionButton>
           </div>
         )}

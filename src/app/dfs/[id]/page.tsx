@@ -30,11 +30,11 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-widest text-slate-400">
+          <p className="text-xs uppercase tracking-widest text-zinc-500">
             DFS · {c.mode === "sim" ? "Simulated slate" : `${dayLabel(c.slate_date!)} · ${games.length} games`} · {c.status === "open" ? "Open for entries" : c.status === "live" ? "● Live" : "Final"}
           </p>
           <h1 className="text-3xl font-black">{c.name}</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-zinc-500">
             Entry {c.entry_fee ? fmtCoins(c.entry_fee) : "FREE"} · {entries.length}/{c.max_entries} entries · 🥇 {prizes[0].name} · 🥈 {prizes[1].name} · 🥉 {prizes[2].name}
             {c.status === "open" && lock && <> · Locks at first tip, {new Date(lock).toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })} ET</>}
           </p>
@@ -69,7 +69,7 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
                 <ul className="space-y-1 text-sm">
                   {games.map((g) => (
                     <li key={g.id} className="flex justify-between"><span>{g.away} @ {g.home}</span>
-                      <span className="text-slate-400">{new Date(g.start_ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })} ET</span></li>
+                      <span className="text-zinc-500">{new Date(g.start_ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })} ET</span></li>
                   ))}
                 </ul>
               </div>
@@ -78,9 +78,9 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
               <p className="label">Entries</p>
               <ul className="space-y-1 text-sm">
                 {entries.map((e) => <li key={e.id}>{e.name ?? `🤖 ${e.bot_name}`}{e.user_id === u.id && " (you)"}</li>)}
-                {entries.length === 0 && <li className="text-slate-500">Nobody yet</li>}
+                {entries.length === 0 && <li className="text-zinc-400">Nobody yet</li>}
               </ul>
-              <p className="mt-3 text-xs text-slate-500">
+              <p className="mt-3 text-xs text-zinc-400">
                 {c.mode === "sim" ? "The host locks the contest to start the simulated slate. Need at least 2 entries; bots count." : "Lineups lock automatically at the first tip-off and the contest settles when every game is final. DraftKings-style scoring."}
               </p>
             </div>

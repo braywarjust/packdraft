@@ -40,3 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 data/
+
+# iCloud-excluded copies
+/node_modules.nosync
+/.next.nosync
+/data.nosync
+/.git.nosync

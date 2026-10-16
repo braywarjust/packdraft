@@ -53,12 +53,12 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
       <div className="space-y-6">
         <div className="card p-5">
           <h2 className="mb-1 text-lg font-bold">Teams</h2>
-          <p className="mb-3 text-sm text-slate-400">Invite code <span className="font-mono font-bold text-brand">{l.invite_code}</span></p>
+          <p className="mb-3 text-sm text-zinc-500">Invite code <span className="font-mono font-bold text-brand">{l.invite_code}</span></p>
           <ul className="space-y-2">
             {teams.map((t) => (
               <li key={t.id} className="flex items-center justify-between rounded-lg bg-ink/60 px-3 py-2 text-sm">
-                <span>{t.name} {t.is_cpu ? <span className="text-xs text-slate-500">CPU</span> : null}</span>
-                {pre && t.user_id !== l.commissioner_id && <ActionButton action={removeTeam.bind(null, l.id, t.id)} className="text-xs text-rose-300" confirm={`Remove ${t.name}?`}>Remove</ActionButton>}
+                <span>{t.name} {t.is_cpu ? <span className="text-xs text-zinc-400">CPU</span> : null}</span>
+                {pre && t.user_id !== l.commissioner_id && <ActionButton action={removeTeam.bind(null, l.id, t.id)} className="text-xs text-red-600" confirm={`Remove ${t.name}?`}>Remove</ActionButton>}
               </li>
             ))}
           </ul>
@@ -66,7 +66,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
 
         <div className="card p-5">
           <h2 className="mb-1 text-lg font-bold">Keepers</h2>
-          <p className="mb-3 text-sm text-slate-400">
+          <p className="mb-3 text-sm text-zinc-500">
             {l.keeper_count === 0 ? "Keepers are off. Set keepers per team above to enable them." : `Each team can keep up to ${l.keeper_count}. A keeper uses that team's pick in the round you choose.`}
           </p>
           {keepers.length > 0 && (
@@ -74,7 +74,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
               {keepers.map((k) => (
                 <li key={k.player_id} className="flex justify-between">
                   <span>{teams.find((t) => t.id === k.team_id)?.name}: <b>{k.name}</b> (Rd {k.round})</span>
-                  {pre && <ActionButton action={removeKeeper.bind(null, l.id, k.player_id)} className="text-xs text-rose-300">Remove</ActionButton>}
+                  {pre && <ActionButton action={removeKeeper.bind(null, l.id, k.player_id)} className="text-xs text-red-600">Remove</ActionButton>}
                 </li>
               ))}
             </ul>

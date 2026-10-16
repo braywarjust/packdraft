@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export function LeagueTabs({ id, isCommish, hasTeam, drafting }: { id: number; isCommish: boolean; hasTeam: boolean; drafting: boolean }) {
-  const path = usePathname();
+  const path = usePathname() ?? "";
   const base = `/league/${id}`;
   const tabs = [
     { href: base, label: "League" },

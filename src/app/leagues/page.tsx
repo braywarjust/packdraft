@@ -21,25 +21,25 @@ export default async function LeaguesPage() {
         </div>
         <section className="space-y-2">
           <h2 className="label">Your leagues</h2>
-          {mine.length === 0 && <p className="text-slate-400">You haven&apos;t joined any leagues yet.</p>}
+          {mine.length === 0 && <p className="text-zinc-500">You haven&apos;t joined any leagues yet.</p>}
           {mine.map((l) => (
             <Link key={l.id} href={`/league/${l.id}`} className="card flex items-center justify-between p-4 hover:border-brand/60">
               <div>
                 <p className="font-bold">{l.name}</p>
-                <p className="text-sm text-slate-400">{l.team} · {l.n} teams</p>
+                <p className="text-sm text-zinc-500">{l.team} · {l.n} teams</p>
               </div>
-              <span className="text-sm text-slate-300">{l.draft_status === "done" ? `Week ${l.current_week}` : l.draft_status === "live" ? "🔴 Drafting" : "Pre-draft"}</span>
+              <span className="text-sm text-zinc-700">{l.draft_status === "done" ? `Week ${l.current_week}` : l.draft_status === "live" ? "🔴 Drafting" : "Pre-draft"}</span>
             </Link>
           ))}
         </section>
         <section className="space-y-2">
           <h2 className="label">Public leagues looking for managers</h2>
-          {pub.length === 0 && <p className="text-slate-400">None right now.</p>}
+          {pub.length === 0 && <p className="text-zinc-500">None right now.</p>}
           {pub.map((l) => (
             <div key={l.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
               <div>
                 <p className="font-bold">{l.name}</p>
-                <p className="text-sm text-slate-400">Commish {l.commish} · {l.humans}/{l.max_teams} managers · {l.scoring === "dk" ? "DK scoring" : "ESPN scoring"}</p>
+                <p className="text-sm text-zinc-500">Commish {l.commish} · {l.humans}/{l.max_teams} managers · {l.scoring === "dk" ? "DK scoring" : "ESPN scoring"}</p>
               </div>
               <ActionForm action={joinLeague} submit="Join" className="flex gap-2" submitClass="btn-primary">
                 <input type="hidden" name="league_id" value={l.id} />
@@ -51,7 +51,7 @@ export default async function LeaguesPage() {
       </div>
       <aside className="card h-fit p-5">
         <h2 className="mb-1 font-bold">Join with invite code</h2>
-        <p className="mb-4 text-sm text-slate-400">Your commish can find it on the league page.</p>
+        <p className="mb-4 text-sm text-zinc-500">Your commish can find it on the league page.</p>
         <ActionForm action={joinLeague} submit="Join league">
           <div><label className="label">Invite code</label><input name="code" className="input uppercase" placeholder="A1B2C3" required /></div>
           <div><label className="label">Team name</label><input name="team_name" className="input" placeholder="Hurts So Good" /></div>

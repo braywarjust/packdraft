@@ -49,8 +49,8 @@ export function LineupBuilder({ players, slots, cap, initial, submit, fee }: {
               <li key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-panel2">
                 <Headshot src={p.headshot} name={p.name} size={28} />
                 <span className={`pos pos-${p.pos}`}>{p.pos}</span>
-                <span className="flex-1 truncate">{p.name} <InjuryTag injury={p.injury} /> <span className="text-xs text-slate-500">{p.team} {p.opp}</span></span>
-                <span className="font-mono text-xs text-slate-400">{p.proj.toFixed(1)}</span>
+                <span className="flex-1 truncate">{p.name} <InjuryTag injury={p.injury} /> <span className="text-xs text-zinc-400">{p.team} {p.opp}</span></span>
+                <span className="font-mono text-xs text-zinc-500">{p.proj.toFixed(1)}</span>
                 <span className="w-16 text-right font-mono text-xs">{money(p.salary)}</span>
                 <button disabled={inL || p.salary > left} onClick={() => add(p)} className="btn-lime px-2 py-0.5 text-xs">+</button>
               </li>
@@ -60,8 +60,8 @@ export function LineupBuilder({ players, slots, cap, initial, submit, fee }: {
       </div>
       <div className="card space-y-3 p-4">
         <div className="flex justify-between text-sm">
-          <span>Remaining <b className={left < 0 ? "text-rose-300" : "text-lime-300"}>{money(left)}</b></span>
-          <span className="text-slate-400">Avg/slot left {open ? money(Math.floor(left / open)) : "—"}</span>
+          <span>Remaining <b className={left < 0 ? "text-red-600" : "text-emerald-600"}>{money(left)}</b></span>
+          <span className="text-zinc-500">Avg/slot left {open ? money(Math.floor(left / open)) : "—"}</span>
           <span>Proj <b>{proj.toFixed(1)}</b></span>
         </div>
         <ul className="space-y-1">
@@ -70,8 +70,8 @@ export function LineupBuilder({ players, slots, cap, initial, submit, fee }: {
             return (
               <li key={s} className="flex items-center gap-2 rounded-lg bg-ink/60 px-2 py-2 text-sm">
                 <span className={`pos pos-${lbl(s)}`}>{lbl(s)}</span>
-                <span className="flex-1">{p ? p.name : <span className="text-slate-600">—</span>}</span>
-                {p && <><span className="font-mono text-xs">{money(p.salary)}</span><button onClick={() => setLineup((l) => l.map((x, idx) => (idx === i ? null : x)))} className="text-xs text-rose-300">✕</button></>}
+                <span className="flex-1">{p ? p.name : <span className="text-zinc-400">—</span>}</span>
+                {p && <><span className="font-mono text-xs">{money(p.salary)}</span><button onClick={() => setLineup((l) => l.map((x, idx) => (idx === i ? null : x)))} className="text-xs text-red-600">✕</button></>}
               </li>
             );
           })}
@@ -87,7 +87,7 @@ export function LineupBuilder({ players, slots, cap, initial, submit, fee }: {
         >
           {initial ? "Update lineup" : `Enter contest${fee ? ` (${money(fee)})` : ""}`}
         </button>
-        {msg && <p className={`text-sm ${msg.bad ? "text-rose-300" : "text-lime-300"}`}>{msg.t}</p>}
+        {msg && <p className={`text-sm ${msg.bad ? "text-red-600" : "text-emerald-600"}`}>{msg.t}</p>}
       </div>
     </div>
   );

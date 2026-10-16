@@ -31,21 +31,21 @@ export default async function Trades({ params, searchParams }: { params: Promise
             propose={proposeTrade.bind(null, l.id)}
           />
         ) : (
-          <p className="text-slate-400">Trading opens once the draft is done.</p>
+          <p className="text-zinc-500">Trading opens once the draft is done.</p>
         )}
       </div>
       <div className="space-y-3 lg:col-span-2">
         <h2 className="text-lg font-bold">Trade block activity</h2>
-        {trades.length === 0 && <p className="text-sm text-slate-500">No trades yet. Someone make a move.</p>}
+        {trades.length === 0 && <p className="text-sm text-zinc-400">No trades yet. Someone make a move.</p>}
         {trades.map((t) => {
           const incoming = me && t.to_team_id === me.id && t.status === "pending";
           const outgoing = me && t.from_team_id === me.id && t.status === "pending";
           return (
-            <div key={t.id} className={`card p-3 text-sm ${incoming ? "border-lime-400/50" : ""}`}>
-              <p className="text-xs text-slate-400">{name.get(t.from_team_id)} → {name.get(t.to_team_id)} · <span className={t.status === "accepted" ? "text-lime-300" : t.status === "pending" ? "text-amber-300" : "text-slate-500"}>{t.status}</span></p>
-              <p><span className="text-slate-400">Sends:</span> {pname(t.give)}</p>
-              <p><span className="text-slate-400">Gets:</span> {pname(t.get)}</p>
-              {t.note && <p className="mt-1 italic text-slate-300">&ldquo;{t.note}&rdquo;</p>}
+            <div key={t.id} className={`card p-3 text-sm ${incoming ? "border-brand/40" : ""}`}>
+              <p className="text-xs text-zinc-500">{name.get(t.from_team_id)} → {name.get(t.to_team_id)} · <span className={t.status === "accepted" ? "text-emerald-600" : t.status === "pending" ? "text-amber-600" : "text-zinc-400"}>{t.status}</span></p>
+              <p><span className="text-zinc-500">Sends:</span> {pname(t.give)}</p>
+              <p><span className="text-zinc-500">Gets:</span> {pname(t.get)}</p>
+              {t.note && <p className="mt-1 italic text-zinc-700">&ldquo;{t.note}&rdquo;</p>}
               {incoming && (
                 <div className="mt-2 flex gap-2">
                   <ActionButton action={respondTrade.bind(null, l.id, t.id, true)} className="btn-lime px-3 py-1 text-xs">Accept</ActionButton>

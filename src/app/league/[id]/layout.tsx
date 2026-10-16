@@ -15,12 +15,12 @@ export default async function LeagueLayout({ children, params }: { children: Rea
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-widest text-slate-400">
+          <p className="text-xs uppercase tracking-widest text-zinc-500">
             {l.is_public ? "Public" : "Private"} league · {l.mode === "sim" ? "Simulated" : "Real NBA"} · {SCORING[l.scoring]?.label ?? l.scoring} · {l.champion_team_id ? "Season over" : l.draft_status === "done" ? `Week ${l.current_week} of ${l.season_weeks}` : l.draft_status === "live" ? "Draft in progress" : "Pre-draft"}
           </p>
           <h1 className="text-2xl font-black">{l.name}</h1>
         </div>
-        {l.week_started_at && <span className="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-bold text-rose-300">● GAMES LIVE</span>}
+        {l.week_started_at && <span className="rounded-full bg-red-500/10 px-3 py-1 text-xs font-bold text-red-600">● GAMES LIVE</span>}
       </div>
       <LeagueTabs id={l.id} isCommish={l.commissioner_id === u.id} hasTeam={!!team} drafting={l.draft_status === "live"} />
       {children}

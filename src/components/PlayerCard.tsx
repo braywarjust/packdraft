@@ -28,7 +28,7 @@ export function PlayerCard({ c, small }: { c: CardData; small?: boolean }) {
     <div className={`relative rounded-2xl bg-gradient-to-br ${FRAME[c.rarity]} p-[3px] shadow-xl ${small ? "h-[230px] w-36" : "h-[280px] w-44"}`}>
       <div className="flex h-full flex-col rounded-[14px] bg-slate-950/90 p-1.5">
         {/* Grading label */}
-        <div className="mb-1.5 rounded-md bg-gradient-to-r from-white to-slate-200 px-1.5 py-1 text-ink">
+        <div className="mb-1.5 rounded-md bg-gradient-to-r from-white to-slate-200 px-1.5 py-1 text-zinc-900">
           <div className="flex items-center justify-between text-[8px] font-bold uppercase leading-tight tracking-wide">
             <span className="truncate">{small ? "PackDraft '27" : "PackDraft 2026-27"}</span>
             <span className={`rounded px-1 text-white ${c.rarity === "grail" ? "bg-emerald-600" : c.rarity === "legendary" ? "bg-amber-600" : c.rarity === "epic" ? "bg-fuchsia-600" : c.rarity === "rare" ? "bg-sky-600" : "bg-slate-500"}`}>{r.label}</span>
@@ -59,8 +59,8 @@ export function PlayerCard({ c, small }: { c: CardData; small?: boolean }) {
           </div>
         </div>
         <div className="mt-1 flex items-center justify-between px-0.5 text-[11px]">
-          <span className="text-slate-500">FMV</span>
-          <span className="font-mono font-bold text-lime-300">{fmtCoins(c.value)}</span>
+          <span className="text-zinc-400">FMV</span>
+          <span className="font-mono font-bold text-emerald-600">{fmtCoins(c.value)}</span>
         </div>
       </div>
     </div>

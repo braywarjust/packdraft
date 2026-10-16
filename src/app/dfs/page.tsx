@@ -22,17 +22,17 @@ export default async function DfsPage() {
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
         <h1 className="text-3xl font-black">Daily Fantasy</h1>
-        <p className="text-slate-400">Build an 8-player lineup (G, G, F, F, C, 3 UTIL) under a $50,000 cap from one night of real NBA games. DraftKings-style scoring. Top 3 win mystery packs.</p>
-        {contests.length === 0 && <p className="card p-6 text-slate-400">No contests yet. Start one on the right.</p>}
+        <p className="text-zinc-500">Build an 8-player lineup (G, G, F, F, C, 3 UTIL) under a $50,000 cap from one night of real NBA games. DraftKings-style scoring. Top 3 win mystery packs.</p>
+        {contests.length === 0 && <p className="card p-6 text-zinc-500">No contests yet. Start one on the right.</p>}
         {contests.map((c) => (
           <Link key={c.id} href={`/dfs/${c.id}`} className="card flex flex-wrap items-center justify-between gap-3 p-4 hover:border-brand/60">
             <div>
               <p className="font-bold">{c.name}</p>
-              <p className="text-sm text-slate-400">{c.mode === "sim" ? "Simulated" : dayLabel(c.slate_date!)} · Host {c.host} · {c.n}/{c.max_entries} entries · Entry {c.entry_fee ? fmtCoins(c.entry_fee) : "FREE"}</p>
+              <p className="text-sm text-zinc-500">{c.mode === "sim" ? "Simulated" : dayLabel(c.slate_date!)} · Host {c.host} · {c.n}/{c.max_entries} entries · Entry {c.entry_fee ? fmtCoins(c.entry_fee) : "FREE"}</p>
             </div>
             <div className="text-right">
               <p className="text-sm">🥇 {PACK_BY_ID[c.prize_pack]?.name}</p>
-              <p className={`text-xs font-bold ${c.status === "live" ? "text-rose-300" : c.status === "open" ? "text-lime-300" : "text-slate-500"}`}>{c.status === "live" ? "● LIVE" : c.status === "open" ? "OPEN" : "FINAL"}</p>
+              <p className={`text-xs font-bold ${c.status === "live" ? "text-red-600" : c.status === "open" ? "text-emerald-600" : "text-zinc-400"}`}>{c.status === "live" ? "● LIVE" : c.status === "open" ? "OPEN" : "FINAL"}</p>
             </div>
           </Link>
         ))}
@@ -57,7 +57,7 @@ export default async function DfsPage() {
           <div><label className="label">1st place prize</label>
             <select name="prize_pack" defaultValue="pro" className="input">{PACKS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
           <div><label className="label">Sim slate length (minutes)</label><input name="sim_minutes" type="number" step="0.5" min={0.5} defaultValue={3} className="input" /></div>
-          <p className="text-xs text-slate-500">2nd gets the next pack down, 3rd gets a Rookie Pack.</p>
+          <p className="text-xs text-zinc-400">2nd gets the next pack down, 3rd gets a Rookie Pack.</p>
         </ActionForm>
       </aside>
     </div>

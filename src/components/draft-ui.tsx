@@ -31,14 +31,14 @@ export function DraftBoard({ order, picks, rounds, currentOverall, myTeamId }: {
             const p = byOverall.get(overall);
             const isNow = overall === currentOverall;
             return (
-              <div key={`${r}-${i}`} className={`h-14 rounded-lg border p-1.5 text-[11px] leading-tight ${p ? POS_BG[p.pos] : "border-line/50 bg-ink/40"} ${isNow ? "anim-glow border-lime-300" : ""}`} style={isNow ? ({ "--glow": "rgba(163,230,53,0.45)" } as React.CSSProperties) : undefined}>
+              <div key={`${r}-${i}`} className={`h-14 rounded-lg border p-1.5 text-[11px] leading-tight ${p ? POS_BG[p.pos] : "border-line/50 bg-ink/40"} ${isNow ? "anim-glow border-brand" : ""}`} style={isNow ? ({ "--glow": "rgba(255,37,54,0.45)" } as React.CSSProperties) : undefined}>
                 {p ? (
                   <>
                     <p className="truncate font-bold">{p.name}</p>
-                    <p className="text-slate-300">{p.pos} · {p.team}{p.is_keeper ? " · K" : ""}</p>
+                    <p className="text-zinc-700">{p.pos} · {p.team}{p.is_keeper ? " · K" : ""}</p>
                   </>
                 ) : (
-                  <p className="text-slate-600">{r + 1}.{String(idx + 1).padStart(2, "0")}{isNow ? " ⏱" : ""}</p>
+                  <p className="text-zinc-400">{r + 1}.{String(idx + 1).padStart(2, "0")}{isNow ? " ⏱" : ""}</p>
                 )}
               </div>
             );
@@ -69,13 +69,13 @@ export function PlayerPool({ players, canPick, onPick, queue, onQueue, busy }: {
       <ul className="flex-1 space-y-1 overflow-y-auto pr-1 scrollbar-thin">
         {list.map((p) => (
           <li key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-panel2">
-            <span className="w-7 text-xs text-slate-500">{p.adp}</span>
+            <span className="w-7 text-xs text-zinc-400">{p.adp}</span>
             <Headshot src={p.headshot ?? null} name={p.name} size={28} />
             <span className={`pos pos-${p.pos}`}>{p.pos}</span>
-            <span className="flex-1 truncate font-medium">{p.name} <InjuryTag injury={p.injury ?? null} /> <span className="text-xs text-slate-500">{p.team}</span></span>
-            <span className="font-mono text-xs text-slate-400">{p.proj.toFixed(1)}</span>
+            <span className="flex-1 truncate font-medium">{p.name} <InjuryTag injury={p.injury ?? null} /> <span className="text-xs text-zinc-400">{p.team}</span></span>
+            <span className="font-mono text-xs text-zinc-500">{p.proj.toFixed(1)}</span>
             {onQueue && (
-              <button title="Queue" onClick={() => onQueue(p.id, !queue?.includes(p.id))} className={`text-xs ${queue?.includes(p.id) ? "text-amber-300" : "text-slate-500 hover:text-slate-300"}`}>★</button>
+              <button title="Queue" onClick={() => onQueue(p.id, !queue?.includes(p.id))} className={`text-xs ${queue?.includes(p.id) ? "text-amber-600" : "text-zinc-400 hover:text-zinc-700"}`}>★</button>
             )}
             <button disabled={!canPick || busy} onClick={() => onPick(p.id)} className="btn-lime px-2 py-0.5 text-xs">Draft</button>
           </li>

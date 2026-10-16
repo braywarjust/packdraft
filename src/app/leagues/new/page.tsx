@@ -7,7 +7,7 @@ export default async function NewLeague() {
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-1 text-2xl font-black">Create a league</h1>
-      <p className="mb-6 text-slate-400">Up to 8 teams is free. Bigger leagues cost $2,500 PackBucks. You can tweak everything later in commissioner settings.</p>
+      <p className="mb-6 text-zinc-500">Up to 8 teams is free. Bigger leagues cost $2,500 PackBucks. You can tweak everything later in commissioner settings.</p>
       <ActionForm action={createLeague} submit="Create league" className="card space-y-5 p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div><label className="label">League name</label><input name="name" className="input" placeholder="The Pack Rats" required /></div>
@@ -50,7 +50,7 @@ export default async function NewLeague() {
           <div><label className="label">Pick clock (s)</label><input name="pick_seconds" type="number" min={10} max={600} defaultValue={60} className="input" /></div>
           <div><label className="label">Sim week length (min)</label><input name="sim_minutes" type="number" step="0.5" min={0.5} defaultValue={5} className="input" /></div>
         </div>
-        <p className="text-xs text-slate-500">Real leagues follow the NBA calendar: week 1 starts the day after your draft, then Monday–Sunday weeks, daily lineups, live box scores. Simulated leagues are for testing or offseason fun: the commish tips off each week and games play out over the sim week length.</p>
+        <p className="text-xs text-zinc-400">Real leagues follow the NBA calendar: week 1 starts the day after your draft, then Monday–Sunday weeks, daily lineups, live box scores. Simulated leagues are for testing or offseason fun: the commish tips off each week and games play out over the sim week length.</p>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_public" className="h-4 w-4" /> Public league (anyone on PackDraft can find and join)</label>
       </ActionForm>
     </div>

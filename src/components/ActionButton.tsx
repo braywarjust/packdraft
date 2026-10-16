@@ -35,7 +35,7 @@ export function ActionButton({
       >
         {pending ? "…" : children}
       </button>
-      {msg && <span className={`text-xs ${msg.bad ? "text-rose-300" : "text-lime-300"}`}>{msg.text}</span>}
+      {msg && <span className={`text-xs ${msg.bad ? "text-red-600" : "text-emerald-600"}`}>{msg.text}</span>}
     </span>
   );
 }

@@ -87,13 +87,13 @@ export function Chat({ leagueId, rivals, send, canPost }: {
       <div className="flex-1 space-y-3 overflow-y-auto p-4 scrollbar-thin">
         {msgs.map((m) =>
           m.kind === "system" ? (
-            <div key={m.id} className="mx-auto max-w-xl whitespace-pre-line rounded-xl border border-line bg-panel2/70 px-4 py-2 text-center text-sm text-slate-300">{render(m.body ?? "")}</div>
+            <div key={m.id} className="mx-auto max-w-xl whitespace-pre-line rounded-xl border border-line bg-panel2/70 px-4 py-2 text-center text-sm text-zinc-700">{render(m.body ?? "")}</div>
           ) : (
             <div key={m.id} className={`flex gap-2 ${m.user_id === me ? "flex-row-reverse" : ""}`}>
-              <div className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold text-ink" style={{ background: m.color ?? "#64748b" }}>{m.name?.[0]?.toUpperCase()}</div>
+              <div className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold text-white" style={{ background: m.color ?? "#64748b" }}>{m.name?.[0]?.toUpperCase()}</div>
               <div className={`max-w-[75%] ${m.user_id === me ? "text-right" : ""}`}>
-                <p className="text-xs text-slate-500">{m.name} · {new Date(m.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p>
-                {m.body && <p className={`inline-block whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${m.user_id === me ? "bg-brand text-ink" : "bg-panel2"}`}>{m.body}</p>}
+                <p className="text-xs text-zinc-400">{m.name} · {new Date(m.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p>
+                {m.body && <p className={`inline-block whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${m.user_id === me ? "bg-brand text-white" : "bg-panel2"}`}>{m.body}</p>}
                 {m.image_url && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={m.image_url} alt="" className="mt-1 max-h-64 rounded-xl" />
@@ -113,7 +113,7 @@ export function Chat({ leagueId, rivals, send, canPost }: {
                 <input value={gifQ} onChange={(e) => setGifQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchGifs()} className="input" placeholder="Search GIFs" />
                 <button className="btn-ghost" onClick={searchGifs}>Search</button>
               </div>
-              {gifDisabled && <p className="text-xs text-slate-400">GIF search needs a free GIPHY key in <code>.env.local</code> (see README). You can still paste any GIF link below.</p>}
+              {gifDisabled && <p className="text-xs text-zinc-500">GIF search needs a free GIPHY key in <code>.env.local</code> (see README). You can still paste any GIF link below.</p>}
               <div className="grid max-h-48 grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-6">
                 {gifs.map((g) => (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -130,13 +130,13 @@ export function Chat({ leagueId, rivals, send, canPost }: {
             <div className="flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={image} alt="" className="h-16 rounded-lg" />
-              <button className="text-xs text-rose-300" onClick={() => setImage(null)}>Remove</button>
+              <button className="text-xs text-red-600" onClick={() => setImage(null)}>Remove</button>
             </div>
           )}
           <div className="flex flex-wrap gap-1">
             {EMOJI.map((e) => <button key={e} onClick={() => setText((t) => t + e)} className="rounded-lg px-1.5 py-0.5 text-lg hover:bg-panel2">{e}</button>)}
             <button
-              className="ml-auto rounded-lg bg-rose-500/20 px-2 py-1 text-xs font-bold text-rose-300 hover:bg-rose-500/30"
+              className="ml-auto rounded-lg bg-red-500/10 px-2 py-1 text-xs font-bold text-red-600 hover:bg-rose-500/30"
               onClick={() => {
                 const t = rivals[Math.floor(Math.random() * rivals.length)] ?? "you";
                 setText(SMACK[Math.floor(Math.random() * SMACK.length)].replace("{t}", t));
@@ -153,10 +153,10 @@ export function Chat({ leagueId, rivals, send, canPost }: {
             <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && submit()} className="input" placeholder="Talk your talk…" />
             <button className="btn-primary" onClick={() => submit()}>Send</button>
           </div>
-          {err && <p className="text-xs text-rose-300">{err}</p>}
+          {err && <p className="text-xs text-red-600">{err}</p>}
         </div>
       ) : (
-        <p className="border-t border-line p-3 text-center text-sm text-slate-400">Join the league to chat.</p>
+        <p className="border-t border-line p-3 text-center text-sm text-zinc-500">Join the league to chat.</p>
       )}
     </div>
   );

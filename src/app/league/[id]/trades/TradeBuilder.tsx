@@ -33,7 +33,7 @@ export function TradeBuilder({
         <li key={p.id}>
           <button onClick={() => toggle(sel, set, p.id)} className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-sm ${sel.includes(p.id) ? "bg-brand/20 ring-1 ring-brand" : "hover:bg-panel2"}`}>
             <span><span className={`pos pos-${p.pos} mr-2`}>{p.pos}</span>{p.name}</span>
-            <span className="font-mono text-xs text-slate-400">{p.proj.toFixed(1)}</span>
+            <span className="font-mono text-xs text-zinc-500">{p.proj.toFixed(1)}</span>
           </button>
         </li>
       ))}
@@ -53,7 +53,7 @@ export function TradeBuilder({
         <div><p className="label">You get ({val(get, theirs).toFixed(1)} pts/g)</p>{list(theirs, get, setGet)}</div>
       </div>
       <input value={note} onChange={(e) => setNote(e.target.value)} className="input" placeholder="Add some persuasion (or trash talk)…" />
-      {partner?.cpu && <p className="text-xs text-slate-400">CPU managers respond instantly and want a little more projected value back than they give.</p>}
+      {partner?.cpu && <p className="text-xs text-zinc-500">CPU managers respond instantly and want a little more projected value back than they give.</p>}
       <div className="flex items-center gap-3">
         <button
           className="btn-primary"
@@ -72,7 +72,7 @@ export function TradeBuilder({
         >
           Send offer
         </button>
-        {msg && <span className={`text-sm ${msg.bad ? "text-rose-300" : "text-lime-300"}`}>{msg.t}</span>}
+        {msg && <span className={`text-sm ${msg.bad ? "text-red-600" : "text-emerald-600"}`}>{msg.t}</span>}
       </div>
     </div>
   );

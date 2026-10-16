@@ -28,7 +28,7 @@ export default async function Home() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm text-slate-400">Welcome back</p>
+          <p className="text-sm text-zinc-500">Welcome back</p>
           <h1 className="text-3xl font-black">{user.name}</h1>
         </div>
         <div className="flex gap-2">
@@ -42,13 +42,13 @@ export default async function Home() {
       </div>
 
       {packs.length > 0 && (
-        <Link href="/packs" className="card flex items-center justify-between gap-4 bg-gradient-to-r from-fuchsia-600/30 via-amber-500/20 to-emerald-500/20 p-5 hover:border-amber-400/60">
+        <Link href="/packs" className="flex items-center justify-between gap-4 overflow-hidden rounded-2xl bg-gradient-to-r from-brand to-red-800 p-5 text-white shadow-lg shadow-red-500/25 transition hover:brightness-110">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">Unopened packs</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-white/80">Unopened packs</p>
             <p className="text-xl font-black">You have {packs.length} pack{packs.length > 1 ? "s" : ""} waiting to be ripped</p>
-            <p className="text-sm text-slate-300">{packs.slice(0, 3).map((p) => `${PACK_BY_ID[p.pack_type]?.name} (${p.source})`).join(" · ")}</p>
+            <p className="text-sm text-white/80">{packs.slice(0, 3).map((p) => `${PACK_BY_ID[p.pack_type]?.name} (${p.source})`).join(" · ")}</p>
           </div>
-          <span className="btn-lime">Rip now →</span>
+          <span className="btn shrink-0 whitespace-nowrap bg-white text-brand">Rip now →</span>
         </Link>
       )}
 
@@ -56,7 +56,7 @@ export default async function Home() {
         <section className="space-y-3 lg:col-span-2">
           <h2 className="text-lg font-bold">My leagues</h2>
           {myTeams.length === 0 && (
-            <div className="card p-6 text-slate-300">
+            <div className="card p-6 text-zinc-700">
               No leagues yet. <Link href="/leagues/new" className="text-brand underline">Create one</Link> for the crew or <Link href="/leagues" className="text-brand underline">join with a code</Link>.
             </div>
           )}
@@ -73,17 +73,17 @@ export default async function Home() {
               <Link key={t.id} href={m && l.draft_status === "done" ? `/league/${l.id}/matchup/${m.id}` : `/league/${l.id}`} className="card block p-4 hover:border-brand/60">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-slate-400">{l.name} · {l.draft_status === "done" ? `Week ${l.current_week}` : l.draft_status === "live" ? "Drafting now" : "Pre-draft"}</p>
-                    <p className="text-lg font-bold">{t.name} <span className="text-sm font-normal text-slate-400">({t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""})</span></p>
+                    <p className="text-xs uppercase tracking-wider text-zinc-500">{l.name} · {l.draft_status === "done" ? `Week ${l.current_week}` : l.draft_status === "live" ? "Drafting now" : "Pre-draft"}</p>
+                    <p className="text-lg font-bold">{t.name} <span className="text-sm font-normal text-zinc-500">({t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""})</span></p>
                   </div>
                   {l.draft_status === "live" && <span className="btn-lime">Draft room →</span>}
-                  {l.week_started_at && <span className="rounded-full bg-rose-500/20 px-2 py-0.5 text-xs font-bold text-rose-300">● LIVE</span>}
+                  {l.week_started_at && <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-bold text-red-600">● LIVE</span>}
                 </div>
                 {mine && theirs && opp && (
                   <div className="mt-3 flex items-center justify-between rounded-xl bg-ink/60 px-4 py-3">
-                    <div><p className="text-xs text-slate-400">You</p><p className="text-2xl font-black">{mine.score.toFixed(1)}</p></div>
-                    <p className="text-xs text-slate-500">proj {(mine.score + mine.remain).toFixed(0)} – {(theirs.score + theirs.remain).toFixed(0)}</p>
-                    <div className="text-right"><p className="text-xs text-slate-400">{opp.name}</p><p className="text-2xl font-black">{theirs.score.toFixed(1)}</p></div>
+                    <div><p className="text-xs text-zinc-500">You</p><p className="text-2xl font-black">{mine.score.toFixed(1)}</p></div>
+                    <p className="text-xs text-zinc-400">proj {(mine.score + mine.remain).toFixed(0)} – {(theirs.score + theirs.remain).toFixed(0)}</p>
+                    <div className="text-right"><p className="text-xs text-zinc-500">{opp.name}</p><p className="text-2xl font-black">{theirs.score.toFixed(1)}</p></div>
                   </div>
                 )}
               </Link>
@@ -95,7 +95,7 @@ export default async function Home() {
             {contests.map((c) => (
               <Link key={c.id} href={`/dfs/${c.id}`} className="card p-4 hover:border-brand/60">
                 <p className="font-bold">{c.name}</p>
-                <p className="text-sm text-slate-400">1st place: {PACK_BY_ID[c.prize_pack]?.name} · {c.status === "live" ? "🔴 Live" : "Open"}</p>
+                <p className="text-sm text-zinc-500">1st place: {PACK_BY_ID[c.prize_pack]?.name} · {c.status === "live" ? "🔴 Live" : "Open"}</p>
               </Link>
             ))}
             <Link href="/dfs" className="card grid place-items-center p-4 text-sm text-brand hover:border-brand/60">+ Start a DFS contest</Link>
@@ -105,12 +105,12 @@ export default async function Home() {
         <aside className="space-y-6">
           <div className="card p-4">
             <h3 className="mb-3 font-bold">🏆 Biggest pulls</h3>
-            {pulls.length === 0 && <p className="text-sm text-slate-400">No packs ripped yet.</p>}
+            {pulls.length === 0 && <p className="text-sm text-zinc-500">No packs ripped yet.</p>}
             <ul className="space-y-2">
               {pulls.map((c, i) => (
                 <li key={i} className="flex items-center justify-between text-sm">
-                  <span><span className={`font-semibold ${RARITIES[c.rarity].text}`}>{c.name}</span> <span className="text-slate-500">· {c.user}</span></span>
-                  <span className="font-mono text-lime-300">{fmtCoins(c.value)}</span>
+                  <span><span className={`font-semibold ${RARITIES[c.rarity].text}`}>{c.name}</span> <span className="text-zinc-400">· {c.user}</span></span>
+                  <span className="font-mono text-emerald-600">{fmtCoins(c.value)}</span>
                 </li>
               ))}
             </ul>
@@ -120,12 +120,12 @@ export default async function Home() {
             <ol className="space-y-2">
               {leaders.map((u, i) => (
                 <li key={u.name} className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2"><span className="w-4 text-slate-500">{i + 1}</span><span className="h-3 w-3 rounded-full" style={{ background: u.color }} />{u.name}</span>
+                  <span className="flex items-center gap-2"><span className="w-4 text-zinc-400">{i + 1}</span><span className="h-3 w-3 rounded-full" style={{ background: u.color }} />{u.name}</span>
                   <span className="font-mono">{fmtCoins(u.coins + u.vault)}</span>
                 </li>
               ))}
             </ol>
-            <p className="mt-2 text-xs text-slate-500">PackBucks + card vault value</p>
+            <p className="mt-2 text-xs text-zinc-400">PackBucks + card vault value</p>
           </div>
         </aside>
       </div>

@@ -21,7 +21,7 @@ export function SettingsForm({ action, children }: { action: (f: FormData) => Pr
       {children}
       <div className="flex items-center gap-3">
         <button className="btn-primary" disabled={pending}>Save settings</button>
-        {msg && <span className={`text-sm ${msg.bad ? "text-rose-300" : "text-lime-300"}`}>{msg.t}</span>}
+        {msg && <span className={`text-sm ${msg.bad ? "text-red-600" : "text-emerald-600"}`}>{msg.t}</span>}
       </div>
     </form>
   );
@@ -61,7 +61,7 @@ export function KeeperForm({ teams, players, rounds, action }: {
       >
         Add keeper
       </button>
-      {err && <p className="text-xs text-rose-300">{err}</p>}
+      {err && <p className="text-xs text-red-600">{err}</p>}
     </div>
   );
 }
