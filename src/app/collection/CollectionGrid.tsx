@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { CardData, PlayerCard, RARITY_TEXT, SlabImage, slabBadges } from "@/components/PlayerCard";
+import { CardData, PlayerCard, RarityBadge, SlabImage, slabBadges } from "@/components/PlayerCard";
 import { BUYBACK_RATE, RARITIES, fmtCoins } from "@/lib/packs";
 import { Logo, LogoWatermark } from "@/components/Logo";
 
@@ -61,7 +61,7 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
             </div>
             <div className="relative min-w-0 space-y-4">
               <div>
-                <p className={`text-xs font-bold uppercase tracking-widest ${RARITY_TEXT[open.rarity]}`}>{RARITIES[open.rarity].label}</p>
+                <RarityBadge rarity={open.rarity} className="mb-1" />
                 <h2 className="text-2xl font-bold tracking-tight">{open.name}</h2>
                 {open.slab_id && (
                   <p className="text-zinc-500">{open.s_year} {open.s_set}{open.s_no ? ` #${open.s_no}` : ""}{open.s_variant ? ` · ${open.s_variant}` : ""}</p>

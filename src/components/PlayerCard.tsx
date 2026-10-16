@@ -8,13 +8,18 @@ export type CardData = {
   s_company?: string | null; s_grade?: string | null; s_cert?: string | null; s_flags?: string | null; s_source?: string | null;
 };
 
-// Coloured glow under the slab instead of a frame, so the slab itself is the tile.
-export const SLAB_GLOW: Record<Rarity, string> = {
-  common: "rgba(24,24,27,0.22)", rare: "rgba(14,165,233,0.55)", epic: "rgba(192,38,211,0.6)", legendary: "rgba(245,158,11,0.7)", grail: "rgba(16,185,129,0.8)",
+// Small coloured rarity badge.
+const BADGE: Record<Rarity, string> = {
+  common: "bg-zinc-100 text-zinc-600 ring-zinc-200", rare: "bg-sky-50 text-sky-700 ring-sky-200", epic: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200",
+  legendary: "bg-amber-50 text-amber-700 ring-amber-200", grail: "bg-emerald-50 text-emerald-700 ring-emerald-200",
 };
-export const RARITY_TEXT: Record<Rarity, string> = {
-  common: "text-zinc-500", rare: "text-sky-600", epic: "text-fuchsia-600", legendary: "text-amber-600", grail: "text-emerald-600",
-};
+export function RarityBadge({ rarity, className = "" }: { rarity: Rarity; className?: string }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset ${BADGE[rarity]} ${className}`}>
+      {RARITIES[rarity].label}
+    </span>
+  );
+}
 
 export function slabBadges(flags: string | null | undefined) {
   if (!flags) return [];
@@ -24,7 +29,7 @@ export function slabBadges(flags: string | null | undefined) {
 }
 
 /** The slab photo on its own (transparent background), cropped to the slab. */
-export function SlabImage({ id, alt, height, rarity, className = "" }: { id: number; alt: string; height: number; rarity: Rarity; className?: string }) {
+export function SlabImage({ id, alt, height, className = "" }: { id: number; alt: string; height: number; rarity?: Rarity; className?: string }) {
   return (
     <div className={`relative ${className}`} style={{ height, width: Math.round(height * 0.6) }}>
       <img
@@ -32,7 +37,7 @@ export function SlabImage({ id, alt, height, rarity, className = "" }: { id: num
         alt={alt}
         loading="lazy"
         className="absolute inset-0 h-full w-full object-cover object-center"
-        style={{ filter: `drop-shadow(0 10px 14px ${SLAB_GLOW[rarity]})` }}
+        style={{ filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.18))" }}
       />
     </div>
   );
@@ -45,8 +50,8 @@ export function SlabCard({ c, small }: { c: CardData; small?: boolean }) {
     <div className="flex flex-col items-center" style={{ width: Math.round(h * 0.6) + 16 }}>
       <SlabImage id={c.slab_id!} alt={`${c.s_year} ${c.s_set} ${c.name}`} height={h} rarity={c.rarity} />
       <div className="mt-2 w-full text-center">
-        <p className={`text-[10px] font-bold uppercase tracking-wider ${RARITY_TEXT[c.rarity]}`}>{RARITIES[c.rarity].label}</p>
-        <p className="truncate text-xs font-semibold text-zinc-900">{c.name}</p>
+        <RarityBadge rarity={c.rarity} />
+        <p className="mt-1 truncate text-xs font-semibold text-zinc-900">{c.name}</p>
         <p className="font-mono text-xs font-bold text-emerald-600" title={c.s_source === "ebay" ? "eBay market value" : "Estimated value"}>
           {fmtCoins(c.value)}{c.s_source === "ebay" ? "" : "*"}
         </p>
