@@ -8,7 +8,7 @@ import { Logo, LogoWatermark } from "@/components/Logo";
 
 export type GridCard = CardData & {
   s_factors?: string | null; s_detail?: string | null; s_est?: number | null; s_pop?: number | null; s_pop_higher?: number | null; created_at: number;
-  photo?: string | null;
+  photo?: string | null; photoLabel?: string | null;
 };
 
 function certUrl(c: GridCard) {
@@ -63,9 +63,12 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
             <div className="relative min-w-0 space-y-4">
               <div className="flex items-center gap-4">
                 {open.photo && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={open.photo} alt={open.name} className="h-24 w-32 shrink-0 rounded-xl border border-zinc-200 bg-zinc-100 object-cover object-top"
-                    onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                  <figure className="shrink-0 text-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={open.photo} alt={open.name} className="h-24 w-32 rounded-xl border border-zinc-200 bg-zinc-100 object-cover object-top"
+                      onError={(e) => { e.currentTarget.parentElement!.style.display = "none"; }} />
+                    {open.photoLabel && <figcaption className="mt-1 text-[10px] text-zinc-400">{open.photoLabel}</figcaption>}
+                  </figure>
                 )}
                 <div className="min-w-0">
                   <RarityBadge rarity={open.rarity} className="mb-1" />

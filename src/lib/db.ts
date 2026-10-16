@@ -120,6 +120,12 @@ function open(): DatabaseSync {
   if (!cardCols.includes("slab_id")) db.exec("ALTER TABLE cards ADD COLUMN slab_id INTEGER");
   const userCols = (db.prepare("PRAGMA table_info(users)").all() as { name: string }[]).map((c) => c.name);
   if (!userCols.includes("is_tester")) db.exec("ALTER TABLE users ADD COLUMN is_tester INTEGER NOT NULL DEFAULT 0");
+  const slabCols = (db.prepare("PRAGMA table_info(slabs)").all() as { name: string }[]).map((c) => c.name);
+  if (!slabCols.includes("photo_url")) {
+    db.exec("ALTER TABLE slabs ADD COLUMN photo_url TEXT");
+    db.exec("ALTER TABLE slabs ADD COLUMN photo_label TEXT");
+    db.exec("ALTER TABLE slabs ADD COLUMN photo_checked INTEGER NOT NULL DEFAULT 0");
+  }
   if (fresh) carryOverUsers(db);
   db.exec("COMMIT");
   return db;

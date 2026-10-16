@@ -4,6 +4,7 @@ import { backfillFinals, ensureSchedule, maybeSyncPlayers, refreshLive } from ".
 import { dailyWaivers, getLeague, tickLeague, weekRange } from "../league";
 import { Contest, tickContest } from "../dfs";
 import { ensureCatalog } from "../slabs";
+import { resolveSlabPhotos } from "./year-photos";
 
 let busy = false;
 export async function tick() {
@@ -25,6 +26,7 @@ export async function tick() {
       }
       tickLeague(id);
     }
+    await resolveSlabPhotos(120);
     for (const c of all<Contest>("SELECT * FROM dfs_contests WHERE status != 'final'")) {
       if (c.mode !== "sim" && c.slate_date) await backfillFinals(c.slate_date, c.slate_date);
       tickContest(c);

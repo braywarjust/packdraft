@@ -4,6 +4,7 @@ import { PACK_BY_ID, RARITIES, Rarity, rollRarity, valueScale, fmtCoins } from "
 import { postSystem } from "./league";
 import { ensureCatalog, pickSlab, slabValue } from "./slabs";
 import { refreshMarket } from "./market";
+import { resolvePhotosFor } from "./nba/year-photos";
 
 /** A card in someone's collection. New cards are real slabs (slab_id set); a few early cards are generated art. */
 export type Card = {
@@ -14,10 +15,12 @@ export type Card = {
   s_year: number | null; s_set: string | null; s_no: string | null; s_variant: string | null; s_company: string | null; s_grade: string | null;
   s_cert: string | null; s_flags: string | null; s_factors: string | null; s_source: string | null; s_detail: string | null;
   s_est: number | null; s_pop: number | null; s_pop_higher: number | null;
+  s_photo: string | null; s_photo_label: string | null; s_photo_checked: number | null;
 };
 const CARD_SELECT = `SELECT c.*, COALESCE(s.player, p.name) name, COALESCE(p.pos, '') pos, COALESCE(p.team, '') team, p.headshot, p.jersey, t.color, t.alt, t.logo,
   s.year s_year, s.set_name s_set, s.card_no s_no, s.variant s_variant, s.company s_company, s.grade s_grade, s.cert s_cert, s.flags s_flags,
-  s.factors s_factors, s.mkt_source s_source, s.mkt_detail s_detail, s.est_value s_est, s.pop s_pop, s.pop_higher s_pop_higher
+  s.factors s_factors, s.mkt_source s_source, s.mkt_detail s_detail, s.est_value s_est, s.pop s_pop, s.pop_higher s_pop_higher,
+  s.photo_url s_photo, s.photo_label s_photo_label, s.photo_checked s_photo_checked
   FROM cards c LEFT JOIN slabs s ON s.id = c.slab_id LEFT JOIN players p ON p.id = COALESCE(s.player_id, c.player_id) LEFT JOIN nba_teams t ON t.abbr = p.team`;
 
 const rand = () => crypto.randomInt(0, 1_000_000) / 1_000_000;
@@ -53,7 +56,7 @@ export async function openPack(userId: number, packId: number): Promise<Card[]> 
   });
 
   // Price each pulled slab against the real market (when eBay keys are set), then lock in that value.
-  await refreshMarket(picked.map((p) => p.slabId));
+  await Promise.all([refreshMarket(picked.map((p) => p.slabId)), resolvePhotosFor(picked.map((p) => p.slabId))]);
   for (const p of picked) {
     const s = one<{ mkt_value: number | null; est_value: number }>("SELECT mkt_value, est_value FROM slabs WHERE id = ?", p.slabId)!;
     run("UPDATE cards SET value = ? WHERE id = ?", slabValue(s), p.cardId);
