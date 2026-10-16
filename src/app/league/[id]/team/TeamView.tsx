@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { one, Team } from "@/lib/db";
-import { getLeague, teamWeek } from "@/lib/league";
+import { boostableGame, getLeague, roster, teamWeek } from "@/lib/league";
+import { OWN_PLAYER_BONUS, boostSlabs, teamBoosts } from "@/lib/boost";
+import { currentUser } from "@/lib/auth";
 import { LineupEditor } from "@/components/LineupEditor";
 import { AutoRefresh } from "@/components/AutoRefresh";
-import { autoSet, dropPlayer, renameTeam, setSlot } from "../../../actions";
+import { autoSet, boostPlayer, dropPlayer, renameTeam, setSlot, unboostPlayer } from "../../../actions";
 
 export async function TeamView({ leagueId, teamId, editable }: { leagueId: number; teamId: number; editable: boolean }) {
   const l = getLeague(leagueId)!;
@@ -12,6 +14,18 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
   const tw = teamWeek(l, t.id, l.current_week);
   const players = tw.players;
   const live = players.some((p) => p.now?.state === "in");
+  // Slab boosts: who can still be boosted for his next game, and what each of those days is already boosted with.
+  const me = editable ? await currentUser() : null;
+  const boosts = teamBoosts(t.id);
+  const nameOf = new Map(players.map((p) => [p.id, p.name]));
+  const boostable = l.draft_status === "done" && !l.champion_team_id
+    ? roster(t.id).flatMap((p) => {
+        const g = boostableGame(l, p);
+        if (!g) return [];
+        const taken = [...boosts.values()].find((b) => b.day_key === g.key);
+        return [{ playerId: p.id, dayKey: g.key, day: g.label, taken: taken && taken.player_id !== p.id ? { name: nameOf.get(taken.player_id) ?? "another player", mult: taken.mult } : null }];
+      })
+    : [];
 
   return (
     <div className="space-y-4">
@@ -41,8 +55,13 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
           setSlot={editable ? setSlot.bind(null, leagueId) : undefined}
           autoSet={editable ? autoSet.bind(null, leagueId) : undefined}
           drop={editable ? dropPlayer.bind(null, leagueId) : undefined}
+          boost={editable && me ? {
+            slabs: boostSlabs(me.id), boostable, ownBonus: OWN_PLAYER_BONUS,
+            set: boostPlayer.bind(null, leagueId), clear: unboostPlayer.bind(null, leagueId),
+          } : undefined}
         />
       )}
+      <p className="text-xs text-zinc-400">⚡ Slab boost: once a day, back one of your players with one of your slabs and his points for that game are multiplied (×1.00 for a $25 slab up to ×3.00, set by the slab&apos;s market value; +{OWN_PLAYER_BONUS.toFixed(1)}× if it&apos;s his own slab). It locks at his tip-off and only counts if he&apos;s in your starting lineup.</p>
       <p className="text-xs text-zinc-400">Lineups are daily. Each player locks at his own tip-off, so you can still swap guys who play later tonight. Points count for whatever slot a player was in when his game started.</p>
     </div>
   );

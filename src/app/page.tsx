@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
-import { boostLive } from "@/lib/boost";
 import { getLeague, maybeFinalize, teamWeek } from "@/lib/league";
 import { unopenedPacks } from "@/lib/packs-server";
 import { PACK_BY_ID, RARITIES, Rarity } from "@/lib/packs";
@@ -22,7 +21,6 @@ export default async function Home() {
   const leaders = all<{ name: string; color: string; coins: number; vault: number }>(
     `SELECT u.name, u.color, u.coins, COALESCE((SELECT SUM(value) FROM cards c WHERE c.user_id = u.id AND c.sold = 0), 0) vault
      FROM users u WHERE u.is_tester = 0 ORDER BY (u.coins + vault) DESC LIMIT 8`);
-  const boost = boostLive(user.id);
 
   return (
     <div className="space-y-6">
@@ -103,17 +101,6 @@ export default async function Home() {
             );
           })}
 
-          <h2 className="pt-2 text-lg font-bold">Slab Boost</h2>
-          <Link href="/boost" className="card flex items-center justify-between gap-3 p-4 hover:border-brand/60">
-            <div>
-              <p className="font-bold">Today&apos;s boost</p>
-              <p className="text-sm text-zinc-500">
-                {boost.picks.length === 0 ? "Back tonight's players with your slabs to earn Pack Points."
-                  : <>{boost.picks.length}/3 slots · {boost.picks.some((p) => p.game?.state === "in") ? "● Live · " : ""}<Coins n={Math.round(boost.total)} /> so far</>}
-              </p>
-            </div>
-            <span className="btn-lime shrink-0">{boost.picks.length ? "Watch" : "Play"}</span>
-          </Link>
         </section>
 
         <aside className="space-y-6">

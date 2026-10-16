@@ -51,7 +51,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <nav className="flex flex-wrap gap-4">
                 <Link href="/leagues" className="hover:text-brand">Leagues</Link>
                 <Link href="/packs" className="hover:text-brand">Packs</Link>
-                <Link href="/boost" className="hover:text-brand">Slab Boost</Link>
                 <Link href="/collection" className="hover:text-brand">Collection</Link>
               </nav>
               <p className="text-xs">Private league site · Live stats via ESPN</p>

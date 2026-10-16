@@ -2,7 +2,6 @@ import { all } from "../db";
 import { addDays, etDate } from "./espn";
 import { backfillFinals, ensureSchedule, maybeSyncPlayers, refreshLive } from "./sync";
 import { dailyWaivers, getLeague, tickLeague, weekRange } from "../league";
-import { boostPayouts } from "../boost";
 import { ensureCatalog } from "../slabs";
 
 let busy = false;
@@ -25,9 +24,6 @@ export async function tick() {
       }
       tickLeague(id);
     }
-    // Pay out Slab Boost picks whose games went final, even if nobody has the page open.
-    await backfillFinals(addDays(today, -2), today);
-    boostPayouts();
   } finally {
     busy = false;
   }

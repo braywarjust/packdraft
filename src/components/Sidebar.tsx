@@ -11,7 +11,6 @@ const I = {
   leagues: "/packdraft-league-icon.svg",
   packs: "/packdraft-pack-icon.svg",
   collection: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
-  dfs: "M4 19V9M10 19V5M16 19v-7M22 19H2",
   mock: "M4 6h16M4 12h16M4 18h10",
   logout: "M15 17l5-5-5-5M20 12H9M12 21H4V3h8",
   collapse: "M15 6l-6 6 6 6",
@@ -63,7 +62,6 @@ export function Sidebar({
     { href: "/leagues", label: "Leagues", icon: I.leagues },
     { href: "/packs", label: "Packs", icon: I.packs, badge: packs },
     { href: "/collection", label: "Collection", icon: I.collection },
-    { href: "/boost", label: "Slab Boost", icon: I.dfs },
     { href: "/mock-draft", label: "Mock Draft", icon: I.mock },
   ];
   const isActive = (href: string, exact?: boolean) => (exact ? path === href : path === href || path.startsWith(`${href}/`) || (href === "/leagues" && path.startsWith("/league/")));

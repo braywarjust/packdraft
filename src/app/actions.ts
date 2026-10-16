@@ -7,12 +7,11 @@ import { all, one, run, tx, League, Team, Player, User } from "@/lib/db";
 import { clearSession, currentUser, hashPin, requireUser, setSession } from "@/lib/auth";
 import {
   getLeague, userTeam, leagueTeams, startDraft, advanceDraft, makePick, autoLineup, moveToSlot, roster, ROSTER_MAX,
-  isLocked, executeTrade, startWeek, finalizeWeek, postSystem, processWaivers, ROUNDS,
+  isLocked, executeTrade, startWeek, finalizeWeek, postSystem, processWaivers, ROUNDS, setBoost, clearBoost,
 } from "@/lib/league";
 import { PACK_BY_ID, BUYBACK_RATE } from "@/lib/packs";
 import { openPack, releaseSlab } from "@/lib/packs-server";
 import { etDate } from "@/lib/nba/espn";
-import { clearPick, setPick } from "@/lib/boost";
 import { ensureSchedule } from "@/lib/nba/sync";
 
 type Result = { error?: string; ok?: boolean };
@@ -480,22 +479,22 @@ export async function whoami() {
   return currentUser();
 }
 
-// ---------- Slab Boost ----------
+// ---------- Slab boosts (one per team per day) ----------
 
-export async function setBoostPick(slot: number, playerId: number, cardId: number) {
+export async function boostPlayer(leagueId: number, playerId: number, cardId: number) {
   return wrap(async () => {
-    const u = await requireUser();
-    setPick(u.id, slot, playerId, cardId);
-    revalidatePath("/boost");
-    return { ok: true };
+    const { l, t, u } = await myLeagueTeam(leagueId);
+    const r = setBoost(l, t.id, u.id, playerId, cardId);
+    revalidatePath(`/league/${leagueId}/team`);
+    return { ok: true, ...r };
   });
 }
 
-export async function clearBoostPick(slot: number) {
+export async function unboostPlayer(leagueId: number, playerId: number) {
   return wrap(async () => {
-    const u = await requireUser();
-    clearPick(u.id, slot);
-    revalidatePath("/boost");
+    const { l, t } = await myLeagueTeam(leagueId);
+    clearBoost(l, t.id, playerId);
+    revalidatePath(`/league/${leagueId}/team`);
     return { ok: true };
   });
 }

@@ -6,14 +6,36 @@ import type { LivePlayer } from "@/lib/league";
 import { Headshot, InjuryTag } from "./Headshot";
 
 const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
+
+type BoostSlab = { cardId: number; slabId: number; playerId: number | null; player: string; label: string; grade: string; rarity: string; value: number; mult: number };
+type BoostProps = {
+  slabs: BoostSlab[];
+  boostable: { playerId: number; dayKey: string; day: string; taken: { name: string; mult: number } | null }[];
+  ownBonus: number;
+  set: (playerId: number, cardId: number) => Promise<unknown>;
+  clear: (playerId: number) => Promise<unknown>;
+};
+
+/** "⚡ ×2.31" chip for a boosted player. */
+export function BoostChip({ boost }: { boost: LivePlayer["boost"] }) {
+  if (!boost) return null;
+  const live = boost.state === "in";
+  return (
+    <span title={`Slab boost ×${boost.mult.toFixed(2)}${boost.own ? " (own-player bonus)" : ""}${boost.state === "pre" ? " on his next game" : ""}`}
+      className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-black ${live ? "animate-pulse bg-amber-400 text-black" : "bg-amber-50 text-amber-600"}`}>
+      ⚡×{boost.mult.toFixed(2)}{boost.own && " ★"}
+    </span>
+  );
+}
 const lbl = (s: string) => s.replace(/\d$/, "");
 const eligible = (slot: string, pos: string) => slot === "BN" || lbl(slot) === "UTIL" || lbl(slot) === pos;
 
 export function LineupEditor({
-  players, editable, setSlot, autoSet, drop,
+  players, editable, setSlot, autoSet, drop, boost,
 }: {
   players: LivePlayer[];
   editable: boolean;
+  boost?: BoostProps;
   setSlot?: (playerId: number, slot: string) => Promise<{ error?: string } | unknown>;
   autoSet?: () => Promise<unknown>;
   drop?: (playerId: number) => Promise<{ error?: string } | unknown>;
@@ -22,6 +44,8 @@ export function LineupEditor({
   const [pending, start] = useTransition();
   const [err, setErr] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
+  const [boosting, setBoosting] = useState<LivePlayer | null>(null);
+  const canBoost = new Map((boost?.boostable ?? []).map((b) => [b.playerId, b]));
 
   const act = (fn: () => Promise<unknown>) =>
     start(async () => {
@@ -47,7 +71,7 @@ export function LineupEditor({
             <div className="flex items-center gap-2">
               <Headshot src={p.headshot} name={p.name} size={36} />
               <div className="min-w-0">
-                <p className="font-semibold">{p.name} <span className="text-xs font-normal text-zinc-400">{p.pos} · {p.team}</span> <InjuryTag injury={p.injury} /> {p.locked && <span title="Locked: game started" className="text-xs">🔒</span>}</p>
+                <p className="font-semibold">{p.name} <span className="text-xs font-normal text-zinc-400">{p.pos} · {p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /> {p.locked && <span title="Locked: game started" className="text-xs">🔒</span>}</p>
                 <p className="truncate text-xs text-zinc-500">
                   {today ? (today.state === "in" ? <span className="text-red-600">● {today.clock} {today.label} </span> : `${today.label} · ${today.clock} `) : "No games this week "}
                   {today?.line && today.state !== "pre" ? `· ${today.line}` : ""}
@@ -61,11 +85,18 @@ export function LineupEditor({
         <td className="pr-3 text-right font-mono font-bold">{p ? p.pts.toFixed(1) : ""}</td>
         {editable && (
           <td className="py-2 pr-3 text-right">
-            {canTarget ? (
-              <button className="btn-lime px-2 py-1 text-xs" disabled={pending} onClick={() => act(() => setSlot!(sel!.id, slot))}>Move here</button>
-            ) : p && !p.locked ? (
-              <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setSelected(selected === p.id ? null : p.id)}>{selected === p.id ? "Cancel" : "Move"}</button>
-            ) : null}
+            <div className="flex justify-end gap-1.5">
+              {canTarget ? (
+                <button className="btn-lime px-2 py-1 text-xs" disabled={pending} onClick={() => act(() => setSlot!(sel!.id, slot))}>Move here</button>
+              ) : p && !p.locked ? (
+                <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setSelected(selected === p.id ? null : p.id)}>{selected === p.id ? "Cancel" : "Move"}</button>
+              ) : null}
+              {p && !canTarget && canBoost.has(p.id) && (
+                <button className={`px-2 py-1 text-xs ${p.boost?.state === "pre" ? "btn-ghost" : "btn-lime"}`} title="Slab boost his next game" onClick={() => setBoosting(p)}>
+                  ⚡ {p.boost?.state === "pre" ? "Change" : "Boost"}
+                </button>
+              )}
+            </div>
           </td>
         )}
       </tr>
@@ -102,6 +133,49 @@ export function LineupEditor({
           </tbody>
         </table>
       </div>
+
+      {boost && boosting && (() => {
+        const info = canBoost.get(boosting.id);
+        return (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" onClick={() => setBoosting(null)}>
+            <div className="card flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between border-b border-line/60 p-4">
+                <div>
+                  <p className="font-bold">⚡ Boost {boosting.name}</p>
+                  <p className="text-xs text-zinc-500">
+                    {info?.day} · projected {boosting.proj.toFixed(1)} pts.
+                    {info?.taken && <span className="text-amber-600"> This replaces today&apos;s boost on {info.taken.name} (×{info.taken.mult.toFixed(2)}).</span>}
+                  </p>
+                </div>
+                <button onClick={() => setBoosting(null)} className="text-zinc-400 hover:text-zinc-900">✕</button>
+              </div>
+              <div className="grid flex-1 grid-cols-2 gap-3 overflow-y-auto p-4 scrollbar-thin sm:grid-cols-4">
+                {boost.slabs.length === 0 && <p className="col-span-full text-sm text-zinc-500">You don&apos;t have any slabs yet. Rip some packs first.</p>}
+                {boost.slabs.map((s) => {
+                  const own = s.playerId === boosting.id;
+                  const mult = s.mult + (own ? boost.ownBonus : 0);
+                  return (
+                    <button key={s.cardId} disabled={pending} onClick={() => { const id = boosting.id; setBoosting(null); act(() => boost.set(id, s.cardId)); }}
+                      className={`flex flex-col items-center gap-1 rounded-lg p-2 text-center transition hover:bg-panel2 disabled:opacity-40 ${own ? "ring-1 ring-amber-500/60" : ""}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/api/slabs/${s.slabId}`} alt="" loading="lazy" className="h-32 w-full object-contain" />
+                      <span className="text-lg font-black text-amber-600">×{mult.toFixed(2)}</span>
+                      <span className="line-clamp-2 text-[11px] text-zinc-500">{s.player}</span>
+                      <span className="text-[11px] text-zinc-400">{own ? "Own-player bonus!" : `$${s.value.toLocaleString()}`}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between border-t border-line/60 px-4 py-2 text-xs text-zinc-500">
+                <span>One boost per day. It locks at his tip-off and only counts if he starts.</span>
+                {boosting.boost?.state === "pre" && (
+                  <button className="text-red-600 hover:underline" onClick={() => { const id = boosting.id; setBoosting(null); act(() => boost.clear(id)); }}>Remove boost</button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

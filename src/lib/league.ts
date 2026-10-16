@@ -4,6 +4,7 @@ import { STARTERS, ROSTER_MAX, eligible, fpts, statLine, Line, slotLabel } from 
 import { addDays, etDate, weekday, dayLabel } from "./nba/espn";
 import { PACK_BY_ID } from "./packs";
 import { creditGame, weekRate } from "./economy";
+import { cardMultiplier, ensureBoosts, teamBoosts } from "./boost";
 
 export { STARTERS, ROSTER_MAX, eligible };
 export const ROUNDS = ROSTER_MAX;
@@ -141,12 +142,56 @@ export function moveToSlot(l: League, teamId: number, playerId: number, slot: st
   run("UPDATE roster SET slot = ? WHERE team_id = ? AND player_id = ?", slot, teamId, playerId);
 }
 
+// ---------- Slab boosts ----------
+
+/** The game a boost set right now would apply to: today's game (real) or his next unplayed game (sim). */
+export function boostableGame(l: League, p: Player) {
+  const games = playerGames(l, p, l.current_week).filter((g) => g.state === "pre");
+  if (l.mode === "sim") return games[0] ?? null;
+  const today = etDate();
+  return games.find((g) => g.key === today) ?? null;
+}
+
+/** Back one rostered player with one of the manager's slabs for his next game. One boost per team per day. */
+export function setBoost(l: League, teamId: number, userId: number, playerId: number, cardId: number) {
+  ensureBoosts();
+  if (l.draft_status !== "done" || l.champion_team_id) throw new Error("Boosts open once the season is under way");
+  const p = roster(teamId).find((x) => x.id === playerId);
+  if (!p) throw new Error("He's not on your roster");
+  const g = boostableGame(l, p);
+  if (!g) throw new Error(l.mode === "sim" ? `${p.name} has no games left this week` : `${p.name} doesn't have a game left today`);
+  const existing = one<{ player_id: number }>("SELECT player_id FROM league_boosts WHERE team_id = ? AND day_key = ?", teamId, g.key);
+  if (existing && existing.player_id !== playerId) {
+    const other = one<Player>("SELECT * FROM players WHERE id = ?", existing.player_id);
+    const og = other && playerGames(l, other, l.current_week).find((x) => x.key === g.key);
+    if (og && og.state !== "pre") throw new Error(`Today's boost is locked on ${other!.name}: his game has started`);
+  }
+  const clash = one<{ id: number }>("SELECT 1 id FROM league_boosts WHERE user_id = ? AND day_key = ? AND card_id = ? AND team_id != ?", userId, g.key, cardId, teamId);
+  if (clash) throw new Error("That slab is already boosting in another league today");
+  const { mult, own } = cardMultiplier(cardId, userId, playerId);
+  run(`INSERT INTO league_boosts (league_id, team_id, user_id, day_key, player_id, card_id, mult, own, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (team_id, day_key) DO UPDATE SET player_id = excluded.player_id, card_id = excluded.card_id, mult = excluded.mult, own = excluded.own, created_at = excluded.created_at`,
+    l.id, teamId, userId, g.key, playerId, cardId, mult, own ? 1 : 0, Date.now());
+  return { player: p.name, mult, own };
+}
+
+export function clearBoost(l: League, teamId: number, playerId: number) {
+  ensureBoosts();
+  const p = one<Player>("SELECT * FROM players WHERE id = ?", playerId);
+  if (!p) return;
+  const pre = new Set(playerGames(l, p, l.current_week).filter((g) => g.state === "pre").map((g) => g.key));
+  const rows = all<{ day_key: string }>("SELECT day_key FROM league_boosts WHERE team_id = ? AND player_id = ?", teamId, playerId);
+  for (const r of rows) if (pre.has(r.day_key)) run("DELETE FROM league_boosts WHERE team_id = ? AND day_key = ?", teamId, r.day_key);
+}
+
 // ---------- Scoring ----------
 
 export type LivePlayer = {
   id: number; name: string; pos: string; team: string; slot: string; headshot: string | null; injury: string | null;
   pts: number; proj: number; played: number; left: number; total: number; locked: boolean;
   now: { label: string; clock: string; state: string; line: string; pts: number } | null;
+  /** Slab boost on his current/next game this week (live), if any. */
+  boost: { mult: number; own: boolean; slabId: number; dayKey: string; state: string } | null;
 };
 
 /**
@@ -161,6 +206,8 @@ export function teamWeek(l: League, teamId: number, week: number) {
   const active = week === l.current_week && l.draft_status === "done" && !l.champion_team_id;
   const rate = l.draft_status === "done" ? weekRate(l.id, week) : 1;
   const owner = one<{ user_id: number | null }>("SELECT user_id FROM teams WHERE id = ?", teamId)?.user_id ?? null;
+  const boosts = teamBoosts(teamId);
+  const boostMult = (playerId: number, key: string) => boosts.get(`${playerId}|${key}`)?.mult ?? 1;
   const pay = (playerId: number, key: string, raw: number) => {
     if (active && owner) creditGame({ leagueId: l.id, week, teamId, userId: owner, playerId, gameKey: key, fpts: raw, rate });
   };
@@ -181,7 +228,7 @@ export function teamWeek(l: League, teamId: number, week: number) {
       if (g.state === "pre") left++;
       else played++;
       if (g.line && frozen.get(k) && frozen.get(k) !== "BN") {
-        const raw = fpts(g.line, l.scoring);
+        const raw = fpts(g.line, l.scoring) * boostMult(p.id, g.key);
         pts += raw * rate;
         if (g.state === "post") pay(p.id, g.key, raw);
       }
@@ -194,10 +241,14 @@ export function teamWeek(l: League, teamId: number, week: number) {
       projected += games.length * proj;
     }
     const cur = games.find((g) => g.state === "in") ?? [...games].reverse().find((g) => g.state === "post") ?? games.find((g) => g.state === "pre");
+    // Show the boost on the game being played now, else an upcoming boosted game, else today's finished one.
+    const bGame = [cur, ...games.filter((g) => g.state === "pre")].find((g) => g && boosts.has(`${p.id}|${g.key}`));
+    const b = bGame ? boosts.get(`${p.id}|${bGame.key}`)! : null;
     rows.push({
       id: p.id, name: p.name, pos: p.pos, team: p.team, slot: p.slot, headshot: p.headshot, injury: p.injury,
       pts: Math.round(pts * 100) / 100, proj, played, left, total: games.length, locked: isLocked(l, p),
-      now: cur ? { label: cur.label, clock: cur.clock, state: cur.state, line: cur.line ? statLine(cur.line) : "", pts: cur.line ? Math.round(fpts(cur.line, l.scoring) * rate * 100) / 100 : 0 } : null,
+      now: cur ? { label: cur.label, clock: cur.clock, state: cur.state, line: cur.line ? statLine(cur.line) : "", pts: cur.line ? Math.round(fpts(cur.line, l.scoring) * boostMult(p.id, cur.key) * rate * 100) / 100 : 0 } : null,
+      boost: b && bGame ? { mult: b.mult, own: !!b.own, slabId: b.slab_id, dayKey: b.day_key, state: bGame.state } : null,
     });
   }
   // Points from players no longer on the roster (dropped/traded mid-week) still count.
@@ -211,7 +262,7 @@ export function teamWeek(l: League, teamId: number, week: number) {
     const p = one<Player>("SELECT * FROM players WHERE id = ?", pid);
     const g = p && playerGames(l, p, week).find((x) => x.key === key);
     if (g?.line) {
-      const raw = fpts(g.line, l.scoring);
+      const raw = fpts(g.line, l.scoring) * boostMult(pid, key);
       ghost += raw * rate;
       if (g.state === "post") pay(pid, key, raw);
     }

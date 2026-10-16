@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { LivePlayer } from "@/lib/league";
 import { Headshot, InjuryTag } from "@/components/Headshot";
+import { BoostChip } from "@/components/LineupEditor";
 
 type Side = { id: number; name: string; record: string; score: number; projected: number; remain: number; players: LivePlayer[] };
 type Data = { week: number; final: boolean; live: boolean; mode: string; range: string | null; progress: number | null; league: string; home: Side; away: Side; winProb: number };
@@ -75,7 +76,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
         <div className={`flex items-center gap-2 ${right ? "flex-row-reverse text-right" : ""}`}>
           <Headshot src={p.headshot} name={p.name} size={38} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">{p.name} <span className="text-xs font-normal text-zinc-400">{p.team}</span> <InjuryTag injury={p.injury} /></p>
+            <p className="truncate text-sm font-semibold">{p.name} <span className="text-xs font-normal text-zinc-400">{p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /></p>
             <p className="truncate text-[11px] text-zinc-500">
               {p.now ? (p.now.state === "in" ? <span className="text-red-600">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
               {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
