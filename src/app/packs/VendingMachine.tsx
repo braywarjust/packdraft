@@ -206,16 +206,16 @@ export function VendingMachine({ coins, inventory, buy, rip, sell }: {
                   const isUp = flipped.has(c.id);
                   return (
                     <button key={c.id} onClick={() => !isUp && flip(c)} className={`flip anim-deal ${isUp ? "flipped" : ""}`} style={{ animationDelay: `${i * 120}ms` }}>
-                      <div className="flip-inner relative h-[280px] w-44">
-                        <div className="flip-face absolute inset-0 grid place-items-center rounded-xl border-2 border-slate-600 bg-gradient-to-br from-slate-800 to-slate-950">
+                      <div className="flip-inner relative h-[300px] w-48">
+                        <div className="flip-face absolute inset-0 grid place-items-center rounded-xl border border-zinc-200 bg-white shadow-lg">
                           <div className="text-center">
-                            <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-brand to-red-800 text-xl font-black text-white">P</div>
-                            <p className="text-xs font-bold tracking-widest text-zinc-500">TAP TO REVEAL</p>
+                            <Logo height={56} className="mx-auto mb-3" />
+                            <p className="text-[10px] font-semibold tracking-[0.3em] text-zinc-400">TAP TO REVEAL</p>
                           </div>
                         </div>
                         <div className={`flip-face flip-back absolute inset-0 rounded-xl ${isUp && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
                           <PlayerCard c={c} />
-                          {sold.has(c.id) && <div className="absolute inset-0 grid place-items-center rounded-xl bg-black/70 text-sm font-bold text-emerald-600">SOLD</div>}
+                          {sold.has(c.id) && <div className="absolute inset-0 grid place-items-center rounded-xl bg-white/85 text-sm font-bold text-zinc-900">SOLD</div>}
                         </div>
                       </div>
                     </button>

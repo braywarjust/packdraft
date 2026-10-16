@@ -80,6 +80,14 @@ CREATE TABLE IF NOT EXISTS cards (
   rarity TEXT NOT NULL, grade REAL NOT NULL, serial INTEGER NOT NULL, print_run INTEGER NOT NULL, value INTEGER NOT NULL,
   sold INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS slabs (
+  id INTEGER PRIMARY KEY, file TEXT UNIQUE NOT NULL, era TEXT, year INTEGER, set_name TEXT, card_no TEXT, player TEXT NOT NULL,
+  variant TEXT, company TEXT NOT NULL, grade TEXT NOT NULL, grade_num REAL, cert TEXT NOT NULL, flags TEXT NOT NULL,
+  factors TEXT NOT NULL, player_tier TEXT, player_id INTEGER, score REAL NOT NULL, rarity TEXT NOT NULL, est_value INTEGER NOT NULL,
+  mkt_value INTEGER, mkt_source TEXT, mkt_detail TEXT, mkt_at INTEGER, pop INTEGER, pop_higher INTEGER, pop_at INTEGER,
+  card_id INTEGER, missing INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_slabs_pick ON slabs(rarity, card_id, est_value);
 CREATE TABLE IF NOT EXISTS dfs_contests (
   id INTEGER PRIMARY KEY, name TEXT NOT NULL, creator_id INTEGER NOT NULL, entry_fee INTEGER NOT NULL DEFAULT 0,
   prize_pack TEXT NOT NULL DEFAULT 'pro', max_entries INTEGER NOT NULL DEFAULT 20, status TEXT NOT NULL DEFAULT 'open',
@@ -107,6 +115,9 @@ function open(): DatabaseSync {
   db.exec(SCHEMA);
   const { n } = db.prepare("SELECT COUNT(*) n FROM players").get() as { n: number };
   if (n === 0) seedFromSnapshot(db);
+  // Migrations for databases created before slabs existed.
+  const cardCols = (db.prepare("PRAGMA table_info(cards)").all() as { name: string }[]).map((c) => c.name);
+  if (!cardCols.includes("slab_id")) db.exec("ALTER TABLE cards ADD COLUMN slab_id INTEGER");
   if (fresh) carryOverUsers(db);
   db.exec("COMMIT");
   return db;

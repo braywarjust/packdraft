@@ -14,18 +14,18 @@ export const RARITIES: Record<Rarity, { label: string; mult: [number, number]; r
 };
 
 export const PACKS: PackType[] = [
-  { id: "rookie", name: "Rookie Pack", price: 25, cards: 3, color: "from-slate-500 to-slate-700", accent: "#94a3b8", blurb: "Cheap thrills. Every hit starts somewhere.",
-    odds: { common: 62, rare: 27, epic: 8.5, legendary: 2.2, grail: 0.3 } },
+  { id: "rookie", name: "Rookie Pack", price: 25, cards: 2, color: "from-slate-500 to-slate-700", accent: "#94a3b8", blurb: "Cheap thrills. Every hit starts somewhere.",
+    odds: { common: 90, rare: 8.5, epic: 1.3, legendary: 0.18, grail: 0.02  } },
   { id: "starter", name: "Starter Pack", price: 100, cards: 3, color: "from-sky-500 to-blue-700", accent: "#38bdf8", blurb: "Solid floor, real upside.",
-    odds: { common: 56, rare: 29, epic: 11, legendary: 3.5, grail: 0.5 } },
+    odds: { common: 70, rare: 23, epic: 5.6, legendary: 1.2, grail: 0.2  } },
   { id: "pro", name: "Pro Pack", price: 250, cards: 4, color: "from-emerald-500 to-teal-700", accent: "#34d399", blurb: "What weekly winners rip.",
     odds: { common: 52, rare: 30, epic: 13, legendary: 4.3, grail: 0.7 } },
   { id: "allpro", name: "All-Pro Pack", price: 500, cards: 4, color: "from-fuchsia-500 to-purple-700", accent: "#e879f9", blurb: "Boosted Epic odds.",
-    odds: { common: 46, rare: 31, epic: 16, legendary: 6, grail: 1 } },
+    odds: { common: 40, rare: 33, epic: 19, legendary: 7, grail: 1  } },
   { id: "hof", name: "Hall of Fame Pack", price: 1000, cards: 5, color: "from-amber-400 to-orange-600", accent: "#fbbf24", blurb: "Top scorer of the week gets one of these.",
-    odds: { common: 40, rare: 32, epic: 18.5, legendary: 8, grail: 1.5 } },
-  { id: "goat", name: "GOAT Pack", price: 5000, cards: 5, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Grail chase.",
-    odds: { common: 30, rare: 32, epic: 23, legendary: 12, grail: 3 } },
+    odds: { common: 28, rare: 34, epic: 25, legendary: 11, grail: 2  } },
+  { id: "goat", name: "GOAT Pack", price: 2500, cards: 5, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Grail chase.",
+    odds: { common: 5, rare: 25, epic: 37, legendary: 25, grail: 8  } },
 ];
 export const PACK_BY_ID: Record<string, PackType> = Object.fromEntries(PACKS.map((p) => [p.id, p]));
 

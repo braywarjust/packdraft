@@ -46,3 +46,4 @@ data/
 /.next.nosync
 /data.nosync
 /.git.nosync
+!.env.local.example

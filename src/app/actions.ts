@@ -10,7 +10,7 @@ import {
   isLocked, executeTrade, startWeek, finalizeWeek, postSystem, processWaivers, ROUNDS,
 } from "@/lib/league";
 import { PACK_BY_ID, BUYBACK_RATE } from "@/lib/packs";
-import { openPack } from "@/lib/packs-server";
+import { openPack, releaseSlab } from "@/lib/packs-server";
 import { validateLineup, addBots, Contest, tickContest } from "@/lib/dfs";
 import { ensureSchedule } from "@/lib/nba/sync";
 
@@ -435,7 +435,7 @@ export async function buyPack(packType: string) {
 export async function ripPack(packId: number) {
   return wrap(async () => {
     const u = await requireUser();
-    const cards = openPack(u.id, packId);
+    const cards = await openPack(u.id, packId);
     return { ok: true, cards };
   });
 }
@@ -451,6 +451,7 @@ export async function sellCards(cardIds: number[]) {
         const pay = Math.floor(c.value * BUYBACK_RATE);
         total += pay;
         run("UPDATE cards SET sold = 1 WHERE id = ?", id);
+        releaseSlab(id);
         run("UPDATE users SET coins = coins + ? WHERE id = ?", pay, u.id);
       }
     });

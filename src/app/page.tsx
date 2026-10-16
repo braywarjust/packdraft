@@ -16,7 +16,7 @@ export default async function Home() {
   const packs = unopenedPacks(user.id);
   const today = new Date().toISOString().slice(0, 10);
   const pulls = all<{ user: string; color: string; name: string; rarity: Rarity; value: number; grade: number }>(
-    `SELECT u.name user, u.color, p.name, c.rarity, c.value, c.grade FROM cards c JOIN users u ON u.id = c.user_id JOIN players p ON p.id = c.player_id
+    `SELECT u.name user, u.color, COALESCE(s.player || ' · ' || s.year || ' ' || s.set_name, p.name) name, c.rarity, c.value, c.grade FROM cards c JOIN users u ON u.id = c.user_id LEFT JOIN slabs s ON s.id = c.slab_id LEFT JOIN players p ON p.id = c.player_id
      ORDER BY c.value DESC LIMIT 6`);
   const leaders = all<{ name: string; color: string; coins: number; vault: number }>(
     `SELECT u.name, u.color, u.coins, COALESCE((SELECT SUM(value) FROM cards c WHERE c.user_id = u.id AND c.sold = 0), 0) vault

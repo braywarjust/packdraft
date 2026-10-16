@@ -54,10 +54,16 @@ export default async function Collection({ searchParams }: { searchParams: Promi
       {cards.length === 0 && (
         <div className="card p-8 text-center text-zinc-500">No cards yet. <Link className="text-brand underline" href="/packs">Hit the vending machine</Link>.</div>
       )}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
         {cards.map((c) => (
           <div key={c.id} className="flex flex-col items-center gap-2">
             <PlayerCard c={c} small />
+            {c.s_cert && (
+              <a href={c.s_company === "PSA" ? `https://www.psacard.com/cert/${c.s_cert}` : c.s_company === "SGC" ? `https://gosgc.com/cert-code-lookup/${c.s_cert}` : `https://www.ebay.com/sch/i.html?_nkw=${c.s_cert}`}
+                target="_blank" rel="noreferrer" className="text-[11px] text-zinc-500 hover:text-zinc-900">
+                {c.s_company} cert {c.s_cert} ↗{c.s_pop != null ? ` · Pop ${c.s_pop}` : ""}
+              </a>
+            )}
             {mine && (
               <ActionButton action={sellCards.bind(null, [c.id])} className="btn-ghost px-2 py-1 text-xs" confirm={`Sell ${c.name} for ${fmtCoins(Math.floor(c.value * BUYBACK_RATE))}?`}>
                 Sell {fmtCoins(Math.floor(c.value * BUYBACK_RATE))}

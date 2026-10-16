@@ -3,12 +3,14 @@ import { addDays, etDate } from "./espn";
 import { backfillFinals, ensureSchedule, maybeSyncPlayers, refreshLive } from "./sync";
 import { dailyWaivers, getLeague, tickLeague, weekRange } from "../league";
 import { Contest, tickContest } from "../dfs";
+import { ensureCatalog } from "../slabs";
 
 let busy = false;
 export async function tick() {
   if (busy) return;
   busy = true;
   try {
+    ensureCatalog();
     await maybeSyncPlayers();
     const today = etDate();
     await ensureSchedule(today, addDays(today, 10));
