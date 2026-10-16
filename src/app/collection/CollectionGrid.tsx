@@ -41,7 +41,7 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-4 backdrop-blur-sm" onClick={() => setOpen(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={() => setOpen(null)}>
           <div className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-3">
               <div className="flex items-center gap-3">
@@ -77,7 +77,7 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
               </div>
               {open.slab_id && (
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="rounded-md bg-zinc-900 px-2 py-0.5 text-xs font-bold text-white">{open.s_company} {open.s_grade}</span>
+                  <span className="rounded-md bg-brand px-2 py-0.5 text-xs font-bold text-white">{open.s_company} {open.s_grade}</span>
                   {slabBadges(open.s_flags).map((b) => <span key={b} className="rounded-md border border-zinc-200 px-2 py-0.5 text-xs font-semibold text-zinc-600">{b}</span>)}
                 </div>
               )}

@@ -131,7 +131,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                   </button>
                 ))}
               </div>
-              <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-white/60 via-transparent to-transparent" />
+              <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-white/5 via-transparent to-transparent" />
             </div>
             <div className="flex w-36 flex-col gap-3">
               <div className="rounded-xl border border-zinc-200 bg-white p-3 text-center">
@@ -141,7 +141,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                 <p className="mt-1 text-[10px] text-zinc-500">{pack.blurb}</p>
               </div>
               <div className="relative grid h-14 place-items-center rounded-xl border-2 border-zinc-300 bg-zinc-100">
-                <div className="h-8 w-1.5 rounded bg-zinc-950" />
+                <div className="h-8 w-1.5 rounded bg-black" />
                 {coinsShown && <span className="anim-coin absolute text-2xl">🪙</span>}
               </div>
               <button onClick={doBuy} disabled={stage !== "idle" || coins < pack.price} className="btn-primary py-3 text-base font-black">

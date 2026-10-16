@@ -1,22 +1,58 @@
 @import "tailwindcss";
 
+/*
+ * Dark theme: a desaturated slate-navy (not black) that sits well with the blue/red logo.
+ * The zinc scale is inverted so existing "light theme" classes (text-zinc-900 = primary text,
+ * bg-zinc-100 = subtle surface, border-zinc-200 = hairline) read correctly on dark surfaces.
+ */
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-ink: #f4f4f5;      /* inset surfaces */
-  --color-panel: #ffffff;    /* cards */
-  --color-panel2: #f4f4f5;   /* hover / secondary fills */
-  --color-line: #e4e4e7;
-  --color-brand: #0253a4;    /* PackDraft blue (logo) */
-  --color-brand-dark: #013f7e;
-  --color-accent: #cc2b31;   /* PackDraft red (logo) */
-  --color-accent-dark: #a91f25;
-  --color-brand2: #18181b;   /* near-black accent */
+  --color-ink: #171c27;      /* inset surfaces */
+  --color-panel: #252c3b;    /* cards */
+  --color-panel2: #2c3445;   /* hover / secondary fills */
+  --color-line: #343d50;
+  --color-brand: #1f63b5;    /* PackDraft blue, lifted slightly for dark backgrounds */
+  --color-brand-dark: #0253a4;
+  --color-accent: #d6363c;   /* PackDraft red */
+  --color-accent-dark: #b4252b;
+  --color-brand2: #0f131b;
+
+  --color-zinc-50: #222938;
+  --color-zinc-100: #283041;
+  --color-zinc-200: #343d50;
+  --color-zinc-300: #46506a;
+  --color-zinc-400: #7d879c;
+  --color-zinc-500: #9aa3b5;
+  --color-zinc-600: #b3bbca;
+  --color-zinc-700: #c8cfdb;
+  --color-zinc-800: #dde2ea;
+  --color-zinc-900: #eef1f6;
+  --color-zinc-950: #f7f9fc;
+
+  /* Soft tints and their text colours, re-tuned for dark surfaces */
+  --color-red-50: #3a2329;  --color-red-600: #f2777b;
+  --color-blue-50: #1d2f4d;
+  --color-rose-50: #3a2330;
+  --color-amber-50: #3a3122; --color-amber-600: #f5c15c; --color-amber-700: #f5c15c;
+  --color-sky-50: #1b3346;   --color-sky-600: #7cc8f2;   --color-sky-700: #7cc8f2;
+  --color-emerald-50: #1b3a33; --color-emerald-600: #4fd1a1; --color-emerald-700: #6ee0b5;
+  --color-fuchsia-50: #36233f; --color-fuchsia-600: #e48af2; --color-fuchsia-700: #e48af2;
+  --color-violet-50: #2b2746;  --color-violet-700: #c4b5fd;
 }
 
-html { color-scheme: light; }
-:root { --sb: 16rem; }
+html { color-scheme: dark; }
+:root { --sb: 16rem; --surface: #252c3b; }
 :root[data-sidebar="collapsed"] { --sb: 4.75rem; }
+
+/* "White" surfaces become the card colour; text-white stays white for buttons and badges. */
+.bg-white, .hover\:bg-white:hover { background-color: var(--surface); }
+.bg-white\/85 { background-color: rgb(37 44 59 / 0.85); }
+.bg-white\/95 { background-color: rgb(37 44 59 / 0.95); }
+.from-white { --tw-gradient-from: var(--surface); }
+/* Brand-coloured text needs a lighter tint to stay readable on dark backgrounds. */
+.text-brand, .hover\:text-brand:hover { color: #6ea6ea; }
+.text-accent { color: #f0676c; }
 
 /* Tailwind v4 resets buttons to the default arrow cursor; show the hand on everything clickable. */
 @layer base {
@@ -25,18 +61,18 @@ html { color-scheme: light; }
   button:disabled, [type="submit"]:disabled, select:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 }
 body {
-  background: #fafafa;
-  color: #18181b;
+  background: #1b2130;
+  color: #eef1f6;
   min-height: 100vh;
 }
 
-@utility card { @apply rounded-xl border border-line bg-white; }
+@utility card { @apply rounded-xl border border-line bg-panel; }
 @utility btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50; }
 @utility btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark; }
-@utility btn-lime { @apply btn border border-zinc-300 bg-white text-zinc-900 hover:border-brand hover:text-brand; }
-@utility btn-ghost { @apply btn border border-line bg-white text-zinc-800 hover:border-zinc-400; }
+@utility btn-lime { @apply btn border border-zinc-300 bg-panel text-zinc-900 hover:border-brand hover:text-brand; }
+@utility btn-ghost { @apply btn border border-line bg-panel text-zinc-800 hover:border-zinc-400; }
 @utility btn-danger { @apply btn bg-accent text-white hover:bg-accent-dark; }
-@utility input { @apply w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-brand focus:ring-2 focus:ring-brand/15; }
+@utility input { @apply w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-brand focus:ring-2 focus:ring-brand/15; }
 @utility label { @apply mb-1 block text-xs font-bold uppercase tracking-wider text-zinc-500; }
 @utility pos { @apply inline-flex w-9 justify-center rounded-md px-1 py-0.5 text-[10px] font-bold; }
 @utility pos-G { @apply bg-sky-500/15 text-sky-700; }
