@@ -8,6 +8,7 @@ import { Logo, LogoWatermark } from "@/components/Logo";
 
 export type GridCard = CardData & {
   s_factors?: string | null; s_detail?: string | null; s_est?: number | null; s_pop?: number | null; s_pop_higher?: number | null; created_at: number;
+  photo?: string | null;
 };
 
 function certUrl(c: GridCard) {
@@ -60,12 +61,19 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
               )}
             </div>
             <div className="relative min-w-0 space-y-4">
-              <div>
-                <RarityBadge rarity={open.rarity} className="mb-1" />
-                <h2 className="text-2xl font-bold tracking-tight">{open.name}</h2>
-                {open.slab_id && (
-                  <p className="text-zinc-500">{open.s_year} {open.s_set}{open.s_no ? ` #${open.s_no}` : ""}{open.s_variant ? ` · ${open.s_variant}` : ""}</p>
+              <div className="flex items-center gap-4">
+                {open.photo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={open.photo} alt={open.name} className="h-24 w-32 shrink-0 rounded-xl border border-zinc-200 bg-zinc-100 object-cover object-top"
+                    onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 )}
+                <div className="min-w-0">
+                  <RarityBadge rarity={open.rarity} className="mb-1" />
+                  <h2 className="text-2xl font-bold tracking-tight">{open.name}</h2>
+                  {open.slab_id && (
+                    <p className="text-zinc-500">{open.s_year} {open.s_set}{open.s_no ? ` #${open.s_no}` : ""}{open.s_variant ? ` · ${open.s_variant}` : ""}</p>
+                  )}
+                </div>
               </div>
               {open.slab_id && (
                 <div className="flex flex-wrap gap-1.5">

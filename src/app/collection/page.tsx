@@ -7,6 +7,7 @@ import { ActionButton } from "@/components/ActionButton";
 import { clearTestCards, sellCards } from "../actions";
 import { PageHeader } from "@/components/PageHeader";
 import { CollectionGrid } from "./CollectionGrid";
+import { slabPlayerPhoto } from "@/lib/nba/photos";
 
 export default async function Collection({ searchParams }: { searchParams: Promise<{ r?: string; sort?: string; u?: string }> }) {
   const sp = await searchParams;
@@ -57,7 +58,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
       {cards.length === 0 && (
         <div className="card p-8 text-center text-zinc-500">No cards yet. <Link className="text-brand underline" href="/packs">Hit the vending machine</Link>.</div>
       )}
-      <CollectionGrid cards={cards} mine={mine} sell={sellCards} />
+      <CollectionGrid cards={cards.map((c) => ({ ...c, photo: c.slab_id ? slabPlayerPhoto(c.name, c.headshot) : c.headshot }))} mine={mine} sell={sellCards} />
     </div>
   );
 }
