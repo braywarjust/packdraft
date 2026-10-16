@@ -32,7 +32,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     `SELECT l.id, l.name, (l.week_started_at IS NOT NULL OR l.draft_status = 'live') live
      FROM leagues l JOIN teams t ON t.league_id = l.id WHERE t.user_id = ? ORDER BY l.id DESC`, user.id);
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Apply the saved sidebar width before first paint so the page doesn't jump. */}
+        <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem("pd-sidebar")==="collapsed")document.documentElement.dataset.sidebar="collapsed"}catch(e){}` }} />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <Sidebar
           user={{ name: user.name, color: user.color, coins: user.is_tester ? "Unlimited" : fmtCoins(user.coins) }}
@@ -40,7 +44,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           leagues={leagues.map((l) => ({ id: l.id, name: l.name, live: !!l.live }))}
           logout={logout}
         />
-        <div className="flex min-h-screen flex-col lg:pl-64">
+        <div className="flex min-h-screen flex-col transition-[padding] duration-200 lg:pl-[var(--sb)]">
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-8">{children}</main>
           <footer className="border-t border-line bg-zinc-50">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-6 text-sm text-zinc-500 sm:px-8">

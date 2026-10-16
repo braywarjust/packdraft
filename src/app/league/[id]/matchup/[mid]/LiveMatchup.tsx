@@ -111,10 +111,10 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
           </div>
         </div>
         <div className="px-5 pb-4">
-          <div className="flex justify-between text-xs font-bold"><span className="text-brand">{hp}%</span><span className="text-zinc-500">Win probability</span><span className="text-zinc-800">{100 - hp}%</span></div>
+          <div className="flex justify-between text-xs font-bold"><span className="text-brand">{hp}%</span><span className="text-zinc-500">Win probability</span><span className="text-accent">{100 - hp}%</span></div>
           <div className="mt-1 flex h-3 overflow-hidden rounded-full bg-panel2">
             <div className="bg-brand transition-all duration-700" style={{ width: `${hp}%` }} />
-            <div className="flex-1 bg-zinc-800" />
+            <div className="flex-1 bg-accent" />
           </div>
           <Spark points={history} />
         </div>
@@ -145,7 +145,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
           {events.length === 0 && <p className="text-sm text-zinc-400">{d.final ? "This one's in the books." : "Updates roll in here while games are live."}</p>}
           <ul className="space-y-2 text-sm">
             {events.map((e) => (
-              <li key={e.key} className={`anim-deal rounded-lg border-l-2 bg-ink/60 px-2 py-1.5 ${e.side === "home" ? "border-brand" : "border-zinc-800"}`}>{e.text}</li>
+              <li key={e.key} className={`anim-deal rounded-lg border-l-2 bg-ink/60 px-2 py-1.5 ${e.side === "home" ? "border-brand" : "border-accent"}`}>{e.text}</li>
             ))}
           </ul>
         </div>

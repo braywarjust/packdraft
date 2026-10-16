@@ -104,7 +104,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                     ))}
                     <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-panel2">
                       <div className="bg-brand" style={{ width: `${wp * 100}%` }} />
-                      <div className="flex-1 bg-zinc-800" />
+                      <div className="flex-1 bg-accent" />
                     </div>
                     <p className="mt-1 text-[11px] text-zinc-400">Win prob {Math.round(wp * 100)}% – {Math.round((1 - wp) * 100)}%</p>
                   </Link>

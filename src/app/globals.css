@@ -7,12 +7,16 @@
   --color-panel: #ffffff;    /* cards */
   --color-panel2: #f4f4f5;   /* hover / secondary fills */
   --color-line: #e4e4e7;
-  --color-brand: #ff2536;    /* PackDraft red */
-  --color-brand-dark: #d4111f;
+  --color-brand: #0253a4;    /* PackDraft blue (logo) */
+  --color-brand-dark: #013f7e;
+  --color-accent: #cc2b31;   /* PackDraft red (logo) */
+  --color-accent-dark: #a91f25;
   --color-brand2: #18181b;   /* near-black accent */
 }
 
 html { color-scheme: light; }
+:root { --sb: 16rem; }
+:root[data-sidebar="collapsed"] { --sb: 4.75rem; }
 
 /* Tailwind v4 resets buttons to the default arrow cursor; show the hand on everything clickable. */
 @layer base {
@@ -28,11 +32,11 @@ body {
 
 @utility card { @apply rounded-xl border border-line bg-white; }
 @utility btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50; }
-@utility btn-primary { @apply btn bg-zinc-900 text-white hover:bg-zinc-700; }
-@utility btn-lime { @apply btn border border-zinc-300 bg-white text-zinc-900 hover:border-zinc-500; }
+@utility btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark; }
+@utility btn-lime { @apply btn border border-zinc-300 bg-white text-zinc-900 hover:border-brand hover:text-brand; }
 @utility btn-ghost { @apply btn border border-line bg-white text-zinc-800 hover:border-zinc-400; }
-@utility btn-danger { @apply btn bg-brand text-white hover:bg-brand-dark; }
-@utility input { @apply w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/10; }
+@utility btn-danger { @apply btn bg-accent text-white hover:bg-accent-dark; }
+@utility input { @apply w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-brand focus:ring-2 focus:ring-brand/15; }
 @utility label { @apply mb-1 block text-xs font-bold uppercase tracking-wider text-zinc-500; }
 @utility pos { @apply inline-flex w-9 justify-center rounded-md px-1 py-0.5 text-[10px] font-bold; }
 @utility pos-G { @apply bg-sky-500/15 text-sky-700; }
@@ -41,8 +45,8 @@ body {
 @utility pos-UTIL { @apply bg-violet-500/15 text-violet-700; }
 @utility pos-BN { @apply bg-zinc-200 text-zinc-500; }
 @utility tab { @apply whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900; }
-@utility tab-active { @apply bg-zinc-900 text-white hover:bg-zinc-900 hover:text-white; }
-@utility navlink { @apply whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold text-zinc-700 hover:bg-red-50 hover:text-brand; }
+@utility tab-active { @apply bg-brand text-white hover:bg-brand hover:text-white; }
+@utility navlink { @apply whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold text-zinc-700 hover:bg-blue-50 hover:text-brand; }
 
 /* ----- Pack ripping ----- */
 @keyframes drop { 0% { transform: translateY(-160px) rotate(-8deg); opacity: 0; } 60% { transform: translateY(12px) rotate(3deg); opacity: 1; } 80% { transform: translateY(-6px) rotate(-1deg); } 100% { transform: translateY(0) rotate(0); } }
@@ -55,7 +59,7 @@ body {
 @keyframes confetti { 0% { transform: translate3d(0, -10vh, 0) rotate(0); opacity: 1; } 100% { transform: translate3d(var(--dx), 105vh, 0) rotate(720deg); opacity: 0.9; } }
 @keyframes coin { 0% { transform: translateY(-40px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(40px); opacity: 0; } }
 @keyframes ticker { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
-@keyframes flash { 0% { background: rgba(255, 37, 54, 0.18); } 100% { background: transparent; } }
+@keyframes flash { 0% { background: rgba(2, 83, 164, 0.15); } 100% { background: transparent; } }
 
 .anim-drop { animation: drop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
 .anim-shake { animation: shake 0.45s ease-in-out infinite; }

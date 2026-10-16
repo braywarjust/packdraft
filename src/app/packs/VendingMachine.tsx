@@ -123,7 +123,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
             <div className="relative flex-1 rounded-2xl border-2 border-zinc-200 bg-white p-3 shadow-inner">
               <div className="grid grid-cols-3 gap-x-3 gap-y-5">
                 {PACKS.map((p, i) => (
-                  <button key={p.id} onClick={() => setSelected(p.id)} className={`group flex flex-col items-center rounded-xl p-2 transition ${selected === p.id ? "bg-zinc-100 ring-2 ring-zinc-900" : "hover:bg-zinc-50"}`}>
+                  <button key={p.id} onClick={() => setSelected(p.id)} className={`group flex flex-col items-center rounded-xl p-2 transition ${selected === p.id ? "bg-blue-50 ring-2 ring-brand" : "hover:bg-zinc-50"}`}>
                     <div className="transition group-hover:-translate-y-1"><PackArt p={p} /></div>
                     <div className="mt-2 h-1 w-full rounded bg-zinc-300" />
                     <span className="mt-1 text-[10px] font-bold text-zinc-500">{String.fromCharCode(65 + Math.floor(i / 3))}{(i % 3) + 1}</span>

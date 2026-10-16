@@ -28,7 +28,7 @@ export default async function Home() {
   return (
     <div className="space-y-6">
       <section className="card relative overflow-hidden p-6 sm:p-8">
-        <LogoWatermark color="red" opacity={0.08} height={260} className="-right-12 -top-6" />
+        <LogoWatermark opacity={0.05} height={260} className="-right-12 -top-6" />
         <div className="relative">
           <p className="text-sm text-zinc-500">Welcome back</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">{user.name}</h1>
