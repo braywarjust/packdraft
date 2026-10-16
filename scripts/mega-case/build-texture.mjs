@@ -1,6 +1,5 @@
-// Builds the UV atlas for the box inside CASE.blend. render.py re-unwraps the box into a 3×2 grid:
-//   row 0: front (-Y), back (+Y), top (+Z)   row 1: left (-X), right (+X), bottom (-Z)
-// Each face is drawn at its real aspect, then stretched into a 1024² cell (the UVs undo the stretch).
+// Builds the UV wrap for the box inside CASE.blend, laid out on the fold-out net in layout.json
+// (true proportions; see blender/mega-case/uv-guide.png).
 // Usage: node scripts/mega-case/build-texture.mjs [out.png]
 import fs from "node:fs";
 import path from "node:path";
@@ -94,11 +93,13 @@ async function back() {
   return sharp(Buffer.from(frame(W, H, inner))).composite([{ input: lg, left: Math.round(W / 2 - lm.width / 2), top: 80 }]).png().toBuffer();
 }
 
-const cell = (buf) => sharp(buf).resize(1024, 1024, { fit: "fill" }).png().toBuffer();
-const faces = [[await front(), 0, 0], [await back(), 1, 0], [await topFace(), 2, 0], [await side(false), 0, 1], [await side(true), 1, 1], [await topFace(), 2, 1]];
+// Lay the faces out on the fold-out net (layout.json); each face art is fitted to its rect.
+const L = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "layout.json"), "utf8"));
+const art = { front: await front(), back: await back(), top: await topFace(), bottom: await topFace(), left: await side(false), right: await side(true) };
 const comps = [];
-for (const [b, c, r] of faces) comps.push({ input: await cell(b), left: c * 1024, top: r * 1024 });
+for (const [k, [x, y, w, h]] of Object.entries(L.faces))
+  comps.push({ input: await sharp(art[k]).resize(w, h, { fit: "fill" }).png().toBuffer(), left: x, top: y });
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
-await sharp({ create: { width: 3072, height: 2048, channels: 4, background: "#07090f" } }).composite(comps).png().toFile(OUT);
+await sharp({ create: { width: L.width, height: L.height, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite(comps).png().toFile(OUT);
 fs.writeFileSync(OUT.replace(/\.png$/, "_front.png"), await front());
 console.log("atlas", OUT, chase);

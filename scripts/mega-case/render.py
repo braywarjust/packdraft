@@ -15,25 +15,28 @@ me, mw = box.data, box.matrix_world
 ws = [mw @ v.co for v in me.vertices]
 lo = [min(v[i] for v in ws) for i in range(3)]; hi = [max(v[i] for v in ws) for i in range(3)]
 nx = lambda v, i: (v[i] - lo[i]) / (hi[i] - lo[i])
-# face key -> (cell col, cell row, s(v), t(v)); s runs left→right and t bottom→top as seen from outside.
+# UVs follow the fold-out net in layout.json (true proportions), so a design made on the guide maps 1:1.
+import json
+L = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "layout.json")))
+IW, IH = L["width"], L["height"]
+# face key -> (net face, s(v), t(v)); s runs left→right and t bottom→top as seen from outside the box.
 FACES = {
-    (0, -1, 0): (0, 0, lambda v: nx(v, 0), lambda v: nx(v, 2)),
-    (0, 1, 0): (1, 0, lambda v: 1 - nx(v, 0), lambda v: nx(v, 2)),
-    (0, 0, 1): (2, 0, lambda v: nx(v, 0), lambda v: nx(v, 1)),
-    (-1, 0, 0): (0, 1, lambda v: 1 - nx(v, 1), lambda v: nx(v, 2)),
-    (1, 0, 0): (1, 1, lambda v: nx(v, 1), lambda v: nx(v, 2)),
-    (0, 0, -1): (2, 1, lambda v: nx(v, 0), lambda v: 1 - nx(v, 1)),
+    (0, -1, 0): ("front", lambda v: nx(v, 0), lambda v: nx(v, 2)),
+    (0, 1, 0): ("back", lambda v: 1 - nx(v, 0), lambda v: nx(v, 2)),
+    (0, 0, 1): ("top", lambda v: nx(v, 0), lambda v: nx(v, 1)),
+    (-1, 0, 0): ("left", lambda v: 1 - nx(v, 1), lambda v: nx(v, 2)),
+    (1, 0, 0): ("right", lambda v: nx(v, 1), lambda v: nx(v, 2)),
+    (0, 0, -1): ("bottom", lambda v: nx(v, 0), lambda v: 1 - nx(v, 1)),
 }
 uv = me.uv_layers.active.data
-pad = 2 / 2048
 for p in me.polygons:
     n = tuple(round(x) for x in (mw.to_3x3() @ p.normal).normalized())
-    col, row, fs, ft = FACES[n]
+    face, fs, ft = FACES[n]
+    x0, y0, w, h = L["faces"][face]
     for li in p.loop_indices:
         v = mw @ me.vertices[me.loops[li].vertex_index].co
         s, t = fs(v), ft(v)
-        u0, v0 = col / 3, 1 - (row + 1) / 2
-        uv[li].uv = (u0 + pad + s * (1 / 3 - 2 * pad), v0 + pad + t * (1 / 2 - 2 * pad))
+        uv[li].uv = ((x0 + 1 + s * (w - 2)) / IW, 1 - (y0 + 1 + (1 - t) * (h - 2)) / IH)
 
 mat = box.material_slots[0].material
 tex = next(n for n in mat.node_tree.nodes if n.type == "TEX_IMAGE")
