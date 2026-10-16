@@ -26,7 +26,7 @@ function PackArt({ p, big, md, slabs }: { p: PackType; big?: boolean; md?: boole
   const [w, h] = artSize(p, big ? "big" : md ? "md" : "sm");
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={`/packs/${p.id}.png?v=5`} alt={p.name} width={w} height={h} draggable={false} onError={() => setFailed(true)}
+    <img src={`/packs/${p.id}.png?v=6`} alt={p.name} width={w} height={h} draggable={false} onError={() => setFailed(true)}
       className="block select-none object-contain" style={{ width: w, height: h, filter: "drop-shadow(0 14px 18px rgba(0,0,0,.45))" }} />
   );
 }

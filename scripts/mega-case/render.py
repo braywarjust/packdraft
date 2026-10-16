@@ -1,6 +1,6 @@
 # Renders the Mega Case cover from CASE.blend: re-unwraps the inner box into the 3×2 atlas from build-texture.mjs,
 # applies it and renders a transparent square PNG with the file's own camera.
-#   Blender -b CASE.blend -P scripts/mega-case/render.py -- <atlas.png> <out.png> [samples] [--glow 1.2] [--clear-acrylic] [--keep-comp] [--save]
+#   Blender -b CASE.blend -P scripts/mega-case/render.py -- <atlas.png> <out.png> [samples] [--glow 1.2] [--frost 0.35] [--clarity 0.6] [--clear-acrylic] [--keep-comp] [--save]
 import bpy, sys, os, glob
 
 argv = sys.argv[sys.argv.index("--") + 1:]
@@ -71,6 +71,26 @@ for name, rough in ((("Cube.006", 0.04), ("Card_Slab_v2_Slab_0.002", 0.02)) if "
     o = bpy.data.objects[name]
     for slot in o.material_slots: slot.material = acrylic("Case_Acrylic", rough)
     o.visible_shadow = False
+
+# --frost K: scale the frosted glass's built-in glow ("Base Light" / "Light Multiplier" in tint_dispersion_v2).
+# 1 = the file's original look; lower keeps the frosted edges but lets the box art show through the panels.
+if "--frost" in argv:
+    k = float(argv[argv.index("--frost") + 1])
+    m = bpy.data.materials.get("tint_dispersion_01")
+    for n in (m.node_tree.nodes if m else []):
+        if n.type == "GROUP":
+            for key in ("Base Light", "Light Multiplier"):
+                if key in n.inputs: n.inputs[key].default_value *= k
+
+# --clarity C (0–1): clears up the frosted panels (Slab.004) so the box art reads through, keeping the
+# frosted edges/normal detail. 0 = original. Lowers the blur roughness and the very high IOR (7.4) glare.
+if "--clarity" in argv:
+    c = float(argv[argv.index("--clarity") + 1])
+    m = bpy.data.materials.get("Slab.004")
+    b = next((n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None) if m else None
+    if b:
+        b.inputs["Roughness"].default_value *= (1 - c)
+        b.inputs["IOR"].default_value = 1.5 + (b.inputs["IOR"].default_value - 1.5) * (1 - c)
 
 # The Windows-only HDRI in this file is missing; light the world with Blender's bundled studio HDRI instead.
 hdr = glob.glob(os.path.join(os.path.dirname(bpy.app.binary_path), "../Resources/*/datafiles/studiolights/world/studio.exr"))
