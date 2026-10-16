@@ -114,16 +114,16 @@ export function VendingMachine({ coins, inventory, buy, rip, sell }: {
       {party && <Confetti />}
       {/* Machine */}
       <div className="max-w-3xl 2xl:col-span-3">
-        <div className="relative rounded-[28px] border-[6px] border-brand bg-gradient-to-b from-white to-zinc-100 p-4 shadow-xl shadow-zinc-900/10">
+        <div className="relative rounded-[28px] border border-zinc-200 bg-zinc-100 p-4">
           <div className="mb-3 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-2">
             <Logo height={26} />
-            <span className="font-mono text-sm font-bold text-brand">CREDIT {fmtCoins(coins)}</span>
+            <span className="font-mono text-sm font-semibold text-zinc-700">CREDIT {fmtCoins(coins)}</span>
           </div>
           <div className="flex gap-4">
             <div className="relative flex-1 rounded-2xl border-2 border-zinc-200 bg-white p-3 shadow-inner">
               <div className="grid grid-cols-3 gap-x-3 gap-y-5">
                 {PACKS.map((p, i) => (
-                  <button key={p.id} onClick={() => setSelected(p.id)} className={`group flex flex-col items-center rounded-xl p-2 transition ${selected === p.id ? "bg-red-50 ring-2 ring-brand" : "hover:bg-zinc-100"}`}>
+                  <button key={p.id} onClick={() => setSelected(p.id)} className={`group flex flex-col items-center rounded-xl p-2 transition ${selected === p.id ? "bg-zinc-100 ring-2 ring-zinc-900" : "hover:bg-zinc-50"}`}>
                     <div className="transition group-hover:-translate-y-1"><PackArt p={p} /></div>
                     <div className="mt-2 h-1 w-full rounded bg-zinc-300" />
                     <span className="mt-1 text-[10px] font-bold text-zinc-500">{String.fromCharCode(65 + Math.floor(i / 3))}{(i % 3) + 1}</span>

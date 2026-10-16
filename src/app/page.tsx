@@ -27,28 +27,28 @@ export default async function Home() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-3xl bg-zinc-950 p-6 text-white sm:p-8">
-        <LogoWatermark color="red" opacity={0.35} height={300} className="-right-16 -top-10" />
+      <section className="card relative overflow-hidden p-6 sm:p-8">
+        <LogoWatermark color="red" opacity={0.08} height={260} className="-right-12 -top-6" />
         <div className="relative">
-          <p className="text-sm font-semibold uppercase tracking-widest text-brand">Welcome back</p>
-          <h1 className="mt-1 text-4xl font-black">{user.name}</h1>
+          <p className="text-sm text-zinc-500">Welcome back</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight">{user.name}</h1>
           <div className="mt-6 flex flex-wrap gap-3">
             {[
               ["PackBucks", fmtCoins(user.coins)],
               ["Unopened packs", String(packs.length)],
               ["Leagues", String(myTeams.length)],
             ].map(([k, v]) => (
-              <div key={k} className="rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
-                <p className="text-xs text-white/60">{k}</p>
-                <p className="text-xl font-black">{v}</p>
+              <div key={k} className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
+                <p className="text-xs text-zinc-500">{k}</p>
+                <p className="text-xl font-semibold">{v}</p>
               </div>
             ))}
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
             {user.last_bonus !== today ? (
-              <ActionButton action={claimBonus} className="btn bg-white text-zinc-900 hover:bg-zinc-100">Claim daily $150</ActionButton>
+              <ActionButton action={claimBonus} className="btn-lime">Claim daily $150</ActionButton>
             ) : (
-              <span className="btn pointer-events-none bg-white/10 text-white/70">Daily bonus claimed</span>
+              <span className="btn pointer-events-none border border-zinc-200 text-zinc-400">Daily bonus claimed</span>
             )}
             <Link href="/leagues/new" className="btn-primary">Create a league</Link>
           </div>
@@ -56,10 +56,10 @@ export default async function Home() {
       </section>
 
       {packs.length > 0 && (
-        <Link href="/packs" className="card flex items-center justify-between gap-4 overflow-hidden border-l-8 border-l-brand p-5 transition hover:border-brand/50">
+        <Link href="/packs" className="card flex items-center justify-between gap-4 overflow-hidden border-l-4 border-l-brand p-5 transition hover:border-zinc-300">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-brand">Unopened packs</p>
-            <p className="text-xl font-black">You have {packs.length} pack{packs.length > 1 ? "s" : ""} waiting to be ripped</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Unopened packs</p>
+            <p className="text-lg font-semibold">You have {packs.length} pack{packs.length > 1 ? "s" : ""} waiting to be ripped</p>
             <p className="text-sm text-zinc-500">{packs.slice(0, 3).map((p) => `${PACK_BY_ID[p.pack_type]?.name} (${p.source})`).join(" · ")}</p>
           </div>
           <span className="btn-primary shrink-0 whitespace-nowrap">Open packs</span>
