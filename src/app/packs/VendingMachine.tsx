@@ -15,8 +15,20 @@ const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3
 
 const PACK_SIZE = { sm: [80, 116], md: [156, 226], big: [232, 336] } as const;
 
+/** Pack image rendered in Blender (public/packs/{id}.png, see scripts/pack-renders). Falls back to the CSS wrapper. */
+function PackArt({ p, big, md, slabs }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[] }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <CssPackArt p={p} big={big} md={md} slabs={slabs} />;
+  const [w, h] = PACK_SIZE[big ? "big" : md ? "md" : "sm"];
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={`/packs/${p.id}.png`} alt={p.name} width={w} height={h} draggable={false} onError={() => setFailed(true)}
+      className="block select-none object-contain" style={{ width: w, height: h, filter: "drop-shadow(0 14px 18px rgba(0,0,0,.45))" }} />
+  );
+}
+
 /** Foil pack wrapper: tier colours, crimped edges, PackDraft logo and a fan of real chase slabs from the vault. */
-function PackArt({ p, big, md, slabs = [] }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[] }) {
+function CssPackArt({ p, big, md, slabs = [] }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[] }) {
   const size = big ? "big" : md ? "md" : "sm";
   const [w, h] = PACK_SIZE[size];
   const slabH = h * 0.44;

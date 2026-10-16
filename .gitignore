@@ -47,3 +47,7 @@ data/
 /data.nosync
 /.git.nosync
 !.env.local.example
+
+# Blender working files (wraps are rebuilt by scripts/pack-renders/build-wraps.mjs)
+/blender/pack-wraps/
+*_backup.blend
