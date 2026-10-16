@@ -5,6 +5,8 @@ import { getLeague, leagueTeams, standings, teamWeek, userTeam, weekProgress, we
 import { dayLabel } from "@/lib/nba/espn";
 import { winProb } from "@/lib/sim";
 import { PACK_BY_ID } from "@/lib/packs";
+import { earnings, weekRate } from "@/lib/economy";
+import { Coins } from "@/components/Coins";
 import { ActionButton } from "@/components/ActionButton";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { fillCpu, finishWeekNow, startDraftAction, startWeekAction } from "../../actions";
@@ -152,6 +154,25 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
             </tbody>
           </table>
         </div>
+        {l.draft_status === "done" && (() => {
+          const rate = weekRate(l.id, l.current_week);
+          const mine = me ? earnings(l.id, u.id, l.current_week) : null;
+          return (
+            <div className="card p-4">
+              <h3 className="mb-1 font-bold">Points pay Pack Points</h3>
+              <p className="mb-3 text-xs text-zinc-500">
+                Every fantasy point your starters score pays you Pack Points when their game goes final.
+                This week 1 point = {rate.toFixed(2)} Pack Points, set by the slab market.
+              </p>
+              {mine && (
+                <ul className="space-y-1.5 text-sm">
+                  <li className="flex justify-between"><span>Earned this week</span><span className="font-semibold text-emerald-600"><Coins n={mine.week} /></span></li>
+                  <li className="flex justify-between"><span>Earned this season</span><span className="font-semibold"><Coins n={mine.season} /></span></li>
+                </ul>
+              )}
+            </div>
+          );
+        })()}
         <div className="card p-4">
           <h3 className="mb-2 font-bold">Weekly pack rewards</h3>
           <ul className="space-y-1.5 text-sm">

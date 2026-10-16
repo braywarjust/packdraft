@@ -3,6 +3,7 @@ import { leagueSeed, rng, simSchedule, gameProgress, simGame, partial, simClock 
 import { STARTERS, ROSTER_MAX, eligible, fpts, statLine, Line, slotLabel } from "./scoring";
 import { addDays, etDate, weekday, dayLabel } from "./nba/espn";
 import { PACK_BY_ID } from "./packs";
+import { creditGame, weekRate } from "./economy";
 
 export { STARTERS, ROSTER_MAX, eligible };
 export const ROUNDS = ROSTER_MAX;
@@ -151,10 +152,18 @@ export type LivePlayer = {
 /**
  * Score a team's week. Each player-game uses the slot he was in when that game started
  * (frozen into daily_slots), so mid-week lineup changes and drops are handled correctly.
+ *
+ * Points are Pack Points: fantasy points × the week's market rate (see economy.ts). When a started
+ * player's game goes final, the manager is paid those Pack Points (once).
  */
 export function teamWeek(l: League, teamId: number, week: number) {
   const players = roster(teamId);
   const active = week === l.current_week && l.draft_status === "done" && !l.champion_team_id;
+  const rate = l.draft_status === "done" ? weekRate(l.id, week) : 1;
+  const owner = one<{ user_id: number | null }>("SELECT user_id FROM teams WHERE id = ?", teamId)?.user_id ?? null;
+  const pay = (playerId: number, key: string, raw: number) => {
+    if (active && owner) creditGame({ leagueId: l.id, week, teamId, userId: owner, playerId, gameKey: key, fpts: raw, rate });
+  };
   const frozen = new Map(
     all<{ date_et: string; player_id: number; slot: string }>("SELECT * FROM daily_slots WHERE team_id = ?", teamId).map((r) => [`${r.player_id}|${r.date_et}`, r.slot]),
   );
@@ -171,9 +180,13 @@ export function teamWeek(l: League, teamId: number, week: number) {
       }
       if (g.state === "pre") left++;
       else played++;
-      if (g.line && frozen.get(k) && frozen.get(k) !== "BN") pts += fpts(g.line, l.scoring);
+      if (g.line && frozen.get(k) && frozen.get(k) !== "BN") {
+        const raw = fpts(g.line, l.scoring);
+        pts += raw * rate;
+        if (g.state === "post") pay(p.id, g.key, raw);
+      }
     }
-    const proj = projFor(p, l.scoring);
+    const proj = projFor(p, l.scoring) * rate;
     if (p.slot !== "BN") {
       const effLeft = isOut(p) ? 0 : left;
       remain += effLeft * proj;
@@ -184,7 +197,7 @@ export function teamWeek(l: League, teamId: number, week: number) {
     rows.push({
       id: p.id, name: p.name, pos: p.pos, team: p.team, slot: p.slot, headshot: p.headshot, injury: p.injury,
       pts: Math.round(pts * 100) / 100, proj, played, left, total: games.length, locked: isLocked(l, p),
-      now: cur ? { label: cur.label, clock: cur.clock, state: cur.state, line: cur.line ? statLine(cur.line) : "", pts: cur.line ? fpts(cur.line, l.scoring) : 0 } : null,
+      now: cur ? { label: cur.label, clock: cur.clock, state: cur.state, line: cur.line ? statLine(cur.line) : "", pts: cur.line ? Math.round(fpts(cur.line, l.scoring) * rate * 100) / 100 : 0 } : null,
     });
   }
   // Points from players no longer on the roster (dropped/traded mid-week) still count.
@@ -197,12 +210,16 @@ export function teamWeek(l: League, teamId: number, week: number) {
     if (onRoster.has(pid) || slot === "BN" || !keyFilter(key)) continue;
     const p = one<Player>("SELECT * FROM players WHERE id = ?", pid);
     const g = p && playerGames(l, p, week).find((x) => x.key === key);
-    if (g?.line) ghost += fpts(g.line, l.scoring);
+    if (g?.line) {
+      const raw = fpts(g.line, l.scoring);
+      ghost += raw * rate;
+      if (g.state === "post") pay(pid, key, raw);
+    }
   }
   const order = (s: string) => (s === "BN" ? 99 : STARTERS.indexOf(s as (typeof STARTERS)[number]));
   rows.sort((a, b) => order(a.slot) - order(b.slot) || b.proj - a.proj);
   const score = Math.round((rows.reduce((s, p) => s + p.pts, 0) + ghost) * 100) / 100;
-  return { players: rows, score, remain, variance, projected };
+  return { players: rows, score, remain, variance, projected, rate };
 }
 
 /** Freeze lineups for started games, finish weeks, and keep CPU lineups fresh. Safe to call often. */

@@ -97,6 +97,13 @@ CREATE TABLE IF NOT EXISTS dfs_entries (
   id INTEGER PRIMARY KEY, contest_id INTEGER NOT NULL, user_id INTEGER, bot_name TEXT, lineup TEXT NOT NULL,
   points REAL, rank INTEGER, created_at INTEGER NOT NULL
 );
+-- Pack Points paid out for each started player-game in a league (one row per team, player and game).
+CREATE TABLE IF NOT EXISTS pp_earnings (
+  league_id INTEGER NOT NULL, week INTEGER NOT NULL, team_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
+  player_id INTEGER NOT NULL, game_key TEXT NOT NULL, fpts REAL NOT NULL, rate REAL NOT NULL, pp INTEGER NOT NULL,
+  created_at INTEGER NOT NULL, PRIMARY KEY (team_id, player_id, game_key)
+);
+CREATE INDEX IF NOT EXISTS idx_pp_user ON pp_earnings(user_id, league_id, week);
 CREATE INDEX IF NOT EXISTS idx_roster_team ON roster(team_id);
 CREATE INDEX IF NOT EXISTS idx_msgs ON messages(league_id, id);
 CREATE INDEX IF NOT EXISTS idx_picks ON draft_picks(league_id, overall);
