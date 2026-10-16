@@ -165,3 +165,18 @@ export function catalogStats() {
     `SELECT rarity, COUNT(*) n, SUM(card_id IS NOT NULL) owned, MIN(est_value) lo, MAX(est_value) hi, AVG(est_value) avg
      FROM slabs WHERE missing = 0 GROUP BY rarity`);
 }
+
+/** Three "chase" slabs to feature on each pack's artwork: high-value hits near ~8x the pack price, distinct players. */
+export function packFeatures(packs: { id: string; price: number }[]): Record<string, number[]> {
+  ensureCatalog();
+  const out: Record<string, number[]> = {};
+  for (const p of packs) {
+    const target = p.price * 8;
+    const rows = all<{ id: number; player: string }>(
+      `SELECT id, player FROM slabs WHERE missing = 0 AND rarity IN ('epic', 'legendary', 'grail') AND player_tier IN ('goat', 'legend', 'star')
+       ORDER BY ABS(est_value - ?) LIMIT 60`, target);
+    const seen = new Set<string>();
+    out[p.id] = rows.filter((r) => !seen.has(r.player) && seen.add(r.player)).slice(0, 3).map((r) => r.id);
+  }
+  return out;
+}

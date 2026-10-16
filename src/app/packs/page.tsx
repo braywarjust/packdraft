@@ -4,7 +4,7 @@ import { PACKS, RARITIES } from "@/lib/packs";
 import { VendingMachine } from "./VendingMachine";
 import { buyPack, ripPack, sellCards } from "../actions";
 import { PageHeader } from "@/components/PageHeader";
-import { catalogStats, ensureCatalog } from "@/lib/slabs";
+import { catalogStats, ensureCatalog, packFeatures } from "@/lib/slabs";
 import { marketConfigured } from "@/lib/market";
 import { Coins } from "@/components/Coins";
 
@@ -18,7 +18,7 @@ export default async function PacksPage() {
     <div className="space-y-6">
       <PageHeader eyebrow="Mystery packs" title="Pack Shop"
         description={<>Buy a pack, rip it open and collect graded, serial-numbered player cards. Don&apos;t love a pull? Instant buyback at 90% of its value.</>} />
-      <VendingMachine coins={u.is_tester ? 1_000_000_000 : u.coins} tester={!!u.is_tester} inventory={inventory} buy={buyPack} rip={ripPack} sell={sellCards} />
+      <VendingMachine features={packFeatures(PACKS)} coins={u.is_tester ? 1_000_000_000 : u.coins} tester={!!u.is_tester} inventory={inventory} buy={buyPack} rip={ripPack} sell={sellCards} />
       <details className="card p-4 text-sm">
         <summary className="cursor-pointer font-semibold">Pack odds</summary>
         <div className="mt-3 overflow-x-auto">

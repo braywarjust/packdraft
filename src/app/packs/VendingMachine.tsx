@@ -13,18 +13,45 @@ type Act<T> = Promise<T | { error: string }>;
 const isCaseHit = (c: CardData) => c.s_source === "courtyard" || c.rarity === "legendary" || c.rarity === "grail";
 const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, grail: 4 };
 
-function PackArt({ p, big, md }: { p: PackType; big?: boolean; md?: boolean }) {
-  const size = big ? "h-80 w-56" : md ? "h-48 w-32" : "h-28 w-20";
-  const title = big ? "text-3xl" : md ? "text-lg" : "text-[10px]";
+const PACK_SIZE = { sm: [80, 116], md: [156, 226], big: [232, 336] } as const;
+
+/** Foil pack wrapper: tier colours, crimped edges, PackDraft logo and a fan of real chase slabs from the vault. */
+function PackArt({ p, big, md, slabs = [] }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[] }) {
+  const size = big ? "big" : md ? "md" : "sm";
+  const [w, h] = PACK_SIZE[size];
+  const slabH = h * 0.44;
+  const fan = slabs.slice(0, size === "sm" ? 1 : 3);
+  const angles = fan.length === 3 ? [-14, 0, 14] : fan.length === 2 ? [-9, 9] : [0];
+  const crimp = "repeating-linear-gradient(90deg, rgba(255,255,255,.45) 0 5px, transparent 5px 10px)";
   return (
-    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${p.color} shadow-xl ${size}`}>
-      <div className="foil absolute inset-0" />
-      <div className="absolute inset-x-0 top-0 h-3 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,.35)_0_6px,transparent_6px_12px)]" />
-      <div className="absolute inset-x-0 bottom-0 h-3 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,.35)_0_6px,transparent_6px_12px)]" />
-      <div className="relative flex h-full flex-col items-center justify-center p-2 text-center">
-        <span className={`font-black uppercase leading-none tracking-tight text-white drop-shadow ${title}`}>{p.name.replace(" Pack", "")}</span>
-        <span className={`mt-1 font-bold text-white/80 ${big ? "text-sm" : md ? "text-xs" : "text-[9px]"}`}>{p.cards} CARDS</span>
-        {(big || md) && <span className={`rounded-full bg-black/30 font-bold text-white ${big ? "mt-6 px-3 py-1 text-xs" : "mt-4 px-2 py-0.5 text-[10px]"}`}>PACKDRAFT</span>}
+    <div className={`relative overflow-hidden rounded-lg bg-gradient-to-br ${p.color} shadow-2xl ring-1 ring-black/20`} style={{ width: w, height: h }}>
+      {/* sheen + texture */}
+      <div className="absolute inset-0" style={{ background: "radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.35), transparent 60%), radial-gradient(90% 60% at 50% 110%, rgba(0,0,0,.45), transparent 70%)" }} />
+      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.5) 0 1px, transparent 1px 9px)" }} />
+      <div className="foil absolute inset-0 opacity-70" />
+      {/* crimped seals */}
+      <div className="absolute inset-x-0 top-0" style={{ height: h * 0.045, background: crimp }} />
+      <div className="absolute inset-x-0 bottom-0" style={{ height: h * 0.045, background: crimp }} />
+      {/* logo */}
+      <div className="absolute inset-x-0 flex justify-center" style={{ top: h * 0.07 }}>
+        <Logo height={h * (size === "sm" ? 0.2 : 0.17)} style={{ filter: "drop-shadow(0 3px 6px rgba(0,0,0,.45))" }} />
+      </div>
+      {/* chase slabs */}
+      <div className="absolute inset-x-0 flex justify-center" style={{ top: h * 0.29, height: slabH }}>
+        {fan.map((id, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={id} src={`/api/slabs/${id}`} alt="" loading="lazy"
+            className="absolute top-0 object-cover object-center"
+            style={{
+              height: slabH, width: slabH * 0.6, transform: `translateX(${(i - (fan.length - 1) / 2) * slabH * 0.36}px) rotate(${angles[i]}deg)`,
+              transformOrigin: "50% 90%", filter: "drop-shadow(0 8px 10px rgba(0,0,0,.5))", zIndex: i === 1 ? 2 : 1,
+            }} />
+        ))}
+      </div>
+      {/* name band */}
+      <div className="absolute inset-x-0 z-10 bg-black/55 text-center backdrop-blur-[2px]" style={{ bottom: h * 0.06, paddingBlock: h * 0.025 }}>
+        <p className={`font-black uppercase leading-none tracking-tight text-white ${size === "big" ? "text-2xl" : size === "md" ? "text-base" : "text-[9px]"}`}>{p.name.replace(" Pack", "")}</p>
+        {size !== "sm" && <p className={`mt-0.5 font-semibold uppercase tracking-[0.2em] text-white/75 ${size === "big" ? "text-xs" : "text-[9px]"}`}>{p.cards} slabs</p>}
       </div>
     </div>
   );
@@ -47,8 +74,8 @@ function Confetti() {
   );
 }
 
-export function VendingMachine({ coins, inventory, buy, rip, sell, tester = false }: {
-  coins: number; inventory: Inv[]; tester?: boolean;
+export function VendingMachine({ coins, inventory, buy, rip, sell, tester = false, features = {} }: {
+  coins: number; inventory: Inv[]; tester?: boolean; features?: Record<string, number[]>;
   buy: (type: string) => Act<{ ok: boolean; packId: number }>;
   rip: (packId: number) => Act<{ ok: boolean; cards: CardData[] }>;
   sell: (ids: number[]) => Act<{ ok: boolean; total: number }>;
@@ -132,7 +159,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               const p = PACK_BY_ID[inv.pack_type];
               return (
                 <button key={inv.id} onClick={() => openFromInventory(inv)} disabled={stage !== "idle"} className="card flex items-center gap-3 p-3 text-left transition hover:border-brand/60">
-                  <PackArt p={p} />
+                  <PackArt p={p} slabs={features[p.id]} />
                   <div className="min-w-0">
                     <p className="text-sm font-bold">{p.name}</p>
                     <p className="truncate text-xs text-zinc-500">{inv.source}</p>
@@ -154,7 +181,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
             return (
               <div key={p.id} className="card flex flex-col overflow-hidden">
                 <div className="flex justify-center bg-zinc-50 py-6">
-                  <div className="transition hover:-translate-y-1"><PackArt p={p} md /></div>
+                  <div className="transition hover:-translate-y-1"><PackArt p={p} md slabs={features[p.id]} /></div>
                 </div>
                 <div className="flex flex-1 flex-col gap-3 p-4">
                   <div className="flex items-start justify-between gap-2">
@@ -185,14 +212,14 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{stage === "tearing" ? "Ripping…" : "Click the pack to rip it"}</p>
               <button onClick={doRip} disabled={stage === "tearing"} className={`relative ${stage === "ready" ? "anim-drop hover:anim-shake" : ""}`}>
                 {stage === "tearing" ? (
-                  <div className="relative h-80 w-56">
-                    <div className="anim-tear-top absolute inset-x-0 top-0 h-16 overflow-hidden"><PackArt p={rp} big /></div>
-                    <div className="anim-tear-bottom absolute inset-x-0 bottom-0 h-64 overflow-hidden" style={{ clipPath: "inset(0 0 0 0)" }}>
-                      <div className="-mt-16"><PackArt p={rp} big /></div>
+                  <div className="relative h-[336px] w-[232px]">
+                    <div className="anim-tear-top absolute inset-x-0 top-0 h-16 overflow-hidden"><PackArt p={rp} big slabs={features[rp.id]} /></div>
+                    <div className="anim-tear-bottom absolute inset-x-0 bottom-0 h-[272px] overflow-hidden" style={{ clipPath: "inset(0 0 0 0)" }}>
+                      <div className="-mt-16"><PackArt p={rp} big slabs={features[rp.id]} /></div>
                     </div>
                   </div>
                 ) : (
-                  <div className="anim-shake"><PackArt p={rp} big /></div>
+                  <div className="anim-shake"><PackArt p={rp} big slabs={features[rp.id]} /></div>
                 )}
               </button>
               {stage === "ready" && <button onClick={close} className="text-sm text-zinc-400 hover:text-white">Save it for later</button>}
