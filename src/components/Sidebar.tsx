@@ -9,7 +9,7 @@ import { Coins } from "./Coins";
 const I = {
   home: "M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z",
   leagues: "M8 21h8M12 17v4M6 3h12v5a6 6 0 0 1-12 0zM6 5H3v2a3 3 0 0 0 3 3M18 5h3v2a3 3 0 0 1-3 3",
-  packs: "M4 7l8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10",
+  packs: "/packdraft-pack-icon.svg",
   collection: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
   dfs: "M4 19V9M10 19V5M16 19v-7M22 19H2",
   mock: "M4 6h16M4 12h16M4 18h10",
@@ -18,6 +18,14 @@ const I = {
   expand: "M9 6l6 6-6 6",
 };
 function Icon({ d }: { d: string }) {
+  // Image icons (a public/ SVG path) are drawn as a mask in currentColor so they match the line icons' colour and states.
+  if (d.startsWith("/")) {
+    return (
+      <span aria-hidden className="grid h-[18px] w-[18px] shrink-0 place-items-center">
+        <span className="h-[15px] w-[15px] bg-current" style={{ mask: `url(${d}) center / contain no-repeat`, WebkitMask: `url(${d}) center / contain no-repeat` }} />
+      </span>
+    );
+  }
   return (
     <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d={d} />
