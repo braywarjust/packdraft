@@ -3,16 +3,15 @@ import { unopenedPacks } from "@/lib/packs-server";
 import { PACKS, RARITIES } from "@/lib/packs";
 import { VendingMachine } from "./VendingMachine";
 import { buyPack, ripPack, sellCards } from "../actions";
+import { PageHeader } from "@/components/PageHeader";
 
 export default async function PacksPage() {
   const u = await requireUser();
   const inventory = unopenedPacks(u.id);
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-black">The Vending Machine</h1>
-        <p className="text-zinc-500">Drop PackBucks, pull a pack, rip it open. Every card is graded and serial-numbered. Don&apos;t love a pull? Instant buyback at 90% of its value.</p>
-      </div>
+      <PageHeader eyebrow="Mystery packs" title="Pack Shop"
+        description={<>Buy a pack, rip it open and collect graded, serial-numbered player cards. Don&apos;t love a pull? Instant buyback at 90% of its value.</>} />
       <VendingMachine coins={u.coins} inventory={inventory} buy={buyPack} rip={ripPack} sell={sellCards} />
       <details className="card p-4 text-sm">
         <summary className="cursor-pointer font-semibold">Pack odds</summary>

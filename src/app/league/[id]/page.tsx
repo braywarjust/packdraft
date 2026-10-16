@@ -153,7 +153,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
           </table>
         </div>
         <div className="card p-4">
-          <h3 className="mb-2 font-bold">🎰 Weekly pack rewards</h3>
+          <h3 className="mb-2 font-bold">Weekly pack rewards</h3>
           <ul className="space-y-1.5 text-sm">
             <li className="flex justify-between"><span>Matchup win</span><span className="font-semibold">{PACK_BY_ID[l.reward_win]?.name}</span></li>
             <li className="flex justify-between"><span>Matchup loss</span><span className="font-semibold">{PACK_BY_ID[l.reward_loss]?.name}</span></li>

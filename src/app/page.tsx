@@ -6,6 +6,7 @@ import { getLeague, maybeFinalize, teamWeek } from "@/lib/league";
 import { unopenedPacks } from "@/lib/packs-server";
 import { PACK_BY_ID, RARITIES, Rarity, fmtCoins } from "@/lib/packs";
 import { ActionButton } from "@/components/ActionButton";
+import { LogoWatermark } from "@/components/Logo";
 import { claimBonus } from "./actions";
 
 export default async function Home() {
@@ -26,20 +27,33 @@ export default async function Home() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm text-zinc-500">Welcome back</p>
-          <h1 className="text-3xl font-black">{user.name}</h1>
+      <section className="relative overflow-hidden rounded-3xl bg-zinc-950 p-6 text-white sm:p-8">
+        <LogoWatermark color="red" opacity={0.35} height={300} className="-right-16 -top-10" />
+        <div className="relative">
+          <p className="text-sm font-semibold uppercase tracking-widest text-brand">Welcome back</p>
+          <h1 className="mt-1 text-4xl font-black">{user.name}</h1>
+          <div className="mt-6 flex flex-wrap gap-3">
+            {[
+              ["PackBucks", fmtCoins(user.coins)],
+              ["Unopened packs", String(packs.length)],
+              ["Leagues", String(myTeams.length)],
+            ].map(([k, v]) => (
+              <div key={k} className="rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
+                <p className="text-xs text-white/60">{k}</p>
+                <p className="text-xl font-black">{v}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 flex flex-wrap gap-2">
+            {user.last_bonus !== today ? (
+              <ActionButton action={claimBonus} className="btn bg-white text-zinc-900 hover:bg-zinc-100">Claim daily $150</ActionButton>
+            ) : (
+              <span className="btn pointer-events-none bg-white/10 text-white/70">Daily bonus claimed</span>
+            )}
+            <Link href="/leagues/new" className="btn-primary">Create a league</Link>
+          </div>
         </div>
-        <div className="flex gap-2">
-          {user.last_bonus !== today ? (
-            <ActionButton action={claimBonus} className="btn-lime">🎁 Claim daily $150</ActionButton>
-          ) : (
-            <span className="btn-ghost pointer-events-none opacity-60">Daily bonus claimed ✓</span>
-          )}
-          <Link href="/leagues/new" className="btn-primary">+ New league</Link>
-        </div>
-      </div>
+      </section>
 
       {packs.length > 0 && (
         <Link href="/packs" className="card flex items-center justify-between gap-4 overflow-hidden border-l-8 border-l-brand p-5 transition hover:border-brand/50">
@@ -48,7 +62,7 @@ export default async function Home() {
             <p className="text-xl font-black">You have {packs.length} pack{packs.length > 1 ? "s" : ""} waiting to be ripped</p>
             <p className="text-sm text-zinc-500">{packs.slice(0, 3).map((p) => `${PACK_BY_ID[p.pack_type]?.name} (${p.source})`).join(" · ")}</p>
           </div>
-          <span className="btn-primary shrink-0 whitespace-nowrap">Rip now →</span>
+          <span className="btn-primary shrink-0 whitespace-nowrap">Open packs</span>
         </Link>
       )}
 
@@ -90,12 +104,12 @@ export default async function Home() {
             );
           })}
 
-          <h2 className="pt-2 text-lg font-bold">DFS contests</h2>
+          <h2 className="pt-2 text-lg font-bold">Daily Fantasy contests</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {contests.map((c) => (
               <Link key={c.id} href={`/dfs/${c.id}`} className="card p-4 hover:border-brand/60">
                 <p className="font-bold">{c.name}</p>
-                <p className="text-sm text-zinc-500">1st place: {PACK_BY_ID[c.prize_pack]?.name} · {c.status === "live" ? "🔴 Live" : "Open"}</p>
+                <p className="text-sm text-zinc-500">1st place: {PACK_BY_ID[c.prize_pack]?.name} · {c.status === "live" ? "Live" : "Open"}</p>
               </Link>
             ))}
             <Link href="/dfs" className="card grid place-items-center p-4 text-sm text-brand hover:border-brand/60">+ Start a DFS contest</Link>
@@ -104,7 +118,7 @@ export default async function Home() {
 
         <aside className="space-y-6">
           <div className="card p-4">
-            <h3 className="mb-3 font-bold">🏆 Biggest pulls</h3>
+            <h3 className="mb-3 font-bold">Biggest pulls</h3>
             {pulls.length === 0 && <p className="text-sm text-zinc-500">No packs ripped yet.</p>}
             <ul className="space-y-2">
               {pulls.map((c, i) => (
@@ -116,7 +130,7 @@ export default async function Home() {
             </ul>
           </div>
           <div className="card p-4">
-            <h3 className="mb-3 font-bold">💰 Net worth</h3>
+            <h3 className="mb-3 font-bold">Net worth</h3>
             <ol className="space-y-2">
               {leaders.map((u, i) => (
                 <li key={u.name} className="flex items-center justify-between text-sm">

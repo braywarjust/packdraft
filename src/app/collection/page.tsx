@@ -6,6 +6,7 @@ import { BUYBACK_RATE, RARITIES, Rarity, fmtCoins } from "@/lib/packs";
 import { PlayerCard } from "@/components/PlayerCard";
 import { ActionButton } from "@/components/ActionButton";
 import { sellCards } from "../actions";
+import { PageHeader } from "@/components/PageHeader";
 
 export default async function Collection({ searchParams }: { searchParams: Promise<{ r?: string; sort?: string; u?: string }> }) {
   const sp = await searchParams;
@@ -28,17 +29,12 @@ export default async function Collection({ searchParams }: { searchParams: Promi
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-black">{mine ? "My collection" : `${viewing.name}'s collection`}</h1>
-          <p className="text-zinc-500">{cards.length} cards · vault value <span className="font-bold text-emerald-600">{fmtCoins(total)}</span></p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <PageHeader eyebrow="Card vault" title={mine ? "My collection" : `${viewing.name}'s collection`}
+        description={<>{cards.length} cards · vault value <span className="font-bold text-emerald-600">{fmtCoins(total)}</span></>}>
           {users.map((x) => (
             <Link key={x.id} href={qs({ u: String(x.id) })} className={`tab ${x.id === viewing.id ? "tab-active" : ""}`}>{x.id === me.id ? "Me" : x.name}</Link>
           ))}
-        </div>
-      </div>
+      </PageHeader>
       <div className="flex flex-wrap items-center gap-2">
         <Link href={qs({ r: undefined })} className={`tab ${!sp.r ? "tab-active" : ""}`}>All</Link>
         {(Object.keys(RARITIES) as Rarity[]).map((r) => (

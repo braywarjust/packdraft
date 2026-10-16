@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { ActionForm } from "@/components/ActionForm";
 import { joinLeague } from "../actions";
+import { PageHeader } from "@/components/PageHeader";
 
 export default async function LeaguesPage() {
   const u = await requireUser();
@@ -13,12 +14,12 @@ export default async function LeaguesPage() {
      FROM leagues l JOIN users u ON u.id = l.commissioner_id
      WHERE l.is_public = 1 AND (l.draft_status = 'pre' OR EXISTS (SELECT 1 FROM teams x WHERE x.league_id = l.id AND x.is_cpu = 1)) AND l.id NOT IN (SELECT league_id FROM teams WHERE user_id = ?) ORDER BY l.id DESC`, u.id);
   return (
+    <>
+    <PageHeader eyebrow="Fantasy NBA" title="Leagues" description="Your leagues, public leagues looking for managers, and invite codes.">
+      <Link href="/leagues/new" className="btn-primary">Create a league</Link>
+    </PageHeader>
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-black">Leagues</h1>
-          <Link href="/leagues/new" className="btn-primary">+ Create league</Link>
-        </div>
         <section className="space-y-2">
           <h2 className="label">Your leagues</h2>
           {mine.length === 0 && <p className="text-zinc-500">You haven&apos;t joined any leagues yet.</p>}
@@ -58,5 +59,6 @@ export default async function LeaguesPage() {
         </ActionForm>
       </aside>
     </div>
+    </>
   );
 }

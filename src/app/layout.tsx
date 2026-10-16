@@ -3,56 +3,58 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { currentUser } from "@/lib/auth";
+import { all } from "@/lib/db";
 import { unopenedPacks } from "@/lib/packs-server";
 import { fmtCoins } from "@/lib/packs";
 import { logout } from "./actions";
 import { Logo } from "@/components/Logo";
+import { Sidebar } from "@/components/Sidebar";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "PackDraft",
+  title: { default: "PackDraft", template: "%s · PackDraft" },
   description: "Fantasy NBA with your friends, plus mystery packs to rip.",
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const user = await currentUser();
-  const packs = user ? unopenedPacks(user.id).length : 0;
+  if (!user) {
+    return (
+      <html lang="en">
+        <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>{children}</body>
+      </html>
+    );
+  }
+  const packs = unopenedPacks(user.id).length;
+  const leagues = all<{ id: number; name: string; live: number }>(
+    `SELECT l.id, l.name, (l.week_started_at IS NOT NULL OR l.draft_status = 'live') live
+     FROM leagues l JOIN teams t ON t.league_id = l.id WHERE t.user_id = ? ORDER BY l.id DESC`, user.id);
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        {user && (
-          <header className="sticky top-0 z-40 border-b-4 border-brand bg-white/95 shadow-sm backdrop-blur">
-            <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2.5">
-              <Link href="/" className="mr-2 shrink-0" aria-label="PackDraft home">
-                <Logo height={38} />
-              </Link>
-              <nav className="order-last -mx-2 flex w-full items-center gap-1 overflow-x-auto scrollbar-thin md:order-none md:mx-0 md:w-auto md:flex-1">
-                <Link className="navlink" href="/leagues">Leagues</Link>
-                <Link className="navlink" href="/packs">
-                  Vending Machine{packs > 0 && <span className="ml-1 rounded-full bg-brand px-1.5 text-[10px] font-black text-white">{packs}</span>}
-                </Link>
-                <Link className="navlink" href="/collection">Collection</Link>
-                <Link className="navlink" href="/dfs">DFS</Link>
-                <Link className="navlink" href="/mock-draft">Mock Draft</Link>
+        <Sidebar
+          user={{ name: user.name, color: user.color, coins: fmtCoins(user.coins) }}
+          packs={packs}
+          leagues={leagues.map((l) => ({ id: l.id, name: l.name, live: !!l.live }))}
+          logout={logout}
+        />
+        <div className="flex min-h-screen flex-col lg:pl-64">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-8">{children}</main>
+          <footer className="border-t border-line bg-zinc-50">
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-6 text-sm text-zinc-500 sm:px-8">
+              <Logo color="black" height={30} className="opacity-80" />
+              <nav className="flex flex-wrap gap-4">
+                <Link href="/leagues" className="hover:text-brand">Leagues</Link>
+                <Link href="/packs" className="hover:text-brand">Packs</Link>
+                <Link href="/dfs" className="hover:text-brand">Daily Fantasy</Link>
+                <Link href="/collection" className="hover:text-brand">Collection</Link>
               </nav>
-              <div className="ml-auto flex items-center gap-3">
-                <span className="rounded-full border border-brand/30 bg-red-50 px-3 py-1 text-sm font-black text-brand" title="PackBucks">
-                  {fmtCoins(user.coins)}
-                </span>
-                <span className="hidden items-center gap-2 text-sm font-semibold text-zinc-800 md:flex">
-                  <span className="h-6 w-6 rounded-full ring-2 ring-red-100" style={{ background: user.color }} />
-                  {user.name}
-                </span>
-                <form action={logout}>
-                  <button className="text-xs font-semibold text-zinc-400 hover:text-brand">Log out</button>
-                </form>
-              </div>
+              <p className="text-xs">Private league site · Live stats via ESPN</p>
             </div>
-          </header>
-        )}
-        <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+          </footer>
+        </div>
       </body>
     </html>
   );

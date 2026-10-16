@@ -41,7 +41,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
           <div><label className="label">Keepers per team {pre ? "" : "(locked)"}</label><input name="keeper_count" type="number" min={0} max={5} defaultValue={l.keeper_count} disabled={!pre} className="input" /></div>
           <div><label className="label">Regular season weeks {pre ? "" : "(locked)"}</label><input name="season_weeks" type="number" min={1} max={24} defaultValue={l.season_weeks} disabled={!pre} className="input" /></div>
         </div>
-        <h3 className="pt-2 font-bold">🎰 Pack rewards</h3>
+        <h3 className="pt-2 font-bold">Pack rewards</h3>
         <div className="grid gap-3 sm:grid-cols-3">
           <div><label className="label">Win</label>{sel("reward_win", l.reward_win)}</div>
           <div><label className="label">Loss</label>{sel("reward_loss", l.reward_loss)}</div>

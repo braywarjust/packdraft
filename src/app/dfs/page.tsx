@@ -7,6 +7,7 @@ import { ActionForm } from "@/components/ActionForm";
 import { addDays, dayLabel, etDate } from "@/lib/nba/espn";
 import { ensureSchedule } from "@/lib/nba/sync";
 import { createContest } from "../actions";
+import { PageHeader } from "@/components/PageHeader";
 
 export default async function DfsPage() {
   await requireUser();
@@ -19,10 +20,11 @@ export default async function DfsPage() {
   const contests = all<{ id: number; name: string; entry_fee: number; prize_pack: string; max_entries: number; status: string; host: string; n: number; mode: string; slate_date: string | null }>(
     `SELECT c.*, u.name host, (SELECT COUNT(*) FROM dfs_entries e WHERE e.contest_id = c.id) n FROM dfs_contests c JOIN users u ON u.id = c.creator_id ORDER BY c.status = 'final', c.id DESC LIMIT 40`);
   return (
+    <>
+    <PageHeader eyebrow="One-night contests" title="Daily Fantasy"
+      description="Build an 8-player lineup (G, G, F, F, C, 3 UTIL) under a $50,000 cap from one night of real NBA games. DraftKings-style scoring. Top 3 win mystery packs." />
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
-        <h1 className="text-3xl font-black">Daily Fantasy</h1>
-        <p className="text-zinc-500">Build an 8-player lineup (G, G, F, F, C, 3 UTIL) under a $50,000 cap from one night of real NBA games. DraftKings-style scoring. Top 3 win mystery packs.</p>
         {contests.length === 0 && <p className="card p-6 text-zinc-500">No contests yet. Start one on the right.</p>}
         {contests.map((c) => (
           <Link key={c.id} href={`/dfs/${c.id}`} className="card flex flex-wrap items-center justify-between gap-3 p-4 hover:border-brand/60">
@@ -61,5 +63,6 @@ export default async function DfsPage() {
         </ActionForm>
       </aside>
     </div>
+    </>
   );
 }
