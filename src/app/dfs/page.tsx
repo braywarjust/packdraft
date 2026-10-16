@@ -2,12 +2,13 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { Contest, maybeSettle } from "@/lib/dfs";
-import { PACKS, PACK_BY_ID, fmtCoins } from "@/lib/packs";
+import { PACKS, PACK_BY_ID } from "@/lib/packs";
 import { ActionForm } from "@/components/ActionForm";
 import { addDays, dayLabel, etDate } from "@/lib/nba/espn";
 import { ensureSchedule } from "@/lib/nba/sync";
 import { createContest } from "../actions";
 import { PageHeader } from "@/components/PageHeader";
+import { Coins } from "@/components/Coins";
 
 export default async function DfsPage() {
   await requireUser();
@@ -30,7 +31,7 @@ export default async function DfsPage() {
           <Link key={c.id} href={`/dfs/${c.id}`} className="card flex flex-wrap items-center justify-between gap-3 p-4 hover:border-brand/60">
             <div>
               <p className="font-bold">{c.name}</p>
-              <p className="text-sm text-zinc-500">{c.mode === "sim" ? "Simulated" : dayLabel(c.slate_date!)} · Host {c.host} · {c.n}/{c.max_entries} entries · Entry {c.entry_fee ? fmtCoins(c.entry_fee) : "FREE"}</p>
+              <p className="text-sm text-zinc-500">{c.mode === "sim" ? "Simulated" : dayLabel(c.slate_date!)} · Host {c.host} · {c.n}/{c.max_entries} entries · Entry {c.entry_fee ? <Coins n={c.entry_fee} /> : "FREE"}</p>
             </div>
             <div className="text-right">
               <p className="text-sm">🥇 {PACK_BY_ID[c.prize_pack]?.name}</p>

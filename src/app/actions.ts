@@ -71,7 +71,7 @@ export async function createLeague(_: Result | undefined, form: FormData): Promi
   const maxTeams = Number(form.get("max_teams") ?? 8);
   if (!name) return { error: "League needs a name" };
   if (![4, 6, 8, 10, 12].includes(maxTeams)) return { error: "Pick 4, 6, 8, 10 or 12 teams" };
-  if (maxTeams > 8 && u.coins < 2500) return { error: "Leagues over 8 teams cost $2,500 PackBucks" };
+  if (maxTeams > 8 && u.coins < 2500) return { error: "Leagues over 8 teams cost 2,500 PackBucks" };
   const id = tx(() => {
     if (maxTeams > 8) run("UPDATE users SET coins = coins - 2500 WHERE id = ?", u.id);
     const faab = Number(form.get("faab_budget") ?? 100);

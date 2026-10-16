@@ -3,11 +3,11 @@ import { requireUser } from "@/lib/auth";
 import { all, one } from "@/lib/db";
 import { Contest, DFS_SLOTS, SALARY_CAP, contestPlayers, prizeLadder, salary, tickContest, slateGames } from "@/lib/dfs";
 import { dayLabel } from "@/lib/nba/espn";
-import { fmtCoins } from "@/lib/packs";
 import { ActionButton } from "@/components/ActionButton";
 import { LineupBuilder } from "./LineupBuilder";
 import { Leaderboard } from "./Leaderboard";
 import { contestBots, enterContest, startContest } from "../../actions";
+import { Coins } from "@/components/Coins";
 
 export default async function ContestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -35,7 +35,7 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
           </p>
           <h1 className="text-3xl font-black">{c.name}</h1>
           <p className="text-sm text-zinc-500">
-            Entry {c.entry_fee ? fmtCoins(c.entry_fee) : "FREE"} · {entries.length}/{c.max_entries} entries · 🥇 {prizes[0].name} · 🥈 {prizes[1].name} · 🥉 {prizes[2].name}
+            Entry {c.entry_fee ? <Coins n={c.entry_fee} /> : "FREE"} · {entries.length}/{c.max_entries} entries · 🥇 {prizes[0].name} · 🥈 {prizes[1].name} · 🥉 {prizes[2].name}
             {c.status === "open" && lock && <> · Locks at first tip, {new Date(lock).toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })} ET</>}
           </p>
         </div>

@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { PACKS, PACK_BY_ID, PackType, RARITIES, Rarity, fmtCoins, BUYBACK_RATE } from "@/lib/packs";
+import { PACKS, PACK_BY_ID, PackType, RARITIES, Rarity, BUYBACK_RATE } from "@/lib/packs";
 import { CardData, GLOW, PlayerCard } from "@/components/PlayerCard";
 import { Logo } from "@/components/Logo";
+import { Coins } from "@/components/Coins";
 
 type Inv = { id: number; pack_type: string; source: string; created_at: number };
 type Act<T> = Promise<T | { error: string }>;
@@ -117,7 +118,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
         <div className="relative rounded-[28px] border border-zinc-200 bg-zinc-100 p-4">
           <div className="mb-3 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-2">
             <Logo height={26} />
-            <span className="font-mono text-sm font-semibold text-zinc-700">{tester ? "TEST MODE · FREE PACKS" : `CREDIT ${fmtCoins(coins)}`}</span>
+            <span className="font-mono text-sm font-semibold text-zinc-700">{tester ? "TEST MODE · FREE PACKS" : <>CREDIT <Coins n={coins} /></>}</span>
           </div>
           <div className="flex gap-4">
             <div className="relative flex-1 rounded-2xl border-2 border-zinc-200 bg-white p-3 shadow-inner">
@@ -127,7 +128,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                     <div className="transition group-hover:-translate-y-1"><PackArt p={p} /></div>
                     <div className="mt-2 h-1 w-full rounded bg-zinc-300" />
                     <span className="mt-1 text-[10px] font-bold text-zinc-500">{String.fromCharCode(65 + Math.floor(i / 3))}{(i % 3) + 1}</span>
-                    <span className="text-xs font-bold text-emerald-600">{fmtCoins(p.price)}</span>
+                    <span className="text-xs font-bold text-emerald-600"><Coins n={p.price} /></span>
                   </button>
                 ))}
               </div>
@@ -137,7 +138,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               <div className="rounded-xl border border-zinc-200 bg-white p-3 text-center">
                 <p className="text-[10px] uppercase text-zinc-400">Selected</p>
                 <p className="text-sm font-black">{pack.name}</p>
-                <p className="font-mono text-emerald-600">{fmtCoins(pack.price)}</p>
+                <p className="font-mono text-emerald-600"><Coins n={pack.price} /></p>
                 <p className="mt-1 text-[10px] text-zinc-500">{pack.blurb}</p>
               </div>
               <div className="relative grid h-14 place-items-center rounded-xl border-2 border-zinc-300 bg-zinc-100">
@@ -145,7 +146,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                 {coinsShown && <span className="anim-coin absolute text-2xl">🪙</span>}
               </div>
               <button onClick={doBuy} disabled={stage !== "idle" || coins < pack.price} className="btn-primary py-3 text-base font-black">
-                {coins < pack.price ? "Need more $" : stage === "vending" ? "Vending…" : "BUY"}
+                {coins < pack.price ? "Need more PackBucks" : stage === "vending" ? "Vending…" : "BUY"}
               </button>
               {err && <p className="text-xs font-semibold text-red-600">{err}</p>}
             </div>
@@ -227,7 +228,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               ) : (
                 <div className="card w-full max-w-xl space-y-3 p-4 text-center">
                   <p className="text-sm text-zinc-500">Pack value</p>
-                  <p className={`text-3xl font-black ${total >= rp.price ? "text-emerald-600" : "text-zinc-800"}`}>{fmtCoins(total)} <span className="text-base font-normal text-zinc-500">on a {fmtCoins(rp.price)} pack {total >= rp.price ? "📈 W" : "📉"}</span></p>
+                  <p className={`text-3xl font-black ${total >= rp.price ? "text-emerald-600" : "text-zinc-800"}`}><Coins n={total} /> <span className="text-base font-normal text-zinc-500">on a <Coins n={rp.price} /> pack {total >= rp.price ? "📈 W" : "📉"}</span></p>
                   <p className="text-xs text-zinc-400">Best pull: <span className={RARITIES[cards[cards.length - 1].rarity].text}>{cards[cards.length - 1].name}</span></p>
                   <div className="flex flex-wrap justify-center gap-2">
                     <button className="btn-ghost" disabled={cards.every((c) => sold.has(c.id) || c.rarity !== "common")}
@@ -235,7 +236,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                       Sell commons ({Math.round(BUYBACK_RATE * 100)}%)
                     </button>
                     <button className="btn-ghost" disabled={cards.every((c) => sold.has(c.id))} onClick={() => sellIds(cards.filter((c) => !sold.has(c.id)).map((c) => c.id))}>
-                      Sell all for {fmtCoins(cards.filter((c) => !sold.has(c.id)).reduce((s, c) => s + Math.floor(c.value * BUYBACK_RATE), 0))}
+                      Sell all for <Coins n={cards.filter((c) => !sold.has(c.id)).reduce((s, c) => s + Math.floor(c.value * BUYBACK_RATE), 0)} />
                     </button>
                     <button className="btn-primary" onClick={close}>Keep & close</button>
                   </div>

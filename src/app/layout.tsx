@@ -5,7 +5,6 @@ import "./globals.css";
 import { currentUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { unopenedPacks } from "@/lib/packs-server";
-import { fmtCoins } from "@/lib/packs";
 import { logout } from "./actions";
 import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
@@ -39,7 +38,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <Sidebar
-          user={{ name: user.name, color: user.color, coins: user.is_tester ? "Unlimited" : fmtCoins(user.coins) }}
+          user={{ name: user.name, color: user.color, coins: user.coins, tester: !!user.is_tester }}
           packs={packs}
           leagues={leagues.map((l) => ({ id: l.id, name: l.name, live: !!l.live }))}
           logout={logout}

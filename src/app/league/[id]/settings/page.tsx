@@ -19,7 +19,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
   const players = all<{ id: number; name: string; pos: string }>("SELECT id, name, pos FROM players ORDER BY adp");
   const sel = (name: string, value: string) => (
     <select name={name} defaultValue={value} className="input">
-      {PACKS.map((p) => <option key={p.id} value={p.id}>{p.name} (${p.price})</option>)}
+      {PACKS.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.price.toLocaleString()} PackBucks)</option>)}
     </select>
   );
 

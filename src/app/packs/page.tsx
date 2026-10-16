@@ -6,7 +6,7 @@ import { buyPack, ripPack, sellCards } from "../actions";
 import { PageHeader } from "@/components/PageHeader";
 import { catalogStats, ensureCatalog } from "@/lib/slabs";
 import { marketConfigured } from "@/lib/market";
-import { fmtCoins } from "@/lib/packs";
+import { Coins } from "@/components/Coins";
 
 export default async function PacksPage() {
   const u = await requireUser();
@@ -27,7 +27,7 @@ export default async function PacksPage() {
             <tbody>
               {PACKS.map((p) => (
                 <tr key={p.id} className="border-t border-line/60 text-center">
-                  <td className="py-1.5 text-left font-semibold">{p.name}</td><td>${p.price.toLocaleString()}</td><td>{p.cards}</td>
+                  <td className="py-1.5 text-left font-semibold">{p.name}</td><td><Coins n={p.price} /></td><td>{p.cards}</td>
                   {Object.keys(RARITIES).map((r) => <td key={r}>{p.odds[r as keyof typeof p.odds]}%</td>)}
                 </tr>
               ))}
@@ -57,7 +57,7 @@ export default async function PacksPage() {
                   <tr key={r} className="border-t border-line/60 text-center">
                     <td className={`py-1.5 text-left font-semibold ${RARITIES[r].text}`}>{RARITIES[r].label}</td>
                     <td>{st?.n ?? 0}</td><td>{st?.owned ?? 0}</td>
-                    <td>{st ? `${fmtCoins(st.lo)} – ${fmtCoins(st.hi)}` : "—"}</td>
+                    <td>{st ? <><Coins n={st.lo} /> – <Coins n={st.hi} /></> : "—"}</td>
                   </tr>
                 );
               })}

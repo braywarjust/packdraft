@@ -4,10 +4,11 @@ import { all } from "@/lib/db";
 import { Contest, maybeSettle } from "@/lib/dfs";
 import { getLeague, maybeFinalize, teamWeek } from "@/lib/league";
 import { unopenedPacks } from "@/lib/packs-server";
-import { PACK_BY_ID, RARITIES, Rarity, fmtCoins } from "@/lib/packs";
+import { PACK_BY_ID, RARITIES, Rarity } from "@/lib/packs";
 import { ActionButton } from "@/components/ActionButton";
 import { LogoWatermark } from "@/components/Logo";
 import { claimBonus } from "./actions";
+import { Coins } from "@/components/Coins";
 
 export default async function Home() {
   const user = await requireUser();
@@ -33,11 +34,11 @@ export default async function Home() {
           <p className="text-sm text-zinc-500">Welcome back</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">{user.name}</h1>
           <div className="mt-6 flex flex-wrap gap-3">
-            {[
-              ["PackBucks", fmtCoins(user.coins)],
+            {([
+              ["PackBucks", <Coins key="c" n={user.coins} />],
               ["Unopened packs", String(packs.length)],
               ["Leagues", String(myTeams.length)],
-            ].map(([k, v]) => (
+            ] as [string, React.ReactNode][]).map(([k, v]) => (
               <div key={k} className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
                 <p className="text-xs text-zinc-500">{k}</p>
                 <p className="text-xl font-semibold">{v}</p>
@@ -46,7 +47,7 @@ export default async function Home() {
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
             {user.last_bonus !== today ? (
-              <ActionButton action={claimBonus} className="btn-lime">Claim daily $150</ActionButton>
+              <ActionButton action={claimBonus} className="btn-lime">Claim daily <Coins n={150} /></ActionButton>
             ) : (
               <span className="btn pointer-events-none border border-zinc-200 text-zinc-400">Daily bonus claimed</span>
             )}
@@ -124,7 +125,7 @@ export default async function Home() {
               {pulls.map((c, i) => (
                 <li key={i} className="flex items-center justify-between text-sm">
                   <span><span className={`font-semibold ${RARITIES[c.rarity].text}`}>{c.name}</span> <span className="text-zinc-400">· {c.user}</span></span>
-                  <span className="font-mono text-emerald-600">{fmtCoins(c.value)}</span>
+                  <span className="font-mono text-emerald-600"><Coins n={c.value} /></span>
                 </li>
               ))}
             </ul>
@@ -135,7 +136,7 @@ export default async function Home() {
               {leaders.map((u, i) => (
                 <li key={u.name} className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2"><span className="w-4 text-zinc-400">{i + 1}</span><span className="h-3 w-3 rounded-full" style={{ background: u.color }} />{u.name}</span>
-                  <span className="font-mono">{fmtCoins(u.coins + u.vault)}</span>
+                  <span className="font-mono"><Coins n={u.coins + u.vault} /></span>
                 </li>
               ))}
             </ol>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
+import { Coins } from "./Coins";
 
 const I = {
   home: "M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z",
@@ -29,7 +30,7 @@ const STORE_KEY = "pd-sidebar";
 export function Sidebar({
   user, packs, leagues, logout,
 }: {
-  user: { name: string; color: string; coins: string };
+  user: { name: string; color: string; coins: number; tester?: boolean };
   packs: number;
   leagues: { id: number; name: string; live: boolean }[];
   logout: () => Promise<void>;
@@ -101,11 +102,11 @@ export function Sidebar({
       <div className={mini ? "space-y-2 p-2.5" : "m-4 space-y-2"}>
         <div className={`rounded-lg border border-zinc-200 bg-white ${mini ? "p-2" : "p-3"}`}>
           <div className={`flex items-center gap-2 ${mini ? "flex-col" : ""}`}>
-            <span className="h-8 w-8 shrink-0 rounded-full" style={{ background: user.color }} title={mini ? `${user.name} · ${user.coins}` : undefined} />
+            <span className="h-8 w-8 shrink-0 rounded-full" style={{ background: user.color }} title={mini ? `${user.name} · ${user.tester ? "Unlimited" : user.coins.toLocaleString()} PackBucks` : undefined} />
             {!mini && (
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{user.name}</p>
-                <p className="text-xs text-zinc-500">{user.coins} PackBucks</p>
+                <p className="text-xs text-zinc-500">{user.tester ? "Unlimited PackBucks" : <Coins n={user.coins} />}</p>
               </div>
             )}
             <form action={logout}>
@@ -132,7 +133,7 @@ export function Sidebar({
       <div className="sticky top-0 z-40 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-2.5 lg:hidden">
         <Link href="/" aria-label="PackDraft home"><Logo height={34} /></Link>
         <div className="flex items-center gap-3">
-          <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700">{user.coins}</span>
+          <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700">{user.tester ? "Unlimited" : <Coins n={user.coins} />}</span>
           <button onClick={() => setOpen(true)} className="rounded-md p-1.5 text-zinc-700 hover:bg-zinc-100" aria-label="Open menu">
             <Icon d="M4 6h16M4 12h16M4 18h16" />
           </button>
