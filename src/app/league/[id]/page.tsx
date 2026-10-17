@@ -33,6 +33,53 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
     <div className="grid gap-6 lg:grid-cols-3">
       {l.draft_status === "done" && <AutoRefresh ms={l.week_started_at ? 4000 : 30000} />}
       <div className="space-y-6 lg:col-span-2">
+        {/* What you're playing for: weekly packs + every point pays Pack Points */}
+        {(() => {
+          const rate = l.draft_status === "done" ? weekRate(l.id, l.current_week) : 1;
+          const mine = me && l.draft_status === "done" ? earnings(l.id, u.id, l.current_week) : null;
+          const rewards = [["Matchup win", l.reward_win, false], ["Matchup loss", l.reward_loss, false], ["Top score", l.reward_top, true], ["Champion", "goat", true]] as const;
+          return (
+            <section className="relative overflow-hidden rounded-2xl border border-amber-400/30 shadow-xl"
+              style={{ background: "radial-gradient(120% 140% at 0% 0%, rgba(245,193,92,.22), transparent 55%), radial-gradient(120% 140% at 100% 100%, rgba(16,185,129,.18), transparent 55%), #1d2433" }}>
+              <div className="grid gap-0 xl:grid-cols-[1.5fr_1fr]">
+                <div className="p-5">
+                  <p className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-600">Every week</p>
+                  <h2 className="text-2xl font-black tracking-tight text-white">Win packs, rip slabs</h2>
+                  <p className="mt-1 text-sm text-zinc-500">Every manager earns a pack each week. Top scorer and the champ get extra.</p>
+                  <div className="mt-4 grid grid-cols-4 gap-2">
+                    {rewards.map(([label, id, bonus]) => (
+                      <Link key={label} href="/packs" className="group flex flex-col items-center rounded-xl bg-black/20 px-1 pb-2 pt-3 text-center ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-amber-400/40">
+                        <PackThumb id={id} height={84} showName={false} />
+                        <span className="mt-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500">{label}</span>
+                        <span className="text-xs font-bold leading-tight text-white">{PACK_BY_ID[id]?.name}</span>
+                        {bonus && <span className="mt-1 rounded-full bg-amber-400 px-1.5 text-[9px] font-black uppercase text-black">Bonus</span>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col justify-between gap-4 border-t border-white/10 bg-black/20 p-5 xl:border-l xl:border-t-0">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-600">Points pay</p>
+                    <h2 className="text-2xl font-black tracking-tight text-white">Every point = Pack Points</h2>
+                    <p className="mt-1 text-sm text-zinc-500">Your starters&apos; fantasy points are paid to you as Pack Points when their games go final.</p>
+                  </div>
+                  <div className="rounded-xl bg-emerald-500/10 p-3 ring-1 ring-emerald-500/30">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">This week&apos;s rate</p>
+                    <p className="flex items-center gap-2 whitespace-nowrap font-mono text-2xl font-black text-emerald-600">1 pt = <CoinIcon />{rate.toFixed(2)}</p>
+                    <p className="text-[10px] text-zinc-500">Set by the slab market</p>
+                  </div>
+                  {mine && (
+                    <div className="grid grid-cols-2 gap-2 text-center">
+                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">This week</p><p className="font-black text-emerald-600"><Coins n={mine.week} /></p></div>
+                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">Season</p><p className="font-black text-white"><Coins n={mine.season} /></p></div>
+                    </div>
+                  )}
+                  <Link href="/packs" className="btn-primary w-full">Spend them in the Pack Shop</Link>
+                </div>
+              </div>
+            </section>
+          );
+        })()}
         {l.draft_status === "pre" && (
           <section className="card space-y-4 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -170,37 +217,6 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
               );
             })}
           </ol>
-        </div>
-        {l.draft_status === "done" && (() => {
-          const rate = weekRate(l.id, l.current_week);
-          const mine = me ? earnings(l.id, u.id, l.current_week) : null;
-          return (
-            <div className="card p-4">
-              <h3 className="mb-1 font-bold">Points pay Pack Points</h3>
-              <p className="mb-3 text-xs text-zinc-500">
-                Every fantasy point your starters score pays you Pack Points when their game goes final.
-                This week 1 point = <span className="inline-flex items-center gap-1 font-semibold text-emerald-600"><CoinIcon />{rate.toFixed(2)}</span> Pack Points, set by the slab market.
-              </p>
-              {mine && (
-                <ul className="space-y-1.5 text-sm">
-                  <li className="flex justify-between"><span>Earned this week</span><span className="font-semibold text-emerald-600"><Coins n={mine.week} /></span></li>
-                  <li className="flex justify-between"><span>Earned this season</span><span className="font-semibold"><Coins n={mine.season} /></span></li>
-                </ul>
-              )}
-            </div>
-          );
-        })()}
-        <div className="card p-4">
-          <h3 className="mb-2 font-bold">Weekly pack rewards</h3>
-          <ul className="space-y-2 text-sm">
-            {([["Matchup win", l.reward_win, ""], ["Matchup loss", l.reward_loss, ""], ["Top score", l.reward_top, "+ "], ["Champion", "goat", "+ "]] as const).map(([label, id, plus]) => (
-              <li key={label} className="grid grid-cols-[minmax(0,1fr)_1.75rem_6.75rem] items-center gap-2.5">
-                <span className="leading-tight text-zinc-500">{label}{plus && <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Bonus</span>}</span>
-                <span className="flex justify-center"><PackThumb id={id} height={40} showName={false} /></span>
-                <span className="font-semibold leading-tight">{PACK_BY_ID[id]?.name}</span>
-              </li>
-            ))}
-          </ul>
         </div>
         {!isCommish && !me && l.draft_status === "pre" && (
           <Link href="/leagues" className="btn-primary w-full">Join this league</Link>
