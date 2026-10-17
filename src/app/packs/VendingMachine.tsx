@@ -261,10 +261,12 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
 
       {/* Rip modal */}
       {(stage === "ready" || stage === "tearing" || stage === "cards") && rp && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-zinc-100/95 p-4 backdrop-blur-sm">
+        <div className={`fixed inset-0 z-50 flex flex-col items-center overflow-y-auto bg-zinc-100/95 p-4 backdrop-blur-sm ${stage === "cards" ? "justify-start pt-[14vh]" : "justify-center"}`}>
+          {/* Anchored to the top in the reveal (not centred) so the slab stays put when the summary appears under it. */}
           {stage !== "cards" ? (
             <div className="flex flex-col items-center gap-6" style={{ "--burst": BURST[rp.id] ?? "#ffffff" } as React.CSSProperties}>
-              <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{stage === "tearing" ? "Opening…" : "Click the pack to open it"}</p>
+              {/* No text once the pack is clicked; kept invisible so the pack doesn't jump. */}
+              <p className={`text-sm uppercase tracking-[0.3em] text-zinc-500 ${stage === "tearing" ? "invisible" : ""}`}>Click the pack to open it</p>
               <button ref={packRef} onClick={doRip} disabled={stage === "tearing"} className={`relative ${stage === "ready" ? "anim-drop hover:anim-shake" : ""}`}>
                 {stage === "tearing" ? (
                   // Charge and burst: light rays spin up behind the crate while it shakes harder and harder, then it
@@ -284,7 +286,6 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
             </div>
           ) : (
             <div className="flex w-full max-w-5xl flex-col items-center gap-6">
-              <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{rp.name} · tap cards to reveal</p>
               <div className="flex flex-wrap justify-center gap-4">
                 {cards.map((c, i) => {
                   const isUp = flipped.has(c.id);
@@ -308,7 +309,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                   );
                 })}
               </div>
-              {!allFlipped ? (
+              {!allFlipped ? (flipped.size > 0 &&
                 <button className="btn-ghost" onClick={() => cards.forEach((c, i) => setTimeout(() => flip(c), i * 350))}>Reveal all</button>
               ) : (
                 <div className="card w-full max-w-xl space-y-3 p-4 text-center">
