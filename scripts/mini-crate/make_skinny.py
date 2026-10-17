@@ -10,15 +10,18 @@ DX = float(argv[1]) if len(argv) > 1 else 0.42
 DY = float(argv[2]) if len(argv) > 2 else 0.12
 CORE_X, CORE_Y = 0.3, 0.15  # world half-widths of the untouched middle
 
+# Work in world axes (relative to each object's origin): the frame mesh has a delta rotation, so its local y is
+# world height, and sliding in local axes made it shorter instead of shallower.
 for name in ("Cube.002", "Cube.006", "Card_Slab_v2_Slab_0.002"):
     o = bpy.data.objects[name]
-    sx, sy = o.scale.x, o.scale.y
-    tx, ty, mx, my = CORE_X / sx, CORE_Y / sy, DX / sx, DY / sy
+    R = o.matrix_world.to_3x3(); Ri = R.inverted()
     for v in o.data.vertices:
-        if v.co.x > tx: v.co.x -= mx
-        elif v.co.x < -tx: v.co.x += mx
-        if v.co.y > ty: v.co.y -= my
-        elif v.co.y < -ty: v.co.y += my
+        w = R @ v.co
+        if w.x > CORE_X: w.x -= DX
+        elif w.x < -CORE_X: w.x += DX
+        if w.y > CORE_Y: w.y -= DY
+        elif w.y < -CORE_Y: w.y += DY
+        v.co = Ri @ w
     o.data.update()
 
 # Report the inner box's new size for the UV layout (1000 px per Blender unit, like the Mega crate).

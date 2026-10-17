@@ -28,7 +28,7 @@ function PackArt({ p, big, md, slabs }: { p: PackType; big?: boolean; md?: boole
   const [failed, setFailed] = useState(false);
   if (failed) return <CssPackArt p={p} big={big} md={md} slabs={slabs} />;
   const [w, h] = artSize(p, big ? "big" : md ? "md" : "sm");
-  const src = `/packs/${p.id}.png?v=7`;
+  const src = `/packs/${p.id}.png?v=8`;
   return (
     <span className="relative block" style={{ width: w, height: h }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
