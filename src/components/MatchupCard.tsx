@@ -30,12 +30,12 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
   };
   return (
     <Link href={href} className={`group relative block overflow-hidden rounded-2xl shadow-xl transition hover:-translate-y-0.5 ${mine ? "ring-2 ring-white/70" : "ring-1 ring-white/10"}`}
-      style={{ background: `linear-gradient(100deg, ${home.brand.color} 50%, ${away.brand.color} 50%)` }}>
-      {/* Each half gets its team's logo, faded and centred; a hard diagonal cut splits the colours. */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(0 0, 54.4% 0, 45.6% 100%, 0 100%)" }}>
+      style={{ background: away.brand.color }}>
+      {/* Both halves are clipped with the same polygon the divider line uses, so colour, logo and line always meet. */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(0 0, 54.4% 0, 45.6% 100%, 0 100%)", background: home.brand.color }}>
         <div className="absolute left-1/4 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"><TeamBadge brand={home.brand} size={big ? 260 : 200} ghost /></div>
       </div>
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(54.4% 0, 100% 0, 100% 100%, 45.6% 100%)" }}>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(54.4% 0, 100% 0, 100% 100%, 45.6% 100%)", background: away.brand.color }}>
         <div className="absolute left-3/4 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"><TeamBadge brand={away.brand} size={big ? 260 : 200} ghost /></div>
       </div>
       <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
