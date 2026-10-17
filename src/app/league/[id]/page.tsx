@@ -1,3 +1,4 @@
+import { PackThumb } from "@/components/PackThumb";
 import { TeamBadge, TeamName } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand } from "@/lib/branding";
 import Link from "next/link";
@@ -178,11 +179,13 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
         })()}
         <div className="card p-4">
           <h3 className="mb-2 font-bold">Weekly pack rewards</h3>
-          <ul className="space-y-1.5 text-sm">
-            <li className="flex justify-between"><span>Matchup win</span><span className="font-semibold">{PACK_BY_ID[l.reward_win]?.name}</span></li>
-            <li className="flex justify-between"><span>Matchup loss</span><span className="font-semibold">{PACK_BY_ID[l.reward_loss]?.name}</span></li>
-            <li className="flex justify-between"><span>Top score of the week</span><span className="font-semibold">+ {PACK_BY_ID[l.reward_top]?.name}</span></li>
-            <li className="flex justify-between"><span>League champion</span><span className="font-semibold">+ GOAT Pack</span></li>
+          <ul className="space-y-2 text-sm">
+            {([["Matchup win", l.reward_win, ""], ["Matchup loss", l.reward_loss, ""], ["Top score of the week", l.reward_top, "+ "], ["League champion", "goat", "+ "]] as const).map(([label, id, plus]) => (
+              <li key={label} className="flex items-center justify-between gap-3">
+                <span className="text-zinc-500">{label}</span>
+                <span className="flex items-center gap-1 text-right">{plus && <span className="text-zinc-500">{plus}</span>}<PackThumb id={id} height={40} /></span>
+              </li>
+            ))}
           </ul>
         </div>
         {!isCommish && !me && l.draft_status === "pre" && (
