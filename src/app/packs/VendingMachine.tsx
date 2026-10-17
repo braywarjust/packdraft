@@ -1,5 +1,6 @@
 "use client";
 
+import { OddsBar } from "@/components/OddsBar";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { PACKS, PACK_BY_ID, PackType, RARITIES, Rarity, BUYBACK_RATE } from "@/lib/packs";
@@ -161,15 +162,15 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
   return (
     <div className="space-y-8">
       {party && <Confetti />}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-zinc-500">
-          {tester ? "Test mode: every pack is free." : <>Your balance: <span className="font-semibold text-zinc-900"><Coins n={coins} /></span></>}
-        </p>
-        {err && <p className="text-sm font-semibold text-red-600">{err}</p>}
-      </div>
+      {(err || tester) && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {tester && <p className="text-sm text-zinc-500">Test mode: every pack is free.</p>}
+          {err && <p className="text-sm font-semibold text-red-600">{err}</p>}
+        </div>
+      )}
 
       {inventory.length > 0 && (
-        <section className="space-y-3">
+        <section id="unopened" className="scroll-mt-36 space-y-3">
           <h2 className="text-lg font-bold">Your unopened packs ({inventory.length})</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {inventory.map((inv) => {
@@ -191,8 +192,8 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
 
       {/* Cases are presented like the packs: the render is the buy button, price underneath. */}
       {PACKS.some((p) => p.kind === "case") && (
-        <section className="space-y-3">
-          <h2 className="text-lg font-bold">Cases</h2>
+        <section id="cases" className="scroll-mt-36 space-y-3">
+          <div><h2 className="text-lg font-bold">Cases</h2><p className="text-sm text-zinc-500">Multi-slab boxes with no Base tier at all.</p></div>
           <div className="flex flex-wrap justify-center gap-10">
             {PACKS.filter((p) => p.kind === "case").map((p) => {
               const busy = stage !== "idle";
@@ -206,6 +207,10 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                   </div>
                   <span className="text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
                   <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
+                  <span className="w-36 space-y-1">
+                    <OddsBar odds={p.odds} />
+                    <span className="block text-center text-[11px] text-zinc-500">Case Hit or better <b className="text-amber-600">{(p.odds.legendary + p.odds.grail).toFixed(p.odds.legendary + p.odds.grail < 1 ? 2 : 1).replace(/\.0$/, "")}%</b></span>
+                  </span>
                 </button>
               );
             })}
@@ -213,8 +218,8 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
         </section>
       )}
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-bold">Packs</h2>
+      <section id="packs" className="scroll-mt-36 space-y-3">
+        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One graded slab each. Pricier packs tilt the odds toward the top tiers. Tap a pack to buy and rip it.</p></div>
         <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 xl:grid-cols-6">
           {PACKS.filter((p) => p.kind !== "case").map((p) => {
             const busy = stage !== "idle";
@@ -228,6 +233,10 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                 </div>
                 <span className="text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
                   <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
+                  <span className="w-36 space-y-1">
+                    <OddsBar odds={p.odds} />
+                    <span className="block text-center text-[11px] text-zinc-500">Case Hit or better <b className="text-amber-600">{(p.odds.legendary + p.odds.grail).toFixed(p.odds.legendary + p.odds.grail < 1 ? 2 : 1).replace(/\.0$/, "")}%</b></span>
+                  </span>
               </button>
             );
           })}

@@ -15,6 +15,17 @@ export const RARITIES: Record<Rarity, { label: string; mult: [number, number]; r
   grail: { label: "Grail", mult: [6, 15], ring: "ring-emerald-300", text: "text-emerald-700", printRun: 1 },
 };
 
+/** Solid tier colours (match the rarity badges) and what each tier means in hobby terms. */
+export const RARITY_HEX: Record<Rarity, string> = { common: "#64748b", rare: "#0284c7", epic: "#c026d3", legendary: "#f59e0b", grail: "#10b981" };
+export const RARITY_BLURB: Record<Rarity, string> = {
+  common: "Everyday graded slabs. The bread and butter of every break.",
+  rare: "Inserts, parallels and better players. The cards you chase in a box.",
+  epic: "Short prints, autos, patches and gem grades. Rare enough to brag about.",
+  legendary: "The one-per-case kind of hit: big names, low pops, on-card autos.",
+  grail: "Holy grails. Logomen, black labels, iconic rookies of legends.",
+};
+export const RARITY_ORDER: Rarity[] = ["common", "rare", "epic", "legendary", "grail"];
+
 export const PACKS: PackType[] = [
   { id: "rookie", name: "Rookie Pack", price: 25, cards: 1, color: "from-slate-500 to-slate-700", accent: "#94a3b8", blurb: "Cheap thrills. Every hit starts somewhere.",
     odds: { common: 90, rare: 8.5, epic: 1.3, legendary: 0.18, grail: 0.02  } },
