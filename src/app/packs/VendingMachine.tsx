@@ -296,8 +296,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                         {/* Face-down slab (SlabBack): exactly the box and slab shape of the revealed scan (SlabImage at 260px),
                             centred the same way, so the flip turns over in place. */}
                         <div className="flip-face absolute inset-0 flex flex-col items-center">
-                          <SlabBack height={260} rarity={c.rarity} className={hit ? "drop-shadow-[0_0_14px_rgba(251,191,36,.75)]" : ""} />
-                          <p className="mt-3 text-[10px] font-semibold tracking-[0.3em] text-zinc-400">TAP TO REVEAL</p>
+                          <SlabBack height={260} rarity={c.rarity} />
                         </div>
                         <div className={`flip-face flip-back absolute inset-0 flex flex-col items-center rounded-xl ${isUp && !c.slab_id && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
                           <PlayerCard c={c} />
