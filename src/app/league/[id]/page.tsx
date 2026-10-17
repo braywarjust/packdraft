@@ -143,20 +143,33 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
 
       <aside className="space-y-6">
         <div className="card p-4">
-          <h3 className="mb-3 font-bold">Standings</h3>
-          <table className="w-full text-sm">
-            <thead className="text-xs text-zinc-400"><tr><th className="text-left">Team</th><th>W-L</th><th className="text-right">PF</th></tr></thead>
-            <tbody>
-              {standings(l.id).map((t, i) => (
-                <tr key={t.id} className={`border-t border-line/60 ${me?.id === t.id ? "text-brand" : ""}`}>
-                  <td className="py-1.5"><span className="mr-2 text-zinc-400">{i + 1}</span>
-                    <Link href={`/league/${l.id}/team/${t.id}`} className="inline-flex max-w-[11rem] hover:underline"><TeamName brand={brand.get(t.id) ?? teamBrand(t)} size={20} /></Link></td>
-                  <td className="text-center">{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""}</td>
-                  <td className="text-right font-mono">{t.points_for.toFixed(1)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <h3 className="mb-3 flex items-center justify-between font-bold">Standings <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">W-L · PF</span></h3>
+          <ol className="space-y-1.5">
+            {standings(l.id).map((t, i) => {
+              const b = brand.get(t.id) ?? teamBrand(t);
+              const mine = me?.id === t.id;
+              return (
+                <li key={t.id}>
+                  <Link href={`/league/${l.id}/team/${t.id}`}
+                    className={`relative flex items-center gap-2.5 overflow-hidden rounded-xl py-2 pl-3 pr-3 transition hover:brightness-125 ${mine ? "ring-2 ring-white/60" : "ring-1 ring-white/5"}`}
+                    style={{ background: `linear-gradient(100deg, ${b.color}cc 0%, ${b.color}55 45%, ${b.alt}22 100%)` }}>
+                    <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: `linear-gradient(${b.color}, ${b.alt})` }} />
+                    <span className="pointer-events-none absolute -right-4 top-1/2 -translate-y-1/2 opacity-15"><TeamBadge brand={b} size={64} /></span>
+                    <span className="relative w-5 text-center font-mono text-lg font-black text-white/80">{i + 1}</span>
+                    <span className="relative"><TeamBadge brand={b} size={30} /></span>
+                    <span className="relative min-w-0 flex-1">
+                      <span className="block truncate text-sm font-bold text-white">{t.name}</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-widest text-white/60">{b.abbr}{mine ? " · You" : ""}</span>
+                    </span>
+                    <span className="relative text-right">
+                      <span className="block font-mono text-sm font-black text-white">{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""}</span>
+                      <span className="block font-mono text-[10px] text-white/70">{t.points_for.toFixed(1)}</span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
         </div>
         {l.draft_status === "done" && (() => {
           const rate = weekRate(l.id, l.current_week);
