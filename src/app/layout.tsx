@@ -1,3 +1,4 @@
+import { ensureBranding, leagueBrand } from "@/lib/branding";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
@@ -28,8 +29,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     );
   }
   const packs = unopenedPacks(user.id).length;
-  const leagues = all<{ id: number; name: string; live: number }>(
-    `SELECT l.id, l.name, (l.week_started_at IS NOT NULL OR l.draft_status = 'live') live
+  ensureBranding();
+  const leagues = all<{ id: number; name: string; live: number; color: string | null; alt_color: string | null; abbr: string | null; logo_url: string | null }>(
+    `SELECT l.id, l.name, l.color, l.alt_color, l.abbr, l.logo_url, (l.week_started_at IS NOT NULL OR l.draft_status = 'live') live
      FROM leagues l JOIN teams t ON t.league_id = l.id WHERE t.user_id = ? ORDER BY l.id DESC`, user.id);
   return (
     <html lang="en" suppressHydrationWarning>
@@ -41,7 +43,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <Sidebar
           user={{ name: user.name, color: user.color, coins: user.coins, tester: !!user.is_tester }}
           packs={packs}
-          leagues={leagues.map((l) => ({ id: l.id, name: l.name, live: !!l.live }))}
+          leagues={leagues.map((l) => ({ id: l.id, name: l.name, live: !!l.live, brand: leagueBrand(l) }))}
           logout={logout}
         />
         <div className="flex min-h-screen flex-col transition-[padding] duration-200 lg:pl-[var(--sb)]">

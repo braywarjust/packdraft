@@ -1,3 +1,4 @@
+import { BrandEditor } from "@/components/BrandEditor";
 import { PresetPicker } from "@/components/PresetPicker";
 import { userPresets } from "@/lib/branding";
 import { Coins } from "@/components/Coins";
@@ -13,7 +14,7 @@ export default async function NewLeague() {
     <div className="mx-auto max-w-2xl">
       <PageHeader eyebrow="Leagues" title="Create a league" description={<>Up to 8 teams is free. Bigger leagues cost <Coins n={2500} className="font-semibold text-emerald-600" />. You can change everything later in commissioner settings.</>} />
       <ActionForm action={createLeague} submit="Create league" className="card space-y-5 p-6">
-        <div><label className="label">League name</label><input name="name" className="input" placeholder="The Pack Rats" required /></div>
+        <BrandEditor fields label="League" initial={{ name: "", abbr: "", color: "#0253a4", alt_color: "#cc2b31", logo_url: null }} />
         <PresetPicker presets={presets} />
         <div className="grid gap-4 sm:grid-cols-3">
           <div>

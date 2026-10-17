@@ -205,6 +205,8 @@ export type League = {
   season_weeks: number; invite_code: string; reward_win: string; reward_loss: string; reward_top: string;
   draft_status: string; draft_order: string | null; pick_deadline: number | null; last_pick_at: number | null;
   current_week: number; week_started_at: number | null; champion_team_id: number | null; created_at: number;
+  // Branding (added by branding.ts ensureBranding)
+  color?: string | null; alt_color?: string | null; abbr?: string | null; logo_url?: string | null;
 };
 export type Team = {
   id: number; league_id: number; user_id: number | null; name: string; is_cpu: number; autodraft: number; faab: number;

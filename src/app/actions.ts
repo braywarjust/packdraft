@@ -13,7 +13,7 @@ import { PACK_BY_ID, BUYBACK_RATE } from "@/lib/packs";
 import { openPack, releaseSlab } from "@/lib/packs-server";
 import { etDate } from "@/lib/nba/espn";
 import { placeBet } from "@/lib/bets";
-import { applyPreset, deletePreset, getPreset, savePreset, setFavoritePreset } from "@/lib/branding";
+import { applyPreset, deletePreset, getPreset, saveLeagueBrand, savePreset, setFavoritePreset } from "@/lib/branding";
 import { ensureSchedule } from "@/lib/nba/sync";
 
 type Result = { error?: string; ok?: boolean };
@@ -87,6 +87,11 @@ export async function createLeague(_: Result | undefined, form: FormData): Promi
       faab, Number(form.get("keeper_count") ?? 0), Number(form.get("pick_seconds") ?? 60), Number(form.get("sim_minutes") ?? 5), code(), Date.now(),
     );
     const lid = Number(r.lastInsertRowid);
+    const color = String(form.get("brand_color") ?? "");
+    if (/^#[0-9a-f]{6}$/i.test(color)) {
+      saveLeagueBrand(lid, { name, abbr: String(form.get("brand_abbr") ?? ""), color, alt_color: String(form.get("brand_alt") ?? color),
+        logo_url: String(form.get("brand_logo") ?? "") || null });
+    }
     const preset = getPreset(u.id, Number(form.get("preset_id") ?? 0));
     const teamName = preset?.name ?? (String(form.get("team_name") ?? "").trim() || `${u.name}'s Team`);
     const tid = Number(run("INSERT INTO teams (league_id, user_id, name, faab) VALUES (?, ?, ?, ?)", lid, u.id, teamName.slice(0, 32), faab).lastInsertRowid);
@@ -558,6 +563,16 @@ export async function favoritePresetAction(presetId: number | null) {
     setFavoritePreset(u.id, presetId);
     revalidatePath("/teams");
     revalidatePath("/");
+    return { ok: true };
+  });
+}
+
+/** Commish: rename and re-brand the league (logo, colours, short name) any time. */
+export async function updateLeagueBrandAction(leagueId: number, b: { name: string; abbr: string; color: string; alt_color: string; logo_url: string | null }) {
+  return wrap(async () => {
+    await commish(leagueId);
+    saveLeagueBrand(leagueId, b);
+    revalidatePath("/", "layout");
     return { ok: true };
   });
 }

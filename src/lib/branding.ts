@@ -21,6 +21,8 @@ export function ensureBranding() {
   if (!cols.includes("abbr")) run("ALTER TABLE teams ADD COLUMN abbr TEXT");
   if (!cols.includes("logo_url")) run("ALTER TABLE teams ADD COLUMN logo_url TEXT");
   if (!cols.includes("preset_id")) run("ALTER TABLE teams ADD COLUMN preset_id INTEGER");
+  const lcols = all<{ name: string }>("PRAGMA table_info(leagues)").map((c) => c.name);
+  for (const c of ["color", "alt_color", "abbr", "logo_url"]) if (!lcols.includes(c)) run(`ALTER TABLE leagues ADD COLUMN ${c} TEXT`);
   const ucols = all<{ name: string }>("PRAGMA table_info(users)").map((c) => c.name);
   if (!ucols.includes("fav_preset_id")) run("ALTER TABLE users ADD COLUMN fav_preset_id INTEGER");
   ready = true;
@@ -88,4 +90,25 @@ export function setFavoritePreset(userId: number, presetId: number | null) {
   ensureBranding();
   if (presetId && !getPreset(userId, presetId)) throw new Error("Preset not found");
   run("UPDATE users SET fav_preset_id = ? WHERE id = ?", presetId, userId);
+}
+
+// ---------- League branding ----------
+
+const LEAGUE_PALETTE = [["#0253a4", "#cc2b31"], ["#111827", "#f5c15c"], ["#7c3aed", "#22d3ee"], ["#0f766e", "#f97316"], ["#be123c", "#111827"], ["#1e3a8a", "#facc15"]];
+
+/** A league's branding (stable auto colours until the commish sets them). */
+export function leagueBrand(l: { id: number; name: string; color?: string | null; alt_color?: string | null; abbr?: string | null; logo_url?: string | null }): Brand {
+  const [c, a] = LEAGUE_PALETTE[hash(`league:${l.id}`) % LEAGUE_PALETTE.length];
+  return { name: l.name, abbr: l.abbr || autoAbbr(l.name), color: l.color || c, alt: l.alt_color || a, logo: l.logo_url ?? null };
+}
+
+/** Validate and store a league's name + branding. */
+export function saveLeagueBrand(leagueId: number, b: { name: string; abbr: string; color: string; alt_color: string; logo_url: string | null }) {
+  ensureBranding();
+  const name = b.name.trim().slice(0, 40);
+  if (name.length < 2) throw new Error("League needs a name");
+  const abbr = (b.abbr.trim() || autoAbbr(name)).replace(/[^a-z0-9]/gi, "").slice(0, 4).toUpperCase();
+  if (!HEX.test(b.color) || !HEX.test(b.alt_color)) throw new Error("Pick two colours");
+  if (b.logo_url && !/^\/api\/uploads\/[a-f0-9]{24}\.png$/.test(b.logo_url)) throw new Error("Logo must be an uploaded PNG");
+  run("UPDATE leagues SET name = ?, abbr = ?, color = ?, alt_color = ?, logo_url = ? WHERE id = ?", name, abbr, b.color, b.alt_color, b.logo_url, leagueId);
 }

@@ -5,7 +5,7 @@ import { all, one, Game, Matchup, Team } from "@/lib/db";
 import { boostableGame, getLeague, maybeFinalize, roster, standings, teamWeek, STARTERS } from "@/lib/league";
 import { unopenedPacks } from "@/lib/packs-server";
 import { RARITIES, Rarity } from "@/lib/packs";
-import { ensureBranding, favoritePresetId, teamBrand, userPresets } from "@/lib/branding";
+import { ensureBranding, favoritePresetId, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
 import { teamBoosts } from "@/lib/boost";
 import { earnings } from "@/lib/economy";
 import { winProb } from "@/lib/sim";
@@ -189,7 +189,7 @@ export default async function Home() {
             <div key={t.id} className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <Link href={`/league/${l.id}`} className="flex min-w-0 items-center gap-2 font-bold hover:underline">
-                  <TeamBadge brand={brand} size={22} />
+                  <TeamBadge brand={leagueBrand(l)} size={24} />
                   <span className="truncate">{l.name}</span>
                   <span className="font-normal text-zinc-500">
                     · {l.champion_team_id ? "Season over" : l.draft_status === "done" ? `Week ${l.current_week}` : l.draft_status === "live" ? "Drafting now" : "Pre-draft"}

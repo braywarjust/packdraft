@@ -1,5 +1,6 @@
 "use client";
 
+import { TeamBadge, type BrandLite } from "./TeamBadge";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -43,7 +44,7 @@ export function Sidebar({
 }: {
   user: { name: string; color: string; coins: number; tester?: boolean };
   packs: number;
-  leagues: { id: number; name: string; live: boolean }[];
+  leagues: { id: number; name: string; live: boolean; brand?: BrandLite }[];
   logout: () => Promise<void>;
 }) {
   const path = usePathname() ?? "/";
@@ -102,8 +103,9 @@ export function Sidebar({
                 return (
                   <Link key={l.id} href={`/league/${l.id}`}
                     className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${active ? "bg-white font-medium text-brand shadow-sm" : "text-zinc-600 hover:bg-white hover:text-zinc-900"}`}>
-                    <span className={`h-2 w-2 rounded-full ${l.live ? "bg-accent" : "bg-zinc-300"}`} />
-                    <span className="truncate">{l.name}</span>
+                    {l.brand ? <TeamBadge brand={l.brand} size={20} /> : <span className={`h-2 w-2 rounded-full ${l.live ? "bg-accent" : "bg-zinc-300"}`} />}
+                    <span className="flex-1 truncate">{l.name}</span>
+                    {l.live && <span className="h-2 w-2 shrink-0 rounded-full bg-accent" title="Live" />}
                   </Link>
                 );
               })}
