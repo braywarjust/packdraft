@@ -404,9 +404,23 @@ function schedule(teamIds: number[], weeks: number) {
   return out;
 }
 
+/** Opening night of the NBA regular season (from the synced schedule; falls back to the known 2026-27 opener). */
+export const NBA_OPENER_FALLBACK = "2026-10-20";
+export function seasonOpener() {
+  const today = etDate();
+  // The season this league plays in: the first regular-season game from ~8 months back onward.
+  return one<{ d: string | null }>("SELECT MIN(date_et) d FROM games WHERE season_type = 2 AND date_et >= ?", addDays(today, -240))?.d ?? NBA_OPENER_FALLBACK;
+}
+
+/** Real leagues: true until opening night (no games count, nothing to earn yet). */
+export const beforeOpener = (l: League) => l.mode !== "sim" && !!l.start_date && etDate() < l.start_date;
+
 export function finishDraft(leagueId: number) {
-  // Real leagues start counting tomorrow (Eastern), so tonight's games never count retroactively.
-  const start = addDays(etDate(), 1);
+  // Real leagues start on opening night of the regular season (or tomorrow if the season is already on),
+  // so preseason and tonight's games never count.
+  const tomorrow = addDays(etDate(), 1);
+  const opener = seasonOpener();
+  const start = opener > tomorrow ? opener : tomorrow;
   run("UPDATE leagues SET draft_status = 'done', pick_deadline = NULL, start_date = COALESCE(start_date, ?) WHERE id = ?", start, leagueId);
   const l = getLeague(leagueId)!;
   const teams = leagueTeams(leagueId);

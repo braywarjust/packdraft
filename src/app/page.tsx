@@ -2,14 +2,14 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all, one, Game, Matchup, Team } from "@/lib/db";
-import { boostableGame, getLeague, maybeFinalize, roster, standings, teamWeek, STARTERS } from "@/lib/league";
+import { beforeOpener, boostableGame, getLeague, maybeFinalize, roster, standings, teamWeek, STARTERS } from "@/lib/league";
 import { unopenedPacks } from "@/lib/packs-server";
 import { RARITIES, Rarity } from "@/lib/packs";
 import { ensureBranding, favoritePresetId, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
 import { teamBoosts } from "@/lib/boost";
 import { earnings } from "@/lib/economy";
 import { winProb } from "@/lib/sim";
-import { etDate } from "@/lib/nba/espn";
+import { dayLabel, etDate } from "@/lib/nba/espn";
 import { ActionButton } from "@/components/ActionButton";
 import { Coins, CoinIcon } from "@/components/Coins";
 import { TeamBadge, type BrandLite } from "@/components/TeamBadge";
@@ -192,7 +192,7 @@ export default async function Home() {
                   <TeamBadge brand={leagueBrand(l)} size={24} />
                   <span className="truncate">{l.name}</span>
                   <span className="font-normal text-zinc-500">
-                    · {l.champion_team_id ? "Season over" : l.draft_status === "done" ? `Week ${l.current_week}` : l.draft_status === "live" ? "Drafting now" : "Pre-draft"}
+                    · {l.champion_team_id ? "Season over" : l.draft_status === "done" ? (beforeOpener(l) ? `Starts ${dayLabel(l.start_date!)}` : `Week ${l.current_week}`) : l.draft_status === "live" ? "Drafting now" : "Pre-draft"}
                     {rank ? ` · ${rank} of ${size}` : ""}
                   </span>
                 </Link>

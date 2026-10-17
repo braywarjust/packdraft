@@ -1,8 +1,9 @@
+import { dayLabel } from "@/lib/nba/espn";
 import { TeamBadge } from "@/components/TeamBadge";
 import { ensureBranding, leagueBrand } from "@/lib/branding";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { canView, getLeague, maybeFinalize, userTeam } from "@/lib/league";
+import { beforeOpener, canView, getLeague, maybeFinalize, userTeam } from "@/lib/league";
 import { LeagueTabs } from "@/components/LeagueTabs";
 import { SCORING } from "@/lib/scoring";
 
@@ -36,6 +37,15 @@ export default async function LeagueLayout({ children, params }: { children: Rea
           </header>
         );
       })()}
+      {l.draft_status === "done" && beforeOpener(l) && (
+        <div className="card flex flex-wrap items-center justify-between gap-3 border-l-4 border-l-amber-400 px-4 py-3">
+          <div>
+            <p className="font-bold">The season tips off {dayLabel(l.start_date!)}</p>
+            <p className="text-sm text-zinc-500">Week 1 starts on opening night of the NBA regular season. Until then nothing scores and there are no Pack Points to earn, so set your lineup and hang tight.</p>
+          </div>
+          <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-black uppercase text-black">Preseason</span>
+        </div>
+      )}
       <LeagueTabs id={l.id} isCommish={l.commissioner_id === u.id} hasTeam={!!team} drafting={l.draft_status === "live"} />
       {children}
     </div>
