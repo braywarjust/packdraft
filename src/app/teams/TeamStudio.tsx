@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { TeamBadge } from "@/components/TeamBadge";
-import { deletePresetAction, savePresetAction } from "../actions";
+import { deletePresetAction, favoritePresetAction, savePresetAction } from "../actions";
+import { StarIcon } from "@/components/Icons";
 
 type P = { id?: number; name: string; abbr: string; color: string; alt_color: string; logo_url: string | null };
 const SWATCHES = ["#0253a4", "#1f63b5", "#cc2b31", "#111827", "#ffffff", "#f5c15c", "#10b981", "#7c3aed", "#f97316", "#0ea5e9", "#be123c", "#64748b"];
@@ -50,7 +51,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-export function TeamStudio({ presets, startNew }: { presets: P[]; startNew: boolean }) {
+export function TeamStudio({ presets, startNew, favorite }: { presets: P[]; startNew: boolean; favorite: number | null }) {
   const router = useRouter();
   const [edit, setEdit] = useState<P | null>(startNew ? blank() : null);
   const [err, setErr] = useState<string | null>(null);
@@ -80,9 +81,16 @@ export function TeamStudio({ presets, startNew }: { presets: P[]; startNew: bool
   return (
     <div className="grid gap-6 lg:grid-cols-5">
       <div className="space-y-3 lg:col-span-2">
+        {presets.length > 1 && <p className="text-xs text-zinc-500">Star a team to brand your home page with it.</p>}
         {presets.map((p) => (
-          <button key={p.id} onClick={() => { setEdit({ ...p }); setErr(null); }}
-            className={`card flex w-full items-center gap-3 p-3 text-left transition hover:border-brand/60 ${edit?.id === p.id ? "border-brand" : ""}`}>
+          <div key={p.id} className="relative">
+          <span role="button" tabIndex={0} title={favorite === p.id ? "Favourite: brands your home page" : "Make this your favourite team"}
+            onClick={() => start(async () => { await favoritePresetAction(favorite === p.id ? null : p.id!); router.refresh(); })}
+            className={`absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-md p-1.5 text-lg transition hover:bg-panel2 ${favorite === p.id ? "text-amber-400" : "text-zinc-500 hover:text-amber-400"}`}>
+            <StarIcon />
+          </span>
+          <button onClick={() => { setEdit({ ...p }); setErr(null); }}
+            className={`card flex w-full items-center gap-3 p-3 pr-12 text-left transition hover:border-brand/60 ${edit?.id === p.id ? "border-brand" : ""}`}>
             <TeamBadge brand={{ name: p.name, abbr: p.abbr, color: p.color, alt: p.alt_color, logo: p.logo_url }} size={44} />
             <span className="min-w-0 flex-1">
               <span className="block truncate font-bold">{p.name}</span>
@@ -92,8 +100,9 @@ export function TeamStudio({ presets, startNew }: { presets: P[]; startNew: bool
                 {p.logo_url ? "· logo" : "· no logo"}
               </span>
             </span>
-            <span className="text-xs text-brand">Edit</span>
+            {favorite === p.id && <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black uppercase text-black">Favourite</span>}
           </button>
+          </div>
         ))}
         <button onClick={() => { setEdit(blank()); setErr(null); }} className="card flex w-full items-center justify-center gap-2 border-dashed p-4 text-sm text-zinc-500 hover:border-brand/60 hover:text-brand">
           + New team

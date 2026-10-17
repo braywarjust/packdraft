@@ -5,7 +5,7 @@ import { all, one, Game, Matchup, Team } from "@/lib/db";
 import { boostableGame, getLeague, maybeFinalize, roster, standings, teamWeek, STARTERS } from "@/lib/league";
 import { unopenedPacks } from "@/lib/packs-server";
 import { RARITIES, Rarity } from "@/lib/packs";
-import { ensureBranding, teamBrand, userPresets } from "@/lib/branding";
+import { ensureBranding, favoritePresetId, teamBrand, userPresets } from "@/lib/branding";
 import { teamBoosts } from "@/lib/boost";
 import { earnings } from "@/lib/economy";
 import { winProb } from "@/lib/sim";
@@ -91,7 +91,12 @@ export default async function Home() {
   if (packs.length) alerts.push({ href: "/packs", tone: "blue", text: `${packs.length} unopened pack${packs.length > 1 ? "s" : ""} waiting to be ripped` });
   if (user.last_bonus !== todayIso) alerts.push({ href: "#bonus", tone: "amber", text: "Your daily Pack Points bonus is ready" });
 
-  const hero = leagues[0]?.brand ?? (presets[0] ? { name: presets[0].name, abbr: presets[0].abbr, color: presets[0].color, alt: presets[0].alt_color, logo: presets[0].logo_url } : DEFAULT_BRAND);
+  // Banner team: your starred Team Studio favourite, else your newest league team, else your first preset.
+  const fav = presets.find((p) => p.id === favoritePresetId(user.id)) ?? null;
+  const asBrand = (p: (typeof presets)[number]): BrandLite => ({ name: p.name, abbr: p.abbr, color: p.color, alt: p.alt_color, logo: p.logo_url });
+  const heroLeague = fav ? leagues.find((x) => x.t.preset_id === fav.id) : leagues[0];
+  const hero = fav ? asBrand(fav) : leagues[0]?.brand ?? (presets[0] ? asBrand(presets[0]) : DEFAULT_BRAND);
+  const otherTeams = leagues.filter((x) => x !== heroLeague);
   const tones = { red: "border-l-red-500", amber: "border-l-amber-400", blue: "border-l-brand" };
 
   return (
@@ -105,11 +110,25 @@ export default async function Home() {
           <div className="min-w-0 flex-1">
             <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Welcome back</p>
             <h1 className="text-4xl font-black leading-none tracking-tight text-white drop-shadow-lg sm:text-5xl">{user.name}</h1>
-            <p className="mt-2 text-sm text-white/80">{hero === DEFAULT_BRAND ? "Set up your team in Team Studio to brand your app." : hero.name}</p>
+            <p className="mt-2 text-sm text-white/80">
+              {hero === DEFAULT_BRAND ? "Set up your team in Team Studio to brand your app." : <>{hero.name}{heroLeague ? ` · ${heroLeague.l.name}` : ""}</>}
+            </p>
+            {otherTeams.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">{heroLeague ? "Your other teams" : "Your teams"}</span>
+                {otherTeams.map((x) => (
+                  <Link key={x.t.id} href={`/league/${x.l.id}`} title={`${x.t.name} · ${x.l.name}`}
+                    className="flex items-center gap-1.5 rounded-full bg-black/25 py-1 pl-1 pr-3 text-xs font-semibold text-white ring-1 ring-white/15 transition hover:bg-black/40">
+                    <TeamBadge brand={x.brand} size={24} />
+                    <span className="max-w-[9rem] truncate">{x.l.name}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
           <div id="bonus" className="flex flex-wrap gap-2">
             {user.last_bonus !== todayIso
-              ? <ActionButton action={claimBonus} className="btn bg-white text-black hover:bg-white/90">Claim daily <Coins n={150} /></ActionButton>
+              ? <ActionButton action={claimBonus} className="btn bg-[#fff] text-black hover:bg-[#e5e7eb]">Claim daily <Coins n={150} /></ActionButton>
               : <span className="btn pointer-events-none bg-black/25 text-white/70">Daily bonus claimed</span>}
           </div>
         </div>
@@ -191,7 +210,7 @@ export default async function Home() {
                     <p className="truncate text-xl font-black text-white">{t.name}</p>
                     <p className="text-sm text-white/80">{l.draft_status === "live" ? "The draft is live. Get in the room." : l.champion_team_id ? "Season complete." : "Waiting for the draft."}</p>
                   </div>
-                  <span className="btn relative bg-white text-black">{l.draft_status === "live" ? "Draft room" : "Open league"}</span>
+                  <span className="btn relative bg-[#fff] text-black">{l.draft_status === "live" ? "Draft room" : "Open league"}</span>
                 </Link>
               )}
             </div>

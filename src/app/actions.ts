@@ -13,7 +13,7 @@ import { PACK_BY_ID, BUYBACK_RATE } from "@/lib/packs";
 import { openPack, releaseSlab } from "@/lib/packs-server";
 import { etDate } from "@/lib/nba/espn";
 import { placeBet } from "@/lib/bets";
-import { applyPreset, deletePreset, getPreset, savePreset } from "@/lib/branding";
+import { applyPreset, deletePreset, getPreset, savePreset, setFavoritePreset } from "@/lib/branding";
 import { ensureSchedule } from "@/lib/nba/sync";
 
 type Result = { error?: string; ok?: boolean };
@@ -548,6 +548,16 @@ export async function applyPresetAction(leagueId: number, presetId: number) {
     if (!p) throw new Error("Preset not found");
     applyPreset(t.id, p);
     revalidatePath(`/league/${leagueId}`, "layout");
+    return { ok: true };
+  });
+}
+
+export async function favoritePresetAction(presetId: number | null) {
+  return wrap(async () => {
+    const u = await requireUser();
+    setFavoritePreset(u.id, presetId);
+    revalidatePath("/teams");
+    revalidatePath("/");
     return { ok: true };
   });
 }

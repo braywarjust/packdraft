@@ -64,7 +64,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
             <h2 className="mt-1 text-4xl font-black leading-none tracking-tight text-white drop-shadow-lg sm:text-5xl">{t.name}</h2>
             <p className="mt-2 text-sm text-white/80">{owner ? `Managed by ${owner}` : "CPU team"}{l.draft_status === "done" ? ` · Week ${l.current_week}` : ""}</p>
           </div>
-          {!editable && <Link href={`/league/${leagueId}/trades?to=${t.id}`} className="btn bg-white text-black hover:bg-white/90">Propose trade</Link>}
+          {!editable && <Link href={`/league/${leagueId}/trades?to=${t.id}`} className="btn bg-[#fff] text-black hover:bg-[#e5e7eb]">Propose trade</Link>}
         </div>
         <div className="relative grid grid-cols-3 gap-px bg-black/20 sm:grid-cols-6">
           {stats.map(([k, v]) => (

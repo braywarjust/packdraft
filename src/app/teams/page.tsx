@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/auth";
-import { userPresets } from "@/lib/branding";
+import { favoritePresetId, userPresets } from "@/lib/branding";
 import { PageHeader } from "@/components/PageHeader";
 import { TeamStudio } from "./TeamStudio";
 
@@ -18,7 +18,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
           First things first: build your team. Give it a name and colours, and upload a transparent PNG logo if you have one. You can make more later.
         </p>
       )}
-      <TeamStudio presets={presets.map((p) => ({ id: p.id, name: p.name, abbr: p.abbr, color: p.color, alt_color: p.alt_color, logo_url: p.logo_url }))} startNew={presets.length === 0} />
+      <TeamStudio presets={presets.map((p) => ({ id: p.id, name: p.name, abbr: p.abbr, color: p.color, alt_color: p.alt_color, logo_url: p.logo_url }))} startNew={presets.length === 0} favorite={favoritePresetId(u.id)} />
     </>
   );
 }

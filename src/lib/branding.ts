@@ -21,6 +21,8 @@ export function ensureBranding() {
   if (!cols.includes("abbr")) run("ALTER TABLE teams ADD COLUMN abbr TEXT");
   if (!cols.includes("logo_url")) run("ALTER TABLE teams ADD COLUMN logo_url TEXT");
   if (!cols.includes("preset_id")) run("ALTER TABLE teams ADD COLUMN preset_id INTEGER");
+  const ucols = all<{ name: string }>("PRAGMA table_info(users)").map((c) => c.name);
+  if (!ucols.includes("fav_preset_id")) run("ALTER TABLE users ADD COLUMN fav_preset_id INTEGER");
   ready = true;
 }
 
@@ -74,4 +76,16 @@ export function applyPreset(teamId: number, p: Preset) {
   ensureBranding();
   run("UPDATE teams SET name = ?, abbr = ?, color = ?, alt_color = ?, logo_url = ?, preset_id = ? WHERE id = ?",
     p.name, p.abbr, p.color, p.alt_color, p.logo_url, p.id, teamId);
+}
+
+/** The Team Studio team that brands your home page (null = use your newest league team). */
+export function favoritePresetId(userId: number) {
+  ensureBranding();
+  return one<{ fav_preset_id: number | null }>("SELECT fav_preset_id FROM users WHERE id = ?", userId)?.fav_preset_id ?? null;
+}
+
+export function setFavoritePreset(userId: number, presetId: number | null) {
+  ensureBranding();
+  if (presetId && !getPreset(userId, presetId)) throw new Error("Preset not found");
+  run("UPDATE users SET fav_preset_id = ? WHERE id = ?", presetId, userId);
 }
