@@ -10,6 +10,7 @@ import type { LivePlayer } from "@/lib/league";
 import { Headshot, InjuryTag } from "./Headshot";
 import { Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
+import { useScrollLock } from "@/components/useScrollLock";
 
 const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
 
@@ -153,6 +154,7 @@ export function BoostModal({ boost, player, info, pending, onClose, run }: {
   boost: BoostProps; player: LivePlayer; info: BoostProps["boostable"][number] | undefined; pending: boolean;
   onClose: () => void; run: (fn: () => Promise<unknown>) => void;
 }) {
+  useScrollLock(true);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" onClick={onClose}>
       <div className="card flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>

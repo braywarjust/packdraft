@@ -8,6 +8,7 @@ import { CardData, PlayerCard, RarityBadge, SlabImage, slabBadges } from "@/comp
 import { BUYBACK_RATE, RARITIES, fmtCoins } from "@/lib/packs";
 import { Logo, LogoWatermark } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
+import { useScrollLock } from "@/components/useScrollLock";
 
 export type GridCard = CardData & {
   s_factors?: string | null; s_detail?: string | null; s_est?: number | null; s_pop?: number | null; s_pop_higher?: number | null; created_at: number;
@@ -23,6 +24,7 @@ function certUrl(c: GridCard) {
 export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine: boolean; sell: (ids: number[]) => Promise<unknown> }) {
   const router = useRouter();
   const [open, setOpen] = useState<GridCard | null>(null);
+  useScrollLock(!!open);
   const [pending, start] = useTransition();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(null);

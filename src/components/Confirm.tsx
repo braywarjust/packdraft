@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useScrollLock } from "@/components/useScrollLock";
 
 /**
  * In-app confirmation (replaces the browser's confirm() popup).
@@ -19,6 +20,7 @@ export function askConfirm(message: string, opts: { confirmLabel?: string; dange
 
 export function ConfirmHost() {
   const [req, setReq] = useState<Req | null>(null);
+  useScrollLock(!!req);
   useEffect(() => {
     push = setReq;
     return () => { push = null; };

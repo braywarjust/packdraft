@@ -9,6 +9,7 @@ import { CoinIcon, Coins } from "./Coins";
 import { Avatar } from "./ProfileView";
 
 import { NAV_ICONS as I, NavIcon as Icon } from "./NavIcons";
+import { useScrollLock } from "@/components/useScrollLock";
 
 const STORE_KEY = "pd-sidebar";
 
@@ -23,6 +24,7 @@ export function Sidebar({
   const path = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  useScrollLock(open);
   useEffect(() => setOpen(false), [path]);
   useEffect(() => setCollapsed(document.documentElement.dataset.sidebar === "collapsed"), []);
 

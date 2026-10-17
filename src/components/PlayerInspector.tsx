@@ -11,6 +11,7 @@ import { Fpts } from "./Fpts";
 import { Coins } from "./Coins";
 import { SlabIcon } from "./SlabIcon";
 import { XIcon } from "./Icons";
+import { useScrollLock } from "@/components/useScrollLock";
 
 /**
  * Player inspector popup. Mount <PlayerInspectorHost /> once (root layout), then call openPlayer(id, leagueId)
@@ -154,6 +155,7 @@ export function PlayerInspectorHost() {
   const [data, setData] = useState<PlayerInfo | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  useScrollLock(!!req);
   useEffect(() => {
     push = setReq;
     return () => { push = null; };

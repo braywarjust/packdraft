@@ -11,6 +11,7 @@ import { Coins } from "@/components/Coins";
 import { SlabCount } from "@/components/SlabIcon";
 import { SlabBack } from "@/components/SlabBack";
 import { CheckIcon, LockIcon } from "@/components/Icons";
+import { useScrollLock } from "@/components/useScrollLock";
 
 type Inv = { id: number; pack_type: string; source: string; created_at: number };
 type Act<T> = Promise<T | { error: string }>;
@@ -210,6 +211,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
   const [burstAt, setBurstAt] = useState<{ x: number; y: number } | null>(null);
 
   const [checkout, setCheckout] = useState<PackType | null>(null);
+  useScrollLock(!!checkout || stage !== "idle");
   /** Charged at checkout; resolves true once paid. Checkout shows "approved", then calls dropIn. */
   const doBuy = async (type: string) => {
     setErr("");
