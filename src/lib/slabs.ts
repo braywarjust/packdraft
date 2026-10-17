@@ -9,7 +9,10 @@ import type { Rarity } from "./packs";
 export const SLABS_DIR = process.env.SLABS_DIR || path.join(os.homedir(), "NBA_Slabs_webp");
 
 // Share of the catalog in each rarity tier, from lowest to highest score.
-export const TIER_SHARE: [Rarity, number][] = [["common", 0.55], ["rare", 0.27], ["epic", 0.12], ["legendary", 0.045], ["grail", 0.015]];
+// Immortal (grail) is only the Ultra Heavy Hitters, so the ranked tiers end at Mythic.
+export const TIER_SHARE: [Rarity, number][] = [["common", 0.55], ["rare", 0.27], ["epic", 0.12], ["legendary", 0.06]];
+/** Bump to re-tier the whole vault when the tier rules change. */
+const TIER_RULES = "2";
 
 export type Slab = {
   id: number; file: string; era: string; year: number; set_name: string; card_no: string | null; player: string; variant: string;
@@ -88,7 +91,7 @@ export const ULTRA_ERA = "Ultra Heavy Hitters";
 type UltraRow = { meta: SlabMeta; price: number; sale: { house: string; date: string; rank: number } };
 /**
  * ultra_heavy_hitters.csv (Rank, Card, Sale Price (USD), Sale Date, Auction House) + images named "NN - <title>.webp",
- * matched by rank. Rows without an image are skipped. These are always Immortal and priced at their auction sale.
+ * matched by rank. Rows without an image are skipped. They make up the whole Immortal tier, priced at their auction sale.
  */
 function loadUltras(): Map<number, Record<string, string>> {
   const file = path.join(SLABS_DIR, "ultra_heavy_hitters.csv");
@@ -127,7 +130,8 @@ export function ensureCatalog() {
   }
   const files = listFiles(SLABS_DIR);
   const known = one<{ n: number }>("SELECT COUNT(*) n FROM slabs WHERE missing = 0")?.n ?? 0;
-  if (known === files.length) return;
+  const rules = one<{ value: string }>("SELECT value FROM meta WHERE key = 'tier_rules'")?.value;
+  if (known === files.length && rules === TIER_RULES) return;
 
   const players = all<{ id: number; name: string; proj: number }>("SELECT id, name, proj FROM players WHERE active = 1 ORDER BY proj DESC");
   const stars = new Set(players.slice(0, 60).map((p) => norm(p.name)));
@@ -150,12 +154,12 @@ export function ensureCatalog() {
     return [{ m, s, fmv: hh?.fmv || null, pack: hh?.pack ?? null, sale: null as UltraRow["sale"] | null }];
   });
   // Rarity tiers are percentiles of the score so the distribution stays fixed as the folder changes.
-  // Ultra Heavy Hitters sit outside the ranking: always Immortal.
+  // Ultra Heavy Hitters sit outside the ranking: they are the Immortal tier.
   const sorted = rows.filter((r) => !r.sale).sort((a, b) => a.s.score - b.s.score);
   const rarity = new Map<string, Rarity>();
   let i = 0;
   for (const [tier, share] of TIER_SHARE) {
-    const end = tier === "grail" ? sorted.length : Math.min(sorted.length, i + Math.round(share * sorted.length));
+    const end = tier === "legendary" ? sorted.length : Math.min(sorted.length, i + Math.round(share * sorted.length));
     for (; i < end; i++) rarity.set(sorted[i].m.file, tier);
   }
   for (const r of rows) if (r.sale) rarity.set(r.m.file, "grail");
@@ -179,6 +183,7 @@ export function ensureCatalog() {
         fmv, JSON.stringify({ match: "courtyard", pack }), Date.now(), m.file);
     }
   });
+  run("INSERT OR REPLACE INTO meta (key, value) VALUES ('tier_rules', ?)", TIER_RULES);
   console.log(`[packdraft] slab catalog: ${rows.length} slabs from ${SLABS_DIR}`);
 }
 
@@ -190,26 +195,11 @@ export function pickSlab(rarity: Rarity, target: number, rand: () => number): Sl
   const order = [start, start - 1, start + 1, start - 2, start + 2].filter((x) => x >= 0 && x < TIER_ORDER.length);
   for (const t of order) {
     const near = all<Slab>(
-      "SELECT * FROM slabs WHERE rarity = ? AND card_id IS NULL AND missing = 0 AND era != ? ORDER BY ABS(est_value - ?) LIMIT 15",
-      TIER_ORDER[t], ULTRA_ERA, target);
+      "SELECT * FROM slabs WHERE rarity = ? AND card_id IS NULL AND missing = 0 ORDER BY ABS(est_value - ?) LIMIT 15",
+      TIER_ORDER[t], target);
     if (near.length) return near[Math.floor(rand() * near.length)];
   }
   return null;
-}
-
-/**
- * Ultra Heavy Hitters are pulled only through this extra roll on an Immortal hit. The chance is set so a pack's odds of
- * one, times their average value (~1.26M), add about 2% of the pack price to its expected return: with all 8 in the vault
- * that's about 1 in 25,000 GOAT Packs, 1 in 6,300 Mega Packs, 1 in 2.5 million Rookie Packs.
- */
-export function maybeUltra(pack: { price: number; cards: number; odds: Record<string, number> }, rand: () => number): Slab | null {
-  const left = all<Slab>("SELECT * FROM slabs WHERE era = ? AND card_id IS NULL AND missing = 0", ULTRA_ERA);
-  const grail = pack.odds.grail ?? 0;
-  if (!left.length || !grail) return null;
-  const avg = left.reduce((s, x) => s + slabValue(x), 0) / left.length;
-  const perPack = (0.02 * pack.price) / avg;
-  const perImmortal = Math.min(1, perPack / (pack.cards * (grail / 100)));
-  return rand() < perImmortal ? left[Math.floor(rand() * left.length)] : null;
 }
 
 export const slabValue = (s: Pick<Slab, "mkt_value" | "est_value">) => s.mkt_value ?? s.est_value;
@@ -222,9 +212,7 @@ export function slabFilePath(file: string) {
 
 export function catalogStats() {
   return all<{ rarity: Rarity; n: number; owned: number; lo: number; hi: number; avg: number }>(
-    // "Typical" leaves out the Ultra Heavy Hitters so a few million-dollar slabs don't swamp the Immortal average.
-    `SELECT rarity, COUNT(*) n, SUM(card_id IS NOT NULL) owned, MIN(est_value) lo, MAX(est_value) hi,
-       COALESCE(AVG(CASE WHEN era != '${ULTRA_ERA}' THEN est_value END), AVG(est_value)) avg
+        `SELECT rarity, COUNT(*) n, SUM(card_id IS NOT NULL) owned, MIN(est_value) lo, MAX(est_value) hi, AVG(est_value) avg
      FROM slabs WHERE missing = 0 GROUP BY rarity`);
 }
 

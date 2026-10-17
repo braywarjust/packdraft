@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { unopenedPacks } from "@/lib/packs-server";
-import { BUYBACK_RATE, PACKS, RARITIES, RARITY_BLURB, RARITY_HEX, RARITY_ORDER } from "@/lib/packs";
+import { BUYBACK_RATE, PACKS, RARITIES, RARITY_BLURB, RARITY_HEX, RARITY_ORDER, fmtOdds } from "@/lib/packs";
 import { VendingMachine } from "./VendingMachine";
 import { buyPack, ripPack, sellCards } from "../actions";
 import { catalogStats, ensureCatalog, packFeatures } from "@/lib/slabs";
@@ -121,7 +121,7 @@ export default async function PacksPage() {
                   </td>
                   {RARITY_ORDER.map((r) => (
                     <td key={r} className="px-2 py-2 text-center font-mono">
-                      {p.odds[r] ? <span className="font-bold" style={{ color: p.odds[r] >= 20 ? RARITY_HEX[r] : undefined }}>{p.odds[r]}%</span> : <span className="text-zinc-400">-</span>}
+                      {p.odds[r] ? <span className="font-bold" style={{ color: p.odds[r] >= 20 ? RARITY_HEX[r] : undefined }}>{fmtOdds(p.odds[r])}</span> : <span className="text-zinc-400">-</span>}
                     </td>
                   ))}
                   <td className="w-40 px-4 py-2"><OddsBar odds={p.odds} height={10} /></td>
@@ -136,7 +136,7 @@ export default async function PacksPage() {
       <section id="scoring" className="scroll-mt-36 card space-y-4 p-5 text-sm">
         <div>
           <h2 className="text-lg font-bold">How a slab&apos;s tier is set</h2>
-          <p className="text-zinc-500">Each slab gets a score from what collectors pay up for. The whole vault is ranked by score: bottom 55% are Common, then 27% Rare, 12% Epic, 4.5% Mythic and the top 1.5% Immortal. The Ultra Heavy Hitters, record auction sales worth hundreds of thousands to millions, are always Immortal and only drop on a tiny extra roll when you hit Immortal.</p>
+          <p className="text-zinc-500">Each slab gets a score from what collectors pay up for. The whole vault is ranked by score: bottom 55% are Common, then 27% Rare, 12% Epic and the top 6% Mythic. Immortal is its own tier: only the Ultra Heavy Hitters, record auction sales worth hundreds of thousands to millions, with odds of about 1 in 25,000 even in a GOAT Pack.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {([

@@ -22,26 +22,26 @@ export const RARITY_BLURB: Record<Rarity, string> = {
   common: "Everyday graded slabs. The bread and butter of every break.",
   rare: "Inserts, parallels and better players. The cards you chase in a box.",
   epic: "Short prints, autos, patches and gem grades. Rare enough to brag about.",
-  legendary: "The one-per-case kind of hit: big names, low pops, on-card autos.",
-  grail: "Holy grails: Logomen, black labels, iconic rookies of legends, and the Ultra Heavy Hitters, record-setting slabs worth up to millions.",
+  legendary: "The best of the vault: big names, low pops, on-card autos, Logomen, black labels and iconic rookies of legends.",
+  grail: "The Ultra Heavy Hitters only: record-setting slabs that sold for hundreds of thousands to millions. Almost impossible to pull.",
 };
 export const RARITY_ORDER: Rarity[] = ["common", "rare", "epic", "legendary", "grail"];
 
 export const PACKS: PackType[] = [
   { id: "rookie", name: "Rookie Pack", price: 25, cards: 1, color: "from-slate-500 to-slate-700", accent: "#94a3b8", blurb: "Cheap thrills. Every hit starts somewhere.",
-    odds: { common: 90, rare: 8.5, epic: 1.3, legendary: 0.18, grail: 0.02  } },
+    odds: { common: 90, rare: 8.5, epic: 1.3, legendary: 0.2, grail: 0.00004 } },
   { id: "starter", name: "Starter Pack", price: 100, cards: 1, color: "from-sky-500 to-blue-700", accent: "#38bdf8", blurb: "Solid floor, real upside.",
-    odds: { common: 70, rare: 23, epic: 5.6, legendary: 1.2, grail: 0.2  } },
+    odds: { common: 70, rare: 23, epic: 5.6, legendary: 1.4, grail: 0.00016 } },
   { id: "pro", name: "Pro Pack", price: 250, cards: 1, color: "from-emerald-500 to-teal-700", accent: "#34d399", blurb: "What weekly winners rip.",
-    odds: { common: 52, rare: 30, epic: 13, legendary: 4.3, grail: 0.7 } },
+    odds: { common: 52, rare: 30, epic: 13, legendary: 5, grail: 0.0004 } },
   { id: "allpro", name: "All-Pro Pack", price: 500, cards: 1, color: "from-fuchsia-500 to-purple-700", accent: "#e879f9", blurb: "Boosted Epic odds.",
-    odds: { common: 40, rare: 33, epic: 19, legendary: 7, grail: 1  } },
+    odds: { common: 40, rare: 33, epic: 19, legendary: 8, grail: 0.0008 } },
   { id: "hof", name: "Hall of Fame Pack", price: 1000, cards: 1, color: "from-amber-400 to-orange-600", accent: "#fbbf24", blurb: "Top scorer of the week gets one of these.",
-    odds: { common: 28, rare: 34, epic: 25, legendary: 11, grail: 2  } },
-  { id: "goat", name: "GOAT Pack", price: 2500, cards: 1, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Immortal chase.",
-    odds: { common: 5, rare: 25, epic: 37, legendary: 25, grail: 8  } },
+    odds: { common: 28, rare: 34, epic: 25, legendary: 13, grail: 0.0016 } },
+  { id: "goat", name: "GOAT Pack", price: 2500, cards: 1, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Mythic chase.",
+    odds: { common: 5, rare: 25, epic: 37, legendary: 33, grail: 0.004 } },
   { id: "megacase", name: "Mega Pack", price: 10000, cards: 5, kind: "case", color: "from-zinc-900 via-amber-500 to-zinc-900", accent: "#f5c15c", blurb: "Five slabs, zero commons. The big rip.",
-    odds: { common: 0, rare: 12, epic: 42, legendary: 34, grail: 12 } },
+    odds: { common: 0, rare: 12, epic: 42, legendary: 46, grail: 0.0032 } },
 ];
 export const PACK_BY_ID: Record<string, PackType> = Object.fromEntries(PACKS.map((p) => [p.id, p]));
 
@@ -59,6 +59,13 @@ function expectedPerCard(odds: PackType["odds"]) {
 /** Scale card values so a pack returns ~92% of its price on average (like real "vending machine" packs). */
 export function valueScale(pack: PackType) {
   return 0.92 / (pack.cards * expectedPerCard(pack.odds));
+}
+
+/** "8.5%", or "1 in 25,000" for odds too small to read as a percentage. */
+export function fmtOdds(pct: number) {
+  if (!pct) return "-";
+  if (pct >= 0.01) return `${pct}%`;
+  return `1 in ${Math.round(100 / pct).toLocaleString("en-US")}`;
 }
 
 export function rollRarity(odds: PackType["odds"], r: number): Rarity {

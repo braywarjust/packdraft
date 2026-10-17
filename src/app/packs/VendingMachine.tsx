@@ -4,7 +4,7 @@ import { PackSheen } from "@/components/PackSheen";
 import { OddsBar } from "@/components/OddsBar";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
-import { PACKS, PACK_BY_ID, PackType, RARITIES, Rarity, BUYBACK_RATE } from "@/lib/packs";
+import { PACKS, PACK_BY_ID, PackType, RARITIES, Rarity, BUYBACK_RATE, fmtOdds } from "@/lib/packs";
 import { CardData, GLOW, PlayerCard } from "@/components/PlayerCard";
 import { Logo } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
@@ -213,7 +213,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
             const short = !tester && coins < p.price;
             return (
               <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
-                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${p.odds.grail}%`}
+                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${fmtOdds(p.odds.grail)}`}
                 className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                 <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                   <PackArt p={p} md slabs={features[p.id]} />
@@ -240,7 +240,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               const short = !tester && coins < p.price;
               return (
                 <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
-                  title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${p.odds.grail}%`}
+                  title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${fmtOdds(p.odds.grail)}`}
                   className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                   <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                     <PackArt p={p} md />
