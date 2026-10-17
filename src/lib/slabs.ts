@@ -82,6 +82,40 @@ function heavyHitter(rel: string, csv: Map<string, Record<string, string>>): Hea
   return { meta, fmv: Math.round(Number(r.fmv_usd) || 0), pack: r.top_pack };
 }
 
+// ---------- Ultra Heavy Hitters (record auction sales) ----------
+
+export const ULTRA_ERA = "Ultra Heavy Hitters";
+type UltraRow = { meta: SlabMeta; price: number; sale: { house: string; date: string; rank: number } };
+/**
+ * ultra_heavy_hitters.csv (Rank, Card, Sale Price (USD), Sale Date, Auction House) + images named "NN - <title>.webp",
+ * matched by rank. Rows without an image are skipped. These are always Immortal and priced at their auction sale.
+ */
+function loadUltras(): Map<number, Record<string, string>> {
+  const file = path.join(SLABS_DIR, "ultra_heavy_hitters.csv");
+  if (!fs.existsSync(file)) return new Map();
+  return new Map(parseCsv(fs.readFileSync(file, "utf8")).map((r) => [Number(r.Rank), r]));
+}
+
+function ultra(rel: string, csv: Map<number, Record<string, string>>): UltraRow | null {
+  const rank = Number(path.basename(rel).match(/^(\d+)\s*-/)?.[1]);
+  const r = csv.get(rank);
+  if (!r) return null;
+  const title = r.Card;
+  const [card, gradeText = ""] = title.split(/ - (?=(?:PSA|BGS|SGC|CGC)\b)/);
+  const m = card.match(/^(\d{4})(?:-\d{2})?\s+(.+?)\s+#(\S+)\s+(.+?)(?:\s+(?:Dual-)?Signed|\s+Rookie Card|\s+\(#|$)/);
+  const company = gradeText.match(/^(PSA|BGS|SGC|CGC)/)?.[1] ?? "PSA";
+  const gradeNum = Number(gradeText.match(/(\d+(?:\.\d)?)(?=[,\s]|$)/)?.[1]) || null;
+  const meta: SlabMeta = {
+    file: rel, era: ULTRA_ERA, year: Number(m?.[1]) || 0, setName: m?.[2] ?? card, cardNo: m?.[3] ?? null,
+    player: (m?.[4] ?? "").replace(/\s+\(.*$/, "").trim() || card, variant: card.match(/\(#[^)]+\)/)?.[0] ?? "",
+    company, grade: gradeText || "Authentic", gradeNum, cert: `UHH-${String(rank).padStart(2, "0")}`,
+    auto: /signed|autograph|\bRPA\b/i.test(card), mem: /patch|game-used|logoman/i.test(card), rookie: /rookie|\bRPA\b/i.test(card),
+    parallel: /refractor|prizm|parallel|gold/i.test(card), numbered: /\(#\d+\/\d+\)/.test(card), premium: true, superInsert: true,
+    blackLabel: /black label|pristine/i.test(title),
+  };
+  return { meta, price: Math.round(Number(r["Sale Price (USD)"]) || 0), sale: { house: r["Auction House"], date: r["Sale Date (as listed)"], rank } };
+}
+
 let checked = false;
 /** Scan the slab folder into the DB (once per server start, and whenever the file count changes). */
 export function ensureCatalog() {
@@ -101,25 +135,34 @@ export function ensureCatalog() {
   const idByName = new Map(players.map((p) => [norm(p.name), p.id]));
 
   const heavy = loadHeavyHitters();
+  const ultras = loadUltras();
   const rows = files.flatMap((f) => {
+    if (f.startsWith(`${ULTRA_ERA}/`)) {
+      const u = ultra(f, ultras);
+      if (!u) return [];
+      const s = scoreSlab(u.meta, stars, active);
+      return [{ m: u.meta, s: { ...s, factors: [`Record sale: $${u.price.toLocaleString("en-US")} at ${u.sale.house}`, ...s.factors] }, fmv: u.price, pack: null, sale: u.sale }];
+    }
     const hh = f.startsWith("Heavy Hitters/") ? heavyHitter(f, heavy) : null;
     const m = hh?.meta ?? parseSlab(f);
     if (!m) return [];
     const s = scoreSlab(m, stars, active);
-    return [{ m, s, fmv: hh?.fmv || null, pack: hh?.pack ?? null }];
+    return [{ m, s, fmv: hh?.fmv || null, pack: hh?.pack ?? null, sale: null as UltraRow["sale"] | null }];
   });
   // Rarity tiers are percentiles of the score so the distribution stays fixed as the folder changes.
-  const sorted = [...rows].sort((a, b) => a.s.score - b.s.score);
+  // Ultra Heavy Hitters sit outside the ranking: always Immortal.
+  const sorted = rows.filter((r) => !r.sale).sort((a, b) => a.s.score - b.s.score);
   const rarity = new Map<string, Rarity>();
   let i = 0;
   for (const [tier, share] of TIER_SHARE) {
     const end = tier === "grail" ? sorted.length : Math.min(sorted.length, i + Math.round(share * sorted.length));
     for (; i < end; i++) rarity.set(sorted[i].m.file, tier);
   }
+  for (const r of rows) if (r.sale) rarity.set(r.m.file, "grail");
 
   tx(() => {
     run("UPDATE slabs SET missing = 1");
-    for (const { m, s, fmv, pack } of rows) {
+    for (const { m, s, fmv, pack, sale } of rows) {
       const flags = JSON.stringify({ auto: m.auto, mem: m.mem, rookie: m.rookie, parallel: m.parallel, numbered: m.numbered, premium: m.premium, insert: m.superInsert, blackLabel: m.blackLabel });
       run(`INSERT INTO slabs (file, era, year, set_name, card_no, player, variant, company, grade, grade_num, cert, flags, factors, player_tier, player_id, score, rarity, est_value, missing)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
@@ -130,7 +173,9 @@ export function ensureCatalog() {
         m.file, m.era, m.year, m.setName, m.cardNo, m.player, m.variant, m.company, m.grade, m.gradeNum, m.cert, flags,
         JSON.stringify(s.factors), s.playerTier, idByName.get(norm(m.player)) ?? null, s.score, rarity.get(m.file)!, fmv ?? estimateValue(s.score, m.cert));
       // Heavy Hitters come with a real market value (Courtyard FMV).
-      if (fmv) run("UPDATE slabs SET mkt_value = ?, mkt_source = 'courtyard', mkt_detail = ?, mkt_at = ? WHERE file = ?",
+      if (sale) run("UPDATE slabs SET mkt_value = ?, mkt_source = 'auction', mkt_detail = ?, mkt_at = ? WHERE file = ?",
+        fmv, JSON.stringify({ match: "auction", ...sale }), Date.now(), m.file);
+      else if (fmv) run("UPDATE slabs SET mkt_value = ?, mkt_source = 'courtyard', mkt_detail = ?, mkt_at = ? WHERE file = ?",
         fmv, JSON.stringify({ match: "courtyard", pack }), Date.now(), m.file);
     }
   });
@@ -145,11 +190,26 @@ export function pickSlab(rarity: Rarity, target: number, rand: () => number): Sl
   const order = [start, start - 1, start + 1, start - 2, start + 2].filter((x) => x >= 0 && x < TIER_ORDER.length);
   for (const t of order) {
     const near = all<Slab>(
-      "SELECT * FROM slabs WHERE rarity = ? AND card_id IS NULL AND missing = 0 ORDER BY ABS(est_value - ?) LIMIT 15",
-      TIER_ORDER[t], target);
+      "SELECT * FROM slabs WHERE rarity = ? AND card_id IS NULL AND missing = 0 AND era != ? ORDER BY ABS(est_value - ?) LIMIT 15",
+      TIER_ORDER[t], ULTRA_ERA, target);
     if (near.length) return near[Math.floor(rand() * near.length)];
   }
   return null;
+}
+
+/**
+ * Ultra Heavy Hitters are pulled only through this extra roll on an Immortal hit. The chance is set so a pack's odds of
+ * one, times their average value (~1.26M), add about 2% of the pack price to its expected return: with all 8 in the vault
+ * that's about 1 in 25,000 GOAT Packs, 1 in 6,300 Mega Packs, 1 in 2.5 million Rookie Packs.
+ */
+export function maybeUltra(pack: { price: number; cards: number; odds: Record<string, number> }, rand: () => number): Slab | null {
+  const left = all<Slab>("SELECT * FROM slabs WHERE era = ? AND card_id IS NULL AND missing = 0", ULTRA_ERA);
+  const grail = pack.odds.grail ?? 0;
+  if (!left.length || !grail) return null;
+  const avg = left.reduce((s, x) => s + slabValue(x), 0) / left.length;
+  const perPack = (0.02 * pack.price) / avg;
+  const perImmortal = Math.min(1, perPack / (pack.cards * (grail / 100)));
+  return rand() < perImmortal ? left[Math.floor(rand() * left.length)] : null;
 }
 
 export const slabValue = (s: Pick<Slab, "mkt_value" | "est_value">) => s.mkt_value ?? s.est_value;
@@ -162,7 +222,9 @@ export function slabFilePath(file: string) {
 
 export function catalogStats() {
   return all<{ rarity: Rarity; n: number; owned: number; lo: number; hi: number; avg: number }>(
-    `SELECT rarity, COUNT(*) n, SUM(card_id IS NOT NULL) owned, MIN(est_value) lo, MAX(est_value) hi, AVG(est_value) avg
+    // "Typical" leaves out the Ultra Heavy Hitters so a few million-dollar slabs don't swamp the Immortal average.
+    `SELECT rarity, COUNT(*) n, SUM(card_id IS NOT NULL) owned, MIN(est_value) lo, MAX(est_value) hi,
+       COALESCE(AVG(CASE WHEN era != '${ULTRA_ERA}' THEN est_value END), AVG(est_value)) avg
      FROM slabs WHERE missing = 0 GROUP BY rarity`);
 }
 

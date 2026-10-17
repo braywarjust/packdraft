@@ -8,21 +8,22 @@ export type PackType = {
 export type Rarity = "common" | "rare" | "epic" | "legendary" | "grail";
 
 export const RARITIES: Record<Rarity, { label: string; mult: [number, number]; ring: string; text: string; printRun: number }> = {
-  common: { label: "Base", mult: [0.08, 0.2], ring: "ring-slate-400", text: "text-zinc-700", printRun: 999 },
-  rare: { label: "Chase", mult: [0.2, 0.45], ring: "ring-sky-400", text: "text-sky-700", printRun: 299 },
-  epic: { label: "Short Print", mult: [0.5, 1.2], ring: "ring-fuchsia-400", text: "text-fuchsia-600", printRun: 99 },
-  legendary: { label: "Case Hit", mult: [1.5, 4], ring: "ring-amber-400", text: "text-amber-600", printRun: 25 },
-  grail: { label: "Grail", mult: [6, 15], ring: "ring-emerald-300", text: "text-emerald-700", printRun: 1 },
+  common: { label: "Common", mult: [0.08, 0.2], ring: "ring-slate-400", text: "text-zinc-700", printRun: 999 },
+  rare: { label: "Rare", mult: [0.2, 0.45], ring: "ring-blue-500", text: "text-blue-400", printRun: 299 },
+  epic: { label: "Epic", mult: [0.5, 1.2], ring: "ring-purple-500", text: "text-purple-400", printRun: 99 },
+  legendary: { label: "Mythic", mult: [1.5, 4], ring: "ring-red-500", text: "text-red-500", printRun: 25 },
+  grail: { label: "Immortal", mult: [6, 15], ring: "ring-sky-200", text: "text-sky-200", printRun: 1 },
 };
 
 /** Solid tier colours (match the rarity badges) and what each tier means in hobby terms. */
-export const RARITY_HEX: Record<Rarity, string> = { common: "#64748b", rare: "#0284c7", epic: "#c026d3", legendary: "#f59e0b", grail: "#10b981" };
+// Internal keys stay common/rare/epic/legendary/grail; shown as Common, Rare, Epic, Mythic, Immortal.
+export const RARITY_HEX: Record<Rarity, string> = { common: "#64748b", rare: "#2563eb", epic: "#9333ea", legendary: "#dc2626", grail: "#bae6fd" };
 export const RARITY_BLURB: Record<Rarity, string> = {
   common: "Everyday graded slabs. The bread and butter of every break.",
   rare: "Inserts, parallels and better players. The cards you chase in a box.",
   epic: "Short prints, autos, patches and gem grades. Rare enough to brag about.",
   legendary: "The one-per-case kind of hit: big names, low pops, on-card autos.",
-  grail: "Holy grails. Logomen, black labels, iconic rookies of legends.",
+  grail: "Holy grails: Logomen, black labels, iconic rookies of legends, and the Ultra Heavy Hitters, record-setting slabs worth up to millions.",
 };
 export const RARITY_ORDER: Rarity[] = ["common", "rare", "epic", "legendary", "grail"];
 
@@ -33,11 +34,11 @@ export const PACKS: PackType[] = [
     odds: { common: 70, rare: 23, epic: 5.6, legendary: 1.2, grail: 0.2  } },
   { id: "pro", name: "Pro Pack", price: 250, cards: 1, color: "from-emerald-500 to-teal-700", accent: "#34d399", blurb: "What weekly winners rip.",
     odds: { common: 52, rare: 30, epic: 13, legendary: 4.3, grail: 0.7 } },
-  { id: "allpro", name: "All-Pro Pack", price: 500, cards: 1, color: "from-fuchsia-500 to-purple-700", accent: "#e879f9", blurb: "Boosted Short Print odds.",
+  { id: "allpro", name: "All-Pro Pack", price: 500, cards: 1, color: "from-fuchsia-500 to-purple-700", accent: "#e879f9", blurb: "Boosted Epic odds.",
     odds: { common: 40, rare: 33, epic: 19, legendary: 7, grail: 1  } },
   { id: "hof", name: "Hall of Fame Pack", price: 1000, cards: 1, color: "from-amber-400 to-orange-600", accent: "#fbbf24", blurb: "Top scorer of the week gets one of these.",
     odds: { common: 28, rare: 34, epic: 25, legendary: 11, grail: 2  } },
-  { id: "goat", name: "GOAT Pack", price: 2500, cards: 1, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Grail chase.",
+  { id: "goat", name: "GOAT Pack", price: 2500, cards: 1, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Immortal chase.",
     odds: { common: 5, rare: 25, epic: 37, legendary: 25, grail: 8  } },
   { id: "megacase", name: "Mega Pack", price: 10000, cards: 5, kind: "case", color: "from-zinc-900 via-amber-500 to-zinc-900", accent: "#f5c15c", blurb: "Five slabs, zero commons. The big rip.",
     odds: { common: 0, rare: 12, epic: 42, legendary: 34, grail: 12 } },

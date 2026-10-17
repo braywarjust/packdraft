@@ -88,7 +88,9 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
                 <p className="text-xs text-zinc-500">Market value</p>
                 <p className="text-3xl font-bold text-emerald-600"><Coins n={open.value} /></p>
                 <p className="mt-1 text-xs text-zinc-500">
-                  {open.s_source === "courtyard"
+                  {open.s_source === "auction"
+                    ? "Ultra Heavy Hitter: priced at its record public auction sale."
+                    : open.s_source === "courtyard"
                     ? "Courtyard fair market value for this exact slab (Heavy Hitter)."
                     : open.s_source === "ebay" && detail
                     ? detail.match === "cert"

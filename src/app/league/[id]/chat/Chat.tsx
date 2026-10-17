@@ -16,7 +16,7 @@ const SMACK = [
   "Hey {t}, set your lineup. Oh wait, you did. Yikes.",
   "{t} is the only manager who could turn a triple-double into a loss.",
   "{t}, I'd trash talk you but your box score already did it for me.",
-  "If losing were a pack, {t} would pull a Grail every week.",
+  "If losing were a pack, {t} would pull an Immortal every week.",
 ];
 
 /** Bold **text**, and "1,234 Pack Points" becomes the Pack Points icon + amount. */

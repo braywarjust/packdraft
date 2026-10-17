@@ -9,7 +9,7 @@ const ROOT = path.resolve(import.meta.dirname, "../..");
 const OUT = path.resolve(process.argv[2] ?? path.join(ROOT, "exports/slab-backs"));
 const S = Number(process.argv[3] ?? 2400);
 const k = S / 1200;
-const RARITY = { base: "#64748b", chase: "#0284c7", "short-print": "#c026d3", "case-hit": "#f59e0b", grail: "#10b981" };
+const RARITY = { common: "#64748b", rare: "#2563eb", epic: "#9333ea", mythic: "#dc2626", immortal: "#bae6fd" };
 
 const sw = 710 * k, x0 = (S - sw) / 2, r = 18 * k, border = 1200 * 0.03 * k, inset = 1200 * 0.035 * k;
 const b64 = (buf, type) => `data:${type};base64,${buf.toString("base64")}`;

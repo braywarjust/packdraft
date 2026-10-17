@@ -70,7 +70,7 @@ export default async function PacksPage() {
             const share = st ? (st.n / vaultTotal) * 100 : 0;
             return (
               <div key={r} className="card relative overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5" style={{ background: RARITY_HEX[r], color: r === "legendary" || r === "grail" ? "#000" : "#fff" }}>
+                <div className="flex items-center justify-between px-4 py-2.5" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>
                   <span className="text-sm font-black uppercase tracking-wider">{RARITIES[r].label}</span>
                   <span className="text-[10px] font-bold opacity-80">Tier {i + 1}</span>
                 </div>
@@ -102,7 +102,7 @@ export default async function PacksPage() {
               <tr className="text-xs text-zinc-500">
                 <th className="px-4 py-3 text-left">Pack</th>
                 {RARITY_ORDER.map((r) => (
-                  <th key={r} className="px-2 py-3"><span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-black uppercase" style={{ background: RARITY_HEX[r], color: r === "legendary" || r === "grail" ? "#000" : "#fff" }}>{RARITIES[r].label}</span></th>
+                  <th key={r} className="px-2 py-3"><span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-black uppercase" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>{RARITIES[r].label}</span></th>
                 ))}
                 <th className="px-4 py-3 text-right">Mix</th>
               </tr>
@@ -136,7 +136,7 @@ export default async function PacksPage() {
       <section id="scoring" className="scroll-mt-36 card space-y-4 p-5 text-sm">
         <div>
           <h2 className="text-lg font-bold">How a slab&apos;s tier is set</h2>
-          <p className="text-zinc-500">Each slab gets a score from what collectors pay up for. The whole vault is ranked by score: bottom 55% are Base, then 27% Chase, 12% Short Print, 4.5% Case Hit and the top 1.5% Grail.</p>
+          <p className="text-zinc-500">Each slab gets a score from what collectors pay up for. The whole vault is ranked by score: bottom 55% are Common, then 27% Rare, 12% Epic, 4.5% Mythic and the top 1.5% Immortal. The Ultra Heavy Hitters, record auction sales worth hundreds of thousands to millions, are always Immortal and only drop on a tiny extra roll when you hit Immortal.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {([

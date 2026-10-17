@@ -87,7 +87,7 @@ async function lid(p, w, h) {
 
 async function back(p, w, h) {
   const lg = await logo("packdraft-logo-full.svg", Math.round(w * 0.5)), lm = await meta(lg);
-  const names = { grail: "Grail", legendary: "Case Hit", epic: "Short Print", rare: "Chase", common: "Base" };
+  const names = { grail: "Immortal", legendary: "Mythic", epic: "Epic", rare: "Rare", common: "Common" };
   const odds = Object.entries(p.odds).reverse().filter(([, v]) => v > 0);
   const x0 = 110, x1 = w - 110;
   const inner = `<rect x="${x0 - 30}" y="420" width="${x1 - x0 + 60}" height="${110 + odds.length * 80}" rx="24" fill="#05070c" opacity=".6"/>

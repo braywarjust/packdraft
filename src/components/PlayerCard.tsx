@@ -11,8 +11,8 @@ export type CardData = {
 
 // Solid rarity badge. Hex colours on purpose: the dark theme remaps Tailwind's tint scales.
 const BADGE: Record<Rarity, string> = {
-  common: "bg-[#64748b] text-white", rare: "bg-[#0284c7] text-white", epic: "bg-[#c026d3] text-white",
-  legendary: "bg-[#f59e0b] text-black", grail: "bg-[#10b981] text-black",
+  common: "bg-[#64748b] text-white", rare: "bg-[#2563eb] text-white", epic: "bg-[#9333ea] text-white",
+  legendary: "bg-[#dc2626] text-white", grail: "bg-[#bae6fd] text-black",
 };
 export function RarityBadge({ rarity, className = "" }: { rarity: Rarity; className?: string }) {
   return (
@@ -53,7 +53,7 @@ export function SlabCard({ c, small }: { c: CardData; small?: boolean }) {
       <div className="mt-2 w-full text-center">
         <RarityBadge rarity={c.rarity} />
         <p className="mt-1 truncate text-xs font-semibold text-zinc-900">{c.name}</p>
-        <p className="font-mono text-xs font-bold text-emerald-600" title={c.s_source === "ebay" ? "eBay market value" : c.s_source === "courtyard" ? "Courtyard fair market value" : "Estimated value"}>
+        <p className="font-mono text-xs font-bold text-emerald-600" title={c.s_source === "ebay" ? "eBay market value" : c.s_source === "auction" ? "Record auction sale" : c.s_source === "courtyard" ? "Courtyard fair market value" : "Estimated value"}>
           <Coins n={c.value} />{c.s_source ? "" : "*"}
         </p>
       </div>
@@ -70,7 +70,7 @@ const FRAME: Record<Rarity, string> = {
   grail: "from-emerald-300 via-cyan-300 via-50% to-fuchsia-400",
 };
 export const GLOW: Record<Rarity, string> = {
-  common: "rgba(148,163,184,0.25)", rare: "rgba(56,189,248,0.45)", epic: "rgba(232,121,249,0.55)", legendary: "rgba(251,191,36,0.7)", grail: "rgba(52,211,153,0.8)",
+  common: "rgba(148,163,184,0.25)", rare: "rgba(37,99,235,0.5)", epic: "rgba(147,51,234,0.55)", legendary: "rgba(220,38,38,0.65)", grail: "rgba(186,230,253,0.85)",
 };
 const GRADE_WORD: Record<number, string> = { 10: "GEM MT", 9.5: "MINT+", 9: "MINT", 8.5: "NM-MT+", 8: "NM-MT" };
 

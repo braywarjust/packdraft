@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { all, one, run, tx, User } from "./db";
 import { PACK_BY_ID, RARITIES, Rarity, rollRarity, valueScale, fmtCoins } from "./packs";
 import { postSystem } from "./league";
-import { ensureCatalog, pickSlab, slabValue } from "./slabs";
+import { ensureCatalog, maybeUltra, pickSlab, slabValue } from "./slabs";
 import { refreshMarket } from "./market";
 
 /** A card in someone's collection. New cards are real slabs (slab_id set); a few early cards are generated art. */
@@ -37,7 +37,7 @@ export async function openPack(userId: number, packId: number): Promise<Card[]> 
       const rarity = rollRarity(pack.odds, rand());
       const [lo, hi] = RARITIES[rarity].mult;
       const target = pack.price * scale * (lo + (hi - lo) * rand());
-      const slab = pickSlab(rarity, target, rand);
+      const slab = (rarity === "grail" ? maybeUltra(pack, rand) : null) ?? pickSlab(rarity, target, rand);
       if (!slab) throw new Error("The vault is empty! Sell some cards back to restock it.");
       const gradeNum = slab.grade_num ?? 0;
       const r = run(

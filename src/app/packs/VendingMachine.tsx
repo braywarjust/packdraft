@@ -14,7 +14,7 @@ import { SlabBack } from "@/components/SlabBack";
 type Inv = { id: number; pack_type: string; source: string; created_at: number };
 type Act<T> = Promise<T | { error: string }>;
 /** Heavy Hitters and the top two rarity tiers count as case hits: their face-down card shakes before the flip. */
-const isCaseHit = (c: CardData) => c.s_source === "courtyard" || c.rarity === "legendary" || c.rarity === "grail";
+const isBigHit = (c: CardData) => c.s_source === "courtyard" || c.s_source === "auction" || c.rarity === "legendary" || c.rarity === "grail";
 const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, grail: 4 };
 
 // 1-slab packs are the skinny frosted crate renders (~0.79 wide:tall).
@@ -213,7 +213,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
             const short = !tester && coins < p.price;
             return (
               <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
-                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Case Hit ${p.odds.legendary}% · Grail ${p.odds.grail}%`}
+                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${p.odds.grail}%`}
                 className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                 <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                   <PackArt p={p} md slabs={features[p.id]} />
@@ -222,7 +222,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                   <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
                   <span className="w-36 space-y-1">
                     <OddsBar odds={p.odds} />
-                    <span className="block text-center text-[11px] text-zinc-500">Case Hit or better <b className="text-amber-600">{(p.odds.legendary + p.odds.grail).toFixed(p.odds.legendary + p.odds.grail < 1 ? 2 : 1).replace(/\.0$/, "")}%</b></span>
+                    <span className="block text-center text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{(p.odds.legendary + p.odds.grail).toFixed(p.odds.legendary + p.odds.grail < 1 ? 2 : 1).replace(/\.0$/, "")}%</b></span>
                   </span>
               </button>
             );
@@ -240,7 +240,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               const short = !tester && coins < p.price;
               return (
                 <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
-                  title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Case Hit ${p.odds.legendary}% · Grail ${p.odds.grail}%`}
+                  title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${p.odds.grail}%`}
                   className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                   <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                     <PackArt p={p} md />
@@ -249,7 +249,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                   <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
                   <span className="w-36 space-y-1">
                     <OddsBar odds={p.odds} />
-                    <span className="block text-center text-[11px] text-zinc-500">Case Hit or better <b className="text-amber-600">{(p.odds.legendary + p.odds.grail).toFixed(p.odds.legendary + p.odds.grail < 1 ? 2 : 1).replace(/\.0$/, "")}%</b></span>
+                    <span className="block text-center text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{(p.odds.legendary + p.odds.grail).toFixed(p.odds.legendary + p.odds.grail < 1 ? 2 : 1).replace(/\.0$/, "")}%</b></span>
                   </span>
                 </button>
               );
@@ -288,7 +288,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               <div className="flex flex-wrap justify-center gap-4">
                 {cards.map((c, i) => {
                   const isUp = flipped.has(c.id);
-                  const hit = isCaseHit(c);
+                  const hit = isBigHit(c);
                   return (
                     <button key={c.id} onClick={() => !isUp && flip(c)} className={`flip anim-deal ${isUp ? "flipped" : ""}`} style={{ animationDelay: `${i * 120}ms` }}>
                       <div className={hit && !isUp ? "anim-rumble [perspective:1000px]" : ""}>
