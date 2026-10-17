@@ -13,8 +13,6 @@ import { SlabIcon } from "@/components/SlabIcon";
 
 export const metadata = { title: "Pack Shop" };
 
-const JUMP = [["#packs", "Packs"], ["#cases", "Cases"], ["#rarity", "Rarity tiers"], ["#odds", "Odds"], ["#scoring", "How tiers are set"]] as const;
-
 export default async function PacksPage() {
   const u = await requireUser();
   const inventory = unopenedPacks(u.id);
@@ -55,11 +53,6 @@ export default async function PacksPage() {
         </div>
       </section>
 
-      {/* Jump nav */}
-      <nav className="sticky top-16 z-20 -mx-1 flex gap-1.5 overflow-x-auto rounded-xl border border-line bg-panel/90 p-1.5 backdrop-blur scrollbar-thin lg:top-[4.25rem]">
-        {inventory.length > 0 && <a href="#unopened" className="tab shrink-0 bg-brand text-white hover:bg-brand-dark hover:text-white">Unopened ({inventory.length})</a>}
-        {JUMP.map(([href, label]) => <a key={href} href={href} className="tab shrink-0">{label}</a>)}
-      </nav>
 
       <VendingMachine features={packFeatures(PACKS)} coins={u.is_tester ? 1_000_000_000 : u.coins} tester={!!u.is_tester} inventory={inventory} buy={buyPack} rip={ripPack} sell={sellCards} />
 
