@@ -101,7 +101,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
 
         {/* What you're playing for: weekly packs + every point pays Pack Points */}
         {(() => {
-          const rate = l.draft_status === "done" ? weekRate(l.id, l.current_week) : 1;
+          const rate = weekRate();
           const mine = me && l.draft_status === "done" ? earnings(l.id, u.id, l.current_week) : null;
           const rewards = [["Matchup win", l.reward_win, false], ["Matchup loss", l.reward_loss, false], ["Top score", l.reward_top, true], ["Champion", "goat", true]] as const;
           return (
@@ -126,13 +126,13 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 <div className="flex flex-col justify-between gap-4 border-t border-white/10 bg-black/20 p-5 xl:border-l xl:border-t-0">
                   <div>
                     <p className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-600">Points pay</p>
-                    <h2 className="text-2xl font-black tracking-tight text-white">Every point = Pack Points</h2>
-                    <p className="mt-1 text-sm text-zinc-500">Your starters&apos; fantasy points are paid to you as Pack Points when their games go final.</p>
+                    <h2 className="text-2xl font-black tracking-tight text-white">Every point pays Pack Points</h2>
+                    <p className="mt-1 text-sm text-zinc-500">Every fantasy point your starters score pays you half a Pack Point when their games go final.</p>
                   </div>
                   <div className="rounded-xl bg-emerald-500/10 p-3 ring-1 ring-emerald-500/30">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">This week&apos;s rate</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Pack Points rate</p>
                     <p className="flex items-center gap-2 whitespace-nowrap font-mono text-2xl font-black text-emerald-600">1 pt = <CoinIcon />{rate.toFixed(2)}</p>
-                    <p className="text-[10px] text-zinc-500">Set by the slab market</p>
+                    <p className="text-[10px] text-zinc-500">Fixed every week</p>
                   </div>
                   {mine && (
                     <div className="grid grid-cols-2 gap-2 text-center">

@@ -1,16 +1,8 @@
-// Fantasy points pay out as Pack Points, backed by the slab market.
+// Fantasy points pay out as Pack Points at a fixed rate.
 //
-// 1 Pack Point is worth $1 of slab market value: pulled cards are valued at their slab's market price
-// (eBay/Courtyard when known, else the rarity estimate). Every fantasy point a started player scores pays
-// the manager `rate` Pack Points when that game goes final.
-//
-// Calibration (simulated 20-week, 8-team seasons, both scoring formats): an average team scores ~1,150 pts
-// a week (p10 ~1,000, p90 ~1,300). At rate 1.00 that's roughly one Hall of Fame Pack a week, or a Mega Pack
-// every ~9 weeks of saving. So fantasy points and Pack Points start 1:1.
-//
-// The rate floats with the market: if slab prices across the vault rise, the same Pack Points buy weaker
-// slabs out of a pack, so the rate rises with them (and falls when prices fall). It is snapshotted per league
-// week, so points never change value mid-week.
+// 1 Pack Point is worth $1 of slab market value. Every fantasy point a started player scores pays the manager
+// PP_PER_POINT Pack Points when that game goes final. Brayden set this to 0.5 and wants it fixed: never float it
+// with the market or change it without him asking.
 import { all, one, run } from "./db";
 
 // The table is also in db.ts's schema; creating it here too means a running dev server picks it up without a restart.
@@ -25,43 +17,12 @@ function ensure() {
   ready = true;
 }
 
-/** Pack Points per fantasy point at the baseline market. */
-export const BASE_RATE = 1;
-const CLAMP: [number, number] = [0.5, 2];
+/** Pack Points paid per fantasy point. Fixed by Brayden: do not change. */
+export const PP_PER_POINT = 0.5;
 
-/** Median slab market value across the whole vault (market price when known, else the estimate). */
-function vaultMedian(): number {
-  const n = one<{ n: number }>("SELECT COUNT(*) n FROM slabs WHERE missing = 0")?.n ?? 0;
-  if (!n) return 0;
-  return one<{ v: number }>(
-    "SELECT COALESCE(mkt_value, est_value) v FROM slabs WHERE missing = 0 ORDER BY v LIMIT 1 OFFSET ?", Math.floor(n / 2))?.v ?? 0;
-}
-
-/** Current market vs the baseline locked in the first time this ran (1.00 = unchanged). Cached per day. */
-export function marketIndex(): number {
-  const day = new Date().toISOString().slice(0, 10);
-  const cached = one<{ value: string }>("SELECT value FROM meta WHERE key = ?", `market_index:${day}`);
-  if (cached) return Number(cached.value);
-  const median = vaultMedian();
-  if (!median) return 1;
-  let base = Number(one<{ value: string }>("SELECT value FROM meta WHERE key = 'market_baseline_median'")?.value);
-  if (!base) {
-    base = median;
-    run("INSERT OR REPLACE INTO meta (key, value) VALUES ('market_baseline_median', ?)", String(base));
-  }
-  const idx = Math.round(Math.min(CLAMP[1], Math.max(CLAMP[0], median / base)) * 100) / 100;
-  run("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)", `market_index:${day}`, String(idx));
-  return idx;
-}
-
-/** Pack Points per fantasy point for a league week, fixed the first time the week is scored. */
-export function weekRate(leagueId: number, week: number): number {
-  const key = `pp_rate:${leagueId}:${week}`;
-  const saved = one<{ value: string }>("SELECT value FROM meta WHERE key = ?", key);
-  if (saved) return Number(saved.value);
-  const rate = Math.round(BASE_RATE * marketIndex() * 100) / 100;
-  run("INSERT OR IGNORE INTO meta (key, value) VALUES (?, ?)", key, String(rate));
-  return rate;
+/** Pack Points per fantasy point for a league week. Always PP_PER_POINT (kept as a function for callers). */
+export function weekRate(_leagueId?: number, _week?: number): number {
+  return PP_PER_POINT;
 }
 
 /** Pay a finished player-game once. Bad nights (negative points) pay nothing rather than costing you. */

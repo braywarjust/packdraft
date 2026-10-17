@@ -198,13 +198,13 @@ export type LivePlayer = {
  * Score a team's week. Each player-game uses the slot he was in when that game started
  * (frozen into daily_slots), so mid-week lineup changes and drops are handled correctly.
  *
- * Points are Pack Points: fantasy points × the week's market rate (see economy.ts). When a started
- * player's game goes final, the manager is paid those Pack Points (once).
+ * Matchup scores are plain fantasy points. When a started player's game goes final, the manager is paid
+ * fantasy points × PP_PER_POINT Pack Points (once; see economy.ts).
  */
 export function teamWeek(l: League, teamId: number, week: number) {
   const players = roster(teamId);
   const active = week === l.current_week && l.draft_status === "done" && !l.champion_team_id;
-  const rate = l.draft_status === "done" ? weekRate(l.id, week) : 1;
+  const rate = weekRate(l.id, week);
   const owner = one<{ user_id: number | null }>("SELECT user_id FROM teams WHERE id = ?", teamId)?.user_id ?? null;
   const boosts = teamBoosts(teamId);
   const boostMult = (playerId: number, key: string) => boosts.get(`${playerId}|${key}`)?.mult ?? 1;
@@ -229,11 +229,11 @@ export function teamWeek(l: League, teamId: number, week: number) {
       else played++;
       if (g.line && frozen.get(k) && frozen.get(k) !== "BN") {
         const raw = fpts(g.line, l.scoring) * boostMult(p.id, g.key);
-        pts += raw * rate;
+        pts += raw;
         if (g.state === "post") pay(p.id, g.key, raw);
       }
     }
-    const proj = projFor(p, l.scoring) * rate;
+    const proj = projFor(p, l.scoring);
     if (p.slot !== "BN") {
       const effLeft = isOut(p) ? 0 : left;
       remain += effLeft * proj;
@@ -247,7 +247,7 @@ export function teamWeek(l: League, teamId: number, week: number) {
     rows.push({
       id: p.id, name: p.name, pos: p.pos, team: p.team, slot: p.slot, headshot: p.headshot, injury: p.injury,
       pts: Math.round(pts * 100) / 100, proj, played, left, total: games.length, locked: isLocked(l, p),
-      now: cur ? { label: cur.label, clock: cur.clock, state: cur.state, line: cur.line ? statLine(cur.line) : "", pts: cur.line ? Math.round(fpts(cur.line, l.scoring) * boostMult(p.id, cur.key) * rate * 100) / 100 : 0 } : null,
+      now: cur ? { label: cur.label, clock: cur.clock, state: cur.state, line: cur.line ? statLine(cur.line) : "", pts: cur.line ? Math.round(fpts(cur.line, l.scoring) * boostMult(p.id, cur.key) * 100) / 100 : 0 } : null,
       boost: b && bGame ? { mult: b.mult, own: !!b.own, slabId: b.slab_id, dayKey: b.day_key, state: bGame.state } : null,
     });
   }
@@ -263,7 +263,7 @@ export function teamWeek(l: League, teamId: number, week: number) {
     const g = p && playerGames(l, p, week).find((x) => x.key === key);
     if (g?.line) {
       const raw = fpts(g.line, l.scoring) * boostMult(pid, key);
-      ghost += raw * rate;
+      ghost += raw;
       if (g.state === "post") pay(pid, key, raw);
     }
   }
