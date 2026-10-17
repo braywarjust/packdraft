@@ -14,7 +14,7 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
     return (
       <div className={`flex min-w-0 flex-1 flex-col gap-2 ${which === "away" ? "items-end text-right" : ""} ${lost ? "opacity-55" : ""}`}>
         <div className={`flex min-w-0 items-center gap-3 ${which === "away" ? "flex-row-reverse" : ""}`}>
-          <div className="rounded-2xl bg-black/25 p-1.5 ring-1 ring-white/15"><TeamBadge brand={s.brand} size={big ? 64 : 48} /></div>
+          <TeamBadge brand={s.brand} size={big ? 76 : 56} />
           <div className="min-w-0">
             <p className={`truncate font-black leading-tight text-white drop-shadow ${big ? "text-xl" : "text-base"}`}>{s.brand.name}</p>
             <p className="text-[11px] font-bold uppercase tracking-widest text-white/60">{s.brand.abbr} · {s.record}</p>

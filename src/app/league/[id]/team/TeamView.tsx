@@ -57,7 +57,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         <div className="pointer-events-none absolute -right-16 -top-20 opacity-25"><TeamBadge brand={b} size={420} /></div>
         <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 2px, transparent 2px 14px)" }} />
         <div className="relative flex flex-wrap items-center gap-6 p-6 sm:p-8">
-          <div className="rounded-3xl bg-black/20 p-3 shadow-xl ring-1 ring-white/20 backdrop-blur"><TeamBadge brand={b} size={132} /></div>
+          <TeamBadge brand={b} size={148} className="drop-shadow-2xl" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-black uppercase tracking-[0.35em] text-white/70">{b.abbr} · {l.name}</p>
             <h2 className="mt-1 text-4xl font-black leading-none tracking-tight text-white drop-shadow-lg sm:text-5xl">{t.name}</h2>
