@@ -30,9 +30,17 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
   };
   return (
     <Link href={href} className={`group relative block overflow-hidden rounded-2xl shadow-xl transition hover:-translate-y-0.5 ${mine ? "ring-2 ring-white/70" : "ring-1 ring-white/10"}`}
-      style={{ background: `linear-gradient(100deg, ${home.brand.color} 0%, ${home.brand.color}aa 38%, #151b27 50%, ${away.brand.color}aa 62%, ${away.brand.color} 100%)` }}>
-      <div className="pointer-events-none absolute -left-10 top-1/2 -translate-y-1/2 opacity-15"><TeamBadge brand={home.brand} size={big ? 240 : 180} /></div>
-      <div className="pointer-events-none absolute -right-10 top-1/2 -translate-y-1/2 opacity-15"><TeamBadge brand={away.brand} size={big ? 240 : 180} /></div>
+      style={{ background: `linear-gradient(100deg, ${home.brand.color} 50%, ${away.brand.color} 50%)` }}>
+      {/* Each half gets its team's logo, faded and centred; a hard diagonal cut splits the colours. */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(0 0, 54.4% 0, 45.6% 100%, 0 100%)" }}>
+        <div className="absolute left-1/4 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"><TeamBadge brand={home.brand} size={big ? 260 : 200} ghost /></div>
+      </div>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(54.4% 0, 100% 0, 100% 100%, 45.6% 100%)" }}>
+        <div className="absolute left-3/4 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"><TeamBadge brand={away.brand} size={big ? 260 : 200} ghost /></div>
+      </div>
+      <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <line x1="54.4" y1="0" x2="45.6" y2="100" stroke="#fff" strokeOpacity=".55" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+      </svg>
       <div className="relative flex items-center gap-3 p-4 sm:p-5">
         {side(home, "home")}
         <div className="flex shrink-0 flex-col items-center gap-1 px-1">
@@ -45,9 +53,9 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
       </div>
       {status !== "final" && (
         <div className="relative px-4 pb-3 sm:px-5">
-          <div className="flex h-2 overflow-hidden rounded-full bg-black/30">
-            <div className="transition-all duration-700" style={{ width: `${hp}%`, background: `linear-gradient(90deg, ${home.brand.alt}, ${home.brand.color})` }} />
-            <div className="flex-1" style={{ background: `linear-gradient(90deg, ${away.brand.color}, ${away.brand.alt})` }} />
+          <div className="flex h-2 overflow-hidden rounded-full bg-black/30 ring-1 ring-black/30">
+            <div className="border-r-2 border-white transition-all duration-700" style={{ width: `${hp}%`, background: home.brand.alt }} />
+            <div className="flex-1" style={{ background: away.brand.alt }} />
           </div>
           <p className="mt-1 flex justify-between text-[10px] font-bold text-white/70"><span>{hp}%</span><span>Win probability</span><span>{100 - hp}%</span></p>
         </div>

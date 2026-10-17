@@ -173,7 +173,7 @@ export function TeamCourt(props: Props) {
             <Court brand={brand} />
             {/* big team logo painted on the floor */}
             <div className="pointer-events-none absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2 opacity-[0.18]">
-              <TeamBadge brand={brand} size={300} />
+              <TeamBadge brand={brand} size={300} ghost />
             </div>
             <div className="relative hidden min-h-[720px] md:block">
               {COURT.map(({ slot, x, y }) => (
@@ -202,7 +202,7 @@ export function TeamCourt(props: Props) {
             </div>
           </section>
           <section className="relative space-y-2 overflow-hidden rounded-2xl border border-white/10 p-4" style={{ background: `linear-gradient(180deg, ${brand.color}22, transparent)` }}>
-            <div className="pointer-events-none absolute -right-10 -top-10 opacity-[0.08]"><TeamBadge brand={brand} size={260} /></div>
+            <div className="pointer-events-none absolute -right-10 -top-10 opacity-[0.08]"><TeamBadge brand={brand} size={260} ghost /></div>
             <h3 className="relative flex items-center gap-2 text-sm font-black uppercase tracking-widest" style={{ color: brand.alt }}>
               <span className="h-4 w-1 rounded" style={{ background: brand.color }} /> Bench <span className="text-xs font-semibold normal-case tracking-normal text-zinc-500">(points don&apos;t count)</span>
             </h3>

@@ -2,7 +2,11 @@
 export type BrandLite = { name: string; abbr: string; color: string; alt: string; logo: string | null };
 
 /** A team's logo, or a monogram in its colours when it has no logo. */
-export function TeamBadge({ brand, size = 28, className = "" }: { brand: BrandLite; size?: number; className?: string }) {
+export function TeamBadge({ brand, size = 28, className = "", ghost = false }: { brand: BrandLite; size?: number; className?: string; ghost?: boolean }) {
+  // Watermark use: no-logo teams show just their letters (no box edges showing through the fade).
+  if (ghost && !brand.logo) {
+    return <span className={`inline-grid shrink-0 place-items-center font-black leading-none text-white ${className}`} style={{ width: size, height: size, fontSize: size * (brand.abbr.length > 2 ? 0.36 : 0.48) }}>{brand.abbr}</span>;
+  }
   if (brand.logo) {
     return <img src={brand.logo} alt={brand.name} title={brand.name} className={`inline-block shrink-0 object-contain ${className}`}
       style={{ width: size, height: size, filter: "drop-shadow(0 1px 2px rgba(0,0,0,.45))" }} />;

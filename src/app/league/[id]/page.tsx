@@ -167,7 +167,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                     className={`relative flex items-center gap-2.5 overflow-hidden rounded-xl py-2 pl-3 pr-3 transition hover:brightness-125 ${mine ? "ring-2 ring-white/60" : "ring-1 ring-white/5"}`}
                     style={{ background: `linear-gradient(100deg, ${b.color}cc 0%, ${b.color}55 45%, ${b.alt}22 100%)` }}>
                     <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: `linear-gradient(${b.color}, ${b.alt})` }} />
-                    <span className="pointer-events-none absolute -right-4 top-1/2 -translate-y-1/2 opacity-15"><TeamBadge brand={b} size={64} /></span>
+                    <span className="pointer-events-none absolute -right-4 top-1/2 -translate-y-1/2 opacity-15"><TeamBadge brand={b} size={64} ghost /></span>
                     <span className="relative w-5 text-center font-mono text-lg font-black text-white/80">{i + 1}</span>
                     <span className="relative"><TeamBadge brand={b} size={30} /></span>
                     <span className="relative min-w-0 flex-1">

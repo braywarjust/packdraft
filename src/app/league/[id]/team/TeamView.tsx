@@ -50,11 +50,11 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
     <div className="relative space-y-6">
       <AutoRefresh ms={live ? 10000 : 60000} />
       {/* Giant logo watermark behind the whole page */}
-      <div className="pointer-events-none absolute -right-24 top-40 -z-0 opacity-[0.06]"><TeamBadge brand={b} size={620} /></div>
+      <div className="pointer-events-none absolute -right-24 top-40 -z-0 opacity-[0.06]"><TeamBadge brand={b} size={620} ghost /></div>
 
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl" style={{ background: `linear-gradient(115deg, ${b.color} 0%, ${b.color} 45%, ${b.alt} 130%)` }}>
-        <div className="pointer-events-none absolute -right-16 -top-20 opacity-25"><TeamBadge brand={b} size={420} /></div>
+        <div className="pointer-events-none absolute -right-16 -top-20 opacity-25"><TeamBadge brand={b} size={420} ghost /></div>
         <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 2px, transparent 2px 14px)" }} />
         <div className="relative flex flex-wrap items-center gap-6 p-6 sm:p-8">
           <TeamBadge brand={b} size={148} className="drop-shadow-2xl" />
