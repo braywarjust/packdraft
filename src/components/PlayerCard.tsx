@@ -9,14 +9,14 @@ export type CardData = {
   s_company?: string | null; s_grade?: string | null; s_cert?: string | null; s_flags?: string | null; s_source?: string | null;
 };
 
-// Small coloured rarity badge.
+// Solid rarity badge. Hex colours on purpose: the dark theme remaps Tailwind's tint scales.
 const BADGE: Record<Rarity, string> = {
-  common: "bg-zinc-100 text-zinc-600 ring-zinc-200", rare: "bg-sky-50 text-sky-700 ring-sky-200", epic: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200",
-  legendary: "bg-amber-50 text-amber-700 ring-amber-200", grail: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  common: "bg-[#64748b] text-white", rare: "bg-[#0284c7] text-white", epic: "bg-[#c026d3] text-white",
+  legendary: "bg-[#f59e0b] text-black", grail: "bg-[#10b981] text-black",
 };
 export function RarityBadge({ rarity, className = "" }: { rarity: Rarity; className?: string }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset ${BADGE[rarity]} ${className}`}>
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm ${BADGE[rarity]} ${className}`}>
       {RARITIES[rarity].label}
     </span>
   );

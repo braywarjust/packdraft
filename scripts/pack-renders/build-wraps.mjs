@@ -127,7 +127,7 @@ async function back(p) {
   const lg = await logo("packdraft-logo-simple.svg", Math.round(FW * 0.42));
   const m = await sharp(lg).metadata();
   const rows = Object.entries(p.odds).reverse();
-  const label = { grail: "Grail 1/1", legendary: "Legendary", epic: "Epic", rare: "Rare", common: "Common" };
+  const label = { grail: "Grail", legendary: "Case Hit", epic: "Short Print", rare: "Chase", common: "Base" };
   const txt = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
     <rect x="${X0 + 110}" y="700" width="${FW - 220}" height="${110 + rows.length * 80}" rx="28" fill="#0b0f18" opacity=".55"/>
     <text x="${CX}" y="772" text-anchor="middle" font-family="Helvetica Neue, Arial" font-weight="800" font-size="46" fill="#fff" letter-spacing="10">PULL ODDS</text>

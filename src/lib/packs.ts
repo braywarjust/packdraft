@@ -8,11 +8,11 @@ export type PackType = {
 export type Rarity = "common" | "rare" | "epic" | "legendary" | "grail";
 
 export const RARITIES: Record<Rarity, { label: string; mult: [number, number]; ring: string; text: string; printRun: number }> = {
-  common: { label: "Common", mult: [0.08, 0.2], ring: "ring-slate-400", text: "text-zinc-700", printRun: 999 },
-  rare: { label: "Rare", mult: [0.2, 0.45], ring: "ring-sky-400", text: "text-sky-700", printRun: 299 },
-  epic: { label: "Epic", mult: [0.5, 1.2], ring: "ring-fuchsia-400", text: "text-fuchsia-600", printRun: 99 },
-  legendary: { label: "Legendary", mult: [1.5, 4], ring: "ring-amber-400", text: "text-amber-600", printRun: 25 },
-  grail: { label: "Grail 1/1", mult: [6, 15], ring: "ring-emerald-300", text: "text-emerald-700", printRun: 1 },
+  common: { label: "Base", mult: [0.08, 0.2], ring: "ring-slate-400", text: "text-zinc-700", printRun: 999 },
+  rare: { label: "Chase", mult: [0.2, 0.45], ring: "ring-sky-400", text: "text-sky-700", printRun: 299 },
+  epic: { label: "Short Print", mult: [0.5, 1.2], ring: "ring-fuchsia-400", text: "text-fuchsia-600", printRun: 99 },
+  legendary: { label: "Case Hit", mult: [1.5, 4], ring: "ring-amber-400", text: "text-amber-600", printRun: 25 },
+  grail: { label: "Grail", mult: [6, 15], ring: "ring-emerald-300", text: "text-emerald-700", printRun: 1 },
 };
 
 export const PACKS: PackType[] = [
@@ -22,7 +22,7 @@ export const PACKS: PackType[] = [
     odds: { common: 70, rare: 23, epic: 5.6, legendary: 1.2, grail: 0.2  } },
   { id: "pro", name: "Pro Pack", price: 250, cards: 1, color: "from-emerald-500 to-teal-700", accent: "#34d399", blurb: "What weekly winners rip.",
     odds: { common: 52, rare: 30, epic: 13, legendary: 4.3, grail: 0.7 } },
-  { id: "allpro", name: "All-Pro Pack", price: 500, cards: 1, color: "from-fuchsia-500 to-purple-700", accent: "#e879f9", blurb: "Boosted Epic odds.",
+  { id: "allpro", name: "All-Pro Pack", price: 500, cards: 1, color: "from-fuchsia-500 to-purple-700", accent: "#e879f9", blurb: "Boosted Short Print odds.",
     odds: { common: 40, rare: 33, epic: 19, legendary: 7, grail: 1  } },
   { id: "hof", name: "Hall of Fame Pack", price: 1000, cards: 1, color: "from-amber-400 to-orange-600", accent: "#fbbf24", blurb: "Top scorer of the week gets one of these.",
     odds: { common: 28, rare: 34, epic: 25, legendary: 11, grail: 2  } },

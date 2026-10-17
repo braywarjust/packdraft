@@ -83,7 +83,7 @@ async function topFace() {
 async function back() {
   const W = 1420, H = 1200;
   const lg = await logo("packdraft-logo-full.svg", 480), lm = await meta(lg);
-  const label = { grail: "Grail 1/1", legendary: "Legendary", epic: "Epic", rare: "Rare", common: "Common" };
+  const label = { grail: "Grail", legendary: "Case Hit", epic: "Short Print", rare: "Chase", common: "Base" };
   const odds = Object.entries(CASE.odds).reverse().filter(([, v]) => v > 0);
   const inner = `<rect x="330" y="400" width="${W - 660}" height="${110 + odds.length * 80}" rx="24" fill="#05070c" opacity=".6"/>
     <text x="${W / 2}" y="470" text-anchor="middle" font-family="${F}" font-weight="800" font-size="42" fill="url(#gold)" letter-spacing="12">PULL ODDS PER SLAB</text>

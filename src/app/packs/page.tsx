@@ -45,7 +45,7 @@ export default async function PacksPage() {
           <li><b>Autograph</b> +20 · <b>Memorabilia</b> +13 (Logoman +28) · auto + patch combo +8</li>
           <li><b>Card type:</b> iconic 90s/modern insert +18, premium set +12, numbered/short print +8, parallel +4, rookie +8</li>
           <li><b>Era:</b> pre-1990 +12, 1990s +5, 2000s +3</li>
-          <li>Tiers by score: bottom 55% Common, next 27% Rare, 12% Epic, 4.5% Legendary, top 1.5% Grail.</li>
+          <li>Tiers by score: bottom 55% Base, next 27% Chase, 12% Short Print, 4.5% Case Hit, top 1.5% Grail.</li>
         </ul>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full">
