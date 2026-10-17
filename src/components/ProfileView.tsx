@@ -75,7 +75,7 @@ function Showcase({ cards, look, c1, c2 }: { cards: CardData[]; look: ProfileLoo
   const caption = (c: CardData) => (
     <div className="mt-2 text-center">
       <RarityBadge rarity={c.rarity} />
-      <p className="mt-1 max-w-[180px] truncate text-xs font-semibold text-zinc-900">{c.name}</p>
+      <p data-slab-name className="mt-1 max-w-[180px] truncate text-xs font-semibold text-zinc-900">{c.name}</p>
       <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={c.value} /></p>
     </div>
   );

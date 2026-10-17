@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * App-wide hover tooltip that replaces the browser's own. Mount <TooltipHost /> once (root layout); any element with a
- * `title` (or `data-tip`) then gets this tooltip instead. The title is moved to data-tip on first hover so the browser
- * never shows its own, and kept as aria-label when the element has no text, so screen readers still get it.
- * Text cut off with "…" (.truncate / .line-clamp-2) shows its full text the same way.
+ * The app's only hover tooltip: the full name of a slab when it's cut off with "…" (mark the element data-slab-name;
+ * give it a value to show something other than its text). Mount <TooltipHost /> once (root layout).
+ * The browser's own tooltip is switched off app-wide: a `title` is moved to data-tip on first hover (and kept as
+ * aria-label when the element has no text, so screen readers still get it) and never shown.
  */
 type Tip = { text: string; x: number; y: number; below: boolean };
 
@@ -39,15 +39,17 @@ export function TooltipHost() {
     const over = (e: PointerEvent) => {
       if (e.pointerType === "touch") return;
       const target = e.target as Element | null;
-      let el = target?.closest?.("[title], [data-tip]") ?? null;
-      let text: string | null = null;
-      if (el) text = adopt(el);
-      else {
-        // Names cut off with "…": show the full text.
-        const cut = target?.closest?.(".truncate, .line-clamp-2") as HTMLElement | null;
-        if (cut && (cut.scrollWidth > cut.clientWidth + 1 || cut.scrollHeight > cut.clientHeight + 1)) { el = cut; text = cut.textContent?.trim() || null; }
-      }
-      if (!el || el === cur.current) return;
+      // Titles never show (the browser's tooltip is switched off app-wide)...
+      const titled = target?.closest?.("[title]");
+      if (titled) adopt(titled);
+      // ...the only tooltip is a slab name that's cut off with "…".
+      const name = target?.closest?.("[data-slab-name]") as HTMLElement | null;
+      const cut = !!name && (name.scrollWidth > name.clientWidth + 1 || name.scrollHeight > name.clientHeight + 1);
+      const el: Element | null = cut ? name : null;
+      const custom = name?.getAttribute("data-slab-name");
+      const text = cut ? ((custom && custom !== "true" ? custom : null) || name!.textContent?.trim() || null) : null;
+      if (!el) { if (cur.current) hide(); return; }
+      if (el === cur.current) return;
       if (timer.current) clearTimeout(timer.current);
       cur.current = el;
       setShown(false);

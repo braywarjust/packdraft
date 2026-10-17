@@ -2,8 +2,8 @@
 type P = { className?: string; title?: string };
 const svg = (d: string, fill = false) => function Icon({ className = "", title }: P) {
   return (
-    // A title shows in the app's own tooltip (TooltipHost), not the browser's.
-    <svg viewBox="0 0 24 24" aria-hidden={!title} role={title ? "img" : undefined} aria-label={title} data-tip={title} className={`inline-block h-[1em] w-[1em] shrink-0 align-[-0.125em] ${className}`}
+    // Labelled for screen readers only; hover tooltips are reserved for long slab names.
+    <svg viewBox="0 0 24 24" aria-hidden={!title} role={title ? "img" : undefined} aria-label={title} className={`inline-block h-[1em] w-[1em] shrink-0 align-[-0.125em] ${className}`}
       fill={fill ? "currentColor" : "none"} stroke={fill ? "none" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d={d} />
     </svg>
