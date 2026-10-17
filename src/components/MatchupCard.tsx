@@ -5,9 +5,14 @@ import { Fpts } from "@/components/Fpts";
 
 export type MatchSide = { id: number; brand: BrandLite; record: string; score: number; proj: number };
 
+/** Links when given an href (cards in lists); a plain block on the matchup page itself. */
+function Wrap({ href, className, style, children }: { href?: string; className: string; style: React.CSSProperties; children: React.ReactNode }) {
+  return href ? <Link href={href} className={className} style={style}>{children}</Link> : <div className={className} style={style}>{children}</div>;
+}
+
 /** A head-to-head card split in the two teams' colours, logos facing off, scores big. */
 export function MatchupCard({ href, home, away, status, winProb, mine, big = false }: {
-  href: string; home: MatchSide; away: MatchSide; status: "pre" | "live" | "final"; winProb: number; mine?: boolean; big?: boolean;
+  href?: string; home: MatchSide; away: MatchSide; status: "pre" | "live" | "final"; winProb: number; mine?: boolean; big?: boolean;
 }) {
   const hp = Math.round(winProb * 100);
   const winner = status === "final" ? (home.score > away.score ? "home" : away.score > home.score ? "away" : null) : null;
@@ -36,7 +41,7 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
     );
   };
   return (
-    <Link href={href} className={`group relative block overflow-hidden rounded-2xl shadow-xl transition hover:-translate-y-0.5 ${mine ? "ring-2 ring-white/70" : "ring-1 ring-white/10"}`}
+    <Wrap href={href} className={`group relative block overflow-hidden rounded-2xl shadow-xl transition hover:-translate-y-0.5 ${mine ? "ring-2 ring-white/70" : "ring-1 ring-white/10"}`}
       style={{ background: away.brand.color }}>
       {/* Both halves are clipped with the same polygon the divider line uses, so colour, logo and line always meet. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(0 0, 54.4% 0, 45.6% 100%, 0 100%)", background: home.brand.color }}>
@@ -67,6 +72,6 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
           <p className="mt-1 flex justify-between text-[10px] font-bold text-white/70"><span>{hp}%</span><span>Win probability</span><span>{100 - hp}%</span></p>
         </div>
       )}
-    </Link>
+    </Wrap>
   );
 }

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { LivePlayer } from "@/lib/league";
 import { InjuryTag } from "@/components/Headshot";
-import { fptsInk, inkOn, isLight } from "@/lib/color";
+import { MatchupCard } from "@/components/MatchupCard";
 import { BoostChip } from "@/components/LineupEditor";
 import { Fpts } from "@/components/Fpts";
 
@@ -77,10 +77,9 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   // Each starter gets a row tinted in his fantasy team's colour, with his photo large and faded in from the outer edge.
   const cell = (p: LivePlayer | undefined, right: boolean, brand: BrandLite) => {
     const fade = `linear-gradient(${right ? "to left" : "to right"}, #000 30%, transparent 92%)`;
-    const light = isLight(brand.color);
     return (
       <div className={`relative min-h-[76px] min-w-0 flex-1 overflow-hidden rounded-xl ring-1 ring-white/5 ${p && flash.has(p.id) ? "anim-flash" : ""}`}
-        style={{ background: light ? brand.color : `linear-gradient(${right ? 270 : 90}deg, transparent 25%, rgba(8,10,16,.45)), ${brand.color}`, color: inkOn(brand.color), ...fptsInk(brand.color) }}>
+        style={{ background: brand.color }}>
         {p ? (
           <>
             {p.headshot && (
@@ -89,17 +88,18 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
                 className={`pointer-events-none absolute top-1 h-[125%] w-auto max-w-none select-none opacity-90 ${right ? "-right-8" : "-left-8"}`}
                 style={{ maskImage: fade, WebkitMaskImage: fade }} />
             )}
-            <div className={`relative flex h-full items-center gap-2 py-2.5 ${right ? "flex-row-reverse pl-3 pr-[72px] text-right" : "pl-[72px] pr-3"}`}>
+            {/* Text and points sit on a dark panel so they're always white with the blue icon, whatever the team colour. */}
+            <div className={`relative my-1.5 flex min-h-[64px] items-center gap-2 rounded-lg bg-[#0f141f]/85 py-2 text-white ring-1 ring-black/20 ${right ? "ml-1.5 mr-[72px] flex-row-reverse pl-3 pr-3 text-right" : "ml-[72px] mr-1.5 pl-3 pr-3"}`}>
               <div className="min-w-0 flex-1">
                 <p className={`flex items-center gap-1.5 text-[15px] font-black leading-tight ${right ? "flex-row-reverse" : ""}`}><span className="truncate">{p.name}</span><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
-                <p className="mt-0.5 truncate text-[11px] font-semibold opacity-90">
+                <p className="mt-0.5 truncate text-[11px] font-semibold text-zinc-300">
                   <TeamLogo team={p.team} size={13} className="-mt-0.5 mr-1 align-middle" />{p.team} ·{" "}
-                  {p.now ? (p.now.state === "in" ? <span className={`font-bold ${light ? "text-red-700" : "text-red-300"}`}>● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
+                  {p.now ? (p.now.state === "in" ? <span className="font-bold text-red-400">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
                   {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
                 </p>
-                <p className="text-[10px] font-semibold opacity-80">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
+                <p className="text-[10px] font-semibold text-zinc-400">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
               </div>
-              <p className="font-mono text-xl font-black"><Fpts n={p.pts} iconClass="text-[0.8em]" /></p>
+              <p className={`border-white/10 font-mono text-xl font-black ${right ? "border-r pr-3" : "border-l pl-3"}`}><Fpts n={p.pts} iconClass="text-[0.8em]" /></p>
             </div>
           </>
         ) : <span className="flex h-full items-center px-4 text-sm text-zinc-500">Empty</span>}
@@ -110,60 +110,16 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   return (
     <div className="space-y-4">
       <Link href={`/league/${leagueId}`} className="text-sm text-zinc-500 hover:text-zinc-900">← {d.league}</Link>
-      {/* Branded header: the two teams' colours split on a diagonal (same as the matchup cards), big logos facing off. */}
-      <div className="relative overflow-hidden rounded-2xl shadow-xl ring-1 ring-white/10" style={{ background: away.brand.color }}>
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(0 0, 54% 0, 46% 100%, 0 100%)", background: home.brand.color }}>
-          <div className="absolute left-1/4 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"><TeamBadge brand={home.brand} size={320} ghost /></div>
-        </div>
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(54% 0, 100% 0, 100% 100%, 46% 100%)", background: away.brand.color }}>
-          <div className="absolute left-3/4 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"><TeamBadge brand={away.brand} size={320} ghost /></div>
-        </div>
-        <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <line x1="54" y1="0" x2="46" y2="100" stroke="#fff" strokeOpacity=".55" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-        </svg>
-        <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-3 p-5 sm:p-6">
-          <div className={`flex min-w-0 flex-col items-start gap-3 `}>
-            <div className={`flex min-w-0 items-center gap-3 `}>
-              <TeamBadge brand={home.brand} size={76} className="drop-shadow-xl" />
-              <div className="min-w-0">
-                <p className="truncate text-xl font-black leading-tight sm:text-2xl" style={{ color: inkOn(home.brand.color) }}>{home.name}</p>
-                <p className="text-[11px] font-bold uppercase tracking-widest opacity-75" style={{ color: inkOn(home.brand.color) }}>{home.brand.abbr} · {home.record}</p>
-              </div>
-            </div>
-            <div className="rounded-xl bg-black/55 px-4 py-2 shadow-lg ring-1 ring-white/10">
-              <p className="font-mono text-4xl font-black leading-none text-white sm:text-5xl"><Fpts n={home.score} iconClass="text-[0.7em]" /></p>
-              <p className="mt-1 font-mono text-xs font-bold text-white/85"><span className="text-[10px] font-black uppercase tracking-widest text-fpts">Proj </span><Fpts n={home.score + home.remain} /></p>
-            </div>
-          </div>
-          <div className="flex flex-col items-center rounded-xl bg-black/55 px-3 py-2 text-center ring-1 ring-white/10">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/70">Week {d.week}</p>
-            {d.range && <p className="text-[10px] text-white/60">{d.range}</p>}
-            <p className={`mt-1 text-sm font-black ${d.final ? "text-white" : d.live ? "text-red-400" : "text-white/80"}`}>{d.final ? "FINAL" : d.live ? "● LIVE" : "In progress"}</p>
-            {d.progress != null && d.progress > 0 && !d.final && <p className="text-[10px] text-white/60">{Math.round(d.progress * 100)}% of sim week</p>}
-          </div>
-          <div className={`flex min-w-0 flex-col gap-3 items-end text-right`}>
-            <div className={`flex min-w-0 items-center gap-3 flex-row-reverse`}>
-              <TeamBadge brand={away.brand} size={76} className="drop-shadow-xl" />
-              <div className="min-w-0">
-                <p className="truncate text-xl font-black leading-tight sm:text-2xl" style={{ color: inkOn(away.brand.color) }}>{away.name}</p>
-                <p className="text-[11px] font-bold uppercase tracking-widest opacity-75" style={{ color: inkOn(away.brand.color) }}>{away.brand.abbr} · {away.record}</p>
-              </div>
-            </div>
-            <div className="rounded-xl bg-black/55 px-4 py-2 shadow-lg ring-1 ring-white/10">
-              <p className="font-mono text-4xl font-black leading-none text-white sm:text-5xl"><Fpts n={away.score} iconClass="text-[0.7em]" /></p>
-              <p className="mt-1 font-mono text-xs font-bold text-white/85"><span className="text-[10px] font-black uppercase tracking-widest text-fpts">Proj </span><Fpts n={away.score + away.remain} /></p>
-            </div>
-          </div>
-        </div>
-        <div className="relative bg-black/55 px-5 py-3">
-          <div className="flex justify-between text-xs font-bold text-white"><span>{hp}%</span><span className="text-white/60">Win probability</span><span>{100 - hp}%</span></div>
-          <div className="mt-1 flex h-3 overflow-hidden rounded-full bg-black/40 ring-1 ring-white/10">
-            <div className="transition-all duration-700" style={{ width: `${hp}%`, background: home.brand.color }} />
-            <div className="flex-1" style={{ background: away.brand.color }} />
-          </div>
-          <Spark points={history} />
-        </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <span className="font-black uppercase tracking-[0.25em] text-zinc-500">Week {d.week}</span>
+        {d.range && <span className="text-zinc-500">{d.range}</span>}
+        <span className={`font-bold ${d.final ? "text-white" : d.live ? "text-red-500" : "text-zinc-400"}`}>{d.final ? "Final" : d.live ? "● Live" : "In progress"}</span>
+        {d.progress != null && d.progress > 0 && !d.final && <span className="text-zinc-500">{Math.round(d.progress * 100)}% of sim week</span>}
       </div>
+      <MatchupCard big home={{ id: home.id, brand: home.brand, record: home.record, score: home.score, proj: home.score + home.remain }}
+        away={{ id: away.id, brand: away.brand, record: away.record, score: away.score, proj: away.score + away.remain }}
+        status={d.final ? "final" : d.live || home.score + away.score > 0 ? "live" : "pre"} winProb={d.winProb} />
+      {history.length > 1 && <div className="card px-4 pb-3 pt-2"><p className="label">Win probability over the week</p><Spark points={history} /></div>}
 
       <div className="grid gap-4 2xl:grid-cols-3">
         <div className="card p-2 2xl:col-span-2">
