@@ -1,3 +1,4 @@
+import { LockIcon } from "@/components/Icons";
 import { TeamLogo } from "@/components/TeamLogo";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
@@ -69,7 +70,7 @@ export default async function Players({ params, searchParams }: { params: Promis
                       <div className="flex items-center gap-2">
                         <Headshot src={p.headshot} name={p.name} size={32} />
                         <div>
-                          <p><span className="font-semibold">{p.name}</span> <InjuryTag injury={p.injury} />{l.draft_status === "done" && isLocked(l, p) && " 🔒"}</p>
+                          <p><span className="font-semibold">{p.name}</span> <InjuryTag injury={p.injury} />{l.draft_status === "done" && isLocked(l, p) && <LockIcon className="ml-1 text-zinc-500" title="Locked: game started" />}</p>
                           <p className="text-xs text-zinc-400"><span className={`pos pos-${p.pos} mr-1`}>{p.pos}</span><TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" />{p.team}</p>
                         </div>
                       </div>

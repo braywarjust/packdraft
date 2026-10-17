@@ -387,7 +387,7 @@ export function startDraft(l: League) {
   const order = teams.map((t) => t.id).sort(() => r() - 0.5);
   run("UPDATE leagues SET draft_status = 'live', draft_order = ?, pick_deadline = ?, last_pick_at = ? WHERE id = ?",
     JSON.stringify(order), Date.now() + l.pick_seconds * 1000, Date.now(), l.id);
-  postSystem(l.id, "🏀 The draft is LIVE! Get in the draft room.");
+  postSystem(l.id, "The draft is LIVE! Get in the draft room.");
 }
 
 function schedule(teamIds: number[], weeks: number) {
@@ -413,10 +413,10 @@ export function finishDraft(leagueId: number) {
   for (const t of teams) autoLineup(l, t.id);
   for (const [w, h, a] of schedule(teams.map((t) => t.id), l.season_weeks))
     run("INSERT INTO matchups (league_id, week, home_team_id, away_team_id) VALUES (?, ?, ?, ?)", leagueId, w, h, a);
-  if (l.mode === "sim") postSystem(leagueId, "✅ Draft complete! Set your lineups; the commish kicks off each simulated week.");
+  if (l.mode === "sim") postSystem(leagueId, "Draft complete! Set your lineups; the commish kicks off each simulated week.");
   else {
     const [s, e] = weekRange(l, 1);
-    postSystem(leagueId, `✅ Draft complete! Week 1 runs ${dayLabel(s)} – ${dayLabel(e)} with real NBA games. Set your lineup daily; players lock at tip-off.`);
+    postSystem(leagueId, `Draft complete! Week 1 runs ${dayLabel(s)} – ${dayLabel(e)} with real NBA games. Set your lineup daily; players lock at tip-off.`);
   }
 }
 
@@ -431,7 +431,7 @@ export function startWeek(l: League) {
   processWaivers(l.id);
   for (const t of leagueTeams(l.id)) if (t.is_cpu) autoLineup(l, t.id);
   run("UPDATE leagues SET week_started_at = ? WHERE id = ?", Date.now(), l.id);
-  postSystem(l.id, `⏱️ Simulated week ${l.current_week} tipped off! Games are live.`);
+  postSystem(l.id, `Simulated week ${l.current_week} tipped off! Games are live.`);
 }
 
 export function finalizeWeek(l: League) {
@@ -465,12 +465,12 @@ export function finalizeWeek(l: League) {
     const top = teamMap.get(scores[0].teamId)!;
     if (top.user_id) awardPack(top.user_id, fresh.reward_top, `${fresh.name} · Week ${week} top score`);
     const bottom = teamMap.get(scores[scores.length - 1].teamId)!;
-    postSystem(l.id, `🏁 Week ${week} final!\n${lines.join("\n")}\n\n👑 Top score: ${top.name} (${scores[0].pts.toFixed(1)}) earns a ${PACK_BY_ID[fresh.reward_top]?.name}.\n🎁 Winners got a ${PACK_BY_ID[fresh.reward_win]?.name ?? "pack"}.\n🧱 Basement: ${bottom.name} (${scores[scores.length - 1].pts.toFixed(1)}). Roast accordingly.`);
+    postSystem(l.id, `Week ${week} final!\n${lines.join("\n")}\n\nTop score: ${top.name} (${scores[0].pts.toFixed(1)}) earns a ${PACK_BY_ID[fresh.reward_top]?.name}.\nWinners got a ${PACK_BY_ID[fresh.reward_win]?.name ?? "pack"}.\nBasement: ${bottom.name} (${scores[scores.length - 1].pts.toFixed(1)}). Roast accordingly.`);
     if (week >= fresh.season_weeks) {
       const champ = all<Team>("SELECT * FROM teams WHERE league_id = ? ORDER BY wins DESC, points_for DESC LIMIT 1", l.id)[0];
       run("UPDATE leagues SET week_started_at = NULL, champion_team_id = ? WHERE id = ?", champ.id, l.id);
       if (champ.user_id) awardPack(champ.user_id, "goat", `${fresh.name} · Champion`);
-      postSystem(l.id, `🏆 ${champ.name} wins the ${fresh.name} championship and a GOAT Pack!`);
+      postSystem(l.id, `${champ.name} wins the ${fresh.name} championship and a GOAT Pack!`);
     } else {
       run("UPDATE leagues SET week_started_at = NULL, current_week = current_week + 1 WHERE id = ?", l.id);
     }
@@ -499,7 +499,7 @@ export function processWaivers(leagueId: number) {
       run("UPDATE teams SET faab = faab - ? WHERE id = ?", c.bid, c.team_id);
       run("UPDATE waiver_claims SET status = 'won' WHERE id = ?", c.id);
       const p = one<Player>("SELECT * FROM players WHERE id = ?", c.add_player_id)!;
-      postSystem(leagueId, `📝 Waivers: ${team.name} claimed ${p.name} for $${c.bid} FAAB.`);
+      postSystem(leagueId, `Waivers: ${team.name} claimed ${p.name} for $${c.bid} FAAB.`);
     });
   }
 }
@@ -529,7 +529,7 @@ export function executeTrade(tradeId: number) {
     run("UPDATE trades SET status = 'accepted' WHERE id = ?", tradeId);
     const name = (id: number) => one<Team>("SELECT * FROM teams WHERE id = ?", id)!.name;
     const pn = (ids: number[]) => ids.map((id) => one<Player>("SELECT name FROM players WHERE id = ?", id)!.name).join(", ") || "nothing";
-    postSystem(t.league_id, `🤝 TRADE: ${name(t.from_team_id)} sends ${pn(give)} to ${name(t.to_team_id)} for ${pn(get)}.`);
+    postSystem(t.league_id, `TRADE: ${name(t.from_team_id)} sends ${pn(give)} to ${name(t.to_team_id)} for ${pn(get)}.`);
   });
 }
 

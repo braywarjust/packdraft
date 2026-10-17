@@ -1,5 +1,6 @@
 "use client";
 
+import { ClockIcon, StarIcon } from "./Icons";
 import { TeamBadge, type BrandLite } from "./TeamBadge";
 import { TeamLogo } from "./TeamLogo";
 import { useMemo, useState } from "react";
@@ -40,7 +41,7 @@ export function DraftBoard({ order, picks, rounds, currentOverall, myTeamId }: {
                     <p className="text-zinc-700">{p.pos} · {p.team}{p.is_keeper ? " · K" : ""}</p>
                   </>
                 ) : (
-                  <p className="text-zinc-400">{r + 1}.{String(idx + 1).padStart(2, "0")}{isNow ? " ⏱" : ""}</p>
+                  <p className="text-zinc-400">{r + 1}.{String(idx + 1).padStart(2, "0")}{isNow ? <ClockIcon className="ml-1" /> : null}</p>
                 )}
               </div>
             );
@@ -77,7 +78,7 @@ export function PlayerPool({ players, canPick, onPick, queue, onQueue, busy }: {
             <span className="flex-1 truncate font-medium">{p.name} <InjuryTag injury={p.injury ?? null} /> <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs text-zinc-400">{p.team}</span></span>
             <span className="font-mono text-xs text-zinc-500">{p.proj.toFixed(1)}</span>
             {onQueue && (
-              <button title="Queue" onClick={() => onQueue(p.id, !queue?.includes(p.id))} className={`text-xs ${queue?.includes(p.id) ? "text-amber-600" : "text-zinc-400 hover:text-zinc-700"}`}>★</button>
+              <button title="Queue" onClick={() => onQueue(p.id, !queue?.includes(p.id))} className={`text-xs ${queue?.includes(p.id) ? "text-amber-600" : "text-zinc-400 hover:text-zinc-700"}`}><StarIcon /></button>
             )}
             <button disabled={!canPick || busy} onClick={() => onPick(p.id)} className="btn-lime px-2 py-0.5 text-xs">Draft</button>
           </li>

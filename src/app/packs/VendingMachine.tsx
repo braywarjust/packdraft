@@ -290,7 +290,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               ) : (
                 <div className="card w-full max-w-xl space-y-3 p-4 text-center">
                   <p className="text-sm text-zinc-500">Pack value</p>
-                  <p className={`text-3xl font-black ${total >= rp.price ? "text-emerald-600" : "text-zinc-800"}`}><Coins n={total} /> <span className="text-base font-normal text-zinc-500">on a <Coins n={rp.price} /> pack {total >= rp.price ? "📈 W" : "📉"}</span></p>
+                  <p className={`text-3xl font-black ${total >= rp.price ? "text-emerald-600" : "text-zinc-800"}`}><Coins n={total} /> <span className="text-base font-normal text-zinc-500">on a <Coins n={rp.price} /> pack {total >= rp.price ? "· W" : "· L"}</span></p>
                   <p className="text-xs text-zinc-400">Best pull: <span className={RARITIES[cards[cards.length - 1].rarity].text}>{cards[cards.length - 1].name}</span></p>
                   <div className="flex flex-wrap justify-center gap-2">
                     <button className="btn-ghost" disabled={cards.every((c) => sold.has(c.id) || c.rarity !== "common")}

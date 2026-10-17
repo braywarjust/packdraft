@@ -35,7 +35,7 @@ export default async function LeaguesPage() {
                 <p className="font-bold">{l.name}</p>
                 <p className="text-sm text-zinc-500">{l.team} · {l.n} teams</p>
               </div>
-              <span className="text-sm text-zinc-700">{l.draft_status === "done" ? `Week ${l.current_week}` : l.draft_status === "live" ? "🔴 Drafting" : "Pre-draft"}</span>
+              <span className="text-sm text-zinc-700">{l.draft_status === "done" ? `Week ${l.current_week}` : l.draft_status === "live" ? "Drafting now" : "Pre-draft"}</span>
             </Link>
           ))}
         </section>

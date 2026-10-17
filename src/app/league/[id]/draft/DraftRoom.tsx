@@ -1,5 +1,6 @@
 "use client";
 
+import { StarIcon } from "@/components/Icons";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { BoardPick, BoardTeam, DraftBoard, PlayerPool, PoolPlayer } from "@/components/draft-ui";
@@ -69,7 +70,7 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
       )}
       {s.status === "done" && (
         <div className="card flex items-center justify-between p-5">
-          <p className="text-lg font-bold">✅ Draft complete</p>
+          <p className="text-lg font-bold">Draft complete</p>
           <Link href={`/league/${leagueId}/team`} className="btn-primary">See my team →</Link>
         </div>
       )}
@@ -81,7 +82,7 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
           </div>
           <div className="flex-1">
             <p className="text-xs uppercase text-zinc-500">On the clock</p>
-            <p className="text-xl font-black">{myTurn ? "🚨 YOU'RE UP" : onClock?.name}</p>
+            <p className="text-xl font-black">{myTurn ? "YOU'RE UP" : onClock?.name}</p>
             <p className="text-xs text-zinc-500">{onClock?.cpu ? "CPU picking…" : onClock?.auto ? "Autodrafting…" : onClock?.owner}</p>
           </div>
           {!onClock?.cpu && !onClock?.auto && (
@@ -113,7 +114,7 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
           )}
           {s.queue.length > 0 && (
             <div className="card p-3">
-              <p className="label">★ My queue (autopick takes these first)</p>
+              <p className="label"><StarIcon className="text-amber-600" /> My queue (autopick takes these first)</p>
               <ol className="list-decimal pl-5 text-sm">
                 {s.queue.map((id) => <li key={id}>{s.available.find((p) => p.id === id)?.name ?? "Drafted"}</li>)}
               </ol>

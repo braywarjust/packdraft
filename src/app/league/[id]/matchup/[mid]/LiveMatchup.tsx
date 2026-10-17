@@ -52,7 +52,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
             if (before !== undefined && Math.abs(p.pts - before) >= 0.5 && p.slot !== "BN") {
               const delta = p.pts - before;
               changed.add(p.id);
-              newEvents.push({ key: `${p.id}-${Date.now()}`, side, text: `${p.name} ${delta > 0 ? "+" : ""}${delta.toFixed(1)}${delta >= 8 ? " 🔥" : ""} · ${p.now?.line ?? ""}` });
+              newEvents.push({ key: `${p.id}-${Date.now()}`, side, text: `${p.name} ${delta > 0 ? "+" : ""}${delta.toFixed(1)}${delta >= 8 ? " (big play)" : ""} · ${p.now?.line ?? ""}` });
             }
             prev.current.set(p.id, p.pts);
           }

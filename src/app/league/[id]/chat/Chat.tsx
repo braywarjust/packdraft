@@ -1,5 +1,6 @@
 "use client";
 
+import { CameraIcon, MicIcon } from "@/components/Icons";
 import { Coins } from "@/components/Coins";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -17,7 +18,6 @@ const SMACK = [
   "{t}, I'd trash talk you but your box score already did it for me.",
   "If losing were a pack, {t} would pull a Grail every week.",
 ];
-const EMOJI = ["🔥", "😂", "💀", "🗑️", "🐐", "😤", "🫡", "📉", "📈", "🏀"];
 
 /** Bold **text**, and "1,234 Pack Points" becomes the Pack Points icon + amount. */
 function render(text: string) {
@@ -138,7 +138,6 @@ export function Chat({ leagueId, rivals, send, canPost }: {
             </div>
           )}
           <div className="flex flex-wrap gap-1">
-            {EMOJI.map((e) => <button key={e} onClick={() => setText((t) => t + e)} className="rounded-lg px-1.5 py-0.5 text-lg hover:bg-panel2">{e}</button>)}
             <button
               className="ml-auto rounded-lg bg-red-500/10 px-2 py-1 text-xs font-bold text-red-600 hover:bg-rose-500/30"
               onClick={() => {
@@ -146,12 +145,12 @@ export function Chat({ leagueId, rivals, send, canPost }: {
                 setText(SMACK[Math.floor(Math.random() * SMACK.length)].replace("{t}", t));
               }}
             >
-              🎤 Smack talk generator
+              <MicIcon /> Smack talk generator
             </button>
           </div>
           <div className="flex gap-2">
             <label className="btn-ghost cursor-pointer px-3" title="Upload image">
-              📷<input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+              <CameraIcon /><input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
             </label>
             <button className="btn-ghost px-3 font-bold" onClick={() => { setGifOpen(!gifOpen); if (!gifs.length) searchGifs(); }}>GIF</button>
             <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && submit()} className="input" placeholder="Talk your talk…" />

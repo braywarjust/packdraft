@@ -12,7 +12,7 @@ export function LeagueTabs({ id, isCommish, hasTeam, drafting }: { id: number; i
     { href: `${base}/matchups`, label: "Matchups" },
     { href: `${base}/players`, label: "Players" },
     { href: `${base}/trades`, label: "Trades" },
-    { href: `${base}/draft`, label: drafting ? "🔴 Draft Room" : "Draft" },
+    { href: `${base}/draft`, label: drafting ? "Draft Room (live)" : "Draft" },
     { href: `${base}/chat`, label: "Chat" },
     ...(isCommish ? [{ href: `${base}/settings`, label: "Commish" }] : []),
   ];

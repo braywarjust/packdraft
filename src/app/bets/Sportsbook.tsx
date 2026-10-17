@@ -1,5 +1,6 @@
 "use client";
 
+import { XIcon } from "@/components/Icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Headshot } from "@/components/Headshot";
@@ -267,7 +268,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
                   <li key={p.key} className="rounded-lg bg-ink/40 p-2 text-sm">
                     <div className="flex justify-between gap-2">
                       <span className="font-semibold">{p.label}</span>
-                      <button onClick={() => setSlip((s) => s.filter((x) => x.key !== p.key))} className="text-zinc-400 hover:text-red-600">✕</button>
+                      <button onClick={() => setSlip((s) => s.filter((x) => x.key !== p.key))} className="text-zinc-400 hover:text-red-600" aria-label="Remove"><XIcon /></button>
                     </div>
                     <p className="flex justify-between text-xs text-zinc-500">
                       <span className="flex items-center gap-1">{p.game.split(" @ ").map((t) => <TeamLogo key={t} team={t} size={14} />)}{p.game}</span>

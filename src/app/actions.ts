@@ -91,7 +91,7 @@ export async function createLeague(_: Result | undefined, form: FormData): Promi
     const teamName = preset?.name ?? (String(form.get("team_name") ?? "").trim() || `${u.name}'s Team`);
     const tid = Number(run("INSERT INTO teams (league_id, user_id, name, faab) VALUES (?, ?, ?, ?)", lid, u.id, teamName.slice(0, 32), faab).lastInsertRowid);
     if (preset) applyPreset(tid, preset);
-    postSystem(lid, `🏟️ ${u.name} created ${name}. Invite code: share it with the crew!`);
+    postSystem(lid, `${u.name} created ${name}. Invite code: share it with the crew!`);
     return lid;
   });
   redirect(`/league/${id}`);
@@ -120,7 +120,7 @@ export async function joinLeague(_: Result | undefined, form: FormData): Promise
     tid = Number(run("INSERT INTO teams (league_id, user_id, name, faab) VALUES (?, ?, ?, ?)", l.id, u.id, teamName, l.faab_budget).lastInsertRowid);
   }
   if (preset) applyPreset(tid, preset);
-  postSystem(l.id, `👋 ${u.name} joined as ${teamName}.`);
+  postSystem(l.id, `${u.name} joined as ${teamName}.`);
   redirect(`/league/${l.id}`);
 }
 
@@ -288,7 +288,7 @@ export async function dropPlayer(leagueId: number, playerId: number) {
     const p = one<Player>("SELECT * FROM players WHERE id = ?", playerId)!;
     if (isLocked(l, p)) throw new Error("Player's game has started");
     run("DELETE FROM roster WHERE team_id = ? AND player_id = ?", t.id, playerId);
-    postSystem(leagueId, `✂️ ${t.name} dropped ${p.name}.`);
+    postSystem(leagueId, `${t.name} dropped ${p.name}.`);
     revalidatePath(`/league/${leagueId}`, "layout");
     return { ok: true };
   });
@@ -314,7 +314,7 @@ export async function addPlayer(leagueId: number, addId: number, dropId: number 
       if (dropId) run("DELETE FROM roster WHERE team_id = ? AND player_id = ?", t.id, dropId);
       run("INSERT INTO roster (team_id, player_id, slot, league_id) VALUES (?, ?, 'BN', ?)", t.id, addId, leagueId);
     });
-    postSystem(leagueId, `➕ ${t.name} added ${p.name}.`);
+    postSystem(leagueId, `${t.name} added ${p.name}.`);
     revalidatePath(`/league/${leagueId}`, "layout");
     return { ok: true };
   });
@@ -356,12 +356,12 @@ export async function proposeTrade(leagueId: number, toTeamId: number, give: num
       if (val(give) >= val(get) * 1.05) {
         executeTrade(id);
         revalidatePath(`/league/${leagueId}`, "layout");
-        return { ok: true, message: `${to.name} accepted! 🤖` };
+        return { ok: true, message: `${to.name} accepted!` };
       }
       run("UPDATE trades SET status = 'rejected' WHERE id = ?", id);
       return { ok: true, message: `${to.name} rejected it. The algorithm says sweeten the deal.` };
     }
-    postSystem(leagueId, `📨 ${t.name} sent a trade offer to ${to.name}.`);
+    postSystem(leagueId, `${t.name} sent a trade offer to ${to.name}.`);
     revalidatePath(`/league/${leagueId}/trades`);
     return { ok: true, message: "Offer sent" };
   });

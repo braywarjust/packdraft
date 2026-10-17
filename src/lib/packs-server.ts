@@ -65,7 +65,7 @@ export async function openPack(userId: number, packId: number): Promise<Card[]> 
   if (big.length && !user.is_tester) {
     const leagues = all<{ league_id: number }>("SELECT DISTINCT league_id FROM teams WHERE user_id = ?", userId);
     for (const c of big) {
-      const msg = `🔥 ${user.name} pulled a ${RARITIES[c.rarity].label.toUpperCase()}: ${c.s_year} ${c.s_set} ${c.name}${c.s_variant ? ` ${c.s_variant}` : ""} ${c.s_company} ${c.s_grade} worth ${fmtCoins(c.value)}!`;
+      const msg = `${user.name} pulled a ${RARITIES[c.rarity].label.toUpperCase()}: ${c.s_year} ${c.s_set} ${c.name}${c.s_variant ? ` ${c.s_variant}` : ""} ${c.s_company} ${c.s_grade} worth ${fmtCoins(c.value)}!`;
       for (const l of leagues) postSystem(l.league_id, msg);
     }
   }

@@ -1,5 +1,6 @@
 "use client";
 
+import { BoltIcon, LockIcon } from "./Icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import type { LivePlayer } from "@/lib/league";
@@ -70,7 +71,7 @@ function PlayerTile({ p, slot, big, brand, state }: {
       <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${brand.color}, ${brand.alt})` }} />
       <div className="flex items-center justify-between px-3 pt-2">
         <span className="rounded-md px-1.5 py-0.5 text-[10px] font-black tracking-wider text-white" style={{ background: brand.color }}>{lbl(slot)}</span>
-        {p && <span className="flex items-center gap-1"><BoostChip boost={p.boost} />{p.locked && <span title="Locked: game started" className="text-xs">🔒</span>}</span>}
+        {p && <span className="flex items-center gap-1"><BoostChip boost={p.boost} />{p.locked && <LockIcon className="text-xs text-zinc-400" title="Locked: game started" />}</span>}
       </div>
       {p ? (
         <div className="px-3 pb-3 pt-1">
@@ -104,7 +105,7 @@ function PlayerTile({ p, slot, big, brand, state }: {
           ) : (
             <>
               <button onClick={state.onMove} className="btn-ghost flex-1 px-2 py-1 text-xs">{state.selected ? "Cancel" : "Move"}</button>
-              {state.boostable && <button onClick={state.onBoost} className="btn-ghost flex-1 px-2 py-1 text-xs">⚡ {p?.boost?.state === "pre" ? "Change" : "Boost"}</button>}
+              {state.boostable && <button onClick={state.onBoost} className="btn-ghost flex-1 px-2 py-1 text-xs"><BoltIcon /> {p?.boost?.state === "pre" ? "Change" : "Boost"}</button>}
             </>
           )}
         </div>
@@ -149,7 +150,7 @@ export function TeamCourt(props: Props) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        {editable && view === "court" && <button className="btn-primary" disabled={pending} onClick={() => act(() => autoSet!())}>⚡ Start my active players</button>}
+        {editable && view === "court" && <button className="btn-primary" disabled={pending} onClick={() => act(() => autoSet!())}><BoltIcon /> Start my active players</button>}
         {editable && view === "court" && sel && (
           <>
             <span className="text-sm text-zinc-700">Moving <b>{sel.name}</b>: tap a green spot</span>

@@ -80,7 +80,7 @@ export function MockDraft({ players, userName }: { players: PoolPlayer[]; userNa
       <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
           <p className="text-xs uppercase text-zinc-500">Mock draft · {teams} teams · pick {slot}</p>
-          <p className="text-xl font-black">{done ? "Draft complete!" : onClock === slot ? "🚨 You're on the clock" : `Bot ${onClock} is picking…`}</p>
+          <p className="text-xl font-black">{done ? "Draft complete!" : onClock === slot ? "You're on the clock" : `Bot ${onClock} is picking…`}</p>
         </div>
         <div className="flex gap-2">
           <button className="btn-ghost" onClick={() => setPicks([])}>Restart</button>

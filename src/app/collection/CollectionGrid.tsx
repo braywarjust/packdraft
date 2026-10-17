@@ -1,5 +1,6 @@
 "use client";
 
+import { XIcon } from "@/components/Icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { CardData, PlayerCard, RarityBadge, SlabImage, slabBadges } from "@/components/PlayerCard";
@@ -50,7 +51,7 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
                 <span className="hidden h-5 w-px bg-zinc-200 sm:block" />
                 <span className="hidden text-xs font-semibold uppercase tracking-[0.25em] text-zinc-400 sm:block">Slab Vault</span>
               </div>
-              <button onClick={() => setOpen(null)} aria-label="Close" className="rounded-md p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900">✕</button>
+              <button onClick={() => setOpen(null)} aria-label="Close" className="rounded-md p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900"><XIcon /></button>
             </div>
             <div className="relative grid gap-6 overflow-hidden p-6 md:grid-cols-[auto_1fr]">
             <LogoWatermark color="red" opacity={0.06} height={230} className="-bottom-12 -right-10" />

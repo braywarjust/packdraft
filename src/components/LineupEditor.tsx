@@ -1,5 +1,6 @@
 "use client";
 
+import { BoltIcon, LockIcon, StarIcon, XIcon } from "./Icons";
 import { TeamLogo } from "./TeamLogo";
 import { Coins } from "./Coins";
 import { useRouter } from "next/navigation";
@@ -18,14 +19,14 @@ export type BoostProps = {
   clear: (playerId: number) => Promise<unknown>;
 };
 
-/** "⚡ ×2.31" chip for a boosted player. */
+/** Bolt + "×2.31" chip for a boosted player. */
 export function BoostChip({ boost }: { boost: LivePlayer["boost"] }) {
   if (!boost) return null;
   const live = boost.state === "in";
   return (
     <span title={`Slab boost ×${boost.mult.toFixed(2)}${boost.own ? " (own-player bonus)" : ""}${boost.state === "pre" ? " on his next game" : ""}`}
       className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-black ${live ? "animate-pulse bg-amber-400 text-black" : "bg-amber-50 text-amber-600"}`}>
-      ⚡×{boost.mult.toFixed(2)}{boost.own && " ★"}
+      <BoltIcon />×{boost.mult.toFixed(2)}{boost.own && <StarIcon className="ml-0.5" />}
     </span>
   );
 }
@@ -73,7 +74,7 @@ export function LineupEditor({
             <div className="flex items-center gap-2">
               <Headshot src={p.headshot} name={p.name} size={36} />
               <div className="min-w-0">
-                <p className="font-semibold">{p.name} <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{p.pos} · {p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /> {p.locked && <span title="Locked: game started" className="text-xs">🔒</span>}</p>
+                <p className="font-semibold">{p.name} <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{p.pos} · {p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /> {p.locked && <LockIcon className="text-xs text-zinc-500" title="Locked: game started" />}</p>
                 <p className="truncate text-xs text-zinc-500">
                   {today ? (today.state === "in" ? <span className="text-red-600">● {today.clock} {today.label} </span> : `${today.label} · ${today.clock} `) : "No games this week "}
                   {today?.line && today.state !== "pre" ? `· ${today.line}` : ""}
@@ -95,7 +96,7 @@ export function LineupEditor({
               ) : null}
               {p && !canTarget && canBoost.has(p.id) && (
                 <button className={`px-2 py-1 text-xs ${p.boost?.state === "pre" ? "btn-ghost" : "btn-lime"}`} title="Slab boost his next game" onClick={() => setBoosting(p)}>
-                  ⚡ {p.boost?.state === "pre" ? "Change" : "Boost"}
+                  <BoltIcon /> {p.boost?.state === "pre" ? "Change" : "Boost"}
                 </button>
               )}
             </div>
@@ -109,7 +110,7 @@ export function LineupEditor({
     <div className="space-y-3">
       {editable && (
         <div className="flex flex-wrap items-center gap-2">
-          <button className="btn-primary" disabled={pending} onClick={() => act(() => autoSet!())}>⚡ Start my active players</button>
+          <button className="btn-primary" disabled={pending} onClick={() => act(() => autoSet!())}><BoltIcon /> Start my active players</button>
           {sel && (
             <>
               <span className="text-sm text-zinc-700">Moving <b>{sel.name}</b>: pick a highlighted slot</span>
@@ -154,13 +155,13 @@ export function BoostModal({ boost, player, info, pending, onClose, run }: {
       <div className="card flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-line/60 p-4">
           <div>
-            <p className="font-bold">⚡ Boost {player.name}</p>
+            <p className="flex items-center gap-1.5 font-bold"><BoltIcon className="text-amber-600" /> Boost {player.name}</p>
             <p className="text-xs text-zinc-500">
               {info?.day} · projected {player.proj.toFixed(1)} pts.
               {info?.taken && <span className="text-amber-600"> This replaces today&apos;s boost on {info.taken.name} (×{info.taken.mult.toFixed(2)}).</span>}
             </p>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900">✕</button>
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900" aria-label="Close"><XIcon /></button>
         </div>
         <div className="grid flex-1 grid-cols-2 gap-3 overflow-y-auto p-4 scrollbar-thin sm:grid-cols-4">
           {boost.slabs.length === 0 && <p className="col-span-full text-sm text-zinc-500">You don&apos;t have any slabs yet. Rip some packs first.</p>}

@@ -1,3 +1,4 @@
+import { ForwardIcon, PlayIcon } from "@/components/Icons";
 import { MatchupCard } from "@/components/MatchupCard";
 import { PackThumb } from "@/components/PackThumb";
 import { TeamBadge, TeamName } from "@/components/TeamBadge";
@@ -43,7 +44,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
               </div>
               {isCommish && (
                 <div className="flex flex-wrap gap-2">
-                  {teams.length < l.max_teams && <ActionButton action={fillCpu.bind(null, l.id)}>🤖 Fill with CPU teams</ActionButton>}
+                  {teams.length < l.max_teams && <ActionButton action={fillCpu.bind(null, l.id)}>Fill with CPU teams</ActionButton>}
                   <ActionButton action={startDraftAction.bind(null, l.id)} className="btn-lime" confirm="Start the live draft now?">Start draft</ActionButton>
                 </div>
               )}
@@ -83,8 +84,8 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 <h2 className="text-lg font-bold">{m ? `Your Week ${l.current_week} matchup` : `Week ${l.current_week}`}</h2>
                 <div className="flex flex-wrap gap-2">
                   {isCommish && !l.champion_team_id && l.mode === "sim" && (!l.week_started_at
-                    ? <ActionButton action={startWeekAction.bind(null, l.id)} className="btn-lime">▶ Kick off Week {l.current_week}</ActionButton>
-                    : <ActionButton action={finishWeekNow.bind(null, l.id)} confirm="Skip to final scores and hand out packs?">⏩ Fast-forward to final</ActionButton>)}
+                    ? <ActionButton action={startWeekAction.bind(null, l.id)} className="btn-lime"><PlayIcon /> Kick off Week {l.current_week}</ActionButton>
+                    : <ActionButton action={finishWeekNow.bind(null, l.id)} confirm="Skip to final scores and hand out packs?"><ForwardIcon /> Fast-forward to final</ActionButton>)}
                   <Link href={`/league/${l.id}/matchups`} className="btn-ghost">All matchups →</Link>
                 </div>
               </div>

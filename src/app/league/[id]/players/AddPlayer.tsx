@@ -1,5 +1,6 @@
 "use client";
 
+import { XIcon } from "@/components/Icons";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -44,7 +45,7 @@ export function AddPlayer({
       >
         Go
       </button>
-      <button className="text-xs text-zinc-400" onClick={() => setOpen(false)}>✕</button>
+      <button className="text-xs text-zinc-400" onClick={() => setOpen(false)} aria-label="Close"><XIcon /></button>
       {msg && <span className="w-full text-right text-xs text-red-600">{msg}</span>}
     </div>
   );

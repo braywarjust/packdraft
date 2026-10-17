@@ -13,7 +13,7 @@ export function SettingsForm({ action, children }: { action: (f: FormData) => Pr
       action={(f) =>
         start(async () => {
           const r = (await action(f)) as { error?: string };
-          setMsg(r?.error ? { t: r.error, bad: true } : { t: "Saved ✓", bad: false });
+          setMsg(r?.error ? { t: r.error, bad: true } : { t: "Saved", bad: false });
           router.refresh();
         })
       }

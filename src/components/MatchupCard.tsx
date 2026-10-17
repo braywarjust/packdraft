@@ -1,3 +1,4 @@
+import { CrownIcon } from "./Icons";
 import Link from "next/link";
 import { TeamBadge, type BrandLite } from "./TeamBadge";
 
@@ -22,7 +23,7 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
         </div>
         <p className={`font-mono font-black leading-none text-white drop-shadow-lg ${big ? "text-5xl" : "text-4xl"}`}>
           {status === "pre" ? <span className="text-2xl text-white/70">proj {s.proj.toFixed(1)}</span> : s.score.toFixed(1)}
-          {winner === which && <span className="ml-2 align-middle text-base">👑</span>}
+          {winner === which && <CrownIcon className="ml-2 align-middle text-base text-amber-300" title="Winner" />}
         </p>
         {status === "live" && <p className="font-mono text-[11px] text-white/60">proj {s.proj.toFixed(1)}</p>}
       </div>

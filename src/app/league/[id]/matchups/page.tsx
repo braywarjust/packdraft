@@ -1,3 +1,4 @@
+import { ForwardIcon, PlayIcon } from "@/components/Icons";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all, Matchup } from "@/lib/db";
@@ -50,8 +51,8 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
         </div>
         {isCommish && current && l.mode === "sim" && (
           !l.week_started_at
-            ? <ActionButton action={startWeekAction.bind(null, l.id)} className="btn-lime">▶ Kick off Week {l.current_week}</ActionButton>
-            : <ActionButton action={finishWeekNow.bind(null, l.id)} confirm="Skip to final scores and hand out packs?">⏩ Fast-forward to final</ActionButton>
+            ? <ActionButton action={startWeekAction.bind(null, l.id)} className="btn-lime"><PlayIcon /> Kick off Week {l.current_week}</ActionButton>
+            : <ActionButton action={finishWeekNow.bind(null, l.id)} confirm="Skip to final scores and hand out packs?"><ForwardIcon /> Fast-forward to final</ActionButton>
         )}
       </div>
 
