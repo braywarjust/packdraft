@@ -3,7 +3,7 @@
 import { PackSheen } from "@/components/PackSheen";
 import { OddsBar } from "@/components/OddsBar";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { PACKS, PACK_BY_ID, PackType, RARITIES, Rarity, BUYBACK_RATE } from "@/lib/packs";
 import { CardData, GLOW, PlayerCard } from "@/components/PlayerCard";
 import { Logo } from "@/components/Logo";
@@ -116,6 +116,8 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
   const [sold, setSold] = useState<Set<number>>(new Set());
   const [err, setErr] = useState("");
   const [party, setParty] = useState(false);
+  const packRef = useRef<HTMLButtonElement>(null);
+  const [burstAt, setBurstAt] = useState<{ x: number; y: number } | null>(null);
 
   const doBuy = async (type: string) => {
     setErr("");
@@ -139,6 +141,9 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
 
   const doRip = async () => {
     if (!packId) return;
+    // Centre the screen flash on the pack itself, not the middle of the window.
+    const b = packRef.current?.getBoundingClientRect();
+    setBurstAt(b ? { x: b.left + b.width / 2, y: b.top + b.height / 2 } : null);
     setStage("tearing");
     // The crate charges up and bursts open (about 1.5s); the slabs deal in once both the burst and the pull are done.
     const [r] = await Promise.all([rip(packId), new Promise((ok) => setTimeout(ok, 1500))]);
@@ -259,20 +264,21 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
           {stage !== "cards" ? (
             <div className="flex flex-col items-center gap-6" style={{ "--burst": BURST[rp.id] ?? "#ffffff" } as React.CSSProperties}>
               <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{stage === "tearing" ? "Opening…" : "Click the pack to open it"}</p>
-              <button onClick={doRip} disabled={stage === "tearing"} className={`relative ${stage === "ready" ? "anim-drop hover:anim-shake" : ""}`}>
+              <button ref={packRef} onClick={doRip} disabled={stage === "tearing"} className={`relative ${stage === "ready" ? "anim-drop hover:anim-shake" : ""}`}>
                 {stage === "tearing" ? (
                   // Charge and burst: light rays spin up behind the crate while it shakes harder and harder, then it
                   // swells into a flash of its tier colour and the slabs deal in.
                   <div className="relative grid place-items-center">
-                    <div className="anim-burst-rays pointer-events-none absolute left-1/2 top-1/2 h-[640px] w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-full" />
-                    <div className="anim-burst-glow pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full" />
+                    {/* Centred by the keyframes themselves (translate -50%), so no translate classes here. */}
+                    <div className="anim-burst-rays pointer-events-none absolute left-1/2 top-1/2 h-[640px] w-[640px] rounded-full" />
+                    <div className="anim-burst-glow pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] rounded-full" />
                     <div className="anim-charge relative"><div className="anim-jitter"><PackArt p={rp} big slabs={features[rp.id]} /></div></div>
                   </div>
                 ) : (
                   <div className="anim-shake"><PackArt p={rp} big slabs={features[rp.id]} /></div>
                 )}
               </button>
-              {stage === "tearing" && <div className="anim-burst-flash pointer-events-none fixed inset-0 z-[55]" />}
+              {stage === "tearing" && <div className="anim-burst-flash pointer-events-none fixed inset-0 z-[55]" style={burstAt ? ({ "--bx": `${burstAt.x}px`, "--by": `${burstAt.y}px` } as React.CSSProperties) : undefined} />}
               {stage === "ready" && <button onClick={close} className="text-sm text-zinc-400 hover:text-white">Save it for later</button>}
             </div>
           ) : (
