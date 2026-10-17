@@ -209,6 +209,8 @@ export type League = {
 export type Team = {
   id: number; league_id: number; user_id: number | null; name: string; is_cpu: number; autodraft: number; faab: number;
   wins: number; losses: number; ties: number; points_for: number; points_against: number;
+  // Branding (added by branding.ts ensureBranding)
+  color?: string | null; alt_color?: string | null; abbr?: string | null; logo_url?: string | null; preset_id?: number | null;
 };
 export type Matchup = {
   id: number; league_id: number; week: number; home_team_id: number; away_team_id: number;

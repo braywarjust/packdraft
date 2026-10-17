@@ -1,3 +1,5 @@
+import { TeamBadge, TeamName } from "@/components/TeamBadge";
+import { ensureBranding, teamBrand } from "@/lib/branding";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all, Matchup } from "@/lib/db";
@@ -15,7 +17,9 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const u = await requireUser();
   const l = getLeague(Number(id))!;
+  ensureBranding();
   const teams = leagueTeams(l.id);
+  const brand = new Map(teams.map((t) => [t.id, teamBrand(t)]));
   const me = userTeam(l.id, u.id);
   const isCommish = l.commissioner_id === u.id;
   const owners = new Map(all<{ id: number; name: string; color: string }>("SELECT id, name, color FROM users").map((x) => [x.id, x]));
@@ -45,8 +49,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
             <ul className="grid gap-2 sm:grid-cols-2">
               {teams.map((t) => (
                 <li key={t.id} className="flex items-center gap-2 rounded-xl bg-ink/60 px-3 py-2 text-sm">
-                  <span className="h-3 w-3 rounded-full" style={{ background: t.user_id ? owners.get(t.user_id)?.color : "#475569" }} />
-                  <span className="font-semibold">{t.name}</span>
+                  <TeamName brand={brand.get(t.id)!} size={26} nameClass="font-semibold" />
                   <span className="text-zinc-400">{t.is_cpu ? "CPU (a friend can take this seat)" : owners.get(t.user_id!)?.name}</span>
                 </li>
               ))}
@@ -100,7 +103,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                   <Link key={m.id} href={`/league/${l.id}/matchup/${m.id}`} className={`card block p-4 hover:border-brand/60 ${mine ? "border-brand/40" : ""}`}>
                     {[{ t: m.home_team_id, s: h }, { t: m.away_team_id, s: a }].map(({ t, s }) => (
                       <div key={t} className="flex items-center justify-between py-1">
-                        <span className="truncate font-semibold">{teamName.get(t)}</span>
+                        <TeamName brand={brand.get(t)!} size={24} nameClass="font-semibold" />
                         <span className="font-mono text-lg font-bold">{live ? s.score.toFixed(1) : <span className="text-sm text-zinc-500">proj {(s.score + s.remain).toFixed(1)}</span>}</span>
                       </div>
                     ))}
@@ -119,7 +122,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 <ul className="mt-2 space-y-1 text-sm">
                   {lastWeek.map((m) => (
                     <li key={m.id} className="flex justify-between">
-                      <span>{teamName.get(m.home_team_id)} vs {teamName.get(m.away_team_id)}</span>
+                      <span className="flex min-w-0 items-center gap-2"><TeamName brand={brand.get(m.home_team_id)!} size={18} /> <span className="text-zinc-400">vs</span> <TeamName brand={brand.get(m.away_team_id)!} size={18} /></span>
                       <span className="font-mono">{m.home_score?.toFixed(1)} – {m.away_score?.toFixed(1)}</span>
                     </li>
                   ))}
@@ -131,7 +134,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
 
         {l.champion_team_id && (
           <div className="card bg-gradient-to-r from-amber-500/30 to-transparent p-6 text-center">
-            <p className="text-4xl">🏆</p>
+            <div className="mb-2 flex justify-center"><TeamBadge brand={brand.get(l.champion_team_id)!} size={72} /></div>
             <p className="text-2xl font-black">{teamName.get(l.champion_team_id)} are champions!</p>
           </div>
         )}
@@ -146,7 +149,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
               {standings(l.id).map((t, i) => (
                 <tr key={t.id} className={`border-t border-line/60 ${me?.id === t.id ? "text-brand" : ""}`}>
                   <td className="py-1.5"><span className="mr-2 text-zinc-400">{i + 1}</span>
-                    <Link href={`/league/${l.id}/team/${t.id}`} className="hover:underline">{t.name}</Link></td>
+                    <Link href={`/league/${l.id}/team/${t.id}`} className="inline-flex max-w-[11rem] hover:underline"><TeamName brand={brand.get(t.id) ?? teamBrand(t)} size={20} /></Link></td>
                   <td className="text-center">{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""}</td>
                   <td className="text-right font-mono">{t.points_for.toFixed(1)}</td>
                 </tr>

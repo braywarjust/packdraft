@@ -13,6 +13,7 @@ import { PACK_BY_ID, BUYBACK_RATE } from "@/lib/packs";
 import { openPack, releaseSlab } from "@/lib/packs-server";
 import { etDate } from "@/lib/nba/espn";
 import { placeBet } from "@/lib/bets";
+import { applyPreset, deletePreset, getPreset, savePreset } from "@/lib/branding";
 import { ensureSchedule } from "@/lib/nba/sync";
 
 type Result = { error?: string; ok?: boolean };
@@ -41,6 +42,8 @@ export async function login(_: Result | undefined, form: FormData): Promise<Resu
     const r = run("INSERT INTO users (name, pin_hash, color, created_at) VALUES (?, ?, ?, ?)", name, pin ? hashPin(pin) : null, color, Date.now());
     user = one<User>("SELECT * FROM users WHERE id = ?", Number(r.lastInsertRowid))!;
     run("INSERT INTO user_packs (user_id, pack_type, source, created_at) VALUES (?, 'starter', 'Welcome gift', ?)", user.id, Date.now());
+    await setSession(user.id);
+    redirect("/teams?welcome=1"); // first thing: set up your team branding
   }
   await setSession(user.id);
   redirect("/");
@@ -84,8 +87,10 @@ export async function createLeague(_: Result | undefined, form: FormData): Promi
       faab, Number(form.get("keeper_count") ?? 0), Number(form.get("pick_seconds") ?? 60), Number(form.get("sim_minutes") ?? 5), code(), Date.now(),
     );
     const lid = Number(r.lastInsertRowid);
-    const teamName = String(form.get("team_name") ?? "").trim() || `${u.name}'s Team`;
-    run("INSERT INTO teams (league_id, user_id, name, faab) VALUES (?, ?, ?, ?)", lid, u.id, teamName.slice(0, 32), faab);
+    const preset = getPreset(u.id, Number(form.get("preset_id") ?? 0));
+    const teamName = preset?.name ?? (String(form.get("team_name") ?? "").trim() || `${u.name}'s Team`);
+    const tid = Number(run("INSERT INTO teams (league_id, user_id, name, faab) VALUES (?, ?, ?, ?)", lid, u.id, teamName.slice(0, 32), faab).lastInsertRowid);
+    if (preset) applyPreset(tid, preset);
     postSystem(lid, `🏟️ ${u.name} created ${name}. Invite code: share it with the crew!`);
     return lid;
   });
@@ -104,13 +109,17 @@ export async function joinLeague(_: Result | undefined, form: FormData): Promise
   const cpu = teams.find((t) => t.is_cpu);
   // After the draft, latecomers can still take over a CPU team (roster and all).
   if (l.draft_status !== "pre" && !cpu) return { error: "That league already drafted and has no CPU teams to take over" };
-  const teamName = (String(form.get("team_name") ?? "").trim() || `${u.name}'s Team`).slice(0, 32);
+  const preset = getPreset(u.id, Number(form.get("preset_id") ?? 0));
+  const teamName = (preset?.name ?? (String(form.get("team_name") ?? "").trim() || `${u.name}'s Team`)).slice(0, 32);
+  let tid: number;
   if (cpu) {
     run("UPDATE teams SET user_id = ?, is_cpu = 0, name = ? WHERE id = ?", u.id, teamName, cpu.id);
+    tid = cpu.id;
   } else {
     if (teams.length >= l.max_teams) return { error: "League is full" };
-    run("INSERT INTO teams (league_id, user_id, name, faab) VALUES (?, ?, ?, ?)", l.id, u.id, teamName, l.faab_budget);
+    tid = Number(run("INSERT INTO teams (league_id, user_id, name, faab) VALUES (?, ?, ?, ?)", l.id, u.id, teamName, l.faab_budget).lastInsertRowid);
   }
+  if (preset) applyPreset(tid, preset);
   postSystem(l.id, `👋 ${u.name} joined as ${teamName}.`);
   redirect(`/league/${l.id}`);
 }
@@ -508,5 +517,37 @@ export async function placeBetAction(picks: { key: string; odds: number }[], sta
     const r = placeBet(u.id, picks, stake);
     revalidatePath("/bets");
     return { ok: true, ...r };
+  });
+}
+
+// ---------- Team branding presets ----------
+
+export async function savePresetAction(p: { id?: number; name: string; abbr: string; color: string; alt_color: string; logo_url: string | null }) {
+  return wrap(async () => {
+    const u = await requireUser();
+    const id = savePreset(u.id, p);
+    revalidatePath("/teams");
+    return { ok: true, id };
+  });
+}
+
+export async function deletePresetAction(id: number) {
+  return wrap(async () => {
+    const u = await requireUser();
+    deletePreset(u.id, id);
+    revalidatePath("/teams");
+    return { ok: true };
+  });
+}
+
+/** Re-brand one of my league teams from a preset. */
+export async function applyPresetAction(leagueId: number, presetId: number) {
+  return wrap(async () => {
+    const { t, u } = await myLeagueTeam(leagueId);
+    const p = getPreset(u.id, presetId);
+    if (!p) throw new Error("Preset not found");
+    applyPreset(t.id, p);
+    revalidatePath(`/league/${leagueId}`, "layout");
+    return { ok: true };
   });
 }

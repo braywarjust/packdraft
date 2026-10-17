@@ -1,3 +1,5 @@
+import { TeamBadge } from "@/components/TeamBadge";
+import { teamBrand, userPresets } from "@/lib/branding";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
@@ -14,6 +16,7 @@ export default async function Home() {
   const myTeams = all<{ id: number; league_id: number; name: string; wins: number; losses: number; ties: number }>(
     "SELECT * FROM teams WHERE user_id = ?", user.id);
   const packs = unopenedPacks(user.id);
+  const presets = userPresets(user.id);
   const today = new Date().toISOString().slice(0, 10);
   const pulls = all<{ user: string; color: string; name: string; rarity: Rarity; value: number; grade: number }>(
     `SELECT u.name user, u.color, COALESCE(s.player || ' · ' || s.year || ' ' || s.set_name, p.name) name, c.rarity, c.value, c.grade FROM cards c JOIN users u ON u.id = c.user_id LEFT JOIN slabs s ON s.id = c.slab_id LEFT JOIN players p ON p.id = c.player_id
@@ -52,6 +55,17 @@ export default async function Home() {
         </div>
       </section>
 
+      {presets.length === 0 && (
+        <Link href="/teams?welcome=1" className="card flex items-center justify-between gap-4 border-l-4 border-l-accent p-5 transition hover:border-zinc-300">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Start here</p>
+            <p className="text-lg font-semibold">Set up your team: name, colours and logo</p>
+            <p className="text-sm text-zinc-500">Do it once in Team Studio, then pick it whenever you join a league.</p>
+          </div>
+          <span className="btn-primary shrink-0">Open Team Studio</span>
+        </Link>
+      )}
+
       {packs.length > 0 && (
         <Link href="/packs" className="card flex items-center justify-between gap-4 overflow-hidden border-l-4 border-l-brand p-5 transition hover:border-zinc-300">
           <div>
@@ -85,7 +99,7 @@ export default async function Home() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs uppercase tracking-wider text-zinc-500">{l.name} · {l.draft_status === "done" ? `Week ${l.current_week}` : l.draft_status === "live" ? "Drafting now" : "Pre-draft"}</p>
-                    <p className="text-lg font-bold">{t.name} <span className="text-sm font-normal text-zinc-500">({t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""})</span></p>
+                    <p className="flex items-center gap-2 text-lg font-bold"><TeamBadge brand={teamBrand(t)} size={28} />{t.name} <span className="text-sm font-normal text-zinc-500">({t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""})</span></p>
                   </div>
                   {l.draft_status === "live" && <span className="btn-lime">Draft room →</span>}
                   {l.week_started_at && <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-bold text-red-600">● LIVE</span>}

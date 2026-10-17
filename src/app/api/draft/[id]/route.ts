@@ -1,3 +1,4 @@
+import { ensureBranding, teamBrand } from "@/lib/branding";
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/auth";
 import { all } from "@/lib/db";
@@ -12,6 +13,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   if (!u || !l0 || !canView(l0, u.id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
   advanceDraft(l0.id);
   const l = getLeague(l0.id)!;
+  ensureBranding();
   const teams = leagueTeams(l.id);
   const users = new Map(all<{ id: number; name: string; color: string }>("SELECT id, name, color FROM users").map((x) => [x.id, x]));
   const orderIds = l.draft_order ? draftOrder(l) : teams.map((t) => t.id);
@@ -28,7 +30,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     order: orderIds.map((tid) => {
       const t = teams.find((x) => x.id === tid)!;
       const owner = t.user_id ? users.get(t.user_id) : null;
-      return { id: t.id, name: t.name, cpu: !!t.is_cpu, auto: !!t.autodraft, owner: owner?.name ?? "CPU", color: owner?.color ?? "#475569" };
+      return { id: t.id, name: t.name, cpu: !!t.is_cpu, auto: !!t.autodraft, owner: owner?.name ?? "CPU", color: teamBrand(t).color, brand: teamBrand(t) };
     }),
     picks,
     keepers,

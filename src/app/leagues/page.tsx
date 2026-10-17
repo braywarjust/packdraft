@@ -1,3 +1,5 @@
+import { PresetPicker } from "@/components/PresetPicker";
+import { userPresets } from "@/lib/branding";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
@@ -7,6 +9,10 @@ import { PageHeader } from "@/components/PageHeader";
 
 export default async function LeaguesPage() {
   const u = await requireUser();
+  const presets = userPresets(u.id);
+  const pickTeam = presets.length
+    ? <select name="preset_id" className="input w-48" defaultValue={presets[0].id}>{presets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+    : <input name="team_name" className="input w-44" placeholder="Your team name" />;
   const mine = all<{ id: number; name: string; draft_status: string; current_week: number; n: number; team: string }>(
     `SELECT l.*, t.name team, (SELECT COUNT(*) FROM teams x WHERE x.league_id = l.id) n FROM leagues l JOIN teams t ON t.league_id = l.id AND t.user_id = ? ORDER BY l.id DESC`, u.id);
   const pub = all<{ id: number; name: string; max_teams: number; n: number; humans: number; scoring: string; commish: string }>(
@@ -44,7 +50,7 @@ export default async function LeaguesPage() {
               </div>
               <ActionForm action={joinLeague} submit="Join" className="flex gap-2" submitClass="btn-primary">
                 <input type="hidden" name="league_id" value={l.id} />
-                <input name="team_name" className="input w-44" placeholder="Your team name" />
+                {pickTeam}
               </ActionForm>
             </div>
           ))}
@@ -55,7 +61,7 @@ export default async function LeaguesPage() {
         <p className="mb-4 text-sm text-zinc-500">Your commish can find it on the league page.</p>
         <ActionForm action={joinLeague} submit="Join league">
           <div><label className="label">Invite code</label><input name="code" className="input uppercase" placeholder="A1B2C3" required /></div>
-          <div><label className="label">Team name</label><input name="team_name" className="input" placeholder="Hurts So Good" /></div>
+          <PresetPicker presets={presets} compact />
         </ActionForm>
       </aside>
     </div>

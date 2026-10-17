@@ -1,3 +1,4 @@
+import { ensureBranding, teamBrand } from "@/lib/branding";
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/auth";
 import { one, Matchup, Team } from "@/lib/db";
@@ -19,10 +20,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const l = getLeague(l0.id)!;
   const m = one<Matchup>("SELECT * FROM matchups WHERE id = ?", m0.id)!;
   const side = (teamId: number, stored: number | null) => {
+    ensureBranding();
     const t = one<Team>("SELECT * FROM teams WHERE id = ?", teamId)!;
     const w = teamWeek(l, teamId, m.week);
     return {
-      id: t.id, name: t.name, record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`,
+      id: t.id, name: t.name, brand: teamBrand(t), record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`,
       score: m.final && stored != null ? stored : w.score, projected: w.projected, remain: w.remain, variance: w.variance, players: w.players,
     };
   };

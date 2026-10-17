@@ -1,5 +1,6 @@
 "use client";
 
+import { TeamBadge, type BrandLite } from "@/components/TeamBadge";
 import { TeamLogo } from "@/components/TeamLogo";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -7,7 +8,7 @@ import type { LivePlayer } from "@/lib/league";
 import { Headshot, InjuryTag } from "@/components/Headshot";
 import { BoostChip } from "@/components/LineupEditor";
 
-type Side = { id: number; name: string; record: string; score: number; projected: number; remain: number; players: LivePlayer[] };
+type Side = { id: number; name: string; brand: BrandLite; record: string; score: number; projected: number; remain: number; players: LivePlayer[] };
 type Data = { week: number; final: boolean; live: boolean; mode: string; range: string | null; progress: number | null; league: string; home: Side; away: Side; winProb: number };
 type Event = { key: string; text: string; side: "home" | "away" };
 
@@ -96,7 +97,8 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
       <div className="card overflow-hidden">
         <div className="grid grid-cols-3 items-center gap-2 p-5">
           <div>
-            <p className="text-lg font-black">{home.name}</p>
+            <div className="mb-1 h-1.5 w-16 rounded-full" style={{ background: `linear-gradient(90deg, ${home.brand.color}, ${home.brand.alt})` }} />
+            <p className="flex items-center gap-2 text-lg font-black"><TeamBadge brand={home.brand} size={36} />{home.name}</p>
             <p className="text-xs text-zinc-500">{home.record} · proj {(home.score + home.remain).toFixed(1)}</p>
             <p className="mt-1 font-mono text-4xl font-black sm:text-5xl">{home.score.toFixed(1)}</p>
           </div>
@@ -107,7 +109,8 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
             {d.progress != null && d.progress > 0 && !d.final && <p className="text-xs text-zinc-400">{Math.round(d.progress * 100)}% of sim week</p>}
           </div>
           <div className="text-right">
-            <p className="text-lg font-black">{away.name}</p>
+            <div className="mb-1 ml-auto h-1.5 w-16 rounded-full" style={{ background: `linear-gradient(90deg, ${away.brand.alt}, ${away.brand.color})` }} />
+            <p className="flex items-center justify-end gap-2 text-lg font-black">{away.name}<TeamBadge brand={away.brand} size={36} /></p>
             <p className="text-xs text-zinc-500">{away.record} · proj {(away.score + away.remain).toFixed(1)}</p>
             <p className="mt-1 font-mono text-4xl font-black sm:text-5xl">{away.score.toFixed(1)}</p>
           </div>
@@ -115,8 +118,8 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
         <div className="px-5 pb-4">
           <div className="flex justify-between text-xs font-bold"><span className="text-brand">{hp}%</span><span className="text-zinc-500">Win probability</span><span className="text-accent">{100 - hp}%</span></div>
           <div className="mt-1 flex h-3 overflow-hidden rounded-full bg-panel2">
-            <div className="bg-brand transition-all duration-700" style={{ width: `${hp}%` }} />
-            <div className="flex-1 bg-accent" />
+            <div className="transition-all duration-700" style={{ width: `${hp}%`, background: home.brand.color }} />
+            <div className="flex-1" style={{ background: away.brand.color }} />
           </div>
           <Spark points={history} />
         </div>
