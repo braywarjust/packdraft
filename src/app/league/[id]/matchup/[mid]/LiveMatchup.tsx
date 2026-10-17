@@ -74,36 +74,31 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   const { home, away } = d;
   const hp = Math.round(d.winProb * 100);
 
-  // Each starter gets a row framed in his fantasy team's colour, with his photo large on the outer edge.
-  const cell = (p: LivePlayer | undefined, right: boolean, brand: BrandLite) => {
-    return (
-      <div className={`relative min-h-[76px] min-w-0 flex-1 overflow-hidden rounded-xl ring-1 ring-white/5 ${p && flash.has(p.id) ? "anim-flash" : ""}`}
-        style={{ background: brand.color }}>
-        {p ? (
-          <>
-            {p.headshot && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.headshot} alt="" aria-hidden loading="lazy"
-                className={`pointer-events-none absolute top-1 h-[125%] w-auto max-w-none select-none ${right ? "-right-8" : "-left-8"}`} />
-            )}
-            {/* Text and points sit on a dark panel so they're always white with the blue icon, whatever the team colour. */}
-            <div className={`relative my-1.5 flex min-h-[64px] items-center gap-2 rounded-lg bg-[#0f141f] py-2 text-white ring-1 ring-black/20 ${right ? "ml-1.5 mr-[72px] flex-row-reverse pl-3 pr-3 text-right" : "ml-[72px] mr-1.5 pl-3 pr-3"}`}>
-              <div className="min-w-0 flex-1">
-                <p className={`flex items-center gap-1.5 text-[15px] font-black leading-tight ${right ? "flex-row-reverse" : ""}`}><span className="truncate">{p.name}</span><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
-                <p className="mt-0.5 truncate text-[11px] font-semibold text-zinc-300">
-                  <TeamLogo team={p.team} size={13} className="-mt-0.5 mr-1 align-middle" />{p.team} ·{" "}
-                  {p.now ? (p.now.state === "in" ? <span className="font-bold text-red-400">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
-                  {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
-                </p>
-                <p className="text-[10px] font-semibold text-zinc-400">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
-              </div>
-              <p className={`border-white/10 font-mono text-xl font-black ${right ? "border-r pr-3" : "border-l pl-3"}`}><Fpts n={p.pts} iconClass="text-[0.8em]" /></p>
-            </div>
-          </>
-        ) : <span className="flex h-full items-center px-4 text-sm text-zinc-500">Empty</span>}
+  // Each starter: a solid team-colour block holding his photo on the outer edge, then a theme panel with his line.
+  const cell = (p: LivePlayer | undefined, right: boolean, brand: BrandLite) => (
+    <div className={`flex min-h-[72px] min-w-0 flex-1 overflow-hidden rounded-xl bg-ink ring-1 ring-white/5 ${right ? "flex-row-reverse" : ""} ${p && flash.has(p.id) ? "anim-flash" : ""}`}>
+      <div className="relative w-[76px] shrink-0 overflow-hidden" style={{ background: `linear-gradient(160deg, ${brand.color}, ${brand.color} 60%, ${brand.alt})` }}>
+        {p?.headshot && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.headshot} alt="" aria-hidden loading="lazy" className="pointer-events-none absolute left-1/2 top-1.5 h-[118%] w-auto max-w-none -translate-x-1/2 select-none" />
+        )}
       </div>
-    );
-  };
+      {p ? (
+        <div className={`flex min-w-0 flex-1 items-center gap-3 px-3 py-2 ${right ? "flex-row-reverse text-right" : ""}`}>
+          <div className="min-w-0 flex-1">
+            <p className={`flex items-center gap-1.5 text-sm font-bold leading-tight text-white ${right ? "flex-row-reverse" : ""}`}><span className="truncate">{p.name}</span><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
+            <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+              <TeamLogo team={p.team} size={13} className="-mt-0.5 mr-1 align-middle" />{p.team} ·{" "}
+              {p.now ? (p.now.state === "in" ? <span className="font-semibold text-red-500">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
+              {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
+            </p>
+            <p className="text-[10px] text-zinc-400">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
+          </div>
+          <p className="font-mono text-lg font-black text-white"><Fpts n={p.pts} iconClass="text-[0.8em]" /></p>
+        </div>
+      ) : <span className="flex flex-1 items-center px-4 text-sm text-zinc-500">Empty</span>}
+    </div>
+  );
 
   return (
     <div className="space-y-4">
