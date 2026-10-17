@@ -1,3 +1,4 @@
+import { SlabCount } from "@/components/SlabIcon";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
@@ -32,7 +33,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
   return (
     <div className="space-y-5">
       <PageHeader eyebrow="Card vault" title={mine ? "My collection" : `${viewing.name}'s collection`}
-        description={<>{cards.length} cards · vault value <span className="font-bold text-emerald-600"><Coins n={total} /></span></>}>
+        description={<><SlabCount n={cards.length} className="align-middle font-semibold text-white" /> · vault value <span className="font-bold text-emerald-600"><Coins n={total} /></span></>}>
           {users.map((x) => (
             <Link key={x.id} href={qs({ u: String(x.id) })} className={`tab ${x.id === viewing.id ? "tab-active" : ""}`}>{x.id === me.id ? "Me" : x.name}</Link>
           ))}

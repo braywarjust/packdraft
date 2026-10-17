@@ -6,6 +6,7 @@ import { PACKS, PACK_BY_ID, PackType, RARITIES, Rarity, BUYBACK_RATE } from "@/l
 import { CardData, GLOW, PlayerCard } from "@/components/PlayerCard";
 import { Logo } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
+import { SlabCount } from "@/components/SlabIcon";
 
 type Inv = { id: number; pack_type: string; source: string; created_at: number };
 type Act<T> = Promise<T | { error: string }>;
@@ -204,6 +205,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                     <PackArt p={p} md />
                   </div>
                   <span className="text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
+                  <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
                 </button>
               );
             })}
@@ -225,6 +227,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                   <PackArt p={p} md slabs={features[p.id]} />
                 </div>
                 <span className="text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
+                  <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
               </button>
             );
           })}
