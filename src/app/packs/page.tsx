@@ -13,7 +13,7 @@ import { SlabIcon } from "@/components/SlabIcon";
 
 export const metadata = { title: "Pack Shop" };
 
-const JUMP = [["#cases", "Cases"], ["#packs", "Packs"], ["#rarity", "Rarity tiers"], ["#odds", "Odds"], ["#scoring", "How tiers are set"]] as const;
+const JUMP = [["#packs", "Packs"], ["#cases", "Cases"], ["#rarity", "Rarity tiers"], ["#odds", "Odds"], ["#scoring", "How tiers are set"]] as const;
 
 export default async function PacksPage() {
   const u = await requireUser();

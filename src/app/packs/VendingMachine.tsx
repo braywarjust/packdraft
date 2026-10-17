@@ -17,7 +17,7 @@ const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3
 
 const PACK_SIZE = { sm: [80, 116], md: [156, 226], big: [232, 336] } as const;
 /** The Mega Case render is roughly square, so it gets wider boxes than the packs. */
-const CASE_SIZE = { sm: [116, 116], md: [300, 300], big: [336, 336] } as const;
+const CASE_SIZE = { sm: [116, 116], md: [220, 220], big: [336, 336] } as const;
 const artSize = (p: PackType, size: "sm" | "md" | "big") => (p.kind === "case" ? CASE_SIZE : PACK_SIZE)[size];
 const slabsLabel = (n: number) => `${n} slab${n === 1 ? "" : "s"}`;
 
@@ -190,6 +190,31 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
         </section>
       )}
 
+      <section id="packs" className="scroll-mt-36 space-y-3">
+        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One graded slab each. Pricier packs tilt the odds toward the top tiers. Tap a pack to buy and rip it.</p></div>
+        <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 xl:grid-cols-6">
+          {PACKS.filter((p) => p.kind !== "case").map((p) => {
+            const busy = stage !== "idle";
+            const short = !tester && coins < p.price;
+            return (
+              <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
+                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Case Hit ${p.odds.legendary}% · Grail ${p.odds.grail}%`}
+                className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50">
+                <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
+                  <PackArt p={p} md slabs={features[p.id]} />
+                </div>
+                <span className="text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
+                  <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
+                  <span className="w-36 space-y-1">
+                    <OddsBar odds={p.odds} />
+                    <span className="block text-center text-[11px] text-zinc-500">Case Hit or better <b className="text-amber-600">{(p.odds.legendary + p.odds.grail).toFixed(p.odds.legendary + p.odds.grail < 1 ? 2 : 1).replace(/\.0$/, "")}%</b></span>
+                  </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       {/* Cases are presented like the packs: the render is the buy button, price underneath. */}
       {PACKS.some((p) => p.kind === "case") && (
         <section id="cases" className="scroll-mt-36 space-y-3">
@@ -218,30 +243,6 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
         </section>
       )}
 
-      <section id="packs" className="scroll-mt-36 space-y-3">
-        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One graded slab each. Pricier packs tilt the odds toward the top tiers. Tap a pack to buy and rip it.</p></div>
-        <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 xl:grid-cols-6">
-          {PACKS.filter((p) => p.kind !== "case").map((p) => {
-            const busy = stage !== "idle";
-            const short = !tester && coins < p.price;
-            return (
-              <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
-                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Case Hit ${p.odds.legendary}% · Grail ${p.odds.grail}%`}
-                className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50">
-                <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
-                  <PackArt p={p} md slabs={features[p.id]} />
-                </div>
-                <span className="text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
-                  <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
-                  <span className="w-36 space-y-1">
-                    <OddsBar odds={p.odds} />
-                    <span className="block text-center text-[11px] text-zinc-500">Case Hit or better <b className="text-amber-600">{(p.odds.legendary + p.odds.grail).toFixed(p.odds.legendary + p.odds.grail < 1 ? 2 : 1).replace(/\.0$/, "")}%</b></span>
-                  </span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
 
       {/* Rip modal */}
       {(stage === "ready" || stage === "tearing" || stage === "cards") && rp && (
