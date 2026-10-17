@@ -10,6 +10,7 @@ import { Logo } from "@/components/Logo";
 import { OddsBar } from "@/components/OddsBar";
 import { PackThumb } from "@/components/PackThumb";
 import { SlabIcon } from "@/components/SlabIcon";
+import { RarityLibraryButton } from "@/components/RarityLibrary";
 import { NAV_ICONS, NavIcon } from "@/components/NavIcons";
 
 export const metadata = { title: "Pack Shop" };
@@ -62,14 +63,14 @@ export default async function PacksPage() {
       <section id="rarity" className="scroll-mt-36 space-y-3">
         <div>
           <h2 className="text-lg font-bold">Rarity tiers</h2>
-          <p className="text-sm text-zinc-500">Every slab in the vault sits in one of five tiers, from the most common to the rarest.</p>
+          <p className="text-sm text-zinc-500">Every slab in the vault sits in one of five tiers, from the most common to the rarest. Tap a tier to see every slab you could pull from it.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
           {RARITY_ORDER.map((r, i) => {
             const st = stats.get(r);
             const share = st ? (st.n / vaultTotal) * 100 : 0;
             return (
-              <div key={r} className="card relative overflow-hidden">
+              <RarityLibraryButton key={r} rarity={r} className="card relative h-full overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2.5" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>
                   <span className="text-sm font-black uppercase tracking-wider">{RARITIES[r].label}</span>
                   <span className="text-[10px] font-bold opacity-80">Tier {i + 1}</span>
@@ -83,8 +84,9 @@ export default async function PacksPage() {
                     <p className="flex justify-between"><span className="text-zinc-500">Range</span><span>{st ? <><Coins n={st.lo} />–<Coins n={st.hi} /></> : "-"}</span></p>
                     <p className="flex justify-between"><span className="text-zinc-500">Pulled so far</span><b>{st?.owned ?? 0}</b></p>
                   </div>
+                  <p className="pt-1 text-xs font-bold" style={{ color: RARITY_HEX[r] === "#64748b" ? "#9aa3b5" : RARITY_HEX[r] }}>Browse all {(st?.n ?? 0).toLocaleString()} slabs</p>
                 </div>
-              </div>
+              </RarityLibraryButton>
             );
           })}
         </div>
