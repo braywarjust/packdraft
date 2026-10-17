@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Headshot } from "@/components/Headshot";
 import { CoinIcon, Coins } from "@/components/Coins";
+import { TeamLogo } from "@/components/TeamLogo";
 import { placeBetAction } from "../actions";
 
 type Offer = { key: string; market: string; side: string; line: number | null; odds: number; label: string; playerId?: number; stat?: string };
@@ -12,7 +13,7 @@ type Game = {
   open: boolean; live: boolean; winProbHome: number; ml: Offer[]; spread: Offer[]; total: Offer[];
   props: { player: { id: number; name: string; team: string; pos: string; headshot: string | null }; now: Record<string, number>; offers: Offer[] }[];
 };
-type Leg = { id: number; label: string; odds: number; status: string; market: string; side: string; line: number | null; now: number | null; winning: string | null; game: { matchup: string; state: string; detail: string; score: string } | null };
+type Leg = { id: number; label: string; odds: number; status: string; market: string; side: string; line: number | null; now: number | null; winning: string | null; game: { matchup: string; away: string; home: string; state: string; detail: string; score: string } | null };
 type Bet = { id: number; stake: number; odds: number; status: string; payout: number; live: number; created_at: number; legs: Leg[] };
 type Data = { games: Game[]; bets: Bet[]; coins: number };
 type Pick = Offer & { game: string; moved?: boolean };
@@ -129,7 +130,10 @@ export function Sportsbook({ initial }: { initial: Data }) {
               return (
                 <section key={g.id} className={`card overflow-hidden ${g.live ? "ring-1 ring-red-500/40" : ""}`}>
                   <div className="flex items-center justify-between border-b border-line/60 px-4 py-2 text-xs">
-                    <span className={g.live ? "font-bold text-red-600" : "text-zinc-500"}>{g.live ? `● LIVE · ${g.detail}` : time(g.start)}</span>
+                    <span className="flex items-center gap-2">
+                      <TeamLogo team={g.away} size={16} /><TeamLogo team={g.home} size={16} />
+                      <span className={g.live ? "font-bold text-red-600" : "text-zinc-500"}>{g.live ? `● LIVE · ${g.detail}` : time(g.start)}</span>
+                    </span>
                     {!g.open && <span className="font-semibold text-zinc-400">Betting closed</span>}
                     {g.live && <span className="text-zinc-500">Win prob {g.away} {100 - hp}% · {g.home} {hp}%</span>}
                   </div>
@@ -141,7 +145,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
                     {([["away", 0], ["home", 1]] as const).map(([side, i]) => (
                       <div key={side} className="contents">
                         <span className="flex items-center justify-between gap-2 font-bold">
-                          <span>{side === "away" ? g.away : g.home}</span>
+                          <span className="flex items-center gap-2"><TeamLogo team={side === "away" ? g.away : g.home} size={28} />{side === "away" ? g.away : g.home}</span>
                           {g.state !== "pre" && <span className="font-mono text-lg">{side === "away" ? g.awayScore : g.homeScore}</span>}
                         </span>
                         <OddsButton o={g.spread[i]} top={fmtLine(g.spread[i].line)} picked={picked.has(g.spread[i].key)} disabled={!g.open} onClick={() => toggle(g.spread[i], label)} />
@@ -163,7 +167,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
                               <div key={pp.player.id} className="rounded-lg bg-ink/40 p-2">
                                 <p className="mb-1.5 flex items-center gap-2 text-sm font-semibold">
                                   <Headshot src={pp.player.headshot} name={pp.player.name} size={26} />
-                                  {pp.player.name} <span className="text-xs font-normal text-zinc-500">{pp.player.pos} · {pp.player.team}</span>
+                                  {pp.player.name} <TeamLogo team={pp.player.team} size={16} /><span className="text-xs font-normal text-zinc-500">{pp.player.pos} · {pp.player.team}</span>
                                 </p>
                                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
                                   {stats.map((s) => {
@@ -216,7 +220,8 @@ export function Sportsbook({ initial }: { initial: Data }) {
                             <span className="font-semibold">{l.label}</span>
                             <span className="font-mono text-xs text-zinc-500">{am(l.odds)}</span>
                           </div>
-                          <p className="text-xs text-zinc-500">
+                          <p className="flex flex-wrap items-center gap-x-1 text-xs text-zinc-500">
+                            {l.game && <><TeamLogo team={l.game.away} size={14} /><TeamLogo team={l.game.home} size={14} /></>}
                             {l.game?.matchup} · {l.game?.state === "in" ? <span className="text-red-600">● {l.game.detail} · {l.game.score}</span> : l.game?.state === "post" ? `Final · ${l.game.score}` : "Not started"}
                             {l.now != null && (l.market === "prop" || l.market === "total") && <span className={`ml-2 font-semibold ${tone}`}>Now {l.now}{l.line ? ` / ${l.line}` : ""}</span>}
                             {l.status !== "open" && <span className={`ml-2 font-bold uppercase ${tone}`}>{l.status}</span>}
@@ -265,7 +270,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
                       <button onClick={() => setSlip((s) => s.filter((x) => x.key !== p.key))} className="text-zinc-400 hover:text-red-600">✕</button>
                     </div>
                     <p className="flex justify-between text-xs text-zinc-500">
-                      <span>{p.game}</span>
+                      <span className="flex items-center gap-1">{p.game.split(" @ ").map((t) => <TeamLogo key={t} team={t} size={14} />)}{p.game}</span>
                       <span className={`font-mono font-bold ${p.moved ? "text-amber-600" : "text-emerald-600"}`}>{am(p.odds)}{p.moved && " (moved)"}</span>
                     </p>
                   </li>

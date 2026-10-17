@@ -1,5 +1,6 @@
 "use client";
 
+import { TeamLogo } from "./TeamLogo";
 import { useMemo, useState } from "react";
 import { Headshot, InjuryTag } from "./Headshot";
 
@@ -72,7 +73,7 @@ export function PlayerPool({ players, canPick, onPick, queue, onQueue, busy }: {
             <span className="w-7 text-xs text-zinc-400">{p.adp}</span>
             <Headshot src={p.headshot ?? null} name={p.name} size={28} />
             <span className={`pos pos-${p.pos}`}>{p.pos}</span>
-            <span className="flex-1 truncate font-medium">{p.name} <InjuryTag injury={p.injury ?? null} /> <span className="text-xs text-zinc-400">{p.team}</span></span>
+            <span className="flex-1 truncate font-medium">{p.name} <InjuryTag injury={p.injury ?? null} /> <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs text-zinc-400">{p.team}</span></span>
             <span className="font-mono text-xs text-zinc-500">{p.proj.toFixed(1)}</span>
             {onQueue && (
               <button title="Queue" onClick={() => onQueue(p.id, !queue?.includes(p.id))} className={`text-xs ${queue?.includes(p.id) ? "text-amber-600" : "text-zinc-400 hover:text-zinc-700"}`}>★</button>

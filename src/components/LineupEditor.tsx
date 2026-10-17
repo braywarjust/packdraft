@@ -1,5 +1,6 @@
 "use client";
 
+import { TeamLogo } from "./TeamLogo";
 import { Coins } from "./Coins";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -72,7 +73,7 @@ export function LineupEditor({
             <div className="flex items-center gap-2">
               <Headshot src={p.headshot} name={p.name} size={36} />
               <div className="min-w-0">
-                <p className="font-semibold">{p.name} <span className="text-xs font-normal text-zinc-400">{p.pos} · {p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /> {p.locked && <span title="Locked: game started" className="text-xs">🔒</span>}</p>
+                <p className="font-semibold">{p.name} <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{p.pos} · {p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /> {p.locked && <span title="Locked: game started" className="text-xs">🔒</span>}</p>
                 <p className="truncate text-xs text-zinc-500">
                   {today ? (today.state === "in" ? <span className="text-red-600">● {today.clock} {today.label} </span> : `${today.label} · ${today.clock} `) : "No games this week "}
                   {today?.line && today.state !== "pre" ? `· ${today.line}` : ""}

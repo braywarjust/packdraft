@@ -1,5 +1,6 @@
 "use client";
 
+import { TeamLogo } from "@/components/TeamLogo";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { LivePlayer } from "@/lib/league";
@@ -76,7 +77,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
         <div className={`flex items-center gap-2 ${right ? "flex-row-reverse text-right" : ""}`}>
           <Headshot src={p.headshot} name={p.name} size={38} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">{p.name} <span className="text-xs font-normal text-zinc-400">{p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /></p>
+            <p className="truncate text-sm font-semibold">{p.name} <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /></p>
             <p className="truncate text-[11px] text-zinc-500">
               {p.now ? (p.now.state === "in" ? <span className="text-red-600">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
               {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}

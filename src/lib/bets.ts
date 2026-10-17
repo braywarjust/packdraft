@@ -303,7 +303,7 @@ export function myBets(userId: number) {
         id: l.id, label: l.label, odds: l.odds, status: l.status, market: l.market, side: l.side, line: l.line,
         now: l.status === "open" ? now : l.result,
         winning: l.status === "open" && now != null && g?.state === "in" ? liveTrend(l, now) : null,
-        game: g ? { matchup: `${g.away} @ ${g.home}`, state: g.state, detail: g.detail ?? "", score: `${g.away} ${g.away_score} – ${g.home} ${g.home_score}` } : null,
+        game: g ? { matchup: `${g.away} @ ${g.home}`, away: g.away, home: g.home, state: g.state, detail: g.detail ?? "", score: `${g.away} ${g.away_score} – ${g.home} ${g.home_score}` } : null,
       };
     }),
   }));
