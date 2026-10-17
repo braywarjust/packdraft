@@ -74,10 +74,10 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   const { home, away } = d;
   const hp = Math.round(d.winProb * 100);
 
-  // Each starter: a solid team-colour block holding his photo on the outer edge, then a theme panel with his line.
+  // Each starter: his photo on the outer edge on the dark theme colour, then a theme panel with his line.
   const cell = (p: LivePlayer | undefined, right: boolean, brand: BrandLite) => (
     <div className={`flex min-h-[72px] min-w-0 flex-1 overflow-hidden rounded-xl bg-ink ring-1 ring-white/5 ${right ? "flex-row-reverse" : ""} ${p && flash.has(p.id) ? "anim-flash" : ""}`}>
-      <div className="relative w-[76px] shrink-0 overflow-hidden" style={{ background: `linear-gradient(160deg, ${brand.color}, ${brand.color} 60%, ${brand.alt})` }}>
+      <div className="relative w-[76px] shrink-0 overflow-hidden bg-panel2">
         {p?.headshot && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={p.headshot} alt="" aria-hidden loading="lazy" className="pointer-events-none absolute left-1/2 top-1.5 h-[118%] w-auto max-w-none -translate-x-1/2 select-none" />
