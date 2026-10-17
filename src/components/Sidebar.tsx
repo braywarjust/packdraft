@@ -56,7 +56,7 @@ export function Sidebar({
             <Link key={it.href} href={it.href} title={mini ? it.label : undefined}
               className={`relative flex items-center rounded-lg border bg-white text-sm font-medium transition ${mini ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} ${active ? "border-brand/30 text-brand shadow-sm" : "border-zinc-200/70 text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"}`}>
               {active && <span className="absolute inset-y-2 left-0 w-1 rounded-r bg-accent" />}
-              <Icon d={it.icon} />
+              <Icon d={it.icon} box={28} />
               {!mini && <span className="flex-1">{it.label}</span>}
               {!!it.badge && (
                 mini
