@@ -105,9 +105,21 @@ const avgStat = (a: Avg, s: Stat) => s === "pra" ? (a.pts ?? 0) + (a.reb ?? 0) +
 // ---------- the board ----------
 
 export type Offer = { key: string; market: Market; side: string; line: number | null; odds: number; label: string; playerId?: number; stat?: Stat };
+export type NbaTeam = { abbr: string; name: string; short: string; color: string; alt: string };
+let teamCache: Map<string, NbaTeam> | null = null;
+export function nbaTeam(abbr: string): NbaTeam {
+  if (!teamCache) {
+    teamCache = new Map(all<{ abbr: string; name: string; short: string; color: string | null; alt: string | null }>("SELECT abbr, name, short, color, alt FROM nba_teams")
+      .map((t) => [t.abbr, { abbr: t.abbr, name: t.name, short: t.short, color: `#${t.color || "334155"}`, alt: `#${t.alt || "94a3b8"}` }]));
+  }
+  return teamCache.get(abbr) ?? { abbr, name: abbr, short: abbr, color: "#334155", alt: "#94a3b8" };
+}
+
 export type GameBoard = {
   id: string; date: string; home: string; away: string; start: number; state: string; detail: string; homeScore: number; awayScore: number;
   open: boolean; live: boolean; winProbHome: number;
+  /** Real NBA branding for both sides (colours as #hex). */
+  teams: Record<"home" | "away", NbaTeam>;
   ml: Offer[]; spread: Offer[]; total: Offer[];
   props: { player: { id: number; name: string; team: string; pos: string; headshot: string | null }; now: Partial<Record<Stat, number>>; offers: Offer[] }[];
 };
@@ -130,6 +142,7 @@ export function gameBoard(g: Game, withProps = true): GameBoard {
   const board: GameBoard = {
     id: g.id, date: g.date_et, home: g.home, away: g.away, start: g.start_ts, state: g.state, detail: g.detail ?? "",
     homeScore: g.home_score, awayScore: g.away_score, open: isOpen(g), live: g.state === "in", winProbHome: Math.round(pHome * 1000) / 1000,
+    teams: { home: nbaTeam(g.home), away: nbaTeam(g.away) },
     ml: [
       { key: k("ml", "away", null), market: "ml", side: "away", line: null, odds: priced(1 - pHome), label: `${g.away} to win` },
       { key: k("ml", "home", null), market: "ml", side: "home", line: null, odds: priced(pHome), label: `${g.home} to win` },

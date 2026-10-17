@@ -12,6 +12,7 @@ type Offer = { key: string; market: string; side: string; line: number | null; o
 type Game = {
   id: string; date: string; home: string; away: string; start: number; state: string; detail: string; homeScore: number; awayScore: number;
   open: boolean; live: boolean; winProbHome: number; ml: Offer[]; spread: Offer[]; total: Offer[];
+  teams: Record<"home" | "away", { abbr: string; name: string; short: string; color: string; alt: string }>;
   props: { player: { id: number; name: string; team: string; pos: string; headshot: string | null }; now: Record<string, number>; offers: Offer[] }[];
 };
 type Leg = { id: number; label: string; odds: number; status: string; market: string; side: string; line: number | null; now: number | null; winning: string | null; game: { matchup: string; away: string; home: string; state: string; detail: string; score: string } | null };
@@ -129,25 +130,60 @@ export function Sportsbook({ initial }: { initial: Data }) {
               const label = `${g.away} @ ${g.home}`;
               const hp = Math.round(g.winProbHome * 100);
               return (
-                <section key={g.id} className={`card overflow-hidden ${g.live ? "ring-1 ring-red-500/40" : ""}`}>
-                  <div className="flex items-center justify-between border-b border-line/60 px-4 py-2 text-xs">
-                    <span className="flex items-center gap-2">
-                      <TeamLogo team={g.away} size={16} /><TeamLogo team={g.home} size={16} />
-                      <span className={g.live ? "font-bold text-red-600" : "text-zinc-500"}>{g.live ? `● LIVE · ${g.detail}` : time(g.start)}</span>
-                    </span>
-                    {!g.open && <span className="font-semibold text-zinc-400">Betting closed</span>}
-                    {g.live && <span className="text-zinc-500">Win prob {g.away} {100 - hp}% · {g.home} {hp}%</span>}
+                <section key={g.id} className={`card overflow-hidden ${g.live ? "ring-1 ring-red-500/50" : ""}`}>
+                  {/* Matchup band in both teams' real colours, split on a hard diagonal */}
+                  <div className="relative h-28 overflow-hidden" style={{ background: g.teams.home.color }}>
+                    <div className="absolute inset-0" style={{ background: g.teams.away.color, clipPath: "polygon(0 0, 54% 0, 46% 100%, 0 100%)" }} />
+                    <div className="pointer-events-none absolute inset-0 opacity-20" style={{ clipPath: "polygon(0 0, 54% 0, 46% 100%, 0 100%)" }}>
+                      <TeamLogo team={g.away} size={150} className="absolute left-[22%] top-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                    <div className="pointer-events-none absolute inset-0 opacity-20" style={{ clipPath: "polygon(54% 0, 100% 0, 100% 100%, 46% 100%)" }}>
+                      <TeamLogo team={g.home} size={150} className="absolute left-[78%] top-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                    <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                      <line x1="54" y1="0" x2="46" y2="100" stroke="#fff" strokeOpacity=".7" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                    </svg>
+                    <div className="relative grid h-full grid-cols-[1fr_auto_1fr] items-center gap-3 px-4">
+                      {(["away", "home"] as const).map((side, i) => {
+                        const t = g.teams[side];
+                        const score = side === "away" ? g.awayScore : g.homeScore;
+                        const team = (
+                          <div key={side} className={`flex min-w-0 items-center gap-3 ${i ? "flex-row-reverse text-right" : ""}`}>
+                            <TeamLogo team={t.abbr} size={48} className="drop-shadow-[0_4px_8px_rgba(0,0,0,.5)]" />
+                            <div className="min-w-0">
+                              <p className="hidden truncate text-[11px] font-bold uppercase tracking-widest text-white/75 drop-shadow xl:block">{t.name.replace(` ${t.short}`, "")}</p>
+                              <p className="text-lg font-black leading-tight text-white drop-shadow-md xl:text-xl">{t.short}</p>
+                            </div>
+                            {g.state !== "pre" && <p className={`font-mono text-3xl font-black text-white drop-shadow-lg ${i ? "mr-auto" : "ml-auto"}`}>{score}</p>}
+                          </div>
+                        );
+                        return i === 0 ? [team, (
+                          <div key="mid" className="flex flex-col items-center gap-1">
+                            {g.live ? <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white">● LIVE</span>
+                              : g.state === "post" ? <span className="rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-black text-white">FINAL</span>
+                              : <span className="text-lg font-black italic text-white drop-shadow">@</span>}
+                            <span className="whitespace-nowrap rounded bg-black/35 px-1.5 py-0.5 text-[10px] font-semibold text-white">{g.live ? g.detail : time(g.start)}</span>
+                          </div>
+                        )] : team;
+                      })}
+                    </div>
                   </div>
+                  {g.live && (
+                    <div className="flex h-1.5">
+                      <div style={{ width: `${100 - hp}%`, background: g.teams.away.color }} className="border-r-2 border-white" />
+                      <div className="flex-1" style={{ background: g.teams.home.color }} />
+                    </div>
+                  )}
                   <div className="grid grid-cols-[1fr_repeat(3,minmax(0,5.5rem))] items-center gap-2 px-4 py-3 text-sm">
-                    <span />
+                    <span className="text-[11px] font-semibold uppercase text-zinc-400">{!g.open ? "Betting closed" : g.live ? `Win prob ${g.away} ${100 - hp}% · ${g.home} ${hp}%` : ""}</span>
                     <span className="text-center text-[11px] font-semibold uppercase text-zinc-400">Spread</span>
                     <span className="text-center text-[11px] font-semibold uppercase text-zinc-400">Total</span>
                     <span className="text-center text-[11px] font-semibold uppercase text-zinc-400">Moneyline</span>
                     {([["away", 0], ["home", 1]] as const).map(([side, i]) => (
                       <div key={side} className="contents">
-                        <span className="flex items-center justify-between gap-2 font-bold">
-                          <span className="flex items-center gap-2"><TeamLogo team={side === "away" ? g.away : g.home} size={28} />{side === "away" ? g.away : g.home}</span>
-                          {g.state !== "pre" && <span className="font-mono text-lg">{side === "away" ? g.awayScore : g.homeScore}</span>}
+                        <span className="flex items-center gap-2 border-l-4 pl-2 font-bold" style={{ borderColor: g.teams[side].color === "#000000" ? g.teams[side].alt : g.teams[side].color }}>
+                          <TeamLogo team={g.teams[side].abbr} size={24} />
+                          <span className="truncate">{g.teams[side].short}</span>
                         </span>
                         <OddsButton o={g.spread[i]} top={fmtLine(g.spread[i].line)} picked={picked.has(g.spread[i].key)} disabled={!g.open} onClick={() => toggle(g.spread[i], label)} />
                         <OddsButton o={g.total[i]} top={`${i ? "U" : "O"} ${g.total[i].line}`} picked={picked.has(g.total[i].key)} disabled={!g.open} onClick={() => toggle(g.total[i], label)} />
@@ -165,7 +201,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
                           {g.props.map((pp) => {
                             const stats = [...new Set(pp.offers.map((o) => o.stat!))];
                             return (
-                              <div key={pp.player.id} className="rounded-lg bg-ink/40 p-2">
+                              <div key={pp.player.id} className="rounded-lg border-l-4 bg-ink/40 p-2" style={{ borderColor: (pp.player.team === g.home ? g.teams.home : g.teams.away).color === "#000000" ? (pp.player.team === g.home ? g.teams.home : g.teams.away).alt : (pp.player.team === g.home ? g.teams.home : g.teams.away).color }}>
                                 <p className="mb-1.5 flex items-center gap-2 text-sm font-semibold">
                                   <Headshot src={pp.player.headshot} name={pp.player.name} size={26} />
                                   {pp.player.name} <TeamLogo team={pp.player.team} size={16} /><span className="text-xs font-normal text-zinc-500">{pp.player.pos} · {pp.player.team}</span>
