@@ -2,7 +2,7 @@ export const NAV_ICONS = {
   home: "M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z",
   leagues: "/league-logo-icon.svg",
   packs: "/packdraft-pack-icon.svg",
-  collection: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
+  collection: "/collection-icon.svg",
   mock: "M4 6h16M4 12h16M4 18h10",
   studio: "/team-studio-icon.svg",
   bets: "M3 7h18v10H3zM7 12h.01M17 12h.01M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z",
@@ -11,7 +11,7 @@ export const NAV_ICONS = {
   expand: "M9 6l6 6-6 6",
 };
 /** Optical sizes for the solid image icons so they weigh the same as the 2px line icons. */
-const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/league-logo-icon.svg": [16, 15], "/team-studio-icon.svg": [16, 15] };
+const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/league-logo-icon.svg": [16, 15], "/team-studio-icon.svg": [16, 15], "/collection-icon.svg": [16, 15] };
 /** A nav icon at any size (18px in the sidebar). */
 export function NavIcon({ d, size = 18 }: { d: string; size?: number }) {
   const k = size / 18;
