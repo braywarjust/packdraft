@@ -12,7 +12,7 @@ export default async function NewLeague() {
   const presets = userPresets(u.id);
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader eyebrow="Leagues" title="Create a league" description={<>Up to 8 teams is free. Bigger leagues cost <Coins n={2500} className="font-semibold text-emerald-600" />. You can change everything later in commissioner settings.</>} />
+      <PageHeader icon="leagues" eyebrow="Leagues" title="Create a league" description={<>Up to 8 teams is free. Bigger leagues cost <Coins n={2500} className="font-semibold text-emerald-600" />. You can change everything later in commissioner settings.</>} />
       <ActionForm action={createLeague} submit="Create league" className="card space-y-5 p-6">
         <BrandEditor fields label="League" initial={{ name: "", abbr: "", color: "#0253a4", alt_color: "#cc2b31", logo_url: null }} />
         <PresetPicker presets={presets} />

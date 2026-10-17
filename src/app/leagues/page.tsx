@@ -23,7 +23,7 @@ export default async function LeaguesPage() {
      WHERE l.is_public = 1 AND (l.draft_status = 'pre' OR EXISTS (SELECT 1 FROM teams x WHERE x.league_id = l.id AND x.is_cpu = 1)) AND l.id NOT IN (SELECT league_id FROM teams WHERE user_id = ?) ORDER BY l.id DESC`, u.id);
   return (
     <>
-    <PageHeader eyebrow="Fantasy NBA" title="Leagues" description="Your leagues, public leagues looking for managers, and invite codes.">
+    <PageHeader icon="leagues" eyebrow="Fantasy NBA" title="Leagues" description="Your leagues, public leagues looking for managers, and invite codes.">
       <Link href="/leagues/new" className="btn-primary">Create a league</Link>
     </PageHeader>
     <div className="grid gap-6 lg:grid-cols-3">

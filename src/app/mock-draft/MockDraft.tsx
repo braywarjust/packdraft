@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BoardPick, DraftBoard, PlayerPool, PoolPlayer } from "@/components/draft-ui";
 import { Fpts } from "@/components/Fpts";
+import { NAV_ICONS, NavIcon } from "@/components/NavIcons";
 
 const ROUNDS = 13;
 const LIMITS: Record<string, number> = { G: 7, F: 7, C: 4 };
@@ -60,7 +61,7 @@ export function MockDraft({ players, userName }: { players: PoolPlayer[]; userNa
   if (!started)
     return (
       <div className="mx-auto max-w-lg card space-y-4 p-6">
-        <h1 className="text-2xl font-black">Mock draft</h1>
+        <h1 className="flex items-center gap-3 text-2xl font-black"><span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/15 text-brand ring-1 ring-brand/30"><NavIcon d={NAV_ICONS.mock} size={24} /></span>Mock draft</h1>
         <p className="text-sm text-zinc-500">Practice against bots that draft by ADP. Nothing here counts. Picks come fast.</p>
         <div className="grid grid-cols-2 gap-4">
           <div><label className="label">Teams</label>
