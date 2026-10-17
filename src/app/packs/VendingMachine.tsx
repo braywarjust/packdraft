@@ -10,7 +10,7 @@ import { Logo } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
 import { SlabCount } from "@/components/SlabIcon";
 import { SlabBack } from "@/components/SlabBack";
-import { XIcon } from "@/components/Icons";
+import { CheckIcon, LockIcon } from "@/components/Icons";
 
 type Inv = { id: number; pack_type: string; source: string; created_at: number };
 type Act<T> = Promise<T | { error: string }>;
@@ -21,6 +21,94 @@ const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3
 // 1-slab packs are the skinny frosted crate renders (~0.79 wide:tall).
 /** Light colour each crate bursts open with (its tier colour). */
 const BURST: Record<string, string> = { rookie: "#cbd5e1", starter: "#7dd3fc", pro: "#6ee7b7", allpro: "#f0abfc", hof: "#fde68a", goat: "#fda4af", megacase: "#e0f2fe" };
+
+/**
+ * Pretend store checkout: order summary, the Pack Points wallet as the payment card, a terms tick and a Pay button that
+ * "processes" before the pack drops in. Buying always leads straight into opening.
+ */
+function Checkout({ p, coins, tester, onPay, onDone, onCancel }: {
+  p: PackType; coins: number; tester: boolean; onPay: () => Promise<boolean>; onDone: () => void; onCancel: () => void;
+}) {
+  const [agree, setAgree] = useState(false);
+  const [state, setState] = useState<"idle" | "processing" | "approved">("idle");
+  const total = tester ? 0 : p.price;
+  const after = coins - total;
+  const order = useMemo(() => `PD-${Math.floor(100000 + Math.random() * 900000)}`, []);
+  const pay = async () => {
+    setState("processing");
+    const [ok] = await Promise.all([onPay(), new Promise((r) => setTimeout(r, 1300))]);
+    if (!ok) { setState("idle"); return; }
+    setState("approved");
+    setTimeout(onDone, 850);
+  };
+  const line = (k: React.ReactNode, v: React.ReactNode, cls = "") => (
+    <div className={`flex items-center justify-between text-sm ${cls}`}><span className="text-zinc-500">{k}</span><span className="font-semibold text-white">{v}</span></div>
+  );
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm" onClick={() => state === "idle" && onCancel()}>
+      <div className="anim-deal w-full max-w-md overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-line px-5 py-3">
+          <p className="flex items-center gap-2 text-sm font-bold text-white"><LockIcon className="text-emerald-500" /> Secure checkout</p>
+          <p className="font-mono text-[11px] text-zinc-500">Order {order}</p>
+        </div>
+        <div className="space-y-5 p-5">
+          {/* Item */}
+          <div className="flex items-center gap-4 rounded-xl bg-ink p-3 ring-1 ring-white/5">
+            <div className="shrink-0"><PackArt p={p} /></div>
+            <div className="min-w-0 flex-1 space-y-1">
+              <p className="font-black text-white">{p.name}</p>
+              <SlabCount n={p.cards} className="text-xs text-zinc-400" />
+              <OddsBar odds={p.odds} />
+              <p className="text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{(p.odds.legendary + p.odds.grail).toFixed(1).replace(/\.0$/, "")}%</b>{p.odds.grail > 0 && <> · Immortal {fmtOdds(p.odds.grail)}</>}</p>
+            </div>
+            <p className="self-start font-mono font-black text-white"><Coins n={p.price} /></p>
+          </div>
+
+          {/* Summary */}
+          <div className="space-y-1.5">
+            {line("Subtotal", <Coins n={p.price} />)}
+            {line("Vault handling", "Free")}
+            {line("Delivery", "Instant")}
+            {tester && line("Test account", <>-<Coins n={p.price} /></>)}
+            <div className="my-2 border-t border-line" />
+            {line(<span className="font-bold text-white">Total</span>, <span className="text-lg text-emerald-500"><Coins n={total} /></span>)}
+          </div>
+
+          {/* Payment method: the wallet as a card */}
+          <div>
+            <p className="label">Pay with</p>
+            <div className="relative overflow-hidden rounded-xl p-4 text-white shadow-lg" style={{ background: "linear-gradient(120deg, #0253a4, #0253a4 55%, #cc2b31 140%)" }}>
+              <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 2px, transparent 2px 14px)" }} />
+              <div className="relative flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/70">PackDraft Wallet</p>
+                  <p className="mt-1 font-mono text-2xl font-black">{tester ? "Unlimited" : <Coins n={coins} />}</p>
+                  <p className="text-[11px] text-white/70">Pack Points balance</p>
+                </div>
+                <Logo height={30} />
+              </div>
+              {!tester && <p className="relative mt-3 flex justify-between border-t border-white/20 pt-2 text-xs"><span className="text-white/70">Balance after purchase</span><b className="font-mono"><Coins n={after} /></b></p>}
+            </div>
+          </div>
+
+          <label className="flex cursor-pointer items-start gap-2 text-xs text-zinc-400">
+            <input type="checkbox" className="mt-0.5" checked={agree} onChange={(e) => setAgree(e.target.checked)} disabled={state !== "idle"} />
+            I understand pack contents are random, it opens right away, and all sales are final.
+          </label>
+
+          <button type="button" onClick={pay} disabled={!agree || state !== "idle"}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-base font-black transition ${state === "approved" ? "bg-emerald-600 text-white" : "btn-primary"} disabled:cursor-not-allowed ${!agree && state === "idle" ? "opacity-50" : ""}`}>
+            {state === "processing" ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Processing payment…</>
+              : state === "approved" ? <><CheckIcon /> Payment approved</>
+              : <>Pay <Coins n={total} /></>}
+          </button>
+          {state === "idle" && <button type="button" onClick={onCancel} className="w-full text-center text-sm text-zinc-500 hover:text-white">Cancel</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const PACK_SIZE = { sm: [88, 112], md: [176, 224], big: [264, 336] } as const;
 /** The Mega Pack render is roughly square, so it gets wider boxes than the 1-slab packs. */
 const CASE_SIZE = { sm: [116, 116], md: [220, 220], big: [336, 336] } as const;
@@ -121,18 +209,19 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
   const packRef = useRef<HTMLButtonElement>(null);
   const [burstAt, setBurstAt] = useState<{ x: number; y: number } | null>(null);
 
+  const [checkout, setCheckout] = useState<PackType | null>(null);
+  /** Charged at checkout; resolves true once paid. Checkout shows "approved", then calls dropIn. */
   const doBuy = async (type: string) => {
     setErr("");
     setBusyId(type);
-    setStage("vending");
     const r = await buy(type);
     setBusyId(null);
-    if ("error" in r) { setErr(r.error); setStage("idle"); return; }
+    if ("error" in r) { setErr(r.error); setCheckout(null); return false; }
     setPackType(type);
     setPackId(r.packId);
-    setStage("ready");
-    router.refresh();
+    return true;
   };
+  const dropIn = () => { setCheckout(null); setStage("ready"); router.refresh(); };
 
   const openFromInventory = (inv: Inv) => {
     setPackType(inv.pack_type);
@@ -207,13 +296,13 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
       )}
 
       <section id="packs" className="scroll-mt-36 space-y-3">
-        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One graded slab each. Pricier packs tilt the odds toward the top tiers. Tap a pack to buy and rip it.</p></div>
+        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One graded slab each. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
         <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 xl:grid-cols-6">
           {PACKS.filter((p) => p.kind !== "case").map((p) => {
             const busy = stage !== "idle";
             const short = !tester && coins < p.price;
             return (
-              <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
+              <button key={p.id} onClick={() => setCheckout(p)} disabled={busy || short}
                 title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${fmtOdds(p.odds.grail)}`}
                 className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                 <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
@@ -240,7 +329,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               const busy = stage !== "idle";
               const short = !tester && coins < p.price;
               return (
-                <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
+                <button key={p.id} onClick={() => setCheckout(p)} disabled={busy || short}
                   title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${fmtOdds(p.odds.grail)}`}
                   className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                   <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
@@ -260,13 +349,12 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
       )}
 
 
+      {checkout && <Checkout p={checkout} coins={coins} tester={tester} onPay={() => doBuy(checkout.id)} onDone={dropIn} onCancel={() => setCheckout(null)} />}
+
       {/* Rip modal */}
       {(stage === "ready" || stage === "tearing" || stage === "cards") && rp && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-zinc-100/95 p-4 backdrop-blur-sm">
-          {/* No words on screen from clicking the pack until a slab is flipped; closing is an icon. */}
-          {stage === "ready" && (
-            <button onClick={close} aria-label="Save it for later" title="Save it for later" className="fixed left-5 top-5 rounded-full p-2 text-zinc-400 hover:bg-white/10 hover:text-white"><XIcon className="text-xl" /></button>
-          )}
+          {/* No words on screen from the pack dropping in until a slab is flipped, and no backing out: it gets opened. */}
           {stage !== "cards" ? (
             <div className="flex flex-col items-center gap-6" style={{ "--burst": BURST[rp.id] ?? "#ffffff" } as React.CSSProperties}>
               <button ref={packRef} onClick={doRip} disabled={stage === "tearing"} className={`relative ${stage === "ready" ? "anim-drop hover:anim-shake" : ""}`}>
