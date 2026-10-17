@@ -63,7 +63,7 @@ export function BrandEditor({ initial, label = "League", placeholder = "The Pack
           <TeamBadge brand={brand} size={64} className="drop-shadow-xl" />
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-white/70">{brand.abbr}{subtitle ? ` · ${subtitle}` : ""}</p>
-            <p className="truncate text-2xl font-black text-white drop-shadow">{brand.name}</p>
+            <p className="truncate text-2xl font-black text-white">{brand.name}</p>
           </div>
         </div>
       </div>

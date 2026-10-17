@@ -109,7 +109,7 @@ export default async function Home() {
           <TeamBadge brand={hero} size={112} className="drop-shadow-2xl" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Welcome back</p>
-            <h1 className="text-4xl font-black leading-none tracking-tight text-white drop-shadow-lg sm:text-5xl">{user.name}</h1>
+            <h1 className="text-4xl font-black leading-none tracking-tight text-white sm:text-5xl">{user.name}</h1>
             <p className="mt-2 text-sm text-white/80">
               {hero === DEFAULT_BRAND ? "Set up your team in Team Studio to brand your app." : <>{hero.name}{heroLeague ? ` · ${heroLeague.l.name}` : ""}</>}
             </p>

@@ -151,17 +151,17 @@ export function Sportsbook({ initial }: { initial: Data }) {
                           <div key={side} className={`flex min-w-0 items-center gap-3 ${i ? "flex-row-reverse text-right" : ""}`}>
                             <TeamLogo team={t.abbr} size={48} className="drop-shadow-[0_4px_8px_rgba(0,0,0,.5)]" />
                             <div className="min-w-0">
-                              <p className="hidden truncate text-[11px] font-bold uppercase tracking-widest text-white/75 drop-shadow xl:block">{t.name.replace(` ${t.short}`, "")}</p>
-                              <p className="text-lg font-black leading-tight text-white drop-shadow-md xl:text-xl">{t.short}</p>
+                              <p className="hidden truncate text-[11px] font-bold uppercase tracking-widest text-white/75 xl:block">{t.name.replace(` ${t.short}`, "")}</p>
+                              <p className="text-lg font-black leading-tight text-white xl:text-xl">{t.short}</p>
                             </div>
-                            {g.state !== "pre" && <p className={`font-mono text-3xl font-black text-white drop-shadow-lg ${i ? "mr-auto" : "ml-auto"}`}>{score}</p>}
+                            {g.state !== "pre" && <p className={`font-mono text-3xl font-black text-white ${i ? "mr-auto" : "ml-auto"}`}>{score}</p>}
                           </div>
                         );
                         return i === 0 ? [team, (
                           <div key="mid" className="flex flex-col items-center gap-1">
                             {g.live ? <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white">● LIVE</span>
                               : g.state === "post" ? <span className="rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-black text-white">FINAL</span>
-                              : <span className="text-lg font-black italic text-white drop-shadow">@</span>}
+                              : <span className="text-lg font-black italic text-white">@</span>}
                             <span className="whitespace-nowrap rounded bg-black/35 px-1.5 py-0.5 text-[10px] font-semibold text-white">{g.live ? g.detail : time(g.start)}</span>
                           </div>
                         )] : team;

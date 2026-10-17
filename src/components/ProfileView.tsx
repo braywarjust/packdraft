@@ -203,11 +203,11 @@ export function ProfileView({ d, editHref, preview = false }: { d: ProfileViewDa
           <Avatar src={user.avatar} name={user.name} color={user.color} size={132} ring={look.ring ? c2 : undefined} className="shadow-2xl" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">PackDraft since {since}</p>
-            <h1 className="mt-1 break-words text-4xl font-black leading-none tracking-tight text-white drop-shadow-lg sm:text-5xl">{user.name}</h1>
+            <h1 className="mt-1 break-words text-4xl font-black leading-none tracking-tight text-white sm:text-5xl">{user.name}</h1>
             {user.tagline && <p className="mt-2 text-lg font-semibold text-white/90">{user.tagline}</p>}
             <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-              {d.favBrand && <TeamName brand={d.favBrand} size={26} className="text-base font-black text-white drop-shadow-[0_1px_3px_rgba(0,0,0,.6)]" />}
-              {d.nba && <span className="inline-flex items-center gap-2 text-base font-black text-white drop-shadow-[0_1px_3px_rgba(0,0,0,.6)]"><TeamLogo team={d.nba.abbr} size={26} />{d.nba.name}</span>}
+              {d.favBrand && <TeamName brand={d.favBrand} size={26} className="text-base font-black text-white" />}
+              {d.nba && <span className="inline-flex items-center gap-2 text-base font-black text-white"><TeamLogo team={d.nba.abbr} size={26} />{d.nba.name}</span>}
             </div>
           </div>
           {editHref && <Link href={editHref} className="btn bg-[#fff] text-black hover:bg-[#e5e7eb]">Edit profile</Link>}

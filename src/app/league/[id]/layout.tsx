@@ -29,7 +29,7 @@ export default async function LeagueLayout({ children, params }: { children: Rea
                 <p className="text-[11px] font-bold uppercase tracking-widest text-white/70">
                   {b.abbr} · {l.is_public ? "Public" : "Private"} league · {l.mode === "sim" ? "Simulated" : "Real NBA"} · {SCORING[l.scoring]?.label ?? l.scoring} · {l.champion_team_id ? "Season over" : l.draft_status === "done" ? `Week ${l.current_week} of ${l.season_weeks}` : l.draft_status === "live" ? "Draft in progress" : "Pre-draft"}
                 </p>
-                <h1 className="truncate text-3xl font-black text-white drop-shadow">{l.name}</h1>
+                <h1 className="truncate text-3xl font-black text-white">{l.name}</h1>
               </div>
               {l.week_started_at && <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white">● GAMES LIVE</span>}
             </div>

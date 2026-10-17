@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { LivePlayer } from "@/lib/league";
 import { InjuryTag } from "@/components/Headshot";
+import { inkOn, isLight } from "@/lib/color";
 import { BoostChip } from "@/components/LineupEditor";
 import { Fpts } from "@/components/Fpts";
 
@@ -76,28 +77,29 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   // Each starter gets a row tinted in his fantasy team's colour, with his photo large and faded in from the outer edge.
   const cell = (p: LivePlayer | undefined, right: boolean, brand: BrandLite) => {
     const fade = `linear-gradient(${right ? "to left" : "to right"}, #000 30%, transparent 92%)`;
+    const light = isLight(brand.color);
     return (
       <div className={`relative min-h-[76px] min-w-0 flex-1 overflow-hidden rounded-xl ring-1 ring-white/5 ${p && flash.has(p.id) ? "anim-flash" : ""}`}
-        style={{ background: `linear-gradient(${right ? 270 : 90}deg, transparent 25%, rgba(8,10,16,.5)), ${brand.color}` }}>
+        style={{ background: light ? brand.color : `linear-gradient(${right ? 270 : 90}deg, transparent 25%, rgba(8,10,16,.45)), ${brand.color}`, color: inkOn(brand.color) }}>
         {p ? (
           <>
             {p.headshot && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={p.headshot} alt="" aria-hidden loading="lazy"
-                className={`pointer-events-none absolute -bottom-1 h-[125%] w-auto max-w-none select-none opacity-90 ${right ? "-right-3" : "-left-3"}`}
+                className={`pointer-events-none absolute top-1 h-[125%] w-auto max-w-none select-none opacity-90 ${right ? "-right-3" : "-left-3"}`}
                 style={{ maskImage: fade, WebkitMaskImage: fade }} />
             )}
-            <div className={`relative flex h-full items-center gap-2 py-2.5 [text-shadow:0_1px_2px_rgba(0,0,0,.85),0_0_8px_rgba(0,0,0,.35)] ${right ? "flex-row-reverse pl-3 pr-[84px] text-right" : "pl-[84px] pr-3"}`}>
+            <div className={`relative flex h-full items-center gap-2 py-2.5 ${right ? "flex-row-reverse pl-3 pr-[84px] text-right" : "pl-[84px] pr-3"}`}>
               <div className="min-w-0 flex-1">
-                <p className={`flex items-center gap-1.5 text-[15px] font-black leading-tight text-white ${right ? "flex-row-reverse" : ""}`}><span className="truncate">{p.name}</span><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
-                <p className="mt-0.5 truncate text-[11px] font-semibold text-white">
+                <p className={`flex items-center gap-1.5 text-[15px] font-black leading-tight ${right ? "flex-row-reverse" : ""}`}><span className="truncate">{p.name}</span><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
+                <p className="mt-0.5 truncate text-[11px] font-semibold opacity-90">
                   <TeamLogo team={p.team} size={13} className="-mt-0.5 mr-1 align-middle" />{p.team} ·{" "}
-                  {p.now ? (p.now.state === "in" ? <span className="font-bold text-red-300">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
+                  {p.now ? (p.now.state === "in" ? <span className={`font-bold ${light ? "text-red-700" : "text-red-300"}`}>● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
                   {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
                 </p>
-                <p className="text-[10px] font-semibold text-white/90">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
+                <p className="text-[10px] font-semibold opacity-80">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
               </div>
-              <p className="font-mono text-xl font-black text-white drop-shadow"><Fpts n={p.pts} iconClass="text-[0.8em]" /></p>
+              <p className="font-mono text-xl font-black"><Fpts n={p.pts} iconClass="text-[0.8em]" /></p>
             </div>
           </>
         ) : <span className="flex h-full items-center px-4 text-sm text-zinc-500">Empty</span>}
@@ -124,8 +126,8 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
             <div className={`flex min-w-0 items-center gap-3 `}>
               <TeamBadge brand={home.brand} size={76} className="drop-shadow-xl" />
               <div className="min-w-0">
-                <p className="truncate text-xl font-black leading-tight text-white drop-shadow sm:text-2xl">{home.name}</p>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-white/75">{home.brand.abbr} · {home.record}</p>
+                <p className="truncate text-xl font-black leading-tight sm:text-2xl" style={{ color: inkOn(home.brand.color) }}>{home.name}</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest opacity-75" style={{ color: inkOn(home.brand.color) }}>{home.brand.abbr} · {home.record}</p>
               </div>
             </div>
             <div className="rounded-xl bg-black/55 px-4 py-2 shadow-lg ring-1 ring-white/10">
@@ -143,8 +145,8 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
             <div className={`flex min-w-0 items-center gap-3 flex-row-reverse`}>
               <TeamBadge brand={away.brand} size={76} className="drop-shadow-xl" />
               <div className="min-w-0">
-                <p className="truncate text-xl font-black leading-tight text-white drop-shadow sm:text-2xl">{away.name}</p>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-white/75">{away.brand.abbr} · {away.record}</p>
+                <p className="truncate text-xl font-black leading-tight sm:text-2xl" style={{ color: inkOn(away.brand.color) }}>{away.name}</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest opacity-75" style={{ color: inkOn(away.brand.color) }}>{away.brand.abbr} · {away.record}</p>
               </div>
             </div>
             <div className="rounded-xl bg-black/55 px-4 py-2 shadow-lg ring-1 ring-white/10">

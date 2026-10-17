@@ -22,7 +22,7 @@ function Preview({ p }: { p: P }) {
         <TeamBadge brand={brand} size={72} />
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-white/70">{brand.abbr}</p>
-          <p className="truncate text-2xl font-black text-white drop-shadow">{brand.name}</p>
+          <p className="truncate text-2xl font-black text-white">{brand.name}</p>
           <p className="text-xs text-white/80">7-2 · 1,048.5 PF</p>
         </div>
       </div>

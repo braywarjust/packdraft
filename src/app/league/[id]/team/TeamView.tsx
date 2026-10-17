@@ -62,7 +62,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
           <TeamBadge brand={b} size={148} className="drop-shadow-2xl" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-black uppercase tracking-[0.35em] text-white/70">{b.abbr} · {l.name}</p>
-            <h2 className="mt-1 text-4xl font-black leading-none tracking-tight text-white drop-shadow-lg sm:text-5xl">{t.name}</h2>
+            <h2 className="mt-1 text-4xl font-black leading-none tracking-tight text-white sm:text-5xl">{t.name}</h2>
             <p className="mt-2 text-sm text-white/80">{owner ? `Managed by ${owner}` : "CPU team"}{l.draft_status === "done" ? ` · Week ${l.current_week}` : ""}</p>
           </div>
           {!editable && <Link href={`/league/${leagueId}/trades?to=${t.id}`} className="btn bg-[#fff] text-black hover:bg-[#e5e7eb]">Propose trade</Link>}
