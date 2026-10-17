@@ -123,3 +123,13 @@ body {
 
 .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 6px; }
+
+/* Foil sheen over pack renders (see PackSheen): a soft diagonal highlight sweeping across, then a pause. */
+@keyframes packSheen { 0% { background-position: 100% 0; } 55%, 100% { background-position: 0% 0; } }
+.pack-sheen {
+  background: linear-gradient(110deg, transparent 43%, rgba(255, 255, 255, 0.18) 46.5%, rgba(255, 255, 255, 0.6) 49.5%, rgba(255, 255, 255, 0.6) 50.5%, rgba(255, 255, 255, 0.18) 53.5%, transparent 57%);
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  animation: packSheen 4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) { .pack-sheen { animation: none; opacity: 0; } }

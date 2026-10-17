@@ -1,5 +1,6 @@
 "use client";
 
+import { PackSheen } from "@/components/PackSheen";
 import { OddsBar } from "@/components/OddsBar";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -26,10 +27,14 @@ function PackArt({ p, big, md, slabs }: { p: PackType; big?: boolean; md?: boole
   const [failed, setFailed] = useState(false);
   if (failed) return <CssPackArt p={p} big={big} md={md} slabs={slabs} />;
   const [w, h] = artSize(p, big ? "big" : md ? "md" : "sm");
+  const src = `/packs/${p.id}.png?v=6`;
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={`/packs/${p.id}.png?v=6`} alt={p.name} width={w} height={h} draggable={false} onError={() => setFailed(true)}
-      className="block select-none object-contain" style={{ width: w, height: h, filter: "drop-shadow(0 14px 18px rgba(0,0,0,.45))" }} />
+    <span className="relative block" style={{ width: w, height: h }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={p.name} width={w} height={h} draggable={false} onError={() => setFailed(true)}
+        className="block select-none object-contain" style={{ width: w, height: h, filter: "drop-shadow(0 14px 18px rgba(0,0,0,.45))" }} />
+      <PackSheen src={src} seed={p.price} />
+    </span>
   );
 }
 
