@@ -199,11 +199,11 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
             return (
               <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
                 title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Case Hit ${p.odds.legendary}% · Grail ${p.odds.grail}%`}
-                className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50">
+                className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                 <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                   <PackArt p={p} md slabs={features[p.id]} />
                 </div>
-                <span className="text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
+                <span className={`text-lg font-bold ${short ? "text-zinc-500 opacity-60" : "text-emerald-600"}`} title={short ? "Not enough Pack Points" : undefined}><Coins n={p.price} /></span>
                   <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
                   <span className="w-36 space-y-1">
                     <OddsBar odds={p.odds} />
@@ -226,11 +226,11 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               return (
                 <button key={p.id} onClick={() => doBuy(p.id)} disabled={busy || short}
                   title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Case Hit ${p.odds.legendary}% · Grail ${p.odds.grail}%`}
-                  className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50">
+                  className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                   <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                     <PackArt p={p} md />
                   </div>
-                  <span className="text-lg font-bold text-emerald-600"><Coins n={p.price} /></span>
+                  <span className={`text-lg font-bold ${short ? "text-zinc-500 opacity-60" : "text-emerald-600"}`} title={short ? "Not enough Pack Points" : undefined}><Coins n={p.price} /></span>
                   <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
                   <span className="w-36 space-y-1">
                     <OddsBar odds={p.odds} />
