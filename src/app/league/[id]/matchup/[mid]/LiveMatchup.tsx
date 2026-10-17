@@ -74,9 +74,8 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   const { home, away } = d;
   const hp = Math.round(d.winProb * 100);
 
-  // Each starter gets a row tinted in his fantasy team's colour, with his photo large and faded in from the outer edge.
+  // Each starter gets a row framed in his fantasy team's colour, with his photo large on the outer edge.
   const cell = (p: LivePlayer | undefined, right: boolean, brand: BrandLite) => {
-    const fade = `linear-gradient(${right ? "to left" : "to right"}, #000 30%, transparent 92%)`;
     return (
       <div className={`relative min-h-[76px] min-w-0 flex-1 overflow-hidden rounded-xl ring-1 ring-white/5 ${p && flash.has(p.id) ? "anim-flash" : ""}`}
         style={{ background: brand.color }}>
@@ -85,11 +84,10 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
             {p.headshot && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={p.headshot} alt="" aria-hidden loading="lazy"
-                className={`pointer-events-none absolute top-1 h-[125%] w-auto max-w-none select-none opacity-90 ${right ? "-right-8" : "-left-8"}`}
-                style={{ maskImage: fade, WebkitMaskImage: fade }} />
+                className={`pointer-events-none absolute top-1 h-[125%] w-auto max-w-none select-none ${right ? "-right-8" : "-left-8"}`} />
             )}
             {/* Text and points sit on a dark panel so they're always white with the blue icon, whatever the team colour. */}
-            <div className={`relative my-1.5 flex min-h-[64px] items-center gap-2 rounded-lg bg-[#0f141f]/85 py-2 text-white ring-1 ring-black/20 ${right ? "ml-1.5 mr-[72px] flex-row-reverse pl-3 pr-3 text-right" : "ml-[72px] mr-1.5 pl-3 pr-3"}`}>
+            <div className={`relative my-1.5 flex min-h-[64px] items-center gap-2 rounded-lg bg-[#0f141f] py-2 text-white ring-1 ring-black/20 ${right ? "ml-1.5 mr-[72px] flex-row-reverse pl-3 pr-3 text-right" : "ml-[72px] mr-1.5 pl-3 pr-3"}`}>
               <div className="min-w-0 flex-1">
                 <p className={`flex items-center gap-1.5 text-[15px] font-black leading-tight ${right ? "flex-row-reverse" : ""}`}><span className="truncate">{p.name}</span><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
                 <p className="mt-0.5 truncate text-[11px] font-semibold text-zinc-300">
