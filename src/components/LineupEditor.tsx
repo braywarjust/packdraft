@@ -9,6 +9,7 @@ import { useState, useTransition } from "react";
 import type { LivePlayer } from "@/lib/league";
 import { Headshot, InjuryTag } from "./Headshot";
 import { Fpts } from "@/components/Fpts";
+import { PlayerButton } from "@/components/PlayerInspector";
 
 const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
 
@@ -76,7 +77,7 @@ export function LineupEditor({
             <div className="flex items-center gap-2">
               <Headshot src={p.headshot} name={p.name} size={36} />
               <div className="min-w-0">
-                <p className="font-semibold">{p.name} <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{p.pos} · {p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /> {p.locked && <LockIcon className="text-xs text-zinc-500" title="Locked: game started" />}</p>
+                <p className="font-semibold"><PlayerButton id={p.id} className="inline">{p.name}</PlayerButton> <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{p.pos} · {p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /> {p.locked && <LockIcon className="text-xs text-zinc-500" title="Locked: game started" />}</p>
                 <p className="truncate text-xs text-zinc-500">
                   {today ? (today.state === "in" ? <span className="text-red-600">● {today.clock} {today.label} </span> : `${today.label} · ${today.clock} `) : "No games this week "}
                   {today?.line && today.state !== "pre" ? `· ${today.line}` : ""}

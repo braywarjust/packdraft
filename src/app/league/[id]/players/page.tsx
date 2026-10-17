@@ -10,6 +10,7 @@ import { ActionButton } from "@/components/ActionButton";
 import { AddPlayer } from "./AddPlayer";
 import { addPlayer, cancelClaim, runWaivers } from "../../../actions";
 import { Fpts } from "@/components/Fpts";
+import { PlayerButton } from "@/components/PlayerInspector";
 
 export default async function Players({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ q?: string; pos?: string; view?: string }> }) {
   const { id } = await params;
@@ -71,7 +72,7 @@ export default async function Players({ params, searchParams }: { params: Promis
                       <div className="flex items-center gap-2">
                         <Headshot src={p.headshot} name={p.name} size={32} />
                         <div>
-                          <p><span className="font-semibold">{p.name}</span> <InjuryTag injury={p.injury} />{l.draft_status === "done" && isLocked(l, p) && <LockIcon className="ml-1 text-zinc-500" title="Locked: game started" />}</p>
+                          <p><PlayerButton id={p.id} league={l.id} className="inline font-semibold">{p.name}</PlayerButton> <InjuryTag injury={p.injury} />{l.draft_status === "done" && isLocked(l, p) && <LockIcon className="ml-1 text-zinc-500" title="Locked: game started" />}</p>
                           <p className="text-xs text-zinc-400"><span className={`pos pos-${p.pos} mr-1`}>{p.pos}</span><TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" />{p.team}</p>
                         </div>
                       </div>

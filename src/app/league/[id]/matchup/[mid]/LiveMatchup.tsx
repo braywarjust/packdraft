@@ -9,6 +9,7 @@ import { InjuryTag } from "@/components/Headshot";
 import { MatchupCard } from "@/components/MatchupCard";
 import { BoostChip } from "@/components/LineupEditor";
 import { Fpts } from "@/components/Fpts";
+import { PlayerButton, openPlayer } from "@/components/PlayerInspector";
 
 type Side = { id: number; name: string; brand: BrandLite; record: string; score: number; projected: number; remain: number; players: LivePlayer[] };
 type Data = { week: number; final: boolean; live: boolean; mode: string; range: string | null; progress: number | null; league: string; home: Side; away: Side; winProb: number };
@@ -77,7 +78,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   // Each starter: his photo on the outer edge on the dark theme colour, then a theme panel with his line.
   const cell = (p: LivePlayer | undefined, right: boolean, brand: BrandLite) => (
     <div className={`flex min-h-[72px] min-w-0 flex-1 overflow-hidden rounded-xl bg-ink ring-1 ring-white/5 ${right ? "flex-row-reverse" : ""} ${p && flash.has(p.id) ? "anim-flash" : ""}`}>
-      <div className="relative w-[76px] shrink-0 overflow-hidden bg-panel2">
+      <div className={`relative w-[76px] shrink-0 overflow-hidden bg-panel2 ${p ? "cursor-pointer" : ""}`} onClick={() => p && openPlayer(p.id)}>
         {p?.headshot && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={p.headshot} alt="" aria-hidden loading="lazy" className="pointer-events-none absolute left-1/2 top-1.5 h-[118%] w-auto max-w-none -translate-x-1/2 select-none" />
@@ -86,7 +87,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
       {p ? (
         <div className={`flex min-w-0 flex-1 items-center gap-3 px-3 py-2 ${right ? "flex-row-reverse text-right" : ""}`}>
           <div className="min-w-0 flex-1">
-            <p className={`flex items-center gap-1.5 text-sm font-bold leading-tight text-white ${right ? "flex-row-reverse" : ""}`}><span className="truncate">{p.name}</span><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
+            <p className={`flex items-center gap-1.5 text-sm font-bold leading-tight text-white ${right ? "flex-row-reverse" : ""}`}><PlayerButton id={p.id} className="truncate">{p.name}</PlayerButton><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
             <p className="mt-0.5 truncate text-[11px] text-zinc-500">
               <TeamLogo team={p.team} size={13} className="-mt-0.5 mr-1 align-middle" />{p.team} ·{" "}
               {p.now ? (p.now.state === "in" ? <span className="font-semibold text-red-500">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
@@ -128,7 +129,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
             <div className="mt-2 grid grid-cols-2 gap-4 text-xs text-zinc-500">
               {[home, away].map((s) => (
                 <ul key={s.id} className="space-y-1">
-                  {s.players.filter((p) => p.slot === "BN").map((p) => <li key={p.id} className="flex justify-between gap-2"><span className="truncate">{p.name}</span><span className="font-mono">{p.left} left</span></li>)}
+                  {s.players.filter((p) => p.slot === "BN").map((p) => <li key={p.id} className="flex justify-between gap-2"><PlayerButton id={p.id} className="truncate">{p.name}</PlayerButton><span className="font-mono">{p.left} left</span></li>)}
                 </ul>
               ))}
             </div>

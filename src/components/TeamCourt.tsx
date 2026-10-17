@@ -10,6 +10,7 @@ import { TeamLogo } from "./TeamLogo";
 import { TeamBadge, type BrandLite } from "./TeamBadge";
 import { BoostChip, BoostModal, LineupEditor, type BoostProps } from "./LineupEditor";
 import { Fpts } from "@/components/Fpts";
+import { PlayerButton } from "@/components/PlayerInspector";
 
 const lbl = (s: string) => s.replace(/\d$/, "");
 const eligible = (slot: string, pos: string) => slot === "BN" || lbl(slot) === "UTIL" || lbl(slot) === pos;
@@ -83,7 +84,7 @@ function PlayerTile({ p, slot, big, brand, state }: {
               <TeamLogo team={p.team} size={big ? 24 : 20} className="absolute -bottom-1 -right-1" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className={`line-clamp-2 font-black leading-tight text-white ${big ? "text-lg" : "text-base"}`}>{p.name}</p>
+              <p className={`line-clamp-2 font-black leading-tight text-white ${big ? "text-lg" : "text-base"}`}><PlayerButton id={p.id}>{p.name}</PlayerButton></p>
               <p className="text-xs text-zinc-400">{p.pos} · {p.team} <InjuryTag injury={p.injury} /></p>
               <p className="mt-0.5 font-mono text-[11px] text-zinc-500">{p.played}/{p.total} GP</p>
               <p className="mt-0.5 whitespace-nowrap font-mono text-xs font-bold text-zinc-800"><span className="text-[10px] font-black uppercase tracking-wider text-fpts">Proj </span><Fpts n={p.proj} />/g</p>

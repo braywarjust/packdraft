@@ -1,4 +1,5 @@
 import { ConfirmHost } from "@/components/Confirm";
+import { PlayerInspectorHost } from "@/components/PlayerInspector";
 import { ensureBranding, leagueBrand } from "@/lib/branding";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -43,6 +44,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <ConfirmHost />
+        <PlayerInspectorHost />
         <Sidebar
           user={{ name: user.name, color: user.color, coins: user.coins, tester: !!user.is_tester, avatar: avatarOf(user.id) }}
           packs={packs}
