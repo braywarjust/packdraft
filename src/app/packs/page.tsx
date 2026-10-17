@@ -102,7 +102,7 @@ export default async function PacksPage() {
               <tr className="text-xs text-zinc-500">
                 <th className="px-4 py-3 text-left">Pack</th>
                 {RARITY_ORDER.map((r) => (
-                  <th key={r} className="px-2 py-3"><span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-black uppercase" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>{RARITIES[r].label}</span></th>
+                  <th key={r} className="px-2 py-3"><span className="inline-block rounded-full px-1.5 py-px text-[8.5px] font-black uppercase leading-tight" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>{RARITIES[r].label}</span></th>
                 ))}
                 <th className="px-4 py-3 text-right">Mix</th>
               </tr>

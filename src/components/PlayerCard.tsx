@@ -16,7 +16,7 @@ const BADGE: Record<Rarity, string> = {
 };
 export function RarityBadge({ rarity, className = "" }: { rarity: Rarity; className?: string }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm ${BADGE[rarity]} ${className}`}>
+    <span className={`inline-flex items-center rounded-full px-1.5 py-px text-[8.5px] font-bold uppercase leading-tight tracking-wide shadow-sm ${BADGE[rarity]} ${className}`}>
       {RARITIES[rarity].label}
     </span>
   );
