@@ -13,14 +13,14 @@ const I = {
   packs: "/packdraft-pack-icon.svg",
   collection: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
   mock: "M4 6h16M4 12h16M4 18h10",
-  studio: "M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z",
+  studio: "/team-studio-icon.svg",
   bets: "M3 7h18v10H3zM7 12h.01M17 12h.01M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z",
   logout: "M15 17l5-5-5-5M20 12H9M12 21H4V3h8",
   collapse: "M15 6l-6 6 6 6",
   expand: "M9 6l6 6-6 6",
 };
 /** Optical sizes for the solid image icons so they weigh the same as the 2px line icons. */
-const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/league-logo-icon.svg": [16, 15] };
+const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/league-logo-icon.svg": [16, 15], "/team-studio-icon.svg": [16, 15] };
 function Icon({ d }: { d: string }) {
   // Image icons (a public/ SVG path) are drawn as a mask in currentColor so they match the line icons' colour and states.
   if (d.startsWith("/")) {
