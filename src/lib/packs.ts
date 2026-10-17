@@ -27,17 +27,18 @@ export const RARITY_BLURB: Record<Rarity, string> = {
 };
 export const RARITY_ORDER: Rarity[] = ["common", "rare", "epic", "legendary", "grail"];
 
+// Immortal (the Ultra Heavy Hitters) can only come out of the GOAT Pack and the Mega Pack.
 export const PACKS: PackType[] = [
   { id: "rookie", name: "Rookie Pack", price: 25, cards: 1, color: "from-slate-500 to-slate-700", accent: "#94a3b8", blurb: "Cheap thrills. Every hit starts somewhere.",
-    odds: { common: 90, rare: 8.5, epic: 1.3, legendary: 0.2, grail: 0.00004 } },
+    odds: { common: 90, rare: 8.5, epic: 1.3, legendary: 0.2, grail: 0 } },
   { id: "starter", name: "Starter Pack", price: 100, cards: 1, color: "from-sky-500 to-blue-700", accent: "#38bdf8", blurb: "Solid floor, real upside.",
-    odds: { common: 70, rare: 23, epic: 5.6, legendary: 1.4, grail: 0.00016 } },
+    odds: { common: 70, rare: 23, epic: 5.6, legendary: 1.4, grail: 0 } },
   { id: "pro", name: "Pro Pack", price: 250, cards: 1, color: "from-emerald-500 to-teal-700", accent: "#34d399", blurb: "What weekly winners rip.",
-    odds: { common: 52, rare: 30, epic: 13, legendary: 5, grail: 0.0004 } },
+    odds: { common: 52, rare: 30, epic: 13, legendary: 5, grail: 0 } },
   { id: "allpro", name: "All-Pro Pack", price: 500, cards: 1, color: "from-fuchsia-500 to-purple-700", accent: "#e879f9", blurb: "Boosted Epic odds.",
-    odds: { common: 40, rare: 33, epic: 19, legendary: 8, grail: 0.0008 } },
+    odds: { common: 40, rare: 33, epic: 19, legendary: 8, grail: 0 } },
   { id: "hof", name: "Hall of Fame Pack", price: 1000, cards: 1, color: "from-amber-400 to-orange-600", accent: "#fbbf24", blurb: "Top scorer of the week gets one of these.",
-    odds: { common: 28, rare: 34, epic: 25, legendary: 13, grail: 0.0016 } },
+    odds: { common: 28, rare: 34, epic: 25, legendary: 13, grail: 0 } },
   { id: "goat", name: "GOAT Pack", price: 2500, cards: 1, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Mythic chase.",
     odds: { common: 5, rare: 25, epic: 37, legendary: 33, grail: 0.004 } },
   { id: "megacase", name: "Mega Pack", price: 10000, cards: 5, kind: "case", color: "from-zinc-900 via-amber-500 to-zinc-900", accent: "#f5c15c", blurb: "Five slabs, zero commons. The big rip.",
