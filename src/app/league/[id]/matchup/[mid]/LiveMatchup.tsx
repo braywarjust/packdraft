@@ -5,7 +5,7 @@ import { TeamLogo } from "@/components/TeamLogo";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { LivePlayer } from "@/lib/league";
-import { Headshot, InjuryTag } from "@/components/Headshot";
+import { InjuryTag } from "@/components/Headshot";
 import { BoostChip } from "@/components/LineupEditor";
 import { Fpts } from "@/components/Fpts";
 
@@ -73,24 +73,36 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   const { home, away } = d;
   const hp = Math.round(d.winProb * 100);
 
-  const cell = (p: LivePlayer | undefined, right: boolean) => (
-    <div className={`min-w-0 flex-1 rounded-lg px-2 py-1.5 ${p && flash.has(p.id) ? "anim-flash" : ""}`}>
-      {p ? (
-        <div className={`flex items-center gap-2 ${right ? "flex-row-reverse text-right" : ""}`}>
-          <Headshot src={p.headshot} name={p.name} size={38} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">{p.name} <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /></p>
-            <p className="truncate text-[11px] text-zinc-500">
-              {p.now ? (p.now.state === "in" ? <span className="text-red-600">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
-              {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
-            </p>
-            <p className="text-[10px] text-zinc-400">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
-          </div>
-          <p className="font-mono text-lg font-black"><Fpts n={p.pts} iconClass="text-[0.8em]" /></p>
-        </div>
-      ) : <span className="text-sm text-zinc-400">Empty</span>}
-    </div>
-  );
+  // Each starter gets a row tinted in his fantasy team's colour, with his photo large and faded in from the outer edge.
+  const cell = (p: LivePlayer | undefined, right: boolean, brand: BrandLite) => {
+    const fade = `linear-gradient(${right ? "to left" : "to right"}, #000 30%, transparent 92%)`;
+    return (
+      <div className={`relative min-h-[76px] min-w-0 flex-1 overflow-hidden rounded-xl ring-1 ring-white/5 ${p && flash.has(p.id) ? "anim-flash" : ""}`}
+        style={{ background: `linear-gradient(${right ? 270 : 90}deg, ${brand.color}55, ${brand.color}14 55%, transparent)` }}>
+        {p ? (
+          <>
+            {p.headshot && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={p.headshot} alt="" aria-hidden loading="lazy"
+                className={`pointer-events-none absolute -bottom-1 h-[125%] w-auto max-w-none select-none opacity-70 ${right ? "-right-3" : "-left-3"}`}
+                style={{ maskImage: fade, WebkitMaskImage: fade }} />
+            )}
+            <div className={`relative flex h-full items-center gap-2 py-2.5 ${right ? "flex-row-reverse pl-3 pr-24 text-right" : "pl-24 pr-3"}`}>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-white drop-shadow">{p.name} <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /></p>
+                <p className="truncate text-[11px] text-zinc-400">
+                  {p.now ? (p.now.state === "in" ? <span className="text-red-500">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
+                  {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
+                </p>
+                <p className="text-[10px] text-zinc-500">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
+              </div>
+              <p className="font-mono text-xl font-black text-white drop-shadow"><Fpts n={p.pts} iconClass="text-[0.8em]" /></p>
+            </div>
+          </>
+        ) : <span className="flex h-full items-center px-4 text-sm text-zinc-500">Empty</span>}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -128,13 +140,13 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="card p-2 lg:col-span-2">
+      <div className="grid gap-4 2xl:grid-cols-3">
+        <div className="card p-2 2xl:col-span-2">
           {STARTERS.map((slot) => (
-            <div key={slot} className="flex items-center gap-1 border-b border-line/40 last:border-0">
-              {cell(home.players.find((p) => p.slot === slot), false)}
-              <span className={`pos pos-${lbl(slot)} shrink-0`}>{lbl(slot)}</span>
-              {cell(away.players.find((p) => p.slot === slot), true)}
+            <div key={slot} className="flex items-stretch gap-1.5 py-1">
+              {cell(home.players.find((p) => p.slot === slot), false, home.brand)}
+              <span className={`pos pos-${lbl(slot)} shrink-0 self-center`}>{lbl(slot)}</span>
+              {cell(away.players.find((p) => p.slot === slot), true, away.brand)}
             </div>
           ))}
           <details className="mt-2 px-2 pb-2">
