@@ -86,7 +86,7 @@ export function LineupEditor({
           ) : <span className="text-zinc-400">Empty</span>}
         </td>
         <td className="text-center text-xs text-zinc-500">{p ? `${p.played}/${p.total}` : ""}</td>
-        <td className="text-right font-mono text-zinc-500">{p ? <Fpts n={p.proj} /> : ""}</td>
+        <td className="text-right font-mono font-semibold text-zinc-800">{p ? <Fpts n={p.proj} /> : ""}</td>
         <td className="pr-3 text-right font-mono font-bold">{p ? <Fpts n={p.pts} /> : ""}</td>
         {editable && (
           <td className="py-2 pr-3 text-right">

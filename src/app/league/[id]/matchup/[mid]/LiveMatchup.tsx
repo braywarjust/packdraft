@@ -100,8 +100,9 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
           <div>
             <div className="mb-1 h-1.5 w-16 rounded-full" style={{ background: `linear-gradient(90deg, ${home.brand.color}, ${home.brand.alt})` }} />
             <p className="flex items-center gap-2 text-lg font-black"><TeamBadge brand={home.brand} size={36} />{home.name}</p>
-            <p className="text-xs text-zinc-500">{home.record} · proj <Fpts n={home.score + home.remain} /></p>
+            <p className="text-xs text-zinc-500">{home.record}</p>
             <p className="mt-1 font-mono text-4xl font-black sm:text-5xl"><Fpts n={home.score} iconClass="text-[0.7em]" /></p>
+            <p className="mt-1 font-mono text-sm font-bold text-zinc-700"><span className="text-[10px] font-black uppercase tracking-widest text-fpts">Proj </span><Fpts n={home.score + home.remain} /></p>
           </div>
           <div className="text-center">
             <p className="text-xs uppercase tracking-widest text-zinc-500">Week {d.week}</p>
@@ -112,8 +113,9 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
           <div className="text-right">
             <div className="mb-1 ml-auto h-1.5 w-16 rounded-full" style={{ background: `linear-gradient(90deg, ${away.brand.alt}, ${away.brand.color})` }} />
             <p className="flex items-center justify-end gap-2 text-lg font-black">{away.name}<TeamBadge brand={away.brand} size={36} /></p>
-            <p className="text-xs text-zinc-500">{away.record} · proj <Fpts n={away.score + away.remain} /></p>
+            <p className="text-xs text-zinc-500">{away.record}</p>
             <p className="mt-1 font-mono text-4xl font-black sm:text-5xl"><Fpts n={away.score} iconClass="text-[0.7em]" /></p>
+            <p className="mt-1 font-mono text-sm font-bold text-zinc-700"><span className="text-[10px] font-black uppercase tracking-widest text-fpts">Proj </span><Fpts n={away.score + away.remain} /></p>
           </div>
         </div>
         <div className="px-5 pb-4">

@@ -22,11 +22,16 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
             <p className="text-[11px] font-bold uppercase tracking-widest text-white/60">{s.brand.abbr} · {s.record}</p>
           </div>
         </div>
-        <p className={`font-mono font-black leading-none text-white drop-shadow-lg ${big ? "text-5xl" : "text-4xl"}`}>
-          {status === "pre" ? <span className="text-2xl text-white/70">proj <Fpts n={s.proj} iconClass="text-[0.8em]" /></span> : <Fpts n={s.score} iconClass="text-[0.7em]" />}
-          {winner === which && <CrownIcon className="ml-2 align-middle text-base text-amber-300" title="Winner" />}
-        </p>
-        {status === "live" && <p className="font-mono text-[11px] text-white/60">proj <Fpts n={s.proj} /></p>}
+        <div className={`flex items-center gap-2 ${which === "away" ? "flex-row-reverse" : ""}`}>
+          <div className={`rounded-xl bg-black/50 px-3 py-1.5 shadow-lg ring-1 ring-white/10 backdrop-blur ${which === "away" ? "text-right" : ""}`}>
+            {status === "pre" && <p className="text-[10px] font-black uppercase tracking-[0.25em] text-fpts">Projected</p>}
+            <p className={`font-mono font-black leading-none text-white ${big ? "text-4xl" : "text-3xl"}`}>
+              <Fpts n={status === "pre" ? s.proj : s.score} iconClass="text-[0.75em]" />
+            </p>
+            {status === "live" && <p className="mt-1 font-mono text-xs font-bold text-white/85">proj <Fpts n={s.proj} /></p>}
+          </div>
+          {winner === which && <CrownIcon className="text-xl text-amber-300" title="Winner" />}
+        </div>
       </div>
     );
   };

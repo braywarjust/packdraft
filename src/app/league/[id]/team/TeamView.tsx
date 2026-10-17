@@ -69,7 +69,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         </div>
         <div className="relative grid grid-cols-3 gap-px bg-black/20 sm:grid-cols-6">
           {stats.map(([k, v]) => (
-            <div key={k} className="bg-black/25 px-4 py-3 backdrop-blur">
+            <div key={k} className="bg-black/45 px-4 py-3 backdrop-blur">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>
               <p className="font-mono text-xl font-black text-white">{v}</p>
             </div>
