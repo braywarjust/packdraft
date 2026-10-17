@@ -1,3 +1,4 @@
+import { MatchupCard } from "@/components/MatchupCard";
 import { PackThumb } from "@/components/PackThumb";
 import { TeamBadge, TeamName } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand } from "@/lib/branding";
@@ -113,72 +114,36 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
           </Link>
         )}
 
-        {l.draft_status === "done" && (
-          <section className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-lg font-bold">Week {l.current_week} matchups</h2>
-              {isCommish && !l.champion_team_id && l.mode === "sim" && (
-                <div className="flex gap-2">
-                  {!l.week_started_at ? (
-                    <ActionButton action={startWeekAction.bind(null, l.id)} className="btn-lime">▶ Kick off Week {l.current_week}</ActionButton>
-                  ) : (
-                    <ActionButton action={finishWeekNow.bind(null, l.id)} confirm="Skip to final scores and hand out packs?">⏩ Fast-forward to final</ActionButton>
-                  )}
+        {l.draft_status === "done" && (() => {
+          const m = matchups.find((x) => me && (x.home_team_id === me.id || x.away_team_id === me.id));
+          const sideOf = (tid: number, stored: number | null, final: number) => {
+            const t = teams.find((x) => x.id === tid)!;
+            const w = teamWeek(l, tid, l.current_week);
+            return { w, side: { id: tid, brand: brand.get(tid)!, record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`, score: final && stored != null ? stored : w.score, proj: w.score + w.remain } };
+          };
+          const h = m && sideOf(m.home_team_id, m.home_score, m.final);
+          const a = m && sideOf(m.away_team_id, m.away_score, m.final);
+          const live = !!(h && a) && (l.mode === "sim" ? !!l.week_started_at : h.w.score + a.w.score > 0);
+          return (
+            <section className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-lg font-bold">{m ? `Your Week ${l.current_week} matchup` : `Week ${l.current_week}`}</h2>
+                <div className="flex flex-wrap gap-2">
+                  {isCommish && !l.champion_team_id && l.mode === "sim" && (!l.week_started_at
+                    ? <ActionButton action={startWeekAction.bind(null, l.id)} className="btn-lime">▶ Kick off Week {l.current_week}</ActionButton>
+                    : <ActionButton action={finishWeekNow.bind(null, l.id)} confirm="Skip to final scores and hand out packs?">⏩ Fast-forward to final</ActionButton>)}
+                  <Link href={`/league/${l.id}/matchups`} className="btn-ghost">All matchups →</Link>
                 </div>
-              )}
-            </div>
-            {l.mode !== "sim" && !l.champion_team_id && (
-              <p className="text-sm text-zinc-500">
-                Real NBA games · {(() => { const [s, e] = weekRange(l, l.current_week); return `${dayLabel(s)} – ${dayLabel(e)}`; })()}. Set your lineup daily; each player locks at his tip-off. Scores update live during games.
-              </p>
-            )}
-            {l.week_started_at && (
-              <div className="h-2 overflow-hidden rounded-full bg-panel2">
-                <div className="h-full bg-gradient-to-r from-brand to-red-800 transition-all" style={{ width: `${progress * 100}%` }} />
               </div>
-            )}
-            {l.mode === "sim" && !l.week_started_at && !l.champion_team_id && (
-              <p className="text-sm text-zinc-500">Simulated league: set your lineup, then the commish tips off the week. Every team plays 3–4 sim games over {l.sim_minutes} min.</p>
-            )}
-            <div className="grid gap-3 sm:grid-cols-2">
-              {matchups.map((m) => {
-                const h = teamWeek(l, m.home_team_id, l.current_week);
-                const a = teamWeek(l, m.away_team_id, l.current_week);
-                const live = l.mode === "sim" ? !!l.week_started_at : h.score + a.score > 0;
-                const wp = winProb(h, a);
-                const mine = me && (m.home_team_id === me.id || m.away_team_id === me.id);
-                return (
-                  <Link key={m.id} href={`/league/${l.id}/matchup/${m.id}`} className={`card block p-4 hover:border-brand/60 ${mine ? "border-brand/40" : ""}`}>
-                    {[{ t: m.home_team_id, s: h }, { t: m.away_team_id, s: a }].map(({ t, s }) => (
-                      <div key={t} className="flex items-center justify-between py-1">
-                        <TeamName brand={brand.get(t)!} size={24} nameClass="font-semibold" />
-                        <span className="font-mono text-lg font-bold">{live ? s.score.toFixed(1) : <span className="text-sm text-zinc-500">proj {(s.score + s.remain).toFixed(1)}</span>}</span>
-                      </div>
-                    ))}
-                    <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-panel2">
-                      <div className="bg-brand" style={{ width: `${wp * 100}%` }} />
-                      <div className="flex-1 bg-accent" />
-                    </div>
-                    <p className="mt-1 text-[11px] text-zinc-400">Win prob {Math.round(wp * 100)}% – {Math.round((1 - wp) * 100)}%</p>
-                  </Link>
-                );
-              })}
-            </div>
-            {lastWeek.length > 0 && (
-              <details className="card p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-zinc-700">Week {l.current_week - 1} results</summary>
-                <ul className="mt-2 space-y-1 text-sm">
-                  {lastWeek.map((m) => (
-                    <li key={m.id} className="flex justify-between">
-                      <span className="flex min-w-0 items-center gap-2"><TeamName brand={brand.get(m.home_team_id)!} size={18} /> <span className="text-zinc-400">vs</span> <TeamName brand={brand.get(m.away_team_id)!} size={18} /></span>
-                      <span className="font-mono">{m.home_score?.toFixed(1)} – {m.away_score?.toFixed(1)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            )}
-          </section>
-        )}
+              {l.week_started_at && (
+                <div className="h-2 overflow-hidden rounded-full bg-panel2"><div className="h-full bg-gradient-to-r from-brand to-red-800 transition-all" style={{ width: `${progress * 100}%` }} /></div>
+              )}
+              {m && h && a && (
+                <MatchupCard href={`/league/${l.id}/matchup/${m.id}`} home={h.side} away={a.side} status={m.final ? "final" : live ? "live" : "pre"} winProb={winProb(h.w, a.w)} mine big />
+              )}
+            </section>
+          );
+        })()}
 
         {l.champion_team_id && (
           <div className="card bg-gradient-to-r from-amber-500/30 to-transparent p-6 text-center">

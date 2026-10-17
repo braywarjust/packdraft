@@ -1,0 +1,57 @@
+import Link from "next/link";
+import { TeamBadge, type BrandLite } from "./TeamBadge";
+
+export type MatchSide = { id: number; brand: BrandLite; record: string; score: number; proj: number };
+
+/** A head-to-head card split in the two teams' colours, logos facing off, scores big. */
+export function MatchupCard({ href, home, away, status, winProb, mine, big = false }: {
+  href: string; home: MatchSide; away: MatchSide; status: "pre" | "live" | "final"; winProb: number; mine?: boolean; big?: boolean;
+}) {
+  const hp = Math.round(winProb * 100);
+  const winner = status === "final" ? (home.score > away.score ? "home" : away.score > home.score ? "away" : null) : null;
+  const side = (s: MatchSide, which: "home" | "away") => {
+    const lost = winner && winner !== which;
+    return (
+      <div className={`flex min-w-0 flex-1 flex-col gap-2 ${which === "away" ? "items-end text-right" : ""} ${lost ? "opacity-55" : ""}`}>
+        <div className={`flex min-w-0 items-center gap-3 ${which === "away" ? "flex-row-reverse" : ""}`}>
+          <div className="rounded-2xl bg-black/25 p-1.5 ring-1 ring-white/15"><TeamBadge brand={s.brand} size={big ? 64 : 48} /></div>
+          <div className="min-w-0">
+            <p className={`truncate font-black leading-tight text-white drop-shadow ${big ? "text-xl" : "text-base"}`}>{s.brand.name}</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/60">{s.brand.abbr} · {s.record}</p>
+          </div>
+        </div>
+        <p className={`font-mono font-black leading-none text-white drop-shadow-lg ${big ? "text-5xl" : "text-4xl"}`}>
+          {status === "pre" ? <span className="text-2xl text-white/70">proj {s.proj.toFixed(1)}</span> : s.score.toFixed(1)}
+          {winner === which && <span className="ml-2 align-middle text-base">👑</span>}
+        </p>
+        {status === "live" && <p className="font-mono text-[11px] text-white/60">proj {s.proj.toFixed(1)}</p>}
+      </div>
+    );
+  };
+  return (
+    <Link href={href} className={`group relative block overflow-hidden rounded-2xl shadow-xl transition hover:-translate-y-0.5 ${mine ? "ring-2 ring-white/70" : "ring-1 ring-white/10"}`}
+      style={{ background: `linear-gradient(100deg, ${home.brand.color} 0%, ${home.brand.color}aa 38%, #151b27 50%, ${away.brand.color}aa 62%, ${away.brand.color} 100%)` }}>
+      <div className="pointer-events-none absolute -left-10 top-1/2 -translate-y-1/2 opacity-15"><TeamBadge brand={home.brand} size={big ? 240 : 180} /></div>
+      <div className="pointer-events-none absolute -right-10 top-1/2 -translate-y-1/2 opacity-15"><TeamBadge brand={away.brand} size={big ? 240 : 180} /></div>
+      <div className="relative flex items-center gap-3 p-4 sm:p-5">
+        {side(home, "home")}
+        <div className="flex shrink-0 flex-col items-center gap-1 px-1">
+          {status === "live" ? <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white">● LIVE</span>
+            : status === "final" ? <span className="rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-black text-white">FINAL</span>
+            : <span className="text-lg font-black italic text-white/80">VS</span>}
+          {mine && <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">You</span>}
+        </div>
+        {side(away, "away")}
+      </div>
+      {status !== "final" && (
+        <div className="relative px-4 pb-3 sm:px-5">
+          <div className="flex h-2 overflow-hidden rounded-full bg-black/30">
+            <div className="transition-all duration-700" style={{ width: `${hp}%`, background: `linear-gradient(90deg, ${home.brand.alt}, ${home.brand.color})` }} />
+            <div className="flex-1" style={{ background: `linear-gradient(90deg, ${away.brand.color}, ${away.brand.alt})` }} />
+          </div>
+          <p className="mt-1 flex justify-between text-[10px] font-bold text-white/70"><span>{hp}%</span><span>Win probability</span><span>{100 - hp}%</span></p>
+        </div>
+      )}
+    </Link>
+  );
+}
