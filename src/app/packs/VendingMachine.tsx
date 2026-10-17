@@ -17,6 +17,8 @@ const isCaseHit = (c: CardData) => c.s_source === "courtyard" || c.rarity === "l
 const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, grail: 4 };
 
 // 1-slab packs are the skinny frosted crate renders (~0.79 wide:tall).
+/** Light colour each crate bursts open with (its tier colour). */
+const BURST: Record<string, string> = { rookie: "#cbd5e1", starter: "#7dd3fc", pro: "#6ee7b7", allpro: "#f0abfc", hof: "#fde68a", goat: "#fda4af", megacase: "#e0f2fe" };
 const PACK_SIZE = { sm: [88, 112], md: [176, 224], big: [264, 336] } as const;
 /** The Mega Pack render is roughly square, so it gets wider boxes than the 1-slab packs. */
 const CASE_SIZE = { sm: [116, 116], md: [220, 220], big: [336, 336] } as const;
@@ -138,13 +140,14 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
   const doRip = async () => {
     if (!packId) return;
     setStage("tearing");
-    const r = await rip(packId);
+    // The crate charges up and bursts open (about 1.5s); the slabs deal in once both the burst and the pull are done.
+    const [r] = await Promise.all([rip(packId), new Promise((ok) => setTimeout(ok, 1500))]);
     if ("error" in r) { setErr(r.error); setStage("idle"); return; }
     // Reveal worst first, best last, for maximum drama.
     setCards([...r.cards].sort((a, b) => RANK[a.rarity] - RANK[b.rarity] || a.value - b.value));
     setFlipped(new Set());
     setSold(new Set());
-    setTimeout(() => setStage("cards"), 650);
+    setStage("cards");
     router.refresh();
   };
 
@@ -254,20 +257,22 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
       {(stage === "ready" || stage === "tearing" || stage === "cards") && rp && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-zinc-100/95 p-4 backdrop-blur-sm">
           {stage !== "cards" ? (
-            <div className="flex flex-col items-center gap-6">
-              <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{stage === "tearing" ? "Ripping…" : "Click the pack to rip it"}</p>
+            <div className="flex flex-col items-center gap-6" style={{ "--burst": BURST[rp.id] ?? "#ffffff" } as React.CSSProperties}>
+              <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{stage === "tearing" ? "Opening…" : "Click the pack to open it"}</p>
               <button onClick={doRip} disabled={stage === "tearing"} className={`relative ${stage === "ready" ? "anim-drop hover:anim-shake" : ""}`}>
                 {stage === "tearing" ? (
-                  <div className="relative h-[336px]" style={{ width: artSize(rp, "big")[0] }}>
-                    <div className="anim-tear-top absolute inset-x-0 top-0 h-16 overflow-hidden"><PackArt p={rp} big slabs={features[rp.id]} /></div>
-                    <div className="anim-tear-bottom absolute inset-x-0 bottom-0 h-[272px] overflow-hidden" style={{ clipPath: "inset(0 0 0 0)" }}>
-                      <div className="-mt-16"><PackArt p={rp} big slabs={features[rp.id]} /></div>
-                    </div>
+                  // Charge and burst: light rays spin up behind the crate while it shakes harder and harder, then it
+                  // swells into a flash of its tier colour and the slabs deal in.
+                  <div className="relative grid place-items-center">
+                    <div className="anim-burst-rays pointer-events-none absolute left-1/2 top-1/2 h-[640px] w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-full" />
+                    <div className="anim-burst-glow pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full" />
+                    <div className="anim-charge relative"><div className="anim-jitter"><PackArt p={rp} big slabs={features[rp.id]} /></div></div>
                   </div>
                 ) : (
                   <div className="anim-shake"><PackArt p={rp} big slabs={features[rp.id]} /></div>
                 )}
               </button>
+              {stage === "tearing" && <div className="anim-burst-flash pointer-events-none fixed inset-0 z-[55]" />}
               {stage === "ready" && <button onClick={close} className="text-sm text-zinc-400 hover:text-white">Save it for later</button>}
             </div>
           ) : (

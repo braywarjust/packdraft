@@ -88,8 +88,6 @@ body {
 /* ----- Pack ripping ----- */
 @keyframes drop { 0% { transform: translateY(-160px) rotate(-8deg); opacity: 0; } 60% { transform: translateY(12px) rotate(3deg); opacity: 1; } 80% { transform: translateY(-6px) rotate(-1deg); } 100% { transform: translateY(0) rotate(0); } }
 @keyframes shake { 0%, 100% { transform: rotate(0) scale(1); } 20% { transform: rotate(-3deg) scale(1.02); } 40% { transform: rotate(3deg) scale(1.03); } 60% { transform: rotate(-4deg) scale(1.04); } 80% { transform: rotate(4deg) scale(1.05); } }
-@keyframes tearTop { to { transform: translateY(-120px) rotate(-25deg); opacity: 0; } }
-@keyframes tearBottom { to { transform: translateY(80px) scale(0.9); opacity: 0; } }
 @keyframes dealIn { from { transform: translateY(60px) scale(0.7); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes shine { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px 2px var(--glow); } 50% { box-shadow: 0 0 45px 10px var(--glow); } }
@@ -108,8 +106,18 @@ body {
 }
 .anim-rumble { animation: rumble 1.3s ease-in-out infinite; }
 .anim-shake { animation: shake 0.45s ease-in-out infinite; }
-.anim-tear-top { animation: tearTop 0.6s ease-in forwards; }
-.anim-tear-bottom { animation: tearBottom 0.6s ease-in forwards; }
+/* Pack opening: the crate charges up (jitter speeds up while it swells), light rays spin up behind it, then it
+   bursts into a flash of its tier colour (--burst). Total about 1.5s. */
+@keyframes charge { 0% { transform: scale(1); filter: brightness(1); } 75% { transform: scale(1.08); filter: brightness(1.35); } 100% { transform: scale(1.6); filter: brightness(3); opacity: 0; } }
+@keyframes jitter { 0%, 100% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(-3px, 1px) rotate(-1.5deg); } 50% { transform: translate(3px, -1px) rotate(1.5deg); } 75% { transform: translate(-2px, -1px) rotate(-1deg); } }
+@keyframes burstGlow { 0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; } 70% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; } 100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; } }
+@keyframes burstRays { 0% { transform: translate(-50%, -50%) rotate(0) scale(0.5); opacity: 0; } 60% { opacity: 0.6; } 100% { transform: translate(-50%, -50%) rotate(140deg) scale(1.3); opacity: 0; } }
+@keyframes burstFlash { 0%, 72% { opacity: 0; } 82% { opacity: 0.9; } 100% { opacity: 0; } }
+.anim-charge { animation: charge 1.5s cubic-bezier(0.5, 0, 0.9, 0.6) forwards; }
+.anim-jitter { animation: jitter 0.16s linear infinite; }
+.anim-burst-glow { background: radial-gradient(circle, var(--burst) 0%, transparent 65%); animation: burstGlow 1.5s ease-in forwards; }
+.anim-burst-rays { background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--burst) 55%, transparent) 0deg 6deg, transparent 6deg 22deg); mask: radial-gradient(circle, #000 20%, transparent 70%); -webkit-mask: radial-gradient(circle, #000 20%, transparent 70%); animation: burstRays 1.5s ease-in forwards; }
+.anim-burst-flash { background: radial-gradient(circle at 50% 50%, #fff, var(--burst) 45%, transparent 85%); animation: burstFlash 1.5s ease-out forwards; }
 .anim-deal { animation: dealIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
 .anim-glow { animation: pulseGlow 1.6s ease-in-out infinite; }
 .anim-coin { animation: coin 0.8s ease-in forwards; }
