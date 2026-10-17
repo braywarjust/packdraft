@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { LivePlayer } from "@/lib/league";
 import { InjuryTag } from "@/components/Headshot";
-import { inkOn, isLight } from "@/lib/color";
+import { fptsInk, inkOn, isLight } from "@/lib/color";
 import { BoostChip } from "@/components/LineupEditor";
 import { Fpts } from "@/components/Fpts";
 
@@ -80,16 +80,16 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
     const light = isLight(brand.color);
     return (
       <div className={`relative min-h-[76px] min-w-0 flex-1 overflow-hidden rounded-xl ring-1 ring-white/5 ${p && flash.has(p.id) ? "anim-flash" : ""}`}
-        style={{ background: light ? brand.color : `linear-gradient(${right ? 270 : 90}deg, transparent 25%, rgba(8,10,16,.45)), ${brand.color}`, color: inkOn(brand.color) }}>
+        style={{ background: light ? brand.color : `linear-gradient(${right ? 270 : 90}deg, transparent 25%, rgba(8,10,16,.45)), ${brand.color}`, color: inkOn(brand.color), ...fptsInk(brand.color) }}>
         {p ? (
           <>
             {p.headshot && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={p.headshot} alt="" aria-hidden loading="lazy"
-                className={`pointer-events-none absolute top-1 h-[125%] w-auto max-w-none select-none opacity-90 ${right ? "-right-3" : "-left-3"}`}
+                className={`pointer-events-none absolute top-1 h-[125%] w-auto max-w-none select-none opacity-90 ${right ? "-right-8" : "-left-8"}`}
                 style={{ maskImage: fade, WebkitMaskImage: fade }} />
             )}
-            <div className={`relative flex h-full items-center gap-2 py-2.5 ${right ? "flex-row-reverse pl-3 pr-[84px] text-right" : "pl-[84px] pr-3"}`}>
+            <div className={`relative flex h-full items-center gap-2 py-2.5 ${right ? "flex-row-reverse pl-3 pr-[72px] text-right" : "pl-[72px] pr-3"}`}>
               <div className="min-w-0 flex-1">
                 <p className={`flex items-center gap-1.5 text-[15px] font-black leading-tight ${right ? "flex-row-reverse" : ""}`}><span className="truncate">{p.name}</span><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
                 <p className="mt-0.5 truncate text-[11px] font-semibold opacity-90">

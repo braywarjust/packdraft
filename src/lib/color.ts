@@ -12,3 +12,6 @@ export function isLight(hex: string): boolean {
 
 /** Text colour that reads on the given background: near-black on light colours, white otherwise. */
 export const inkOn = (hex: string) => (isLight(hex) ? "#0b0f17" : "#ffffff");
+
+/** Style for a coloured container so fantasy point icons inside it turn black (light colour) or white (dark colour). */
+export const fptsInk = (hex: string) => ({ "--fpts-ink": isLight(hex) ? "#0b0f17" : "#ffffff" }) as React.CSSProperties;

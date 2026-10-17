@@ -5,19 +5,23 @@ import { PP_PER_POINT } from "@/lib/economy-rate";
  * Fantasy points (what players score in league matchups), shown with the Fantasy Points logo so they're never
  * confused with Pack Points (the currency, CoinIcon in Coins.tsx). 1 fantasy point pays 0.5 Pack Points.
  */
-/** Blue by default; pass tone="white" only on a dark background. */
-export function FptIcon({ className = "", tone = "blue" }: { className?: string; tone?: "blue" | "white" }) {
+/**
+ * Blue on the app's dark panels by default. Any container can switch it for its own background by setting the
+ * CSS variable --fpts-ink (see fptsInk() in lib/color: black on light colours, white on dark ones), or pass tone.
+ */
+export function FptIcon({ className = "", tone }: { className?: string; tone?: "blue" | "white" | "black" }) {
   const mask = "url(/fantasy-points.svg) center / contain no-repeat";
   return (
     <span
       aria-hidden
-      className={`inline-block shrink-0 align-[-0.1em] ${tone === "white" ? "bg-white" : "bg-fpts"} ${className}`}
-      style={{ width: "0.95em", height: "0.95em", mask, WebkitMask: mask }}
+      className={`inline-block shrink-0 align-[-0.1em] ${className}`}
+      style={{ width: "0.95em", height: "0.95em", mask, WebkitMask: mask,
+        background: tone === "white" ? "#fff" : tone === "black" ? "#0b0f17" : tone === "blue" ? "var(--color-fpts)" : "var(--fpts-ink, var(--color-fpts))" }}
     />
   );
 }
 
-export function Fpts({ n, digits = 1, className = "", iconClass = "", tone }: { n: number; digits?: number; className?: string; iconClass?: string; tone?: "blue" | "white" }) {
+export function Fpts({ n, digits = 1, className = "", iconClass = "", tone }: { n: number; digits?: number; className?: string; iconClass?: string; tone?: "blue" | "white" | "black" }) {
   const s = n.toFixed(digits);
   return (
     <span className={`inline-flex items-center gap-[0.25em] whitespace-nowrap ${className}`} title={`${s} fantasy points`}>
