@@ -55,3 +55,4 @@ data/
 /blender/mega-case/
 /blender/mini-crate/*.png
 !/blender/mini-crate/mini-crate-uv-guide*.png
+/exports/
