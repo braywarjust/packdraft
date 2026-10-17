@@ -94,7 +94,7 @@ export default async function PacksPage() {
       <section id="odds" className="scroll-mt-36 space-y-3">
         <div>
           <h2 className="text-lg font-bold">Odds per slab</h2>
-          <p className="text-sm text-zinc-500">The chance each slab you pull lands in each tier. Every pack is built to return about 92% of its price in slab value on average, so the fun is in the swings.</p>
+          <p className="text-sm text-zinc-500">The chance each slab you pull lands in each tier. Every pack is built to return roughly 90% of its price in slab value on average, so the fun is in the swings.</p>
         </div>
         <div className="card overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">
@@ -136,7 +136,7 @@ export default async function PacksPage() {
       <section id="scoring" className="scroll-mt-36 card space-y-4 p-5 text-sm">
         <div>
           <h2 className="text-lg font-bold">How a slab&apos;s tier is set</h2>
-          <p className="text-zinc-500">Each slab gets a score from what collectors pay up for. The whole vault is ranked by score: bottom 55% are Common, then 27% Rare, 12% Epic and the top 6% Mythic. Immortal is its own tier: only the Ultra Heavy Hitters, record auction sales worth hundreds of thousands to millions, with odds of about 1 in 25,000 even in a GOAT Pack.</p>
+          <p className="text-zinc-500">A slab&apos;s tier comes from its value: Common under 75, Rare 75 to 249, Epic 250 to 999 and Mythic 1,000 and up. Immortal is its own tier: only the Ultra Heavy Hitters, record auction sales worth hundreds of thousands to millions, with odds of about 1 in 25,000 even in a GOAT Pack. Without a market price, a slab&apos;s value is estimated from a score of what collectors pay up for:</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {([

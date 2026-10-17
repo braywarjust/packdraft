@@ -9,10 +9,14 @@ import type { Rarity } from "./packs";
 export const SLABS_DIR = process.env.SLABS_DIR || path.join(os.homedir(), "NBA_Slabs_webp");
 
 // Share of the catalog in each rarity tier, from lowest to highest score.
-// Immortal (grail) is only the Ultra Heavy Hitters, so the ranked tiers end at Mythic.
-export const TIER_SHARE: [Rarity, number][] = [["common", 0.55], ["rare", 0.27], ["epic", 0.12], ["legendary", 0.06]];
+/**
+ * Tiers go by Pack Point value (market price when known, else the estimate), so ranges never overlap:
+ * Common under 75, Rare 75-249, Epic 250-999, Mythic 1,000+. Immortal is only the Ultra Heavy Hitters.
+ */
+export const TIER_FLOOR: [Rarity, number][] = [["legendary", 1000], ["epic", 250], ["rare", 75], ["common", 0]];
+export const tierForValue = (v: number): Rarity => TIER_FLOOR.find(([, min]) => v >= min)![0];
 /** Bump to re-tier the whole vault when the tier rules change. */
-const TIER_RULES = "2";
+const TIER_RULES = "3";
 
 export type Slab = {
   id: number; file: string; era: string; year: number; set_name: string; card_no: string | null; player: string; variant: string;
@@ -153,16 +157,9 @@ export function ensureCatalog() {
     const s = scoreSlab(m, stars, active);
     return [{ m, s, fmv: hh?.fmv || null, pack: hh?.pack ?? null, sale: null as UltraRow["sale"] | null }];
   });
-  // Rarity tiers are percentiles of the score so the distribution stays fixed as the folder changes.
-  // Ultra Heavy Hitters sit outside the ranking: they are the Immortal tier.
-  const sorted = rows.filter((r) => !r.sale).sort((a, b) => a.s.score - b.s.score);
+  // Tier by value; the Ultra Heavy Hitters are the Immortal tier.
   const rarity = new Map<string, Rarity>();
-  let i = 0;
-  for (const [tier, share] of TIER_SHARE) {
-    const end = tier === "legendary" ? sorted.length : Math.min(sorted.length, i + Math.round(share * sorted.length));
-    for (; i < end; i++) rarity.set(sorted[i].m.file, tier);
-  }
-  for (const r of rows) if (r.sale) rarity.set(r.m.file, "grail");
+  for (const r of rows) rarity.set(r.m.file, r.sale ? "grail" : tierForValue(r.fmv ?? estimateValue(r.s.score, r.m.cert)));
 
   tx(() => {
     run("UPDATE slabs SET missing = 1");
@@ -195,7 +192,7 @@ export function pickSlab(rarity: Rarity, target: number, rand: () => number): Sl
   const order = [start, start - 1, start + 1, start - 2, start + 2].filter((x) => x >= 0 && x < TIER_ORDER.length);
   for (const t of order) {
     const near = all<Slab>(
-      "SELECT * FROM slabs WHERE rarity = ? AND card_id IS NULL AND missing = 0 ORDER BY ABS(est_value - ?) LIMIT 15",
+      "SELECT * FROM slabs WHERE rarity = ? AND card_id IS NULL AND missing = 0 ORDER BY ABS(COALESCE(mkt_value, est_value) - ?) LIMIT 15",
       TIER_ORDER[t], target);
     if (near.length) return near[Math.floor(rand() * near.length)];
   }
