@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { CoinIcon, Coins } from "./Coins";
+import { Avatar } from "./ProfileView";
 
 import { NAV_ICONS as I, NavIcon as Icon } from "./NavIcons";
 
@@ -14,7 +15,7 @@ const STORE_KEY = "pd-sidebar";
 export function Sidebar({
   user, packs, leagues, logout,
 }: {
-  user: { name: string; color: string; coins: number; tester?: boolean };
+  user: { name: string; color: string; coins: number; tester?: boolean; avatar?: string | null };
   packs: number;
   leagues: { id: number; name: string; live: boolean; brand?: BrandLite }[];
   logout: () => Promise<void>;
@@ -91,10 +92,12 @@ export function Sidebar({
       <div className={mini ? "space-y-2 p-2.5" : "m-4 space-y-2"}>
         <div className={`rounded-lg border border-zinc-200 bg-white ${mini ? "p-2" : "p-3"}`}>
           <div className={`flex items-center gap-2 ${mini ? "flex-col" : ""}`}>
-            <span className="h-8 w-8 shrink-0 rounded-full" style={{ background: user.color }} title={mini ? `${user.name} · ${user.tester ? "Unlimited" : user.coins.toLocaleString()} Pack Points` : undefined} />
+            <Link href="/profile" className="shrink-0 rounded-full transition hover:ring-2 hover:ring-fpts" title={mini ? `${user.name} · view profile` : "View profile"}>
+              <Avatar src={user.avatar ?? null} name={user.name} color={user.color} size={mini ? 32 : 36} />
+            </Link>
             {!mini && (
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{user.name}</p>
+                <Link href="/profile" className="block truncate text-sm font-semibold hover:text-fpts">{user.name}</Link>
                 <p className="text-xs text-zinc-500">{user.tester ? <span className="inline-flex items-center gap-1"><CoinIcon />Unlimited</span> : <Coins n={user.coins} />}</p>
               </div>
             )}

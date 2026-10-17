@@ -11,6 +11,7 @@ import { logout } from "./actions";
 import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
 import { BalancePill } from "@/components/BalancePill";
+import { avatarOf } from "@/lib/profile";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -43,7 +44,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <ConfirmHost />
         <Sidebar
-          user={{ name: user.name, color: user.color, coins: user.coins, tester: !!user.is_tester }}
+          user={{ name: user.name, color: user.color, coins: user.coins, tester: !!user.is_tester, avatar: avatarOf(user.id) }}
           packs={packs}
           leagues={leagues.map((l) => ({ id: l.id, name: l.name, live: !!l.live, brand: leagueBrand(l) }))}
           logout={logout}
