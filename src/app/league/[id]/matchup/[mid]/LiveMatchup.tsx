@@ -78,23 +78,24 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
     const fade = `linear-gradient(${right ? "to left" : "to right"}, #000 30%, transparent 92%)`;
     return (
       <div className={`relative min-h-[76px] min-w-0 flex-1 overflow-hidden rounded-xl ring-1 ring-white/5 ${p && flash.has(p.id) ? "anim-flash" : ""}`}
-        style={{ background: `linear-gradient(${right ? 270 : 90}deg, ${brand.color}55, ${brand.color}14 55%, transparent)` }}>
+        style={{ background: `linear-gradient(${right ? 270 : 90}deg, transparent 25%, rgba(8,10,16,.5)), ${brand.color}` }}>
         {p ? (
           <>
             {p.headshot && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={p.headshot} alt="" aria-hidden loading="lazy"
-                className={`pointer-events-none absolute -bottom-1 h-[125%] w-auto max-w-none select-none opacity-70 ${right ? "-right-3" : "-left-3"}`}
+                className={`pointer-events-none absolute -bottom-1 h-[125%] w-auto max-w-none select-none opacity-90 ${right ? "-right-3" : "-left-3"}`}
                 style={{ maskImage: fade, WebkitMaskImage: fade }} />
             )}
-            <div className={`relative flex h-full items-center gap-2 py-2.5 ${right ? "flex-row-reverse pl-3 pr-24 text-right" : "pl-24 pr-3"}`}>
+            <div className={`relative flex h-full items-center gap-2 py-2.5 [text-shadow:0_1px_2px_rgba(0,0,0,.85),0_0_8px_rgba(0,0,0,.35)] ${right ? "flex-row-reverse pl-3 pr-[84px] text-right" : "pl-[84px] pr-3"}`}>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-white drop-shadow">{p.name} <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /></p>
-                <p className="truncate text-[11px] text-zinc-400">
-                  {p.now ? (p.now.state === "in" ? <span className="text-red-500">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
+                <p className={`flex items-center gap-1.5 text-[15px] font-black leading-tight text-white ${right ? "flex-row-reverse" : ""}`}><span className="truncate">{p.name}</span><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
+                <p className="mt-0.5 truncate text-[11px] font-semibold text-white">
+                  <TeamLogo team={p.team} size={13} className="-mt-0.5 mr-1 align-middle" />{p.team} ·{" "}
+                  {p.now ? (p.now.state === "in" ? <span className="font-bold text-red-300">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
                   {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
                 </p>
-                <p className="text-[10px] text-zinc-500">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
+                <p className="text-[10px] font-semibold text-white/90">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
               </div>
               <p className="font-mono text-xl font-black text-white drop-shadow"><Fpts n={p.pts} iconClass="text-[0.8em]" /></p>
             </div>
@@ -107,32 +108,54 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   return (
     <div className="space-y-4">
       <Link href={`/league/${leagueId}`} className="text-sm text-zinc-500 hover:text-zinc-900">← {d.league}</Link>
-      <div className="card overflow-hidden">
-        <div className="grid grid-cols-3 items-center gap-2 p-5">
-          <div>
-            <div className="mb-1 h-1.5 w-16 rounded-full" style={{ background: `linear-gradient(90deg, ${home.brand.color}, ${home.brand.alt})` }} />
-            <p className="flex items-center gap-2 text-lg font-black"><TeamBadge brand={home.brand} size={36} />{home.name}</p>
-            <p className="text-xs text-zinc-500">{home.record}</p>
-            <p className="mt-1 font-mono text-4xl font-black sm:text-5xl"><Fpts n={home.score} iconClass="text-[0.7em]" /></p>
-            <p className="mt-1 font-mono text-sm font-bold text-zinc-700"><span className="text-[10px] font-black uppercase tracking-widest text-fpts">Proj </span><Fpts n={home.score + home.remain} /></p>
+      {/* Branded header: the two teams' colours split on a diagonal (same as the matchup cards), big logos facing off. */}
+      <div className="relative overflow-hidden rounded-2xl shadow-xl ring-1 ring-white/10" style={{ background: away.brand.color }}>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(0 0, 54% 0, 46% 100%, 0 100%)", background: home.brand.color }}>
+          <div className="absolute left-1/4 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"><TeamBadge brand={home.brand} size={320} ghost /></div>
+        </div>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(54% 0, 100% 0, 100% 100%, 46% 100%)", background: away.brand.color }}>
+          <div className="absolute left-3/4 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"><TeamBadge brand={away.brand} size={320} ghost /></div>
+        </div>
+        <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <line x1="54" y1="0" x2="46" y2="100" stroke="#fff" strokeOpacity=".55" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+        </svg>
+        <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-3 p-5 sm:p-6">
+          <div className={`flex min-w-0 flex-col items-start gap-3 `}>
+            <div className={`flex min-w-0 items-center gap-3 `}>
+              <TeamBadge brand={home.brand} size={76} className="drop-shadow-xl" />
+              <div className="min-w-0">
+                <p className="truncate text-xl font-black leading-tight text-white drop-shadow sm:text-2xl">{home.name}</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-white/75">{home.brand.abbr} · {home.record}</p>
+              </div>
+            </div>
+            <div className="rounded-xl bg-black/55 px-4 py-2 shadow-lg ring-1 ring-white/10">
+              <p className="font-mono text-4xl font-black leading-none text-white sm:text-5xl"><Fpts n={home.score} iconClass="text-[0.7em]" /></p>
+              <p className="mt-1 font-mono text-xs font-bold text-white/85"><span className="text-[10px] font-black uppercase tracking-widest text-fpts">Proj </span><Fpts n={home.score + home.remain} /></p>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-xs uppercase tracking-widest text-zinc-500">Week {d.week}</p>
-            {d.range && <p className="text-[11px] text-zinc-400">{d.range}</p>}
-            <p className={`mt-1 text-sm font-bold ${d.final ? "text-zinc-700" : d.live ? "text-red-600" : "text-zinc-500"}`}>{d.final ? "FINAL" : d.live ? "● LIVE" : "In progress"}</p>
-            {d.progress != null && d.progress > 0 && !d.final && <p className="text-xs text-zinc-400">{Math.round(d.progress * 100)}% of sim week</p>}
+          <div className="flex flex-col items-center rounded-xl bg-black/55 px-3 py-2 text-center ring-1 ring-white/10">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/70">Week {d.week}</p>
+            {d.range && <p className="text-[10px] text-white/60">{d.range}</p>}
+            <p className={`mt-1 text-sm font-black ${d.final ? "text-white" : d.live ? "text-red-400" : "text-white/80"}`}>{d.final ? "FINAL" : d.live ? "● LIVE" : "In progress"}</p>
+            {d.progress != null && d.progress > 0 && !d.final && <p className="text-[10px] text-white/60">{Math.round(d.progress * 100)}% of sim week</p>}
           </div>
-          <div className="text-right">
-            <div className="mb-1 ml-auto h-1.5 w-16 rounded-full" style={{ background: `linear-gradient(90deg, ${away.brand.alt}, ${away.brand.color})` }} />
-            <p className="flex items-center justify-end gap-2 text-lg font-black">{away.name}<TeamBadge brand={away.brand} size={36} /></p>
-            <p className="text-xs text-zinc-500">{away.record}</p>
-            <p className="mt-1 font-mono text-4xl font-black sm:text-5xl"><Fpts n={away.score} iconClass="text-[0.7em]" /></p>
-            <p className="mt-1 font-mono text-sm font-bold text-zinc-700"><span className="text-[10px] font-black uppercase tracking-widest text-fpts">Proj </span><Fpts n={away.score + away.remain} /></p>
+          <div className={`flex min-w-0 flex-col gap-3 items-end text-right`}>
+            <div className={`flex min-w-0 items-center gap-3 flex-row-reverse`}>
+              <TeamBadge brand={away.brand} size={76} className="drop-shadow-xl" />
+              <div className="min-w-0">
+                <p className="truncate text-xl font-black leading-tight text-white drop-shadow sm:text-2xl">{away.name}</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-white/75">{away.brand.abbr} · {away.record}</p>
+              </div>
+            </div>
+            <div className="rounded-xl bg-black/55 px-4 py-2 shadow-lg ring-1 ring-white/10">
+              <p className="font-mono text-4xl font-black leading-none text-white sm:text-5xl"><Fpts n={away.score} iconClass="text-[0.7em]" /></p>
+              <p className="mt-1 font-mono text-xs font-bold text-white/85"><span className="text-[10px] font-black uppercase tracking-widest text-fpts">Proj </span><Fpts n={away.score + away.remain} /></p>
+            </div>
           </div>
         </div>
-        <div className="px-5 pb-4">
-          <div className="flex justify-between text-xs font-bold"><span className="text-brand">{hp}%</span><span className="text-zinc-500">Win probability</span><span className="text-accent">{100 - hp}%</span></div>
-          <div className="mt-1 flex h-3 overflow-hidden rounded-full bg-panel2">
+        <div className="relative bg-black/55 px-5 py-3">
+          <div className="flex justify-between text-xs font-bold text-white"><span>{hp}%</span><span className="text-white/60">Win probability</span><span>{100 - hp}%</span></div>
+          <div className="mt-1 flex h-3 overflow-hidden rounded-full bg-black/40 ring-1 ring-white/10">
             <div className="transition-all duration-700" style={{ width: `${hp}%`, background: home.brand.color }} />
             <div className="flex-1" style={{ background: away.brand.color }} />
           </div>
