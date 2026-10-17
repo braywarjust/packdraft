@@ -12,6 +12,7 @@ import {
 import { PACK_BY_ID, BUYBACK_RATE } from "@/lib/packs";
 import { openPack, releaseSlab } from "@/lib/packs-server";
 import { etDate } from "@/lib/nba/espn";
+import { placeBet } from "@/lib/bets";
 import { ensureSchedule } from "@/lib/nba/sync";
 
 type Result = { error?: string; ok?: boolean };
@@ -496,5 +497,16 @@ export async function unboostPlayer(leagueId: number, playerId: number) {
     clearBoost(l, t.id, playerId);
     revalidatePath(`/league/${leagueId}/team`);
     return { ok: true };
+  });
+}
+
+// ---------- Sportsbook ----------
+
+export async function placeBetAction(picks: { key: string; odds: number }[], stake: number) {
+  return wrap(async () => {
+    const u = await requireUser();
+    const r = placeBet(u.id, picks, stake);
+    revalidatePath("/bets");
+    return { ok: true, ...r };
   });
 }

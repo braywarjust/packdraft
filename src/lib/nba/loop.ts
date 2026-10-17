@@ -3,6 +3,7 @@ import { addDays, etDate } from "./espn";
 import { backfillFinals, ensureSchedule, maybeSyncPlayers, refreshLive } from "./sync";
 import { dailyWaivers, getLeague, tickLeague, weekRange } from "../league";
 import { ensureCatalog } from "../slabs";
+import { settleBets } from "../bets";
 
 let busy = false;
 export async function tick() {
@@ -24,6 +25,7 @@ export async function tick() {
       }
       tickLeague(id);
     }
+    settleBets();
   } finally {
     busy = false;
   }
