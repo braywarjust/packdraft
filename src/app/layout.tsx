@@ -1,3 +1,4 @@
+import { ConfirmHost } from "@/components/Confirm";
 import { ensureBranding, leagueBrand } from "@/lib/branding";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -24,7 +25,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   if (!user) {
     return (
       <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>{children}</body>
+        <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>{children}<ConfirmHost /></body>
       </html>
     );
   }
@@ -40,6 +41,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem("pd-sidebar")==="collapsed")document.documentElement.dataset.sidebar="collapsed"}catch(e){}` }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+        <ConfirmHost />
         <Sidebar
           user={{ name: user.name, color: user.color, coins: user.coins, tester: !!user.is_tester }}
           packs={packs}

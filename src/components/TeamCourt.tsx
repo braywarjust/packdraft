@@ -1,5 +1,6 @@
 "use client";
 
+import { askConfirm } from "./Confirm";
 import { BoltIcon, LockIcon } from "./Icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -155,7 +156,7 @@ export function TeamCourt(props: Props) {
           <>
             <span className="text-sm text-zinc-700">Moving <b>{sel.name}</b>: tap a green spot</span>
             {sel.slot !== "BN" && <button className="btn-ghost px-2 py-1 text-xs" onClick={() => act(() => setSlot!(sel.id, "BN"))}>Bench him</button>}
-            <button className="btn-danger px-2 py-1 text-xs" onClick={() => { if (confirm(`Drop ${sel.name}?`)) act(() => drop!(sel.id)); }}>Drop</button>
+            <button className="btn-danger px-2 py-1 text-xs" onClick={async () => { if (await askConfirm(`Drop ${sel.name}?`, { confirmLabel: "Drop", danger: true })) act(() => drop!(sel.id)); }}>Drop</button>
           </>
         )}
         {err && <span className="text-sm text-red-600">{err}</span>}

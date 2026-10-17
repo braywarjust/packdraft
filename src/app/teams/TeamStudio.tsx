@@ -1,5 +1,6 @@
 "use client";
 
+import { askConfirm } from "@/components/Confirm";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
@@ -118,7 +119,7 @@ export function TeamStudio({ presets, startNew, favorite }: { presets: P[]; star
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">{edit.id ? "Edit team" : "New team"}</h2>
               {edit.id && (
-                <button onClick={() => { if (confirm(`Delete ${edit.name}? Leagues already using it keep their branding.`)) start(async () => { await deletePresetAction(edit.id!); setEdit(null); router.refresh(); }); }}
+                <button onClick={async () => { if (await askConfirm(`Delete ${edit.name}? Leagues already using it keep their branding.`, { confirmLabel: "Delete", danger: true })) start(async () => { await deletePresetAction(edit.id!); setEdit(null); router.refresh(); }); }}
                   className="text-xs text-zinc-500 hover:text-red-600">Delete</button>
               )}
             </div>

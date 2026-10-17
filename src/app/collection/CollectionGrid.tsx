@@ -1,5 +1,6 @@
 "use client";
 
+import { askConfirm } from "@/components/Confirm";
 import { XIcon } from "@/components/Icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -117,8 +118,8 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
                 <button
                   className="btn-lime"
                   disabled={pending}
-                  onClick={() => {
-                    if (!confirm(`Sell ${open.name} back for ${fmtCoins(Math.floor(open.value * BUYBACK_RATE))}?`)) return;
+                  onClick={async () => {
+                    if (!(await askConfirm(`Sell ${open.name} back for ${fmtCoins(Math.floor(open.value * BUYBACK_RATE))}?`, { confirmLabel: "Sell" }))) return;
                     start(async () => {
                       await sell([open.id]);
                       setOpen(null);
