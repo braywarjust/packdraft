@@ -153,7 +153,7 @@ export function ProfileEditor({ initial, nba, maxFeatured }: { initial: Initial;
             {featured.map((id, i) => { const c = byId.get(id); if (!c) return null; return (
               <div key={id} className="flex items-center gap-2 rounded-xl bg-black/20 p-2 ring-1 ring-white/10">
                 <span className="grid h-6 w-6 place-items-center rounded-full bg-fpts text-xs font-black text-black">{i + 1}</span>
-                <span data-slab-name className="max-w-[140px] truncate text-sm font-semibold">{c.name}</span>
+                <span className="max-w-[140px] truncate text-sm font-semibold">{c.name}</span>
                 <button type="button" className="rounded px-1.5 text-zinc-400 hover:text-white disabled:opacity-30" disabled={i === 0} onClick={() => moveCard(i, -1)} aria-label="Move left">&lsaquo;</button>
                 <button type="button" className="rounded px-1.5 text-zinc-400 hover:text-white disabled:opacity-30" disabled={i === featured.length - 1} onClick={() => moveCard(i, 1)} aria-label="Move right">&rsaquo;</button>
               </div>
@@ -168,7 +168,7 @@ export function ProfileEditor({ initial, nba, maxFeatured }: { initial: Initial;
                 {n >= 0 && <span className="absolute right-1.5 top-1.5 z-10 grid h-5 w-5 place-items-center rounded-full bg-fpts text-[11px] font-black text-black">{n + 1}</span>}
                 {c.slab_id ? <SlabImage id={c.slab_id} alt={c.name} height={120} rarity={c.rarity} /> : <div className="flex h-[130px] w-full justify-center overflow-hidden"><div className="origin-top scale-50"><PlayerCard c={c} small /></div></div>}
                 <RarityBadge rarity={c.rarity} className="mt-1" />
-                <span data-slab-name className="mt-0.5 w-full truncate text-[10px] text-zinc-500">{c.name}</span>
+                <span className="mt-0.5 w-full truncate text-[10px] text-zinc-500">{c.name}</span>
               </button>
             ); })}
           </div>

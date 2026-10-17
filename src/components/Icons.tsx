@@ -2,9 +2,9 @@
 type P = { className?: string; title?: string };
 const svg = (d: string, fill = false) => function Icon({ className = "", title }: P) {
   return (
-    // Labelled for screen readers only; hover tooltips are reserved for long slab names.
-    <svg viewBox="0 0 24 24" aria-hidden={!title} role={title ? "img" : undefined} aria-label={title} className={`inline-block h-[1em] w-[1em] shrink-0 align-[-0.125em] ${className}`}
+    <svg viewBox="0 0 24 24" aria-hidden={!title} role={title ? "img" : undefined} className={`inline-block h-[1em] w-[1em] shrink-0 align-[-0.125em] ${className}`}
       fill={fill ? "currentColor" : "none"} stroke={fill ? "none" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      {title && <title>{title}</title>}
       <path d={d} />
     </svg>
   );

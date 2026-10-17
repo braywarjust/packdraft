@@ -83,15 +83,15 @@ function RarityLibrary({ rarity, onClose }: { rarity: Rarity; onClose: () => voi
         <div className="flex-1 overflow-y-auto p-5">
           <div className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8">
             {slabs.map((s) => (
-              <div key={s.id} className="flex flex-col items-center text-center">
+              <div key={s.id} className="flex flex-col items-center text-center" title={`${s.year} ${s.set_name} ${s.player} · ${s.company} ${s.grade}`}>
                 <div className="relative">
                   <img src={`/api/slabs/${s.id}?h=300`} alt={s.player} loading="lazy" className="h-[150px] w-[90px] object-cover"
                     style={{ filter: "grayscale(1) brightness(.85) contrast(.95)", opacity: 0.6 }} />
                   {!!s.mine && <span className="absolute -right-1 -top-1 rounded-full bg-emerald-500 px-1.5 text-[9px] font-black text-black">YOURS</span>}
                   {!s.mine && !!s.pulled && <span className="absolute -right-1 -top-1 rounded-full bg-zinc-600 px-1.5 text-[9px] font-bold text-white">PULLED</span>}
                 </div>
-                <p data-slab-name className="mt-1.5 w-full truncate text-[11px] font-semibold text-zinc-400">{s.player}</p>
-                <p data-slab-name className="w-full truncate text-[10px] text-zinc-500">{s.year} {s.set_name}</p>
+                <p className="mt-1.5 w-full truncate text-[11px] font-semibold text-zinc-400">{s.player}</p>
+                <p className="w-full truncate text-[10px] text-zinc-500">{s.year} {s.set_name}</p>
                 <p className="font-mono text-[11px] font-bold text-zinc-400"><Coins n={s.value} /></p>
               </div>
             ))}

@@ -1,5 +1,4 @@
 import { ConfirmHost } from "@/components/Confirm";
-import { TooltipHost } from "@/components/Tooltip";
 import { PlayerInspectorHost } from "@/components/PlayerInspector";
 import { ensureBranding, leagueBrand } from "@/lib/branding";
 import type { Metadata } from "next";
@@ -28,7 +27,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   if (!user) {
     return (
       <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>{children}<ConfirmHost /><TooltipHost /></body>
+        <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>{children}<ConfirmHost /></body>
       </html>
     );
   }
@@ -45,7 +44,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <ConfirmHost />
-        <TooltipHost />
         <PlayerInspectorHost />
         <Sidebar
           user={{ name: user.name, color: user.color, coins: user.coins, tester: !!user.is_tester, avatar: avatarOf(user.id) }}

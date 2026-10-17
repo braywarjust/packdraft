@@ -52,7 +52,7 @@ export function SlabCard({ c, small }: { c: CardData; small?: boolean }) {
       <SlabImage id={c.slab_id!} alt={`${c.s_year} ${c.s_set} ${c.name}`} height={h} rarity={c.rarity} />
       <div className="mt-2 w-full text-center">
         <RarityBadge rarity={c.rarity} />
-        <p data-slab-name className="mt-1 truncate text-xs font-semibold text-zinc-900">{c.name}</p>
+        <p className="mt-1 truncate text-xs font-semibold text-zinc-900">{c.name}</p>
         <p className="font-mono text-xs font-bold text-emerald-600" title={c.s_source === "ebay" ? "eBay market value" : c.s_source === "auction" ? "Record auction sale" : c.s_source === "courtyard" ? "Courtyard fair market value" : "Estimated value"}>
           <Coins n={c.value} />{c.s_source ? "" : "*"}
         </p>
@@ -90,7 +90,7 @@ export function PlayerCard({ c, small }: { c: CardData; small?: boolean }) {
             <span className={`rounded px-1 text-white ${c.rarity === "grail" ? "bg-emerald-600" : c.rarity === "legendary" ? "bg-amber-600" : c.rarity === "epic" ? "bg-fuchsia-600" : c.rarity === "rare" ? "bg-sky-600" : "bg-slate-500"}`}>{r.label}</span>
           </div>
           <div className="flex items-end justify-between gap-1">
-            <span data-slab-name className={`truncate font-black leading-tight ${small ? "text-[10px]" : "text-[11px]"}`}>{c.name}</span>
+            <span className={`truncate font-black leading-tight ${small ? "text-[10px]" : "text-[11px]"}`}>{c.name}</span>
             <span className="text-right leading-none">
               <span className="block text-[7px] font-bold">{GRADE_WORD[c.grade] ?? ""}</span>
               <span className={`font-black ${small ? "text-sm" : "text-base"}`}>{c.grade}</span>
