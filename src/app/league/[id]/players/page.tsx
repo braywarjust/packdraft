@@ -9,6 +9,7 @@ import { Headshot, InjuryTag } from "@/components/Headshot";
 import { ActionButton } from "@/components/ActionButton";
 import { AddPlayer } from "./AddPlayer";
 import { addPlayer, cancelClaim, runWaivers } from "../../../actions";
+import { Fpts } from "@/components/Fpts";
 
 export default async function Players({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ q?: string; pos?: string; view?: string }> }) {
   const { id } = await params;
@@ -76,7 +77,7 @@ export default async function Players({ params, searchParams }: { params: Promis
                       </div>
                     </td>
                     <td className="text-center text-xs text-zinc-500">{avg ? `${avg.pts.toFixed(1)}/${avg.reb.toFixed(1)}/${avg.ast.toFixed(1)}` : "Rookie"}</td>
-                    <td className="text-center font-mono">{projFor(p, l.scoring).toFixed(1)}</td>
+                    <td className="text-center font-mono"><Fpts n={projFor(p, l.scoring)} /></td>
                     <td className="text-center text-xs">{games.length ? `${left} of ${games.length} left` : "—"}</td>
                     <td className="text-zinc-500">{owner ?? (faab ? "Waivers" : "FA")}</td>
                     <td className="py-1 pr-3 text-right">

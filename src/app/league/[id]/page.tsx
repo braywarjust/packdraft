@@ -15,6 +15,7 @@ import { CoinIcon, Coins } from "@/components/Coins";
 import { ActionButton } from "@/components/ActionButton";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { fillCpu, finishWeekNow, startDraftAction, startWeekAction } from "../../actions";
+import { Fpts, FptIcon, PointsKey } from "@/components/Fpts";
 
 export default async function LeagueHome({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -129,9 +130,10 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                     <h2 className="text-2xl font-black tracking-tight text-white">Every point pays Pack Points</h2>
                     <p className="mt-1 text-sm text-zinc-500">Every fantasy point your starters score pays you half a Pack Point when their games go final.</p>
                   </div>
+                  <PointsKey compact />
                   <div className="rounded-xl bg-emerald-500/10 p-3 ring-1 ring-emerald-500/30">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Pack Points rate</p>
-                    <p className="flex items-center gap-2 whitespace-nowrap font-mono text-2xl font-black text-emerald-600">1 pt = <CoinIcon />{rate.toFixed(2)}</p>
+                    <p className="flex items-center gap-2 whitespace-nowrap font-mono text-2xl font-black text-emerald-600"><FptIcon />1 = <CoinIcon />{rate.toFixed(2)}</p>
                     <p className="text-[10px] text-zinc-500">Fixed every week</p>
                   </div>
                   {mine && (
@@ -177,7 +179,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                     </span>
                     <span className="relative text-right">
                       <span className="block font-mono text-sm font-black text-white">{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""}</span>
-                      <span className="block font-mono text-[10px] text-white/70">{t.points_for.toFixed(1)}</span>
+                      <span className="block font-mono text-[10px] text-white/70"><Fpts n={t.points_for} /></span>
                     </span>
                   </Link>
                 </li>

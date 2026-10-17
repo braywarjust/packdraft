@@ -17,8 +17,8 @@ function ensure() {
   ready = true;
 }
 
-/** Pack Points paid per fantasy point. Fixed by Brayden: do not change. */
-export const PP_PER_POINT = 0.5;
+import { PP_PER_POINT } from "./economy-rate";
+export { PP_PER_POINT };
 
 /** Pack Points per fantasy point for a league week. Always PP_PER_POINT (kept as a function for callers). */
 export function weekRate(_leagueId?: number, _week?: number): number {

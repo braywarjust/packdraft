@@ -7,10 +7,11 @@ import { useEffect, useRef, useState } from "react";
 import type { LivePlayer } from "@/lib/league";
 import { Headshot, InjuryTag } from "@/components/Headshot";
 import { BoostChip } from "@/components/LineupEditor";
+import { Fpts } from "@/components/Fpts";
 
 type Side = { id: number; name: string; brand: BrandLite; record: string; score: number; projected: number; remain: number; players: LivePlayer[] };
 type Data = { week: number; final: boolean; live: boolean; mode: string; range: string | null; progress: number | null; league: string; home: Side; away: Side; winProb: number };
-type Event = { key: string; text: string; side: "home" | "away" };
+type Event = { key: string; name: string; delta: number; line: string; side: "home" | "away" };
 
 const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
 const lbl = (s: string) => s.replace(/\d$/, "");
@@ -52,7 +53,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
             if (before !== undefined && Math.abs(p.pts - before) >= 0.5 && p.slot !== "BN") {
               const delta = p.pts - before;
               changed.add(p.id);
-              newEvents.push({ key: `${p.id}-${Date.now()}`, side, text: `${p.name} ${delta > 0 ? "+" : ""}${delta.toFixed(1)}${delta >= 8 ? " (big play)" : ""} · ${p.now?.line ?? ""}` });
+              newEvents.push({ key: `${p.id}-${Date.now()}`, side, name: p.name, delta, line: p.now?.line ?? "" });
             }
             prev.current.set(p.id, p.pts);
           }
@@ -83,9 +84,9 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
               {p.now ? (p.now.state === "in" ? <span className="text-red-600">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
               {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
             </p>
-            <p className="text-[10px] text-zinc-400">{p.played}/{p.total} games · {p.left} left · {p.proj.toFixed(1)}/g</p>
+            <p className="text-[10px] text-zinc-400">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
           </div>
-          <p className="font-mono text-lg font-black">{p.pts.toFixed(1)}</p>
+          <p className="font-mono text-lg font-black"><Fpts n={p.pts} iconClass="text-[0.8em]" /></p>
         </div>
       ) : <span className="text-sm text-zinc-400">Empty</span>}
     </div>
@@ -99,8 +100,8 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
           <div>
             <div className="mb-1 h-1.5 w-16 rounded-full" style={{ background: `linear-gradient(90deg, ${home.brand.color}, ${home.brand.alt})` }} />
             <p className="flex items-center gap-2 text-lg font-black"><TeamBadge brand={home.brand} size={36} />{home.name}</p>
-            <p className="text-xs text-zinc-500">{home.record} · proj {(home.score + home.remain).toFixed(1)}</p>
-            <p className="mt-1 font-mono text-4xl font-black sm:text-5xl">{home.score.toFixed(1)}</p>
+            <p className="text-xs text-zinc-500">{home.record} · proj <Fpts n={home.score + home.remain} /></p>
+            <p className="mt-1 font-mono text-4xl font-black sm:text-5xl"><Fpts n={home.score} iconClass="text-[0.7em]" /></p>
           </div>
           <div className="text-center">
             <p className="text-xs uppercase tracking-widest text-zinc-500">Week {d.week}</p>
@@ -111,8 +112,8 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
           <div className="text-right">
             <div className="mb-1 ml-auto h-1.5 w-16 rounded-full" style={{ background: `linear-gradient(90deg, ${away.brand.alt}, ${away.brand.color})` }} />
             <p className="flex items-center justify-end gap-2 text-lg font-black">{away.name}<TeamBadge brand={away.brand} size={36} /></p>
-            <p className="text-xs text-zinc-500">{away.record} · proj {(away.score + away.remain).toFixed(1)}</p>
-            <p className="mt-1 font-mono text-4xl font-black sm:text-5xl">{away.score.toFixed(1)}</p>
+            <p className="text-xs text-zinc-500">{away.record} · proj <Fpts n={away.score + away.remain} /></p>
+            <p className="mt-1 font-mono text-4xl font-black sm:text-5xl"><Fpts n={away.score} iconClass="text-[0.7em]" /></p>
           </div>
         </div>
         <div className="px-5 pb-4">
@@ -150,7 +151,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
           {events.length === 0 && <p className="text-sm text-zinc-400">{d.final ? "This one's in the books." : "Updates roll in here while games are live."}</p>}
           <ul className="space-y-2 text-sm">
             {events.map((e) => (
-              <li key={e.key} className={`anim-deal rounded-lg border-l-2 bg-ink/60 px-2 py-1.5 ${e.side === "home" ? "border-brand" : "border-accent"}`}>{e.text}</li>
+              <li key={e.key} className={`anim-deal rounded-lg border-l-2 bg-ink/60 px-2 py-1.5 ${e.side === "home" ? "border-brand" : "border-accent"}`}>{e.name} {e.delta > 0 ? "+" : "-"}<Fpts n={Math.abs(e.delta)} />{e.delta >= 8 ? " (big play)" : ""} · {e.line}</li>
             ))}
           </ul>
         </div>

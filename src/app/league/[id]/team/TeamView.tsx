@@ -10,6 +10,7 @@ import { currentUser } from "@/lib/auth";
 import { TeamCourt } from "@/components/TeamCourt";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { applyPresetAction, autoSet, boostPlayer, dropPlayer, renameTeam, setSlot, unboostPlayer } from "../../../actions";
+import { Fpts, PointsKey } from "@/components/Fpts";
 
 export async function TeamView({ leagueId, teamId, editable }: { leagueId: number; teamId: number; editable: boolean }) {
   const l = getLeague(leagueId)!;
@@ -38,11 +39,11 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
   const rank = table.findIndex((x) => x.id === t.id) + 1;
   const ord = (n: number) => `${n}${["th", "st", "nd", "rd"][(n % 100 >> 3) ^ 1 && n % 10] || "th"}`;
   const owner = t.user_id ? one<{ name: string }>("SELECT name FROM users WHERE id = ?", t.user_id)?.name : null;
-  const stats: [string, string][] = [
+  const stats: [string, React.ReactNode][] = [
     ["Record", `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`],
     ["Standing", rank ? `${ord(rank)} of ${table.length}` : "-"],
-    ["Points for", t.points_for.toFixed(1)],
-    ["This week", tw.score.toFixed(1)],
+    ["Points for", <Fpts key="pf" n={t.points_for} iconClass="text-[0.8em]" />],
+    ["This week", <Fpts key="wk" n={tw.score} iconClass="text-[0.8em]" />],
     ["FAAB", `$${t.faab}`],
     ["Roster", `${players.length}/13`],
   ];
@@ -114,6 +115,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
           </div>
         </details>
       )}
+      <PointsKey className="relative" />
       <p className="relative text-xs text-zinc-400"><BoltIcon className="text-amber-600" /> Slab boost: once a day, back one of your players with one of your slabs and his points for that game are multiplied (×1.00 for a <Coins n={25} /> slab up to ×3.00, set by the slab&apos;s market value; +{OWN_PLAYER_BONUS.toFixed(1)}× if it&apos;s his own slab). It locks at his tip-off and only counts if he&apos;s in your starting lineup.</p>
       <p className="relative text-xs text-zinc-400">Lineups are daily. Each player locks at his own tip-off, so you can still swap guys who play later tonight. Points count for whatever slot a player was in when his game started.</p>
     </div>

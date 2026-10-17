@@ -9,6 +9,7 @@ import { Headshot, InjuryTag } from "./Headshot";
 import { TeamLogo } from "./TeamLogo";
 import { TeamBadge, type BrandLite } from "./TeamBadge";
 import { BoostChip, BoostModal, LineupEditor, type BoostProps } from "./LineupEditor";
+import { Fpts } from "@/components/Fpts";
 
 const lbl = (s: string) => s.replace(/\d$/, "");
 const eligible = (slot: string, pos: string) => slot === "BN" || lbl(slot) === "UTIL" || lbl(slot) === pos;
@@ -84,10 +85,10 @@ function PlayerTile({ p, slot, big, brand, state }: {
             <div className="min-w-0 flex-1">
               <p className={`line-clamp-2 font-black leading-tight text-white ${big ? "text-lg" : "text-base"}`}>{p.name}</p>
               <p className="text-xs text-zinc-400">{p.pos} · {p.team} <InjuryTag injury={p.injury} /></p>
-              <p className="mt-0.5 font-mono text-[11px] text-zinc-500">{p.played}/{p.total} GP · {p.proj.toFixed(1)}/g</p>
+              <p className="mt-0.5 font-mono text-[11px] text-zinc-500">{p.played}/{p.total} GP · <Fpts n={p.proj} />/g</p>
             </div>
             <div className="text-right">
-              <p className={`font-mono font-black leading-none text-white ${big ? "text-3xl" : "text-2xl"}`}>{p.pts.toFixed(1)}</p>
+              <p className={`font-mono font-black leading-none text-white ${big ? "text-3xl" : "text-2xl"}`}><Fpts n={p.pts} iconClass="text-[0.75em]" /></p>
               <p className="text-[10px] uppercase tracking-wider text-zinc-500">wk pts</p>
             </div>
           </div>
@@ -185,7 +186,7 @@ export function TeamCourt(props: Props) {
               ))}
               <div className="absolute bottom-4 left-4 rounded-xl bg-black/40 px-3 py-2 backdrop-blur">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Starters this week</p>
-                <p className="font-mono text-2xl font-black text-white">{starters.toFixed(1)}</p>
+                <p className="font-mono text-2xl font-black text-white"><Fpts n={starters} iconClass="text-[0.75em]" /></p>
               </div>
             </div>
             {/* phones: stack the five */}

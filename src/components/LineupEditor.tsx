@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { LivePlayer } from "@/lib/league";
 import { Headshot, InjuryTag } from "./Headshot";
+import { Fpts } from "@/components/Fpts";
 
 const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
 
@@ -85,8 +86,8 @@ export function LineupEditor({
           ) : <span className="text-zinc-400">Empty</span>}
         </td>
         <td className="text-center text-xs text-zinc-500">{p ? `${p.played}/${p.total}` : ""}</td>
-        <td className="text-right font-mono text-zinc-500">{p ? p.proj.toFixed(1) : ""}</td>
-        <td className="pr-3 text-right font-mono font-bold">{p ? p.pts.toFixed(1) : ""}</td>
+        <td className="text-right font-mono text-zinc-500">{p ? <Fpts n={p.proj} /> : ""}</td>
+        <td className="pr-3 text-right font-mono font-bold">{p ? <Fpts n={p.pts} /> : ""}</td>
         {editable && (
           <td className="py-2 pr-3 text-right">
             <div className="flex justify-end gap-1.5">
@@ -131,7 +132,7 @@ export function LineupEditor({
             {STARTERS.map((s) => row(s, bySlot.get(s)))}
             <tr className="border-t border-line bg-panel2/60">
               <td colSpan={4} className="py-2 pl-3 text-xs font-bold uppercase text-zinc-500">Week total (starters only count)</td>
-              <td className="pr-3 text-right font-mono font-bold">{weekPts.toFixed(1)}</td>{editable && <td />}
+              <td className="pr-3 text-right font-mono font-bold"><Fpts n={weekPts} /></td>{editable && <td />}
             </tr>
             {bench.map((p) => row("BN", p))}
           </tbody>
@@ -158,7 +159,7 @@ export function BoostModal({ boost, player, info, pending, onClose, run }: {
           <div>
             <p className="flex items-center gap-1.5 font-bold"><BoltIcon className="text-amber-600" /> Boost {player.name}</p>
             <p className="text-xs text-zinc-500">
-              {info?.day} · projected {player.proj.toFixed(1)} pts.
+              {info?.day} · projected <Fpts n={player.proj} /> fantasy points.
               {info?.taken && <span className="text-amber-600"> This replaces today&apos;s boost on {info.taken.name} (×{info.taken.mult.toFixed(2)}).</span>}
             </p>
           </div>

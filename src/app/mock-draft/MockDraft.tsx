@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { BoardPick, DraftBoard, PlayerPool, PoolPlayer } from "@/components/draft-ui";
+import { Fpts } from "@/components/Fpts";
 
 const ROUNDS = 13;
 const LIMITS: Record<string, number> = { G: 7, F: 7, C: 4 };
@@ -92,7 +93,7 @@ export function MockDraft({ players, userName }: { players: PoolPlayer[]; userNa
         <div className="space-y-4">
           {!done && <PlayerPool players={pool} canPick={onClock === slot} onPick={(id) => add(slot, id)} />}
           <div className="card p-3">
-            <p className="label">Your team ({mine.reduce((s, p) => s + (players.find((x) => x.id === p.id)?.proj ?? 0), 0).toFixed(1)} proj pts/g)</p>
+            <p className="label">Your team (<Fpts n={mine.reduce((s, p) => s + (players.find((x) => x.id === p.id)?.proj ?? 0), 0)} /> proj/g)</p>
             <ul className="space-y-1 text-sm">{mine.map((p) => <li key={p.id}><span className={`pos pos-${p.pos} mr-2`}>{p.pos}</span>{p.name}</li>)}</ul>
           </div>
         </div>

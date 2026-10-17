@@ -5,6 +5,7 @@ import { TeamBadge, type BrandLite } from "./TeamBadge";
 import { TeamLogo } from "./TeamLogo";
 import { useMemo, useState } from "react";
 import { Headshot, InjuryTag } from "./Headshot";
+import { Fpts } from "@/components/Fpts";
 
 export type BoardTeam = { id: number; name: string; owner: string; color: string; cpu?: boolean; brand?: BrandLite };
 export type BoardPick = { overall: number; round: number; team_id: number; name: string; pos: string; team: string; is_keeper?: number };
@@ -76,7 +77,7 @@ export function PlayerPool({ players, canPick, onPick, queue, onQueue, busy }: {
             <Headshot src={p.headshot ?? null} name={p.name} size={28} />
             <span className={`pos pos-${p.pos}`}>{p.pos}</span>
             <span className="flex-1 truncate font-medium">{p.name} <InjuryTag injury={p.injury ?? null} /> <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs text-zinc-400">{p.team}</span></span>
-            <span className="font-mono text-xs text-zinc-500">{p.proj.toFixed(1)}</span>
+            <span className="font-mono text-xs text-zinc-500"><Fpts n={p.proj} /></span>
             {onQueue && (
               <button title="Queue" onClick={() => onQueue(p.id, !queue?.includes(p.id))} className={`text-xs ${queue?.includes(p.id) ? "text-amber-600" : "text-zinc-400 hover:text-zinc-700"}`}><StarIcon /></button>
             )}
