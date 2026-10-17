@@ -180,10 +180,11 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
         <div className="card p-4">
           <h3 className="mb-2 font-bold">Weekly pack rewards</h3>
           <ul className="space-y-2 text-sm">
-            {([["Matchup win", l.reward_win, ""], ["Matchup loss", l.reward_loss, ""], ["Top score of the week", l.reward_top, "+ "], ["League champion", "goat", "+ "]] as const).map(([label, id, plus]) => (
-              <li key={label} className="flex items-center justify-between gap-3">
-                <span className="text-zinc-500">{label}</span>
-                <span className="flex items-center gap-1 text-right">{plus && <span className="text-zinc-500">{plus}</span>}<PackThumb id={id} height={40} /></span>
+            {([["Matchup win", l.reward_win, ""], ["Matchup loss", l.reward_loss, ""], ["Top score", l.reward_top, "+ "], ["Champion", "goat", "+ "]] as const).map(([label, id, plus]) => (
+              <li key={label} className="grid grid-cols-[minmax(0,1fr)_1.75rem_6.75rem] items-center gap-2.5">
+                <span className="leading-tight text-zinc-500">{label}{plus && <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Bonus</span>}</span>
+                <span className="flex justify-center"><PackThumb id={id} height={40} showName={false} /></span>
+                <span className="font-semibold leading-tight">{PACK_BY_ID[id]?.name}</span>
               </li>
             ))}
           </ul>
