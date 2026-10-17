@@ -10,6 +10,7 @@ import { Logo } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
 import { SlabCount } from "@/components/SlabIcon";
 import { SlabBack } from "@/components/SlabBack";
+import { XIcon } from "@/components/Icons";
 
 type Inv = { id: number; pack_type: string; source: string; created_at: number };
 type Act<T> = Promise<T | { error: string }>;
@@ -261,12 +262,13 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
 
       {/* Rip modal */}
       {(stage === "ready" || stage === "tearing" || stage === "cards") && rp && (
-        <div className={`fixed inset-0 z-50 flex flex-col items-center overflow-y-auto bg-zinc-100/95 p-4 backdrop-blur-sm ${stage === "cards" ? "justify-start pt-[14vh]" : "justify-center"}`}>
-          {/* Anchored to the top in the reveal (not centred) so the slab stays put when the summary appears under it. */}
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-zinc-100/95 p-4 backdrop-blur-sm">
+          {/* No words on screen from clicking the pack until a slab is flipped; closing is an icon. */}
+          {stage === "ready" && (
+            <button onClick={close} aria-label="Save it for later" title="Save it for later" className="fixed left-5 top-5 rounded-full p-2 text-zinc-400 hover:bg-white/10 hover:text-white"><XIcon className="text-xl" /></button>
+          )}
           {stage !== "cards" ? (
             <div className="flex flex-col items-center gap-6" style={{ "--burst": BURST[rp.id] ?? "#ffffff" } as React.CSSProperties}>
-              {/* No text once the pack is clicked; kept invisible so the pack doesn't jump. */}
-              <p className={`text-sm uppercase tracking-[0.3em] text-zinc-500 ${stage === "tearing" ? "invisible" : ""}`}>Click the pack to open it</p>
               <button ref={packRef} onClick={doRip} disabled={stage === "tearing"} className={`relative ${stage === "ready" ? "anim-drop hover:anim-shake" : ""}`}>
                 {stage === "tearing" ? (
                   // Charge and burst: light rays spin up behind the crate while it shakes harder and harder, then it
@@ -282,18 +284,18 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                 )}
               </button>
               {stage === "tearing" && <div className="anim-burst-flash pointer-events-none fixed inset-0 z-[55]" style={burstAt ? ({ "--bx": `${burstAt.x}px`, "--by": `${burstAt.y}px` } as React.CSSProperties) : undefined} />}
-              {stage === "ready" && <button onClick={close} className="text-sm text-zinc-400 hover:text-white">Save it for later</button>}
             </div>
           ) : (
-            <div className="flex w-full max-w-5xl flex-col items-center gap-6">
-              <div className="flex flex-wrap justify-center gap-4">
+            // The slabs sit dead centre, where the pack was; the summary hangs below them out of the flow so nothing moves.
+            <div className="relative flex w-full max-w-5xl flex-col items-center">
+              <div className="flex flex-wrap justify-center gap-x-4 gap-y-24">
                 {cards.map((c, i) => {
                   const isUp = flipped.has(c.id);
                   const hit = isBigHit(c);
                   return (
                     <button key={c.id} onClick={() => !isUp && flip(c)} className={`flip anim-deal ${isUp ? "flipped" : ""}`} style={{ animationDelay: `${i * 120}ms` }}>
                       <div className={hit && !isUp ? "anim-rumble [perspective:1000px]" : ""}>
-                      <div className="flip-inner relative h-[330px] w-44">
+                      <div className="flip-inner relative h-[260px] w-44">{/* slab height only, so the slab itself is centred; its caption hangs below */}
                         {/* Face-down slab (SlabBack): exactly the box and slab shape of the revealed scan (SlabImage at 260px),
                             centred the same way, so the flip turns over in place. */}
                         <div className="flip-face absolute inset-0 flex flex-col items-center">
@@ -309,6 +311,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                   );
                 })}
               </div>
+              <div className="absolute left-1/2 top-full mt-24 flex w-full max-w-xl -translate-x-1/2 justify-center pb-6">
               {!allFlipped ? (flipped.size > 0 &&
                 <button className="btn-ghost" onClick={() => cards.forEach((c, i) => setTimeout(() => flip(c), i * 350))}>Reveal all</button>
               ) : (
@@ -328,6 +331,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                   </div>
                 </div>
               )}
+              </div>
             </div>
           )}
         </div>
