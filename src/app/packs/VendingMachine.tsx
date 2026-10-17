@@ -9,6 +9,7 @@ import { CardData, GLOW, PlayerCard } from "@/components/PlayerCard";
 import { Logo } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
 import { SlabCount } from "@/components/SlabIcon";
+import { SlabBack } from "@/components/SlabBack";
 
 type Inv = { id: number; pack_type: string; source: string; created_at: number };
 type Act<T> = Promise<T | { error: string }>;
@@ -292,17 +293,15 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
                     <button key={c.id} onClick={() => !isUp && flip(c)} className={`flip anim-deal ${isUp ? "flipped" : ""}`} style={{ animationDelay: `${i * 120}ms` }}>
                       <div className={hit && !isUp ? "anim-rumble [perspective:1000px]" : ""}>
                       <div className="flip-inner relative h-[330px] w-44">
-                        {/* Shared slab back rendered in Blender (scripts/slab-back). Same square framing and 260px height as the
-                            revealed slab scan (SlabCard), so the flip swaps back for front without a size jump. */}
+                        {/* Face-down slab (SlabBack): exactly the box and slab shape of the revealed scan (SlabImage at 260px),
+                            centred the same way, so the flip turns over in place. */}
                         <div className="flip-face absolute inset-0 flex flex-col items-center">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src="/slab-back.webp?v=2" alt="" draggable={false} className="pointer-events-none max-w-none select-none"
-                            style={{ width: 260, height: 260, filter: hit ? "drop-shadow(0 0 14px rgba(251,191,36,.75))" : "drop-shadow(0 8px 12px rgba(0,0,0,.35))" }} />
+                          <SlabBack height={260} rarity={c.rarity} className={hit ? "drop-shadow-[0_0_14px_rgba(251,191,36,.75)]" : ""} />
                           {hit
                             ? <p className="mt-3 animate-pulse rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-black tracking-widest text-black">CASE HIT</p>
                             : <p className="mt-3 text-[10px] font-semibold tracking-[0.3em] text-zinc-400">TAP TO REVEAL</p>}
                         </div>
-                        <div className={`flip-face flip-back absolute inset-0 rounded-xl ${isUp && !c.slab_id && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
+                        <div className={`flip-face flip-back absolute inset-0 flex flex-col items-center rounded-xl ${isUp && !c.slab_id && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
                           <PlayerCard c={c} />
                           {sold.has(c.id) && <div className="absolute inset-0 grid place-items-center rounded-xl bg-white/85 text-sm font-bold text-zinc-900">SOLD</div>}
                         </div>
