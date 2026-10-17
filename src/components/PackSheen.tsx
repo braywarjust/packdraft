@@ -6,6 +6,6 @@ export function PackSheen({ src, seed = 0 }: { src: string; seed?: number }) {
   const mask = `url("${src}") center / contain no-repeat`;
   return (
     <span aria-hidden className="pack-sheen pointer-events-none absolute inset-0"
-      style={{ mask, WebkitMask: mask, animationDelay: `${-((seed * 0.73) % 4).toFixed(2)}s` }} />
+      style={{ mask, WebkitMask: mask, animationDelay: `${-((seed * 0.73) % 14).toFixed(2)}s` }} />
   );
 }
