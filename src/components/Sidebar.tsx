@@ -9,7 +9,7 @@ import { CoinIcon, Coins } from "./Coins";
 
 const I = {
   home: "M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z",
-  leagues: "/packdraft-league-icon.svg",
+  leagues: "/league-logo-icon.svg",
   packs: "/packdraft-pack-icon.svg",
   collection: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
   mock: "M4 6h16M4 12h16M4 18h10",
@@ -20,7 +20,7 @@ const I = {
   expand: "M9 6l6 6-6 6",
 };
 /** Optical sizes for the solid image icons so they weigh the same as the 2px line icons. */
-const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/packdraft-league-icon.svg": [9, 18] };
+const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/league-logo-icon.svg": [16, 15] };
 function Icon({ d }: { d: string }) {
   // Image icons (a public/ SVG path) are drawn as a mask in currentColor so they match the line icons' colour and states.
   if (d.startsWith("/")) {
