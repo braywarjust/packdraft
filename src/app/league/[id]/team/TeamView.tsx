@@ -1,3 +1,4 @@
+import { Coins } from "@/components/Coins";
 import Link from "next/link";
 import { one, Team } from "@/lib/db";
 import { boostableGame, getLeague, roster, teamWeek } from "@/lib/league";
@@ -61,7 +62,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
           } : undefined}
         />
       )}
-      <p className="text-xs text-zinc-400">⚡ Slab boost: once a day, back one of your players with one of your slabs and his points for that game are multiplied (×1.00 for a $25 slab up to ×3.00, set by the slab&apos;s market value; +{OWN_PLAYER_BONUS.toFixed(1)}× if it&apos;s his own slab). It locks at his tip-off and only counts if he&apos;s in your starting lineup.</p>
+      <p className="text-xs text-zinc-400">⚡ Slab boost: once a day, back one of your players with one of your slabs and his points for that game are multiplied (×1.00 for a <Coins n={25} /> slab up to ×3.00, set by the slab&apos;s market value; +{OWN_PLAYER_BONUS.toFixed(1)}× if it&apos;s his own slab). It locks at his tip-off and only counts if he&apos;s in your starting lineup.</p>
       <p className="text-xs text-zinc-400">Lineups are daily. Each player locks at his own tip-off, so you can still swap guys who play later tonight. Points count for whatever slot a player was in when his game started.</p>
     </div>
   );

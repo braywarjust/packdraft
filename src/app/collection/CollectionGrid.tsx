@@ -91,7 +91,7 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
                     : open.s_source === "ebay" && detail
                     ? detail.match === "cert"
                       ? `This exact slab is listed on eBay (${detail.n} listing${detail.n > 1 ? "s" : ""}).`
-                      : `Median of ${detail.n} eBay listings for this card in this grade${detail.low != null ? ` (${detail.low.toLocaleString()}–${detail.high!.toLocaleString()} Pack Points)` : ""}.`
+                      : <>Median of {detail.n} eBay listings for this card in this grade{detail.low != null && <> (<Coins n={detail.low} />–<Coins n={detail.high!} />)</>}.</>
                     : open.slab_id ? "Estimated from the rarity score. Add eBay keys to price from live listings." : "Generated card value."}
                 </p>
               </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Coins } from "./Coins";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { LivePlayer } from "@/lib/league";
@@ -161,7 +162,7 @@ export function LineupEditor({
                       <img src={`/api/slabs/${s.slabId}`} alt="" loading="lazy" className="h-32 w-full object-contain" />
                       <span className="text-lg font-black text-amber-600">×{mult.toFixed(2)}</span>
                       <span className="line-clamp-2 text-[11px] text-zinc-500">{s.player}</span>
-                      <span className="text-[11px] text-zinc-400">{own ? "Own-player bonus!" : `$${s.value.toLocaleString()}`}</span>
+                      <span className="text-[11px] text-zinc-400">{own ? "Own-player bonus!" : <Coins n={s.value} />}</span>
                     </button>
                   );
                 })}

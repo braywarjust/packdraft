@@ -1,5 +1,6 @@
 "use client";
 
+import { Coins } from "@/components/Coins";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Msg = { id: number; user_id: number | null; kind: string; body: string | null; image_url: string | null; created_at: number; name: string | null; color: string | null };
@@ -18,9 +19,12 @@ const SMACK = [
 ];
 const EMOJI = ["🔥", "😂", "💀", "🗑️", "🐐", "😤", "🫡", "📉", "📈", "🏀"];
 
+/** Bold **text**, and "1,234 Pack Points" becomes the Pack Points icon + amount. */
 function render(text: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**") ? <b key={i}>{part.slice(2, -2)}</b> : <span key={i}>{part}</span>,
+  return text.split(/(\*\*[^*]+\*\*|[\d,]+ Pack Points)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? <b key={i}>{part.slice(2, -2)}</b>
+      : /^[\d,]+ Pack Points$/.test(part) ? <Coins key={i} n={Number(part.replace(/\D/g, ""))} className="font-semibold text-emerald-600" />
+      : <span key={i}>{part}</span>,
   );
 }
 

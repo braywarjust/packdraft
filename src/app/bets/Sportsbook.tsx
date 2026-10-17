@@ -295,7 +295,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
         </div>
         <div className="card p-4 text-xs text-zinc-500">
           <p className="mb-1 font-semibold text-zinc-700">House rules</p>
-          <p>Bets are 10–2,500 Pack Points, max payout 50,000. Lines and odds are set by PackDraft from season averages and update live with the score and box score. Bets settle when the game goes final. Landing exactly on a line is a push (stake back; that parlay leg drops out). Live betting closes in the final minute.</p>
+          <p>Bets are <Coins n={10} />–<Coins n={2500} />, max payout <Coins n={50000} />. Lines and odds are set by PackDraft from season averages and update live with the score and box score. Bets settle when the game goes final. Landing exactly on a line is a push (stake back; that parlay leg drops out). Live betting closes in the final minute.</p>
         </div>
       </aside>
     </div>

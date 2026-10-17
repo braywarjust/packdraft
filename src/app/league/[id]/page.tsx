@@ -6,7 +6,7 @@ import { dayLabel } from "@/lib/nba/espn";
 import { winProb } from "@/lib/sim";
 import { PACK_BY_ID } from "@/lib/packs";
 import { earnings, weekRate } from "@/lib/economy";
-import { Coins } from "@/components/Coins";
+import { CoinIcon, Coins } from "@/components/Coins";
 import { ActionButton } from "@/components/ActionButton";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { fillCpu, finishWeekNow, startDraftAction, startWeekAction } from "../../actions";
@@ -162,7 +162,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
               <h3 className="mb-1 font-bold">Points pay Pack Points</h3>
               <p className="mb-3 text-xs text-zinc-500">
                 Every fantasy point your starters score pays you Pack Points when their game goes final.
-                This week 1 point = {rate.toFixed(2)} Pack Points, set by the slab market.
+                This week 1 point = <span className="inline-flex items-center gap-1 font-semibold text-emerald-600"><CoinIcon />{rate.toFixed(2)}</span> Pack Points, set by the slab market.
               </p>
               {mine && (
                 <ul className="space-y-1.5 text-sm">

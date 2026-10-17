@@ -1,3 +1,4 @@
+import { Coins } from "@/components/Coins";
 import { requireUser } from "@/lib/auth";
 import { ActionForm } from "@/components/ActionForm";
 import { createLeague } from "../../actions";
@@ -7,7 +8,7 @@ export default async function NewLeague() {
   await requireUser();
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader eyebrow="Leagues" title="Create a league" description="Up to 8 teams is free. Bigger leagues cost 2,500 Pack Points. You can change everything later in commissioner settings." />
+      <PageHeader eyebrow="Leagues" title="Create a league" description={<>Up to 8 teams is free. Bigger leagues cost <Coins n={2500} className="font-semibold text-emerald-600" />. You can change everything later in commissioner settings.</>} />
       <ActionForm action={createLeague} submit="Create league" className="card space-y-5 p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div><label className="label">League name</label><input name="name" className="input" placeholder="The Pack Rats" required /></div>
