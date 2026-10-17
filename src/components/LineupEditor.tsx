@@ -10,7 +10,7 @@ import { Headshot, InjuryTag } from "./Headshot";
 const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
 
 type BoostSlab = { cardId: number; slabId: number; playerId: number | null; player: string; label: string; grade: string; rarity: string; value: number; mult: number };
-type BoostProps = {
+export type BoostProps = {
   slabs: BoostSlab[];
   boostable: { playerId: number; dayKey: string; day: string; taken: { name: string; mult: number } | null }[];
   ownBonus: number;
@@ -136,48 +136,56 @@ export function LineupEditor({
         </table>
       </div>
 
-      {boost && boosting && (() => {
-        const info = canBoost.get(boosting.id);
-        return (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" onClick={() => setBoosting(null)}>
-            <div className="card flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between border-b border-line/60 p-4">
-                <div>
-                  <p className="font-bold">⚡ Boost {boosting.name}</p>
-                  <p className="text-xs text-zinc-500">
-                    {info?.day} · projected {boosting.proj.toFixed(1)} pts.
-                    {info?.taken && <span className="text-amber-600"> This replaces today&apos;s boost on {info.taken.name} (×{info.taken.mult.toFixed(2)}).</span>}
-                  </p>
-                </div>
-                <button onClick={() => setBoosting(null)} className="text-zinc-400 hover:text-zinc-900">✕</button>
-              </div>
-              <div className="grid flex-1 grid-cols-2 gap-3 overflow-y-auto p-4 scrollbar-thin sm:grid-cols-4">
-                {boost.slabs.length === 0 && <p className="col-span-full text-sm text-zinc-500">You don&apos;t have any slabs yet. Rip some packs first.</p>}
-                {boost.slabs.map((s) => {
-                  const own = s.playerId === boosting.id;
-                  const mult = s.mult + (own ? boost.ownBonus : 0);
-                  return (
-                    <button key={s.cardId} disabled={pending} onClick={() => { const id = boosting.id; setBoosting(null); act(() => boost.set(id, s.cardId)); }}
-                      className={`flex flex-col items-center gap-1 rounded-lg p-2 text-center transition hover:bg-panel2 disabled:opacity-40 ${own ? "ring-1 ring-amber-500/60" : ""}`}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/api/slabs/${s.slabId}`} alt="" loading="lazy" className="h-32 w-full object-contain" />
-                      <span className="text-lg font-black text-amber-600">×{mult.toFixed(2)}</span>
-                      <span className="line-clamp-2 text-[11px] text-zinc-500">{s.player}</span>
-                      <span className="text-[11px] text-zinc-400">{own ? "Own-player bonus!" : <Coins n={s.value} />}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="flex items-center justify-between border-t border-line/60 px-4 py-2 text-xs text-zinc-500">
-                <span>One boost per day. It locks at his tip-off and only counts if he starts.</span>
-                {boosting.boost?.state === "pre" && (
-                  <button className="text-red-600 hover:underline" onClick={() => { const id = boosting.id; setBoosting(null); act(() => boost.clear(id)); }}>Remove boost</button>
-                )}
-              </div>
-            </div>
+      {boost && boosting && (
+        <BoostModal boost={boost} player={boosting} info={canBoost.get(boosting.id)} pending={pending} onClose={() => setBoosting(null)}
+          run={(fn) => { setBoosting(null); act(fn); }} />
+      )}
+    </div>
+  );
+}
+
+/** Slab picker for boosting one player's next game. */
+export function BoostModal({ boost, player, info, pending, onClose, run }: {
+  boost: BoostProps; player: LivePlayer; info: BoostProps["boostable"][number] | undefined; pending: boolean;
+  onClose: () => void; run: (fn: () => Promise<unknown>) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" onClick={onClose}>
+      <div className="card flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-line/60 p-4">
+          <div>
+            <p className="font-bold">⚡ Boost {player.name}</p>
+            <p className="text-xs text-zinc-500">
+              {info?.day} · projected {player.proj.toFixed(1)} pts.
+              {info?.taken && <span className="text-amber-600"> This replaces today&apos;s boost on {info.taken.name} (×{info.taken.mult.toFixed(2)}).</span>}
+            </p>
           </div>
-        );
-      })()}
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900">✕</button>
+        </div>
+        <div className="grid flex-1 grid-cols-2 gap-3 overflow-y-auto p-4 scrollbar-thin sm:grid-cols-4">
+          {boost.slabs.length === 0 && <p className="col-span-full text-sm text-zinc-500">You don&apos;t have any slabs yet. Rip some packs first.</p>}
+          {boost.slabs.map((s) => {
+            const own = s.playerId === player.id;
+            const mult = s.mult + (own ? boost.ownBonus : 0);
+            return (
+              <button key={s.cardId} disabled={pending} onClick={() => run(() => boost.set(player.id, s.cardId))}
+                className={`flex flex-col items-center gap-1 rounded-lg p-2 text-center transition hover:bg-panel2 disabled:opacity-40 ${own ? "ring-1 ring-amber-500/60" : ""}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/api/slabs/${s.slabId}`} alt="" loading="lazy" className="h-32 w-full object-contain" />
+                <span className="text-lg font-black text-amber-600">×{mult.toFixed(2)}</span>
+                <span className="line-clamp-2 text-[11px] text-zinc-500">{s.player}</span>
+                <span className="text-[11px] text-zinc-400">{own ? "Own-player bonus!" : <Coins n={s.value} />}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex items-center justify-between border-t border-line/60 px-4 py-2 text-xs text-zinc-500">
+          <span>One boost per day. It locks at his tip-off and only counts if he starts.</span>
+          {player.boost?.state === "pre" && (
+            <button className="text-red-600 hover:underline" onClick={() => run(() => boost.clear(player.id))}>Remove boost</button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
