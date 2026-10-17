@@ -20,9 +20,11 @@ export function NavIcon({ d, size = 18, box, maxW }: { d: string; size?: number;
   const k = Math.min(size / 18, maxW ? maxW / (MASK_SIZE[d] ?? [15, 15])[0] : Infinity);
   // Image icons (a public/ SVG path) are drawn as a mask in currentColor so they match the line icons' colour and states.
   if (d.startsWith("/")) {
+    // A wider-than-slot icon gets equal negative margins so it overflows both sides evenly and stays centred.
+    const w = (MASK_SIZE[d] ?? [15, 15])[0] * k;
     return (
       <span aria-hidden className="grid shrink-0 place-items-center" style={{ width: box ?? size, height: size }}>
-        <span className="bg-current" style={{ width: (MASK_SIZE[d] ?? [15, 15])[0] * k, height: (MASK_SIZE[d] ?? [15, 15])[1] * k, mask: `url(${d}) center / contain no-repeat`, WebkitMask: `url(${d}) center / contain no-repeat` }} />
+        <span className="bg-current" style={{ width: w, height: (MASK_SIZE[d] ?? [15, 15])[1] * k, marginInline: Math.min(0, ((box ?? size) - w) / 2), mask: `url(${d}) center / contain no-repeat`, WebkitMask: `url(${d}) center / contain no-repeat` }} />
       </span>
     );
   }
