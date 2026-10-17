@@ -16,8 +16,9 @@ type Act<T> = Promise<T | { error: string }>;
 const isCaseHit = (c: CardData) => c.s_source === "courtyard" || c.rarity === "legendary" || c.rarity === "grail";
 const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, grail: 4 };
 
-const PACK_SIZE = { sm: [80, 116], md: [156, 226], big: [232, 336] } as const;
-/** The Mega Case render is roughly square, so it gets wider boxes than the packs. */
+// 1-slab packs are the skinny frosted crate renders (~0.79 wide:tall).
+const PACK_SIZE = { sm: [88, 112], md: [176, 224], big: [264, 336] } as const;
+/** The Mega Pack render is roughly square, so it gets wider boxes than the 1-slab packs. */
 const CASE_SIZE = { sm: [116, 116], md: [220, 220], big: [336, 336] } as const;
 const artSize = (p: PackType, size: "sm" | "md" | "big") => (p.kind === "case" ? CASE_SIZE : PACK_SIZE)[size];
 const slabsLabel = (n: number) => `${n} slab${n === 1 ? "" : "s"}`;
@@ -27,7 +28,7 @@ function PackArt({ p, big, md, slabs }: { p: PackType; big?: boolean; md?: boole
   const [failed, setFailed] = useState(false);
   if (failed) return <CssPackArt p={p} big={big} md={md} slabs={slabs} />;
   const [w, h] = artSize(p, big ? "big" : md ? "md" : "sm");
-  const src = `/packs/${p.id}.png?v=6`;
+  const src = `/packs/${p.id}.png?v=7`;
   return (
     <span className="relative block" style={{ width: w, height: h }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -220,10 +221,10 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
         </div>
       </section>
 
-      {/* Cases are presented like the packs: the render is the buy button, price underneath. */}
+      {/* The Mega Pack: presented like the others (the render is the buy button, price underneath). */}
       {PACKS.some((p) => p.kind === "case") && (
-        <section id="cases" className="scroll-mt-36 space-y-3">
-          <div><h2 className="text-lg font-bold">Cases</h2><p className="text-sm text-zinc-500">Multi-slab boxes with no Base tier at all.</p></div>
+        <section id="mega" className="scroll-mt-36 space-y-3">
+          <div><h2 className="text-lg font-bold">Mega Pack</h2><p className="text-sm text-zinc-500">Five slabs in one big crate, with no Base tier at all.</p></div>
           <div className="flex flex-wrap justify-center gap-10">
             {PACKS.filter((p) => p.kind === "case").map((p) => {
               const busy = stage !== "idle";
@@ -254,7 +255,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-zinc-100/95 p-4 backdrop-blur-sm">
           {stage !== "cards" ? (
             <div className="flex flex-col items-center gap-6">
-              <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{stage === "tearing" ? "Ripping…" : `Click the ${rp.kind === "case" ? "case" : "pack"} to rip it`}</p>
+              <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{stage === "tearing" ? "Ripping…" : "Click the pack to rip it"}</p>
               <button onClick={doRip} disabled={stage === "tearing"} className={`relative ${stage === "ready" ? "anim-drop hover:anim-shake" : ""}`}>
                 {stage === "tearing" ? (
                   <div className="relative h-[336px]" style={{ width: artSize(rp, "big")[0] }}>

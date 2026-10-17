@@ -5,7 +5,7 @@
 // the manager `rate` Pack Points when that game goes final.
 //
 // Calibration (simulated 20-week, 8-team seasons, both scoring formats): an average team scores ~1,150 pts
-// a week (p10 ~1,000, p90 ~1,300). At rate 1.00 that's roughly one Hall of Fame Pack a week, or a Mega Case
+// a week (p10 ~1,000, p90 ~1,300). At rate 1.00 that's roughly one Hall of Fame Pack a week, or a Mega Pack
 // every ~9 weeks of saving. So fantasy points and Pack Points start 1:1.
 //
 // The rate floats with the market: if slab prices across the vault rise, the same Pack Points buy weaker

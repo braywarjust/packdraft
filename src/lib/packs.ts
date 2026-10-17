@@ -1,6 +1,6 @@
 export type PackType = {
   id: string; name: string; price: number; cards: number; color: string; accent: string; blurb: string;
-  /** "case" = the multi-slab Mega Case (wider box art, featured in the shop). */
+  /** "case" = the multi-slab Mega Pack (wide crate art). Everything is called a pack in the UI. */
   kind?: "pack" | "case";
   // Rarity odds (percent). Higher packs shift weight toward the top tiers.
   odds: Record<Rarity, number>;
@@ -39,7 +39,7 @@ export const PACKS: PackType[] = [
     odds: { common: 28, rare: 34, epic: 25, legendary: 11, grail: 2  } },
   { id: "goat", name: "GOAT Pack", price: 2500, cards: 1, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Grail chase.",
     odds: { common: 5, rare: 25, epic: 37, legendary: 25, grail: 8  } },
-  { id: "megacase", name: "Mega Case", price: 10000, cards: 5, kind: "case", color: "from-zinc-900 via-amber-500 to-zinc-900", accent: "#f5c15c", blurb: "Five slabs, zero commons. The big rip.",
+  { id: "megacase", name: "Mega Pack", price: 10000, cards: 5, kind: "case", color: "from-zinc-900 via-amber-500 to-zinc-900", accent: "#f5c15c", blurb: "Five slabs, zero commons. The big rip.",
     odds: { common: 0, rare: 12, epic: 42, legendary: 34, grail: 12 } },
 ];
 export const PACK_BY_ID: Record<string, PackType> = Object.fromEntries(PACKS.map((p) => [p.id, p]));

@@ -1,0 +1,13 @@
+{
+  "_comment": "Fold-out net for the inner box of MINI-CRATE.blend (1-slab packs) at 1000 px per Blender unit (box is 1.097 x 0.621 x 1.633). Rects are [x, y, w, h] in image pixels from the top-left. Each face is drawn as seen from outside, upright.",
+  "width": 3436,
+  "height": 2875,
+  "faces": {
+    "left":   [0,    621,  621,  1633],
+    "front":  [621,  621,  1097, 1633],
+    "right":  [1718, 621,  621,  1633],
+    "back":   [2339, 621,  1097, 1633],
+    "top":    [621,  0,    1097, 621],
+    "bottom": [621,  2254, 1097, 621]
+  }
+}

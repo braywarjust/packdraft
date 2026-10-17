@@ -1,6 +1,6 @@
 # Renders the Mega Case cover from CASE.blend: re-unwraps the inner box into the 3×2 atlas from build-texture.mjs,
 # applies it and renders a transparent square PNG with the file's own camera.
-#   Blender -b CASE.blend -P scripts/mega-case/render.py -- <atlas.png> <out.png> [samples] [--glow 1.2] [--frost 0.35] [--clarity 0.6] [--clear-acrylic] [--keep-comp] [--save]
+#   Blender -b CASE.blend -P scripts/mega-case/render.py -- <atlas.png> <out.png> [samples] [--glow 1.2] [--frost 0.35] [--clarity 0.6] [--layout layout.json] [--clear-acrylic] [--keep-comp] [--save]
 import bpy, sys, os, glob
 
 argv = sys.argv[sys.argv.index("--") + 1:]
@@ -17,7 +17,7 @@ lo = [min(v[i] for v in ws) for i in range(3)]; hi = [max(v[i] for v in ws) for 
 nx = lambda v, i: (v[i] - lo[i]) / (hi[i] - lo[i])
 # UVs follow the fold-out net in layout.json (true proportions), so a design made on the guide maps 1:1.
 import json
-L = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "layout.json")))
+L = json.load(open(argv[argv.index("--layout") + 1] if "--layout" in argv else os.path.join(os.path.dirname(os.path.abspath(__file__)), "layout.json")))
 IW, IH = L["width"], L["height"]
 # face key -> (net face, s(v), t(v)); s runs left→right and t bottom→top as seen from outside the box.
 FACES = {

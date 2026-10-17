@@ -6,8 +6,11 @@ import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 
+// Usage: node build-guide.mjs [outDir] [layout.json] [title] [prefix]
 const OUT = path.resolve(process.argv[2] ?? path.join(import.meta.dirname, "../../blender/mega-case"));
-const L = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "layout.json"), "utf8"));
+const L = JSON.parse(fs.readFileSync(process.argv[3] ?? path.join(import.meta.dirname, "layout.json"), "utf8"));
+const TITLE = process.argv[4] ?? "PACKDRAFT MEGA CASE · UV WRAP GUIDE";
+const PREFIX = process.argv[5] ?? "uv-guide";
 const SAFE = 80;
 const F = "Helvetica Neue, Arial";
 const INFO = {
@@ -44,7 +47,7 @@ function faceSvg(name, [x, y, w, h], fill) {
 function guide(fill) {
   const faces = Object.entries(L.faces).map(([k, r]) => faceSvg(k, r, fill)).join("");
   const notes = [
-    "PACKDRAFT MEGA CASE · UV WRAP GUIDE",
+    TITLE,
     `Canvas: ${L.width} × ${L.height} px (keep this exact size)`,
     "Design every face upright, as seen from outside the box.",
     "The net folds like a box: shared edges meet each other.",
@@ -53,18 +56,20 @@ function guide(fill) {
     "Grey corner areas are unused.",
     "Export as PNG and send it back: I'll render it.",
   ];
-  const [nx, ny] = [L.faces.right[0] + 60, 120];
+  // Notes go in the empty top-right corner; shrink the type if that corner is short.
+  const lh = Math.min(78, (L.faces.front[1] - 40) / notes.length);
+  const [nx, ny] = [L.faces.right[0] + 60, 40 + lh];
   return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${L.width}" height="${L.height}">
     ${fill ? `<rect width="${L.width}" height="${L.height}" fill="#d9dce1"/>
     <pattern id="h" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="40" fill="#c3c7ce"/></pattern>
     <rect width="${L.width}" height="${L.height}" fill="url(#h)"/>
     ${Object.values(L.faces).map(([x, y, w, h]) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff"/>`).join("")}` : ""}
     ${faces}
-    ${notes.map((t, i) => `<text x="${nx}" y="${ny + i * 78}" font-family="${F}" font-size="${i ? 46 : 56}" font-weight="${i ? 500 : 900}" fill="#1f2937">${t}</text>`).join("")}
+    ${notes.map((t, i) => `<text x="${nx}" y="${ny + i * lh}" font-family="${F}" font-size="${(i ? 46 : 56) * (lh / 78)}" font-weight="${i ? 500 : 900}" fill="#1f2937">${t}</text>`).join("")}
   </svg>`);
 }
 
 fs.mkdirSync(OUT, { recursive: true });
-await sharp(guide(true)).png().toFile(path.join(OUT, "uv-guide.png"));
-await sharp(guide(false)).png().toFile(path.join(OUT, "uv-guide-overlay.png"));
+await sharp(guide(true)).png().toFile(path.join(OUT, `${PREFIX}.png`));
+await sharp(guide(false)).png().toFile(path.join(OUT, `${PREFIX}-overlay.png`));
 console.log("guide", OUT);

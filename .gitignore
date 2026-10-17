@@ -53,3 +53,5 @@ data/
 *_backup.blend
 /blender/slab-back/
 /blender/mega-case/
+/blender/mini-crate/*.png
+!/blender/mini-crate/mini-crate-uv-guide*.png

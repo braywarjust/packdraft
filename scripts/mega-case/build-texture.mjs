@@ -57,7 +57,7 @@ async function front() {
   }
   const text = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><defs>${GOLD}</defs>
     <rect x="44" y="928" width="${W - 88}" height="210" fill="#05070c" opacity=".72"/>
-    <text x="${W / 2}" y="1068" text-anchor="middle" font-family="${FB}" font-weight="900" font-size="150" fill="url(#gold)" stroke="#6b4a0f" stroke-width="3" letter-spacing="4">MEGA CASE</text>
+    <text x="${W / 2}" y="1068" text-anchor="middle" font-family="${FB}" font-weight="900" font-size="150" fill="url(#gold)" stroke="#6b4a0f" stroke-width="3" letter-spacing="4">MEGA PACK</text>
     <text x="${W / 2}" y="1122" text-anchor="middle" font-family="${F}" font-weight="800" font-size="36" fill="#fff" fill-opacity=".85" letter-spacing="14">${CASE.cards} GRADED SLABS · NBA</text>
   </svg>`;
   return sharp(Buffer.from(frame(W, H))).composite([...comps, { input: Buffer.from(text), left: 0, top: 0 }]).png().toBuffer();
@@ -67,7 +67,7 @@ async function side(flip) {
   const W = 634, H = 1200;
   const lg = await logo("packdraft-logo-simple.svg", 340), lm = await meta(lg);
   const inner = `<g transform="translate(${W / 2 + 40} 690) rotate(-90)">
-      <text text-anchor="middle" font-family="${FB}" font-weight="900" font-size="112" fill="url(#gold)" stroke="#6b4a0f" stroke-width="2">MEGA CASE</text></g>
+      <text text-anchor="middle" font-family="${FB}" font-weight="900" font-size="112" fill="url(#gold)" stroke="#6b4a0f" stroke-width="2">MEGA PACK</text></g>
     <text x="${W / 2}" y="${H - 66}" text-anchor="middle" font-family="${F}" font-weight="800" font-size="30" fill="#fff" fill-opacity=".8" letter-spacing="10">${CASE.cards} SLABS</text>`;
   void flip;
   return sharp(Buffer.from(frame(W, H, inner))).composite([{ input: lg, left: Math.round(W / 2 - lm.width / 2), top: 90 }]).png().toBuffer();
@@ -76,7 +76,7 @@ async function side(flip) {
 async function topFace() {
   const W = 1420, H = 632;
   const lg = await logo("packdraft-logo-full.svg", 520), lm = await meta(lg);
-  const inner = `<text x="${W / 2}" y="${H - 80}" text-anchor="middle" font-family="${F}" font-weight="800" font-size="38" fill="#f5c15c" letter-spacing="16">PACKDRAFT · MEGA CASE</text>`;
+  const inner = `<text x="${W / 2}" y="${H - 80}" text-anchor="middle" font-family="${F}" font-weight="800" font-size="38" fill="#f5c15c" letter-spacing="16">PACKDRAFT · MEGA PACK</text>`;
   return sharp(Buffer.from(frame(W, H, inner))).composite([{ input: lg, left: Math.round(W / 2 - lm.width / 2), top: 70 }]).png().toBuffer();
 }
 
