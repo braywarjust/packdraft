@@ -13,9 +13,6 @@ async function act<T>(fn: (userId: number) => T): Promise<T | { error: string }>
   }
 }
 
-export const crashBet = async (stake: number, auto: number | null) => act((u) => C.crashBet(u, stake, auto));
-export const crashCashout = async () => act((u) => C.crashCashout(u));
-
 export const chickenStart = async (stake: number, level: string) => act((u) => C.chickenStart(u, stake, level));
 export const chickenStep = async () => act((u) => C.chickenStep(u));
 export const chickenCashout = async () => act((u) => C.chickenCashout(u));

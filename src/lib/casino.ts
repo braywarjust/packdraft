@@ -132,16 +132,23 @@ export function crashState(userId: number) {
   const phase = now < g.start_at ? "betting" : crashed ? "crashed" : "running";
   const mine = one<Round>("SELECT * FROM casino_rounds WHERE user_id = ? AND game = 'crash' ORDER BY id DESC LIMIT 1", userId);
   const mb = mine ? (JSON.parse(mine.state) as CrashBet) : null;
-  const bets = all<{ stake: number; state: string; status: string; payout: number; name: string }>(
-    `SELECT r.stake, r.state, r.status, r.payout, u.name FROM casino_rounds r JOIN users u ON u.id = r.user_id
+  const bets = all<{ user_id: number; stake: number; state: string; status: string; payout: number; name: string }>(
+    `SELECT r.user_id, r.stake, r.state, r.status, r.payout, u.name FROM casino_rounds r JOIN users u ON u.id = r.user_id
      WHERE r.game = 'crash' AND json_extract(r.state, '$.game') = ? ORDER BY r.stake DESC`, g.id);
   return {
     game: { id: g.id, start: g.start_at, now, phase, crash: crashed ? g.crash : null },
     bet: mine && mb && mb.game === g.id ? { id: mine.id, stake: mine.stake, auto: mb.auto, cashed: mb.cashed ?? null, status: mine.status, payout: mine.payout } : null,
-    players: bets.map((b) => ({ name: b.name, stake: b.stake, cashed: (JSON.parse(b.state) as CrashBet).cashed ?? null, status: b.status, payout: b.payout })),
+    players: bets.map((b) => ({ name: b.name, me: b.user_id === userId, stake: b.stake, cashed: (JSON.parse(b.state) as CrashBet).cashed ?? null, status: b.status, payout: b.payout })),
     recent: all<{ crash: number }>("SELECT crash FROM crash_games WHERE id < ? ORDER BY id DESC LIMIT 12", g.id).map((x) => x.crash),
     balance: balance(userId),
   };
+}
+
+/** Milliseconds until the shared round next changes: bets close, it crashes, or the next round opens. */
+export function crashWake(now = Date.now()) {
+  const g = crashGame(now);
+  const end = g.start_at + msFor(g.crash);
+  return now < g.start_at ? g.start_at - now : now < end ? end - now : end + CRASH_PAUSE_MS - now;
 }
 
 export function crashBet(userId: number, stake: number, auto: number | null) {

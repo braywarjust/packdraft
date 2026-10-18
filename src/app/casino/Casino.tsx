@@ -2,10 +2,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Coins, CoinIcon } from "@/components/Coins";
+import { announceBalance } from "@/components/useLiveBalance";
 import * as A from "./actions";
+import { CRASH_RATE, crashRenderer } from "./crash-canvas";
 
 type Game = "crash" | "chicken" | "blackjack" | "mines";
 type Res<T> = T | { error: string };
@@ -16,7 +17,6 @@ async function safe<T>(fn: () => Promise<Res<T>>): Promise<Res<T>> {
 }
 
 // Same maths as src/lib/casino.ts (the client only animates; the server decides).
-const CRASH_RATE = 0.07;
 const crashAt = (ms: number) => Math.floor(Math.exp(CRASH_RATE * (Math.max(0, ms) / 1000)) * 100 + 1e-9) / 100;
 const ROAD = 26;
 const CARS: Record<string, number> = { easy: 2, medium: 4, hard: 6, expert: 11 };
@@ -36,9 +36,9 @@ const GAMES: { id: Game; name: string; blurb: string; bg: string }[] = [
 ];
 
 export function Casino({ game, initial, tester }: { game: Game; initial: Initial; tester: boolean }) {
-  const router = useRouter();
-  const [balance, setBalance] = useState<number>(initial.crash.balance);
-  const sync = (b: number) => { if (b !== balance) { setBalance(b); router.refresh(); } };
+  // New balances go straight to the header and sidebar (no page refresh, so nothing stutters mid-game).
+  const shown = useRef<number>(initial.crash.balance);
+  const sync = (b: number) => { if (b !== shown.current) { shown.current = b; announceBalance(b); } };
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:max-w-[780px] sm:grid-cols-4">
@@ -65,7 +65,7 @@ const RAYS = Array.from({ length: 16 }, (_, i) => {
 /** A square, casino-style game tile: bright gradient, sunburst, the game's art and its name. Sizes are in cqw so the art scales with the tile. */
 function GameThumb({ g, active }: { g: (typeof GAMES)[number]; active: boolean }) {
   return (
-    <Link href={`/casino?g=${g.id}`} scroll={false} aria-current={active ? "page" : undefined} style={{ background: g.bg }}
+    <Link href={`/casino?g=${g.id}`} scroll={false} aria-label={`${g.name}: ${g.blurb}`} aria-current={active ? "page" : undefined} style={{ background: g.bg }}
       className={`casino-thumb @container group relative block aspect-square overflow-hidden rounded-2xl transition duration-200 hover:-translate-y-1 ${active ? "is-active ring-[3px] ring-[#fff]" : "ring-1 ring-white/10 brightness-[.86] hover:brightness-100"}`}>
       <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden>
         <defs>
@@ -216,9 +216,16 @@ function ProfitField({ label, mult, amount }: { label: string; mult: number; amo
   );
 }
 
-function BigButton({ children, onClick, disabled, tone = "blue" }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; tone?: "blue" | "green" | "grey" }) {
+/** onPress fires on mouse-down (and on tap or keyboard), a beat sooner than a click: what you want for Cash out. */
+function BigButton({ children, onClick, onPress, disabled, tone = "blue" }: { children: React.ReactNode; onClick?: () => void; onPress?: () => void; disabled?: boolean; tone?: "blue" | "green" | "grey" }) {
   const bg = tone === "green" ? "bg-[#22e36b] text-[#06240f] hover:bg-[#4cf08a]" : tone === "grey" ? "bg-[#344257] text-white hover:bg-[#3e4e67]" : "bg-[#1f6fe0] text-white hover:bg-[#3584f0]";
-  return <button type="button" onClick={onClick} disabled={disabled} className={`flex w-full items-center justify-center gap-2 rounded-lg py-3.5 text-base font-bold transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50 ${bg}`}>{children}</button>;
+  const downAt = useRef(0);
+  const press = onPress && {
+    onPointerDown: (e: React.PointerEvent) => { if (e.pointerType === "mouse" && e.button === 0) { downAt.current = performance.now(); onPress(); } },
+    // Taps and keyboard presses come through as a click; skip the click that follows a mouse-down we already handled.
+    onClick: () => { if (performance.now() - downAt.current > 1000) onPress(); },
+  };
+  return <button type="button" onClick={onClick} {...press} disabled={disabled} className={`flex w-full items-center justify-center gap-2 rounded-lg py-3.5 text-base font-bold transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50 ${bg}`}>{children}</button>;
 }
 
 function Err({ text }: { text: string | null }) {
@@ -227,78 +234,197 @@ function Err({ text }: { text: string | null }) {
 
 // ---------------------------------------------------------------- Crash (shared rounds)
 
+type CrashPhase = "betting" | "running" | "crashed";
+const crashPhase = (g: any, now: number): CrashPhase => (g.crash != null ? "crashed" : now < g.start ? "betting" : "running");
+
+/**
+ * Crash: one shared round for everyone. The server streams the round (bets, cash-outs, the crash) the moment anything
+ * changes; the browser keeps its clock in step with the server's and draws the multiplier, the curve and the rocket
+ * itself every frame, straight to a canvas and a few text nodes, so nothing waits on a React render.
+ */
 function Crash({ init, onBalance, tester }: { init: any; onBalance: (b: number) => void; tester: boolean }) {
   const [bet, setBet] = useState(10);
   const [target, setTarget] = useState(2);
   const [s, setS] = useState<any>(init);
+  const [phase, setPhase] = useState<CrashPhase>(() => crashPhase(init.game, init.game.now));
   const [queued, setQueued] = useState(false);
+  const [busy, setBusy] = useState<null | "bet" | "cash">(null);
+  const [cashingAt, setCashingAt] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [pending, start] = useTransition();
-  // First render uses the server's clock so it matches the server HTML; the animation loop takes over after.
-  const [now, setNow] = useState<number>(init.game.now);
-  const [mounted, setMounted] = useState(false); // the live graph is drawn in the browser only (no server/browser float mismatch)
-  useEffect(() => setMounted(true), []);
-  const offset = useRef(0);
-  useEffect(() => { offset.current = init.game.now - Date.now(); }, [init.game.now]);
-  const queueRef = useRef(queued);
-  queueRef.current = queued;
+  // Server-rendered starting text; from then on the animation loop writes the number directly.
+  const [firstText] = useState(() => fmtX(init.game.crash ?? (init.game.now < init.game.start ? 1 : crashAt(init.game.now - init.game.start))));
 
-  // Poll the shared round; animate every frame from the server's clock.
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const multRef = useRef<HTMLParagraphElement>(null);
+  const countRef = useRef<HTMLSpanElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const cashRef = useRef<HTMLSpanElement>(null);
+  const sRef = useRef(s);
+  sRef.current = s;
+  const phaseRef = useRef(phase);
+  const cashingRef = useRef(cashingAt);
+  cashingRef.current = cashingAt;
+  const busyRef = useRef(busy);
+  busyRef.current = busy;
+  const balanceRef = useRef(onBalance);
+  balanceRef.current = onBalance;
+  // Server clock = Date.now() + offset. Each message gives a sample; the largest is the one that travelled fastest.
+  const clock = useRef({ offset: init.game.now - Date.now(), target: init.game.now - Date.now(), samples: [] as number[], synced: false, seen: 0 });
+
+  const receive = useCallback((r: any) => {
+    const c = clock.current;
+    c.samples.push(r.game.now - Date.now());
+    if (c.samples.length > 12) c.samples.shift();
+    c.target = Math.max(...c.samples);
+    if (!c.synced || Math.abs(c.target - c.offset) > 80) { c.offset = c.target; c.synced = true; }
+    if (r.game.now < c.seen) return; // an older snapshot that arrived late
+    c.seen = r.game.now;
+    setS(r);
+    balanceRef.current(r.balance);
+  }, []);
+
+  // Live stream of the round, with a plain fetch as a fallback if it drops.
   useEffect(() => {
-    let stop = false, raf = 0;
-    const frame = () => { setNow(Date.now() + offset.current); if (!stop) raf = requestAnimationFrame(frame); };
-    frame();
-    const poll = setInterval(async () => {
+    let es: EventSource | null = null, last = Date.now(), stop = false;
+    const open = () => {
+      es = new EventSource("/api/casino/crash/stream");
+      es.onmessage = (e) => { last = Date.now(); try { receive(JSON.parse(e.data)); } catch { /* ignore a bad frame */ } };
+    };
+    open();
+    const watch = setInterval(async () => {
+      if (Date.now() - last < 2500) return;
+      if (es?.readyState === EventSource.CLOSED) open();
       try {
         const res = await fetch("/api/casino/crash", { cache: "no-store" });
         const r = await res.json();
-        if (stop || !res.ok || isErr(r)) return;
-        offset.current = r.game.now - Date.now();
-        setNow(r.game.now); // keeps time moving even when animation frames are paused (background tab)
-        setS(r);
-        onBalance(r.balance);
-      } catch { /* blip: next tick */ }
-    }, 250);
-    return () => { stop = true; cancelAnimationFrame(raf); clearInterval(poll); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+        if (!stop && res.ok && !isErr(r)) { last = Date.now(); receive(r); }
+      } catch { /* still offline */ }
+    }, 1000);
+    return () => { stop = true; es?.close(); clearInterval(watch); };
+  }, [receive]);
+
+  // The animation loop.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const stage = crashRenderer(canvas);
+    const ro = new ResizeObserver(() => stage.resize());
+    ro.observe(canvas);
+    let raf = 0, prev = performance.now(), color = "";
+    const loop = (ts: number) => {
+      const dt = Math.min(0.05, Math.max(0, (ts - prev) / 1000));
+      prev = ts;
+      const c = clock.current;
+      c.offset += Math.max(-1, Math.min(1, c.target - c.offset)); // ease small corrections in, a millisecond a frame
+      const now = Date.now() + c.offset;
+      const st = sRef.current, g = st.game;
+      const p = crashPhase(g, now);
+      if (p !== phaseRef.current) { phaseRef.current = p; setPhase(p); }
+      const crashMs = g.crash != null ? (Math.log(g.crash) / CRASH_RATE) * 1000 : 0;
+      const t = p === "betting" ? 0 : p === "crashed" ? crashMs / 1000 : (now - g.start) / 1000;
+      const m = p === "betting" ? 1 : p === "crashed" ? g.crash : crashAt(now - g.start);
+
+      // Only touch the DOM when the text actually changes.
+      const put = (el: HTMLElement | null, v: string) => { if (el && el.textContent !== v) el.textContent = v; };
+      put(multRef.current, fmtX(m));
+      const col = p === "crashed" ? "#ef4444" : "#ffffff";
+      if (col !== color && multRef.current) { color = col; multRef.current.style.color = col; }
+      if (p === "betting") {
+        const left = Math.max(0, g.start - now);
+        put(countRef.current, `${(left / 1000).toFixed(2)}s`);
+        if (barRef.current) barRef.current.style.transform = `scaleX(${Math.min(1, left / 6000)})`;
+      }
+      const my = st.bet;
+      if (my?.status === "live" && p === "running") put(cashRef.current, Math.floor(my.stake * m).toLocaleString("en-US"));
+
+      const cashouts = st.players.filter((x: any) => x.cashed).map((x: any) => ({ m: x.cashed, label: `${x.me ? "You" : x.name} ${fmtX(x.cashed)}`, me: !!x.me }));
+      if (my?.status === "live") {
+        const pending = cashingRef.current ?? (my.auto && m >= my.auto && p === "running" ? my.auto : null);
+        if (pending) cashouts.push({ m: pending, label: `You ${fmtX(pending)}`, me: true });
+      }
+      stage.frame({ phase: p, t, countdown: p === "betting" ? g.start - now : 0, sinceCrash: p === "crashed" ? now - (g.start + crashMs) : 0, cashouts }, dt);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+  }, [firstText]);
+
+  const post = async (body: object) => {
+    try {
+      const res = await fetch("/api/casino/crash", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      return await res.json();
+    } catch {
+      return { error: "Connection lost. Try again." };
+    }
+  };
+  const place = async () => {
+    if (busyRef.current) return;
+    setErr(null);
+    setBusy("bet");
+    const r = await post({ action: "bet", stake: bet, auto: target >= 1.01 ? target : null });
+    setBusy(null);
+    if (isErr(r)) {
+      // Just missed the countdown: hold the bet for the next round instead.
+      if (/in progress/i.test(r.error)) setQueued(true);
+      else setErr(r.error);
+      return;
+    }
+    receive(r);
+  };
+  const cash = async () => {
+    if (busyRef.current) return;
+    setErr(null);
+    setCashingAt(crashAt(Date.now() + clock.current.offset - sRef.current.game.start));
+    setBusy("cash");
+    const r = await post({ action: "cashout" });
+    setBusy(null);
+    setCashingAt(null);
+    if (isErr(r)) return setErr(r.error);
+    receive(r);
+  };
 
   const g = s.game;
-  const phase: "betting" | "running" | "crashed" = g.crash ? "crashed" : g.phase === "running" || now >= g.start ? "running" : "betting";
-  const mult = phase === "betting" ? 1 : phase === "crashed" ? g.crash : crashAt(now - g.start);
   const my = s.bet;
   const inRound = my && my.status === "live";
-
-  const place = () => start(async () => {
-    setErr(null);
-    const r = await safe(() => A.crashBet(bet, target >= 1.01 ? target : null));
-    if (isErr(r)) return setErr(r.error);
-    setS(r); onBalance(r.balance);
-  });
-  const cash = () => start(async () => {
-    const r = await safe(() => A.crashCashout());
-    if (isErr(r)) return setErr(r.error);
-    setS(r); onBalance(r.balance);
-  });
-  // A bet queued during a round goes in as soon as the next countdown opens.
+  // A bet held for the next round goes in as soon as its countdown opens.
   useEffect(() => {
-    if (phase === "betting" && queueRef.current && !my) { setQueued(false); place(); }
+    if (phase === "betting" && queued && !my) { setQueued(false); place(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, g.id]);
 
-  const total = s.players.reduce((x: number, p: any) => x + p.stake, 0);
-  // Graph: time on x, multiplier on y, rescaled as the round climbs.
-  const tNow = phase === "betting" ? 0 : Math.log(Math.max(1, mult)) / CRASH_RATE;
-  const tMax = Math.max(10, tNow * 1.12), mMax = Math.max(2, mult * 1.15);
-  const pts = Array.from({ length: 60 }, (_, i) => { const t = (tNow * i) / 59; const m = Math.exp(CRASH_RATE * t); return [(t / tMax) * 100, 100 - ((m - 1) / (mMax - 1)) * 100]; });
-  const tip = pts[pts.length - 1];
-  const color = phase === "crashed" ? "#ef4444" : my?.status === "won" ? C.green : "#3b82f6";
+  let button: React.ReactNode, main: () => void = () => {};
+  if (inRound && phase === "running") {
+    main = cash;
+    button = (
+      <BigButton tone="green" onPress={cash} disabled={busy === "cash"}>
+        {busy === "cash" && cashingAt ? `Cashing out at ${fmtX(cashingAt)}` : <>Cash out <span className="inline-flex items-center gap-[0.3em]"><CoinIcon /><span ref={cashRef} className="tabular-nums" /></span></>}
+      </BigButton>
+    );
+  } else if (inRound && phase === "betting") button = <BigButton disabled>Waiting for the round…</BigButton>;
+  else if (phase === "betting" && !my) {
+    main = place;
+    button = <BigButton onPress={place} disabled={busy === "bet"}>{busy === "bet" ? "Placing bet…" : "Bet"}</BigButton>;
+  } else {
+    main = () => setQueued((q) => !q);
+    button = <BigButton tone="grey" onPress={main}>{queued ? "Cancel (queued for next round)" : "Bet next round"}</BigButton>;
+  }
+  const mainRef = useRef(main);
+  mainRef.current = main;
+  // Space bar presses the main button (Bet / Cash out), unless you're typing in a field.
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || e.repeat) return;
+      const el = document.activeElement as HTMLElement | null;
+      if (el && /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) return;
+      e.preventDefault();
+      if (el?.tagName === "BUTTON") el.blur();
+      mainRef.current();
+    };
+    window.addEventListener("keydown", on);
+    return () => window.removeEventListener("keydown", on);
+  }, []);
 
-  let button: React.ReactNode;
-  if (inRound && phase === "running") button = <BigButton tone="green" onClick={cash} disabled={pending}>Cash out <Coins n={Math.floor(my.stake * mult)} /></BigButton>;
-  else if (inRound && phase === "betting") button = <BigButton disabled>Waiting for the round…</BigButton>;
-  else if (phase === "betting" && g.start - now > 250) button = <BigButton onClick={place} disabled={pending}>Bet</BigButton>;
-  else button = <BigButton tone="grey" onClick={() => setQueued((q) => !q)}>{queued ? "Cancel (queued for next round)" : "Bet next round"}</BigButton>;
+  const total = s.players.reduce((x: number, p: any) => x + p.stake, 0);
 
   return (
     <Shell controls={<>
@@ -320,6 +446,7 @@ function Crash({ init, onBalance, tester }: { init: any; onBalance: (b: number) 
         </div>
       </div>
       {button}
+      <p className="-mt-2 text-center text-[11px] text-zinc-500">Press Space to {inRound && phase === "running" ? "cash out" : "bet"}</p>
       <ProfitField label="Profit on Win" mult={target} amount={Math.max(0, Math.floor(bet * target) - bet)} />
       <Err text={err} />
       {tester && <p className="text-xs text-zinc-500">Test mode: bets are free.</p>}
@@ -332,7 +459,7 @@ function Crash({ init, onBalance, tester }: { init: any; onBalance: (b: number) 
           <ul className="mt-2 space-y-1 border-t border-white/5 pt-2 text-xs">
             {s.players.map((p: any, i: number) => (
               <li key={i} className="flex justify-between gap-2">
-                <span className="truncate text-zinc-400">{p.name}</span>
+                <span className={`truncate ${p.me ? "font-bold text-white" : "text-zinc-400"}`}>{p.name}</span>
                 <span className={`font-mono ${p.cashed ? "text-[#22e36b]" : "text-zinc-500"}`}>{p.cashed ? `${fmtX(p.cashed)} · ${p.payout.toLocaleString("en-US")}` : p.status === "lost" ? "Busted" : p.stake.toLocaleString("en-US")}</span>
               </li>
             ))}
@@ -340,34 +467,26 @@ function Crash({ init, onBalance, tester }: { init: any; onBalance: (b: number) 
         )}
       </div>
     </>}>
+      <canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" />
       <div className="absolute inset-x-4 top-4 z-10 flex gap-2 overflow-hidden">
         {s.recent.map((c: number, i: number) => (
-          <span key={`${g.id}-${i}`} className={`anim-deal shrink-0 rounded-full px-3.5 py-1.5 font-mono text-xs font-bold ${c >= 2 ? "text-[#06240f]" : "text-white"}`} style={{ background: c >= 2 ? C.green : C.raised }}>{fmtX(c)}</span>
+          <span key={g.id - 1 - i} className={`anim-deal shrink-0 rounded-full px-3.5 py-1.5 font-mono text-xs font-bold ${c >= 2 ? "text-[#06240f]" : "text-white"}`} style={{ background: c >= 2 ? C.green : C.raised }}>{fmtX(c)}</span>
         ))}
       </div>
-      <div className="absolute inset-0 pt-16">
-        <svg className="absolute inset-x-10 bottom-10 top-20 h-[calc(100%-7.5rem)] w-[calc(100%-5rem)] overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {[0, 25, 50, 75, 100].map((y) => <line key={y} x1="0" x2="100" y1={y} y2={y} stroke="rgba(255,255,255,.05)" vectorEffect="non-scaling-stroke" />)}
-          {mounted && phase !== "betting" && <>
-            <polygon points={`0,100 ${pts.map((p) => p.join(",")).join(" ")} ${tip[0]},100`} fill={color} opacity=".14" />
-            <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          </>}
-        </svg>
-        {mounted && phase !== "betting" && (
-          <div className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-4 ring-white/20" style={{ left: `calc(2.5rem + (100% - 5rem) * ${tip[0] / 100})`, top: `calc(5rem + (100% - 7.5rem) * ${tip[1] / 100})`, background: color }} />
-        )}
-        <div className="absolute inset-0 grid place-items-center">
-          <div className="text-center">
-            <p className="font-mono text-7xl font-black tabular-nums sm:text-8xl" style={{ color: phase === "crashed" ? "#ef4444" : "#ffffff" }}>{mounted ? fmtX(mult) : "1.00x"}</p>
-            {mounted && phase === "betting" && (
-              <p className="mx-auto mt-3 inline-block rounded-full px-4 py-1.5 text-sm font-bold text-white" style={{ background: C.raised }}>
-                Starting in <span className="font-mono" style={{ color: C.green }}>{Math.max(0, (g.start - now) / 1000).toFixed(2)}s</span>
+      <div className="pointer-events-none absolute inset-0 grid place-items-center pt-6">
+        <div className="text-center">
+          <p ref={multRef} className="font-mono text-7xl font-black tabular-nums text-white sm:text-8xl" suppressHydrationWarning>{firstText}</p>
+          {phase === "betting" && (
+            <div className="mx-auto mt-3 w-56">
+              <p className="inline-block rounded-full px-4 py-1.5 text-sm font-bold text-white" style={{ background: C.raised }}>
+                Launching in <span ref={countRef} className="font-mono tabular-nums" style={{ color: C.green }} />
               </p>
-            )}
-            {phase === "crashed" && <p className="mt-2 text-sm font-black uppercase tracking-[0.3em] text-red-500">Crashed</p>}
-            {my?.status === "won" && my.cashed && <p className="mt-2 text-sm font-bold" style={{ color: C.green }}>You cashed out at {fmtX(my.cashed)}: +{(my.payout - my.stake).toLocaleString("en-US")}</p>}
-            {my?.status === "lost" && phase === "crashed" && <p className="mt-1 text-sm text-zinc-500">Lost {my.stake.toLocaleString("en-US")}</p>}
-          </div>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div ref={barRef} className="h-full origin-left rounded-full" style={{ background: C.green }} /></div>
+            </div>
+          )}
+          {phase === "crashed" && <p className="mt-2 text-sm font-black uppercase tracking-[0.3em] text-red-500">Crashed</p>}
+          {my?.status === "won" && my.cashed && <p className="mt-2 text-sm font-bold" style={{ color: C.green }}>You cashed out at {fmtX(my.cashed)}: +{(my.payout - my.stake).toLocaleString("en-US")}</p>}
+          {my?.status === "lost" && phase === "crashed" && <p className="mt-1 text-sm text-zinc-500">Lost {my.stake.toLocaleString("en-US")}</p>}
         </div>
       </div>
     </Shell>
