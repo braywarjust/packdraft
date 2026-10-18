@@ -12,7 +12,7 @@ export const NAV_ICONS = {
   expand: "M9 6l6 6-6 6",
 };
 /** Optical sizes for the solid image icons so they weigh the same as the 2px line icons. */
-const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/league-logo-icon.svg": [16, 15], "/team-studio-icon.svg": [16, 15], "/collection-icon.svg": [16, 15], "/casino-icon.svg": [17, 15],
+const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/league-logo-icon.svg": [16, 15], "/team-studio-icon.svg": [16, 15], "/collection-icon.svg": [16, 15], "/casino-icon.svg": [20, 18],
   // Two cards side by side: drawn twice as wide so each card matches the single-card icons (16×15).
   "/sportsbook-icon.svg": [32, 15] };
 /** A nav icon at any size (18px in the sidebar). `box` widens the slot so wide icons (Sportsbook) don't crowd the label. */
