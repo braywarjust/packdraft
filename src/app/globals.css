@@ -147,11 +147,11 @@ body {
 /* ---------- Casino ---------- */
 /* Vehicles are centred by their lane wrapper, so these only move them vertically. */
 @keyframes carPass { from { transform: translateY(-110%); } to { transform: translateY(760px); } }
-@keyframes carHit { 0% { transform: translateY(-340%); } 70% { transform: translateY(-96%); } 82% { transform: translateY(-104%); } 100% { transform: translateY(-100%); } }
+@keyframes carRunOver { from { transform: translateY(-110%); } to { transform: translateY(760px); } }
 @keyframes tilePop { 0% { transform: scale(.3); opacity: 0; } 65% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
 @keyframes cardDeal { from { transform: translate(260px, -260px) rotate(18deg); opacity: 0; } to { transform: none; opacity: 1; } }
 .anim-car-pass { animation: carPass linear forwards; }
-.anim-car-hit { animation: carHit .45s cubic-bezier(.3,.9,.4,1) forwards; }
+.anim-car-runover { animation: carRunOver .62s linear forwards; }
 .anim-tile-pop { animation: tilePop .28s cubic-bezier(.3,.9,.4,1.3) both; }
 .anim-card-deal { animation: cardDeal .38s cubic-bezier(.2,.9,.3,1) both; }
 
@@ -211,6 +211,6 @@ body {
 .chk-won .chk-comb { animation: chkCombWobble .3s ease-in-out 6; }
 .chk-won .chk-leg { animation: chkTuck .6s ease-in-out 3; }
 
-/* Run over: timed with the car's landing (carHit). */
-.chk-squash-out { animation: chkSquashOut .2s ease-in .28s forwards; transform-origin: 50% 100%; }
-.chk-splat-in { animation: chkSplatIn .36s cubic-bezier(.3, .9, .4, 1.2) .4s both; transform-origin: 50% 60%; }
+/* Run over: timed so the chicken squashes as the car's nose reaches it (about a quarter of carRunOver). */
+.chk-squash-out { animation: chkSquashOut .12s ease-in .15s forwards; transform-origin: 50% 100%; }
+.chk-splat-in { animation: chkSplatIn .34s cubic-bezier(.3, .9, .4, 1.2) .22s both; transform-origin: 50% 60%; }

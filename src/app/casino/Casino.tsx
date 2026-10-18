@@ -483,15 +483,18 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
   const dead = over && round.status === "lost";
   const pos = dead ? round.hit : landing ?? step;
 
-  const act = (fn: () => Promise<any>, hop = false) => start(async () => {
+  const act = (fn: () => Promise<any>, hop = false) => {
     setErr(null);
     // A Go jumps straight away (into the next lane) while the server decides; the result shows once it lands.
+    // These updates sit outside the transition so they render now (transition updates wait for the request).
     if (hop) { setLanding(step + 1); setHopping(true); setTimeout(() => setHopping(false), JUMP_MS); }
-    const [r] = await Promise.all([safe(fn), new Promise((ok) => setTimeout(ok, hop ? JUMP_MS - 20 : 0))]);
-    setLanding(null);
-    if (isErr(r)) return setErr(r.error);
-    setRound(r.round); onBalance(r.balance);
-  });
+    start(async () => {
+      const [r] = await Promise.all([safe(fn), new Promise((ok) => setTimeout(ok, hop ? JUMP_MS - 20 : 0))]);
+      setLanding(null);
+      if (isErr(r)) return setErr(r.error);
+      setRound(r.round); onBalance(r.balance);
+    });
+  };
 
   // Background traffic in the lanes ahead, for a bit of life.
   useEffect(() => {
@@ -559,9 +562,10 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
                     <div className="anim-car-pass" style={{ animationDuration: `${c.dur}s` }}><Vehicle kind={c.kind} color={c.color} /></div>
                   </div>
                 ))}
+                {/* The car that gets the chicken drives straight over it and on off the screen. */}
                 {isHit && (
-                  <div className="pointer-events-none absolute inset-x-0 top-[64%] z-20 flex justify-center">
-                    <div className="anim-car-hit"><Vehicle kind={hitter.kind} color={hitter.color} /></div>
+                  <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center">
+                    <div className="anim-car-runover"><Vehicle kind={hitter.kind} color={hitter.color} /></div>
                   </div>
                 )}
                 <div className="absolute left-1/2 top-[54%] -translate-x-1/2">
