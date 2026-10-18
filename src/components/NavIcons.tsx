@@ -6,13 +6,13 @@ export const NAV_ICONS = {
   mock: "M4 6h16M4 12h16M4 18h10",
   studio: "/team-studio-icon.svg",
   bets: "/sportsbook-icon.svg",
-  casino: "M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01",
+  casino: "/casino-icon.svg",
   logout: "M15 17l5-5-5-5M20 12H9M12 21H4V3h8",
   collapse: "M15 6l-6 6 6 6",
   expand: "M9 6l6 6-6 6",
 };
 /** Optical sizes for the solid image icons so they weigh the same as the 2px line icons. */
-const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/league-logo-icon.svg": [16, 15], "/team-studio-icon.svg": [16, 15], "/collection-icon.svg": [16, 15],
+const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/league-logo-icon.svg": [16, 15], "/team-studio-icon.svg": [16, 15], "/collection-icon.svg": [16, 15], "/casino-icon.svg": [17, 15],
   // Two cards side by side: drawn twice as wide so each card matches the single-card icons (16×15).
   "/sportsbook-icon.svg": [32, 15] };
 /** A nav icon at any size (18px in the sidebar). `box` widens the slot so wide icons (Sportsbook) don't crowd the label. */
