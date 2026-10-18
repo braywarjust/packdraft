@@ -263,6 +263,7 @@ function Crash({ init, onBalance }: { init: any; onBalance: (b: number) => void 
   const countRef = useRef<HTMLSpanElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const cashRef = useRef<HTMLSpanElement>(null);
+  const stakeRef = useRef<HTMLSpanElement>(null);
   const sRef = useRef(s);
   sRef.current = s;
   const phaseRef = useRef(phase);
@@ -339,7 +340,11 @@ function Crash({ init, onBalance }: { init: any; onBalance: (b: number) => void 
         if (barRef.current) barRef.current.style.transform = `scaleX(${Math.min(1, left / 6000)})`;
       }
       const my = st.bet;
-      if (my?.status === "live" && p === "running") put(cashRef.current, Math.floor(my.stake * m).toLocaleString("en-US"));
+      if (my?.status === "live" && p === "running") {
+        const amt = Math.floor(my.stake * m).toLocaleString("en-US");
+        put(cashRef.current, amt);
+        put(stakeRef.current, amt);
+      }
 
       const cashouts = st.players.filter((x: any) => x.cashed).map((x: any) => ({ m: x.cashed, label: `${x.me ? "You" : x.name} ${fmtX(x.cashed)}`, me: !!x.me }));
       if (my?.status === "live") {
@@ -479,6 +484,12 @@ function Crash({ init, onBalance }: { init: any; onBalance: (b: number) => void 
       <div className="pointer-events-none absolute inset-0 grid place-items-center pt-6">
         <div className="text-center">
           <p ref={multRef} className="font-mono text-7xl font-black tabular-nums text-white sm:text-8xl" suppressHydrationWarning>{firstText}</p>
+          {/* Your bet climbing with the multiplier while you're in. */}
+          {inRound && phase === "running" && (
+            <p className="mt-1 inline-flex items-center gap-2 font-mono text-3xl font-black tabular-nums" style={{ color: C.green }}>
+              <CoinIcon /><span ref={stakeRef}>{Math.floor(my.stake).toLocaleString("en-US")}</span>
+            </p>
+          )}
           {phase === "betting" && (
             <div className="mx-auto mt-3 w-56">
               <p className="inline-block rounded-full px-4 py-1.5 text-sm font-bold text-white" style={{ background: C.raised }}>
