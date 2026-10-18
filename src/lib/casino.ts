@@ -11,7 +11,7 @@
 import crypto from "node:crypto";
 import { all, one, run, tx } from "./db";
 
-export const MIN_BET = 1;
+export const MIN_BET = 0; // 0 = free play: try a game without risking anything (nothing won or lost)
 export const MAX_BET = 10_000;
 export const MAX_WIN = 250_000;
 
@@ -74,17 +74,18 @@ function open(userId: number, game: Game, stake: number, state: object) {
 const save = (r: Round, state: object) => run("UPDATE casino_rounds SET state = ? WHERE id = ?", JSON.stringify(state), r.id);
 
 /** Close a round paying a total amount back (0 = lost). Multiplier is recorded against the opening stake. */
-function settlePaid(r: Round, paid: number, state: object, status?: "won" | "lost" | "push") {
+function settlePaid(r: Round, paid: number, state: object, status?: "won" | "lost" | "push", multiplier?: number) {
   const payout = Math.min(MAX_WIN, Math.floor(paid));
   const st = status ?? (payout > 0 ? "won" : "lost");
   tx(() => {
     const done = run("UPDATE casino_rounds SET status = ?, payout = ?, multiplier = ?, state = ?, settled_at = ? WHERE id = ? AND status = 'live'",
-      st, payout, r.stake ? payout / r.stake : 0, JSON.stringify(state), Date.now(), r.id);
+      st, payout, multiplier ?? (r.stake ? payout / r.stake : 0), JSON.stringify(state), Date.now(), r.id);
     if (Number(done.changes) && payout > 0 && !user(r.user_id).is_tester) run("UPDATE users SET coins = coins + ? WHERE id = ?", payout, r.user_id);
   });
   return payout;
 }
-const settle = (r: Round, multiplier: number, state: object) => settlePaid(r, r.stake * multiplier, state);
+// Status comes from the multiplier (not the payout) so free-play rounds still record wins and losses.
+const settle = (r: Round, multiplier: number, state: object) => settlePaid(r, r.stake * multiplier, state, multiplier > 0 ? "won" : "lost", multiplier);
 
 // ---------------------------------------------------------------- Crash (shared rounds, like Stake)
 // One round at a time for everyone: 6s to place bets, the multiplier climbs as e^(0.07 t) until it crashes, then a
@@ -292,7 +293,16 @@ export function minesState(userId: number, id?: number) {
 
 export type Card = { r: number; s: number }; // rank 1-13 (A..K), suit 0-3
 type Hand = { cards: Card[]; bet: number; doubled: boolean; done: boolean; result?: string; paid?: number };
-type BjState = { hands: Hand[]; active: number; dealer: Card[]; phase: "insurance" | "play" | "done"; insurance: number; insurancePaid?: number; split: boolean; result?: string };
+type BjState = { hands: Hand[]; active: number; dealer: Card[]; phase: "insurance" | "play" | "done"; insurance: number; insured?: boolean; insurancePaid?: number; split: boolean; result?: string };
+const HAND_RETURN: Record<string, number> = { Blackjack: 2.5, Win: 2, "Dealer busts": 2, Push: 1 };
+/** Settle a finished hand set. Win/loss is worked out in bet units, so it's right for free (0-point) hands too. */
+function bjSettle(r: Round, s: BjState, paid: number) {
+  const dBj = isBj(s.dealer);
+  let net = 0, units = 0;
+  for (const h of s.hands) { const u = h.doubled ? 2 : 1; units += u; net += ((HAND_RETURN[h.result ?? ""] ?? 0) - 1) * u; }
+  if (s.insured) net += dBj ? 1 : -0.5;
+  settlePaid(r, paid, s, net > 0 ? "won" : net < 0 ? "lost" : "push", r.stake ? undefined : Math.max(0, 1 + net / units));
+}
 const draw = (): Card => ({ r: crypto.randomInt(1, 14), s: crypto.randomInt(0, 4) });
 const cardVal = (c: Card) => (c.r === 1 ? 11 : Math.min(10, c.r));
 
@@ -333,10 +343,9 @@ function bjFinish(r: Round, s: BjState) {
     else { h.result = "Lose"; h.paid = 0; }
     paid += h.paid;
   }
-  const staked = s.hands.reduce((x, h) => x + h.bet, 0) + s.insurance;
   s.phase = "done";
   s.result = s.hands.length > 1 ? s.hands.map((h) => h.result).join(" · ") : s.hands[0].result;
-  settlePaid(r, paid, s, paid > staked ? "won" : paid === staked ? "push" : paid > 0 ? "lost" : "lost");
+  bjSettle(r, s, paid);
 }
 
 /** Dealer checks for blackjack (after insurance is decided when showing an ace). */
@@ -349,11 +358,11 @@ function bjPeek(r: Round, s: BjState) {
     s.phase = "done";
     s.result = pBj ? "Push: both blackjack" : "Dealer blackjack";
     const paid = s.hands[0].paid + s.insurancePaid;
-    return settlePaid(r, paid, s, paid >= r.stake + s.insurance && paid > 0 ? (paid > r.stake + s.insurance ? "won" : "push") : "lost");
+    return bjSettle(r, s, paid);
   }
   if (pBj) {
     s.hands[0].result = "Blackjack"; s.hands[0].paid = s.hands[0].bet * 2.5; s.phase = "done"; s.result = "Blackjack!";
-    return settlePaid(r, s.hands[0].paid, s, "won");
+    return bjSettle(r, s, s.hands[0].paid);
   }
   s.phase = "play";
   save(r, s);
@@ -373,7 +382,7 @@ export function bjInsurance(userId: number, take: boolean) {
   if (!r) throw new Error("No hand in play");
   const s = JSON.parse(r.state) as BjState;
   if (s.phase !== "insurance") throw new Error("Insurance isn't on offer");
-  if (take) { const cost = Math.floor(r.stake / 2); charge(userId, cost, "take insurance"); s.insurance = cost; }
+  if (take) { const cost = Math.floor(r.stake / 2); charge(userId, cost, "take insurance"); s.insurance = cost; s.insured = true; }
   bjPeek(r, s);
   return bjState(userId, r.id);
 }

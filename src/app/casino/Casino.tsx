@@ -80,16 +80,17 @@ function BetField({ value, onChange, disabled }: { value: number; onChange: (n: 
       <Label left="Bet Amount" right={<Coins n={value || 0} />} />
       <div className="flex overflow-hidden rounded-lg ring-1 ring-white/10" style={{ background: C.field }}>
         <div className="relative flex-1">
-          <input type="number" min={1} value={value || ""} disabled={disabled} placeholder="0" onChange={(e) => onChange(Math.max(0, Math.floor(Number(e.target.value))))}
+          <input type="number" min={0} value={value} disabled={disabled} placeholder="0" onChange={(e) => onChange(Math.max(0, Math.min(10000, Math.floor(Number(e.target.value) || 0))))}
             className="w-full bg-transparent py-2.5 pl-3 pr-9 font-mono text-white outline-none disabled:opacity-60" />
           <CoinIcon className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />
         </div>
         <div className="flex items-stretch" style={{ background: C.raised }}>
-          <button type="button" disabled={disabled} onClick={() => onChange(Math.max(1, Math.floor(value / 2)))} className="px-3.5 text-sm font-bold text-zinc-700 hover:bg-white/5 disabled:opacity-40">½</button>
+          <button type="button" disabled={disabled} onClick={() => onChange(Math.floor(value / 2))} className="px-3.5 text-sm font-bold text-zinc-700 hover:bg-white/5 disabled:opacity-40">½</button>
           <span className="my-2 w-px bg-white/15" />
-          <button type="button" disabled={disabled} onClick={() => onChange(Math.min(10000, value * 2 || 1))} className="px-3.5 text-sm font-bold text-zinc-700 hover:bg-white/5 disabled:opacity-40">2×</button>
+          <button type="button" disabled={disabled} onClick={() => onChange(Math.min(10000, value * 2))} className="px-3.5 text-sm font-bold text-zinc-700 hover:bg-white/5 disabled:opacity-40">2×</button>
         </div>
       </div>
+      {value === 0 && <p className="mt-1.5 text-xs font-semibold text-[#22e36b]">Free play: try it out, nothing is won or lost.</p>}
     </div>
   );
 }
@@ -186,8 +187,8 @@ function Crash({ init, onBalance, tester }: { init: any; onBalance: (b: number) 
   let button: React.ReactNode;
   if (inRound && phase === "running") button = <BigButton tone="green" onClick={cash} disabled={pending}>Cash out <Coins n={Math.floor(my.stake * mult)} /></BigButton>;
   else if (inRound && phase === "betting") button = <BigButton disabled>Waiting for the round…</BigButton>;
-  else if (phase === "betting" && g.start - now > 250) button = <BigButton onClick={place} disabled={pending || !bet}>Bet</BigButton>;
-  else button = <BigButton tone="grey" onClick={() => setQueued((q) => !q)} disabled={!bet}>{queued ? "Cancel (queued for next round)" : "Bet next round"}</BigButton>;
+  else if (phase === "betting" && g.start - now > 250) button = <BigButton onClick={place} disabled={pending}>Bet</BigButton>;
+  else button = <BigButton tone="grey" onClick={() => setQueued((q) => !q)}>{queued ? "Cancel (queued for next round)" : "Bet next round"}</BigButton>;
 
   return (
     <Shell controls={<>
@@ -527,7 +528,7 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
           <BigButton tone="grey" onClick={() => act(A.chickenStep, true)} disabled={pending}>Go</BigButton>
         </>
       ) : (
-        <BigButton onClick={() => act(() => A.chickenStart(bet, level))} disabled={pending || !bet}>Bet</BigButton>
+        <BigButton onClick={() => act(() => A.chickenStart(bet, level))} disabled={pending}>Bet</BigButton>
       )}
       <ProfitField label="Total Profit" mult={liveRound || (over && round.status === "won") ? round.multiplier : 1} amount={liveRound || (over && round.status === "won") ? Math.floor(round.stake * round.multiplier) - round.stake : 0} />
       <Err text={err} />
@@ -638,7 +639,7 @@ function Mines({ init, onBalance, tester }: { init: any; onBalance: (b: number) 
       </div>
       {liveRound
         ? <BigButton tone="green" onClick={() => act(A.minesCashout)} disabled={pending || picks.length === 0}>Cashout <Coins n={Math.floor(round.stake * mult)} /></BigButton>
-        : <BigButton onClick={() => act(() => A.minesStart(bet, count))} disabled={pending || !bet}>Bet</BigButton>}
+        : <BigButton onClick={() => act(() => A.minesStart(bet, count))} disabled={pending}>Bet</BigButton>}
       <BigButton tone="grey" onClick={() => pick("random")} disabled={!liveRound || pending}>Random Pick</BigButton>
       <ProfitField label="Total Profit" mult={liveRound || (over && round.status === "won") ? mult : 1} amount={liveRound || (over && round.status === "won") ? Math.floor(round.stake * mult) - round.stake : 0} />
       {liveRound && <p className="text-sm text-zinc-500">Next gem: <span className="font-mono text-white">{fmtX(round.next)}</span></p>}
@@ -760,7 +761,7 @@ function Blackjack({ init, onBalance, tester }: { init: any; onBalance: (b: numb
             icon={<span className="text-sm text-zinc-500">×2</span>} />
         </div>
       )}
-      <BigButton onClick={() => act(() => A.bjStart(bet))} disabled={!!liveRound || pending || !bet}>Bet</BigButton>
+      <BigButton onClick={() => act(() => A.bjStart(bet))} disabled={!!liveRound || pending}>Bet</BigButton>
       <Err text={err} />
       {over && <p className={`text-sm font-bold ${won ? "text-[#22e36b]" : round.status === "push" ? "text-amber-400" : "text-red-500"}`}>{round.result}{round.payout ? `: paid ${round.payout.toLocaleString("en-US")}` : ""}</p>}
       {tester && <p className="text-xs text-zinc-500">Test mode: bets are free.</p>}
