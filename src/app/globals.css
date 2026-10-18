@@ -215,6 +215,16 @@ body {
 .chk-squash-out { animation: chkSquashOut .12s ease-in .15s forwards; transform-origin: 50% 100%; }
 .chk-splat-in { animation: chkSplatIn .34s cubic-bezier(.3, .9, .4, 1.2) .22s both; transform-origin: 50% 60%; }
 
+/* Casino backdrop: Pack Points icons drifting down behind the page (FallingCoins.tsx). */
+@keyframes ppFall { from { transform: translate3d(0, -12vh, 0) rotate(var(--r0)); } to { transform: translate3d(var(--dx), 112vh, 0) rotate(var(--r1)); } }
+@keyframes ppSway { from { transform: translateX(-14px); } to { transform: translateX(14px); } }
+.pp-fall { position: absolute; top: 0; animation: ppFall var(--dur) linear var(--delay) infinite; will-change: transform; }
+.pp-sway { display: block; animation: ppSway var(--sway) ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) {
+  .pp-fall { animation: none; transform: translateY(var(--y)) rotate(var(--r0)); }
+  .pp-sway { animation: none; }
+}
+
 /* Casino game thumbnails: the sunburst turns on the selected and hovered tiles, the rocket's flame flickers,
    and the chicken hops when you hover it. */
 @keyframes raysSpin { to { transform: rotate(360deg); } }
