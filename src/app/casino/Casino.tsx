@@ -294,21 +294,125 @@ function ChickenSprite({ state }: { state: "idle" | "hop" | "dead" | "won" }) {
   );
 }
 
-const CAR_COLORS = ["#22c55e", "#ef4444", "#3b82f6", "#f59e0b", "#a855f7", "#ec4899"];
-function Car({ color }: { color: string }) {
-  // Top-down race car, nose pointing down the screen.
-  return (
-    <svg viewBox="0 0 60 100" className="h-24 w-14">
-      <rect x="4" y="14" width="10" height="20" rx="3" fill="#111827" /><rect x="46" y="14" width="10" height="20" rx="3" fill="#111827" />
-      <rect x="4" y="64" width="10" height="20" rx="3" fill="#111827" /><rect x="46" y="64" width="10" height="20" rx="3" fill="#111827" />
-      <path d="M8 6h44v10H8z" fill={color} />
-      <path d="M18 14h24l4 30-4 44H18l-4-44z" fill={color} />
-      <rect x="22" y="40" width="16" height="22" rx="6" fill="#0f172a" />
-      <circle cx="30" cy="51" r="5" fill="#f8fafc" />
-      <path d="M8 88h44v8H8z" fill={color} />
-      <rect x="26" y="66" width="8" height="18" rx="2" fill="#0f172a" opacity=".5" />
-    </svg>
-  );
+// ---- Vehicles (top-down, nose pointing down the screen) ----
+type VehicleKind = "race" | "sedan" | "sports" | "taxi" | "police" | "pickup" | "van" | "bus" | "bike";
+const PAINT = ["#22c55e", "#ef4444", "#3b82f6", "#f59e0b", "#a855f7", "#ec4899", "#14b8a6", "#f97316", "#e5e7eb", "#64748b"];
+/** Width on screen and how long it takes to cross the screen (seconds, min-max). Buses lumber, bikes zip. */
+const VEHICLE: Record<VehicleKind, { w: number; speed: [number, number]; weight: number }> = {
+  sedan: { w: 50, speed: [1.3, 1.8], weight: 5 }, sports: { w: 50, speed: [0.9, 1.2], weight: 3 }, race: { w: 54, speed: [0.8, 1.05], weight: 2 },
+  taxi: { w: 50, speed: [1.3, 1.7], weight: 2 }, police: { w: 50, speed: [0.95, 1.25], weight: 1 }, pickup: { w: 52, speed: [1.4, 1.9], weight: 3 },
+  van: { w: 54, speed: [1.7, 2.2], weight: 2 }, bus: { w: 60, speed: [2.2, 2.8], weight: 1 }, bike: { w: 24, speed: [0.85, 1.1], weight: 2 },
+};
+const KINDS = (Object.keys(VEHICLE) as VehicleKind[]).flatMap((k) => Array(VEHICLE[k].weight).fill(k) as VehicleKind[]);
+const pickVehicle = (r = Math.random) => {
+  const kind = KINDS[Math.floor(r() * KINDS.length)];
+  const color = kind === "taxi" ? "#facc15" : kind === "police" ? "#f8fafc" : kind === "bus" ? (r() < 0.5 ? "#fbbf24" : "#2563eb") : PAINT[Math.floor(r() * PAINT.length)];
+  const [lo, hi] = VEHICLE[kind].speed;
+  return { kind, color, dur: lo + r() * (hi - lo) };
+};
+
+const GLASS = "#0f172a";
+const TYRE = "#0b0f16";
+const tyres = (x1: number, x2: number, ys: number[], w = 7, h = 16) => ys.flatMap((y) => [<rect key={`a${y}`} x={x1} y={y} width={w} height={h} rx="2.5" fill={TYRE} />, <rect key={`b${y}`} x={x2} y={y} width={w} height={h} rx="2.5" fill={TYRE} />]);
+
+function Vehicle({ kind, color }: { kind: VehicleKind; color: string }) {
+  const w = VEHICLE[kind].w;
+  let body: React.ReactNode, h = 110;
+  switch (kind) {
+    case "race":
+      h = 100;
+      body = <>
+        {tyres(2, 47, [14, 66], 11, 20)}
+        <path d="M8 6h44v10H8z" fill={color} />
+        <path d="M18 14h24l4 30-4 44H18l-4-44z" fill={color} />
+        <path d="M27 14h6v74h-6z" fill="#fff" opacity=".35" />
+        <rect x="22" y="40" width="16" height="22" rx="6" fill={GLASS} /><circle cx="30" cy="51" r="5" fill="#f8fafc" />
+        <path d="M8 88h44v8H8z" fill={color} />
+      </>;
+      break;
+    case "sports":
+      h = 104;
+      body = <>
+        {tyres(3, 50, [16, 70])}
+        <path d="M14 4h32q8 0 9 10l2 64q0 22-27 24Q3 100 3 78l2-64Q6 4 14 4z" fill={color} />
+        <path d="M8 8h44v6H8z" fill="#0b0f16" opacity=".55" />
+        <path d="M24 4h4v96h-4zM32 4h4v96h-4z" fill="#fff" opacity=".7" />
+        <path d="M13 30h34l-3 16H16z" fill={GLASS} /><path d="M12 64h36l-4 18H16z" fill={GLASS} />
+        <rect x="8" y="96" width="10" height="4" rx="2" fill="#fde68a" /><rect x="42" y="96" width="10" height="4" rx="2" fill="#fde68a" />
+      </>;
+      break;
+    case "taxi":
+    case "police":
+    case "sedan":
+      h = 110;
+      body = <>
+        {tyres(2, 51, [18, 76])}
+        <rect x="6" y="4" width="48" height="102" rx="14" fill={kind === "police" ? "#111827" : color} />
+        {kind === "police" && <rect x="6" y="34" width="48" height="40" fill="#f8fafc" />}
+        <rect x="11" y="18" width="38" height="13" rx="5" fill={GLASS} opacity=".9" />
+        <rect x="11" y="33" width="38" height="34" rx="6" fill={kind === "police" ? "#f8fafc" : color} />
+        <rect x="11" y="33" width="38" height="34" rx="6" fill="#000" opacity=".12" />
+        <rect x="10" y="68" width="40" height="17" rx="6" fill={GLASS} />
+        {kind === "taxi" && <>
+          <rect x="20" y="44" width="20" height="10" rx="2" fill="#111827" /><rect x="22" y="46" width="16" height="6" rx="1" fill="#fde047" />
+          <path d="M6 58h48v4H6z" fill="#111827" /><path d="M10 58h4v4h-4zM18 58h4v4h-4zM26 58h4v4h-4zM34 58h4v4h-4zM42 58h4v4h-4zM50 58h4v4h-4z" fill="#fde047" />
+        </>}
+        {kind === "police" && <>
+          <rect x="13" y="45" width="17" height="8" rx="2" fill="#ef4444" /><rect x="30" y="45" width="17" height="8" rx="2" fill="#3b82f6" />
+        </>}
+        <rect x="9" y="5" width="10" height="4" rx="2" fill="#ef4444" /><rect x="41" y="5" width="10" height="4" rx="2" fill="#ef4444" />
+        <rect x="9" y="101" width="11" height="4" rx="2" fill="#fde68a" /><rect x="40" y="101" width="11" height="4" rx="2" fill="#fde68a" />
+        <rect x="1" y="66" width="6" height="5" rx="2" fill={kind === "police" ? "#111827" : color} /><rect x="53" y="66" width="6" height="5" rx="2" fill={kind === "police" ? "#111827" : color} />
+      </>;
+      break;
+    case "pickup":
+      h = 124;
+      body = <>
+        {tyres(2, 51, [16, 92])}
+        <rect x="6" y="4" width="48" height="116" rx="10" fill={color} />
+        <rect x="11" y="9" width="38" height="52" rx="4" fill="#000" opacity=".28" />
+        <path d="M11 22h38M11 36h38M11 50h38" stroke="#000" strokeOpacity=".2" strokeWidth="2" />
+        <rect x="10" y="66" width="40" height="12" rx="4" fill={GLASS} opacity=".9" />
+        <rect x="10" y="78" width="40" height="18" rx="5" fill="#000" opacity=".12" />
+        <rect x="9" y="97" width="42" height="15" rx="5" fill={GLASS} />
+        <rect x="8" y="115" width="11" height="4" rx="2" fill="#fde68a" /><rect x="41" y="115" width="11" height="4" rx="2" fill="#fde68a" />
+      </>;
+      break;
+    case "van":
+      h = 132;
+      body = <>
+        {tyres(2, 51, [16, 100])}
+        <rect x="5" y="3" width="50" height="126" rx="9" fill={color} />
+        <rect x="10" y="10" width="40" height="88" rx="4" fill="#000" opacity=".1" />
+        <path d="M14 18v72M46 18v72" stroke="#000" strokeOpacity=".22" strokeWidth="3" strokeLinecap="round" />
+        <rect x="9" y="106" width="42" height="15" rx="5" fill={GLASS} />
+        <rect x="8" y="124" width="11" height="4" rx="2" fill="#fde68a" /><rect x="41" y="124" width="11" height="4" rx="2" fill="#fde68a" />
+      </>;
+      break;
+    case "bus":
+      h = 190;
+      body = <>
+        {tyres(1, 52, [22, 150])}
+        <rect x="4" y="3" width="52" height="184" rx="10" fill={color} />
+        <rect x="9" y="12" width="42" height="150" rx="5" fill="#000" opacity=".1" />
+        <rect x="16" y="40" width="28" height="20" rx="3" fill="#cbd5e1" /><rect x="16" y="100" width="28" height="20" rx="3" fill="#cbd5e1" />
+        <path d="M18 46h24M18 52h24M18 106h24M18 112h24" stroke="#64748b" strokeWidth="2" />
+        <rect x="8" y="166" width="44" height="14" rx="5" fill={GLASS} />
+        <rect x="8" y="182" width="10" height="4" rx="2" fill="#fde68a" /><rect x="42" y="182" width="10" height="4" rx="2" fill="#fde68a" />
+      </>;
+      break;
+    case "bike":
+      h = 70;
+      body = <>
+        <rect x="11" y="2" width="8" height="18" rx="4" fill={TYRE} /><rect x="11" y="50" width="8" height="18" rx="4" fill={TYRE} />
+        <rect x="9" y="16" width="12" height="36" rx="5" fill={color} />
+        <path d="M2 46h26" stroke="#94a3b8" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="15" cy="32" r="8" fill="#111827" /><circle cx="15" cy="34" r="5" fill={color} opacity=".85" />
+        <rect x="12" y="64" width="6" height="4" rx="2" fill="#fde68a" />
+      </>;
+      break;
+  }
+  return <svg viewBox={`0 0 ${kind === "bike" ? 30 : 60} ${h}`} style={{ width: w }} className="block h-auto">{body}</svg>;
 }
 
 function Manhole({ open }: { open?: boolean }) {
@@ -330,7 +434,7 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [hopping, setHopping] = useState(false);
-  const [traffic, setTraffic] = useState<{ id: number; lane: number; color: string; dur: number }[]>([]);
+  const [traffic, setTraffic] = useState<{ id: number; lane: number; kind: VehicleKind; color: string; dur: number }[]>([]);
   const liveRound = round && round.status === "live";
   const over = round && round.status !== "live";
   const cars = CARS[round?.level ?? level];
@@ -355,13 +459,15 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
       const ahead = Math.max(1, pos + 1);
       const lane = ahead + Math.floor(Math.random() * Math.min(6, Math.max(1, lanes - ahead + 1)));
       if (lane > lanes) return;
-      const car = { id: ++id, lane, color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)], dur: 1.1 + Math.random() * 0.8 };
-      setTraffic((x) => [...x.slice(-6), car]);
+      const car = { id: ++id, lane, ...pickVehicle() };
+      setTraffic((x) => (x.some((c) => c.lane === lane) ? x : [...x.slice(-7), car]));
       setTimeout(() => setTraffic((x) => x.filter((c) => c.id !== car.id)), car.dur * 1000 + 100);
-    }, 900);
+    }, 700);
     return () => clearInterval(t);
   }, [pos, lanes]);
 
+  // The vehicle that gets the chicken is picked from the round id, so it stays the same on every render.
+  const hitter = useMemo(() => { let x = (round?.id ?? 1) * 9301 + 49297; const r = () => ((x = (x * 9301 + 49297) % 233280) / 233280); return pickVehicle(r); }, [round?.id]);
   const shift = Math.max(0, pos - 2) * LANE_W;
   const chickenState = dead ? "dead" : hopping ? "hop" : over && round.status === "won" ? "won" : "idle";
 
@@ -406,10 +512,17 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
             const isHit = dead && n === round.hit;
             return (
               <div key={n} className="relative shrink-0 border-r-[3px] border-dashed border-white/10" style={{ width: LANE_W }}>
+                {/* Vehicles sit in a full-width centred column; the animation only moves them down the lane. */}
                 {traffic.filter((c) => c.lane === n && !isHit).map((c) => (
-                  <div key={c.id} className="anim-car-pass absolute left-1/2 -translate-x-1/2" style={{ animationDuration: `${c.dur}s` }}><Car color={c.color} /></div>
+                  <div key={c.id} className="pointer-events-none absolute inset-x-0 top-0 z-[5] flex justify-center">
+                    <div className="anim-car-pass" style={{ animationDuration: `${c.dur}s` }}><Vehicle kind={c.kind} color={c.color} /></div>
+                  </div>
                 ))}
-                {isHit && <div className="anim-car-hit absolute left-1/2 top-[64%] z-20 -translate-x-1/2 -translate-y-full"><Car color="#22c55e" /></div>}
+                {isHit && (
+                  <div className="pointer-events-none absolute inset-x-0 top-[64%] z-20 flex justify-center">
+                    <div className="anim-car-hit"><Vehicle kind={hitter.kind} color={hitter.color} /></div>
+                  </div>
+                )}
                 <div className="absolute left-1/2 top-[54%] -translate-x-1/2">
                   {passed && !isHit ? (
                     <svg viewBox="0 0 80 50" className="h-12 w-20"><rect x="6" y="10" width="68" height="30" rx="8" fill="#3b2f12" /><path d="M14 10l14 30M34 10l14 30M54 10l14 30" stroke="#f59e0b" strokeWidth="7" /></svg>
