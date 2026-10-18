@@ -155,53 +155,62 @@ body {
 .anim-tile-pop { animation: tilePop .28s cubic-bezier(.3,.9,.4,1.3) both; }
 .anim-card-deal { animation: cardDeal .38s cubic-bezier(.2,.9,.3,1) both; }
 
-/* Chicken: every part animates separately (transform-box makes each part's origin its own box). */
+/* Chicken (Stake style): every part animates separately (transform-box makes each part's origin its own box). */
 .chk * { transform-box: fill-box; }
 .chk-leg { transform-origin: 50% 0; }
-.chk-tail { transform-origin: 100% 80%; }
-.chk-wing { transform-origin: 15% 25%; }
-.chk-head { transform-origin: 30% 90%; }
-.chk-comb { transform-origin: 40% 100%; }
+.chk-tail { transform-origin: 100% 60%; }
+.chk-head { transform-origin: 40% 100%; }
+.chk-comb { transform-origin: 50% 100%; }
 .chk-wattle { transform-origin: 50% 0; }
-.chk-beak { transform-origin: 0 20%; }
-.chk-lid { transform-origin: 50% 0; transform: scaleY(0); }
+.chk-beak { transform-origin: 0 50%; }
+.chk-eyes { transform-origin: 50% 50%; }
 .chk-body { transform-origin: 50% 100%; }
-@keyframes chkBody { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.025, .975); } }
-@keyframes chkHead { 0%, 38%, 100% { transform: translate(0, 0) rotate(0); } 18% { transform: translate(0, 1.2px) rotate(-3deg); } 50% { transform: translate(1.5px, 2.5px) rotate(16deg); } 56% { transform: translate(0, 0) rotate(-2deg); } 70% { transform: translate(0, 1px) rotate(2deg); } }
-@keyframes chkTail { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(9deg); } }
-@keyframes chkWingIdle { 0%, 78%, 100% { transform: rotate(0); } 83% { transform: rotate(-22deg); } 88% { transform: rotate(2deg); } 93% { transform: rotate(-14deg); } }
-@keyframes chkComb { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-8deg); } }
-@keyframes chkWattle { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(14deg); } }
-@keyframes chkBeak { 0%, 86%, 100% { transform: rotate(0); } 91% { transform: rotate(22deg); } }
-@keyframes chkBlink { 0%, 90%, 100% { transform: scaleY(0); } 94% { transform: scaleY(1); } }
-@keyframes chkLeg { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(10deg); } }
-@keyframes chkFlap { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-48deg); } }
-@keyframes chkTuck { 0%, 100% { transform: scaleY(1) rotate(0); } 50% { transform: scaleY(.55) rotate(-20deg); } }
-@keyframes chkHopBody { 0% { transform: translateY(0) scale(1, 1); } 15% { transform: translateY(2px) scale(1.08, .88); } 55% { transform: translateY(-26px) scale(.96, 1.06); } 85% { transform: translateY(0) scale(1.06, .92); } 100% { transform: translateY(0) scale(1, 1); } }
-@keyframes chkShadow { 0%, 100% { transform: scale(1); opacity: .25; } 55% { transform: scale(.55); opacity: .12; } }
-@keyframes chkCheer { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-14px) rotate(-6deg); } 60% { transform: translateY(0) rotate(4deg); } }
-@keyframes chkHeadUp { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-14deg); } }
+.chk-shadow { transform-origin: 50% 50%; }
+@keyframes chkBreathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.02, .975); } }
+@keyframes chkHeadBob { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(1.2px) rotate(-2deg); } 55% { transform: translateY(0) rotate(0); } 70% { transform: translateY(.8px) rotate(2.5deg); } }
+@keyframes chkTailSway { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-7deg); } }
+@keyframes chkCombWobble { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-7deg); } }
+@keyframes chkWattleSwing { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(12deg); } }
+@keyframes chkBlink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+@keyframes chkBeakClick { 0%, 88%, 100% { transform: rotate(0); } 92% { transform: rotate(10deg); } }
+@keyframes chkFeet { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-6deg); } }
+/* Jump: anticipation squash, stretch on take-off, float at the top, squash on landing, settle. */
+@keyframes chkJump {
+  0% { transform: translateY(0) scale(1, 1); }
+  12% { transform: translateY(0) scale(1.14, .84); }
+  32% { transform: translateY(-22px) scale(.92, 1.1); }
+  52% { transform: translateY(-30px) scale(.98, 1.02); }
+  74% { transform: translateY(-12px) scale(.97, 1.04); }
+  88% { transform: translateY(0) scale(1.12, .88); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+@keyframes chkJumpShadow { 0%, 100% { transform: scale(1); opacity: .22; } 52% { transform: scale(.55); opacity: .1; } }
+@keyframes chkTuck { 0%, 100% { transform: rotate(0) scaleY(1); } 30%, 70% { transform: rotate(-24deg) scaleY(.7); } }
+@keyframes chkTailFlick { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(12deg); } }
+@keyframes chkCheer { 0%, 100% { transform: translateY(0) scale(1, 1); } 15% { transform: translateY(0) scale(1.1, .9); } 45% { transform: translateY(-16px) scale(.95, 1.06); } 80% { transform: translateY(0) scale(1.06, .94); } }
+@keyframes chkSquashOut { 0% { transform: scale(1, 1); opacity: 1; } 60% { transform: scale(1.35, .25); opacity: 1; } 100% { transform: scale(1.45, .12); opacity: 0; } }
+@keyframes chkSplatIn { 0% { transform: scale(.75, .35); opacity: 0; } 35% { transform: scale(1.12, 1.06); opacity: 1; } 65% { transform: scale(.96, .98); } 100% { transform: scale(1, 1); opacity: 1; } }
 
-.chk-idle .chk-body { animation: chkBody 1.4s ease-in-out infinite; }
-.chk-idle .chk-head { animation: chkHead 3.2s ease-in-out infinite; }
-.chk-idle .chk-tail { animation: chkTail 1.7s ease-in-out infinite; }
-.chk-idle .chk-wing { animation: chkWingIdle 3.4s ease-in-out infinite; }
-.chk-idle .chk-comb { animation: chkComb 1.6s ease-in-out infinite; }
-.chk-idle .chk-wattle { animation: chkWattle 1.6s ease-in-out infinite .2s; }
-.chk-idle .chk-beak { animation: chkBeak 3.2s ease-in-out infinite; }
-.chk-idle .chk-lid, .chk-won .chk-lid { animation: chkBlink 3.8s ease-in-out infinite; }
-.chk-idle .chk-leg-l { animation: chkLeg 1.4s ease-in-out infinite; }
-.chk-idle .chk-leg-r { animation: chkLeg 1.4s ease-in-out infinite -.7s; }
+.chk-idle .chk-body { animation: chkBreathe 1.5s ease-in-out infinite; }
+.chk-idle .chk-head { animation: chkHeadBob 2.6s ease-in-out infinite; }
+.chk-idle .chk-tail { animation: chkTailSway 1.8s ease-in-out infinite; }
+.chk-idle .chk-comb { animation: chkCombWobble 1.5s ease-in-out infinite; }
+.chk-idle .chk-wattle { animation: chkWattleSwing 1.5s ease-in-out infinite .15s; }
+.chk-idle .chk-eyes, .chk-won .chk-eyes { animation: chkBlink 3.6s ease-in-out infinite; }
+.chk-idle .chk-beak { animation: chkBeakClick 4.2s ease-in-out infinite; }
+.chk-idle .chk-leg-l { animation: chkFeet 1.6s ease-in-out infinite; }
+.chk-idle .chk-leg-r { animation: chkFeet 1.6s ease-in-out infinite -.8s; }
 
-.chk-hop { animation: chkHopBody .38s ease-out; transform-origin: 50% 100%; }
-.chk-hop .chk-shadow { animation: chkShadow .38s ease-out; transform-origin: 50% 50%; }
-.chk-hop .chk-wing { animation: chkFlap .095s linear 4; }
-.chk-hop .chk-leg { animation: chkTuck .38s ease-out; }
-.chk-hop .chk-head { transform: rotate(-6deg); transition: transform .1s; }
-.chk-hop .chk-tail { transform: rotate(14deg); }
+.chk-hop { animation: chkJump .34s cubic-bezier(.33, 0, .25, 1); transform-origin: 50% 100%; }
+.chk-hop .chk-shadow { animation: chkJumpShadow .34s ease-in-out; }
+.chk-hop .chk-leg { animation: chkTuck .34s ease-in-out; }
+.chk-hop .chk-tail { animation: chkTailFlick .34s ease-out; }
+.chk-hop .chk-comb { animation: chkCombWobble .17s ease-in-out 2; }
 
-.chk-won { animation: chkCheer .7s ease-in-out 3; transform-origin: 50% 100%; }
-.chk-won .chk-wing { animation: chkFlap .16s linear 13; }
-.chk-won .chk-head { animation: chkHeadUp .7s ease-in-out 3; }
-.chk-won .chk-beak { transform: rotate(20deg); }
-.chk-won .chk-comb { animation: chkComb .35s ease-in-out 6; }
+.chk-won { animation: chkCheer .6s ease-in-out 3; transform-origin: 50% 100%; }
+.chk-won .chk-comb { animation: chkCombWobble .3s ease-in-out 6; }
+.chk-won .chk-leg { animation: chkTuck .6s ease-in-out 3; }
+
+/* Run over: timed with the car's landing (carHit). */
+.chk-squash-out { animation: chkSquashOut .2s ease-in .28s forwards; transform-origin: 50% 100%; }
+.chk-splat-in { animation: chkSplatIn .36s cubic-bezier(.3, .9, .4, 1.2) .4s both; transform-origin: 50% 60%; }

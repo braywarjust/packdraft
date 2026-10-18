@@ -266,57 +266,68 @@ function Crash({ init, onBalance, tester }: { init: any; onBalance: (b: number) 
 // ---------------------------------------------------------------- Chicken
 
 /**
- * The chicken, built from separate parts that each animate on their own: legs shuffle, tail sways, wing flutters,
- * head bobs and pecks, comb and wattle wobble, beak opens, eye blinks. The root state (idle/hop/won) changes how
- * the parts move; see the chk-* rules in globals.css.
+ * Stake-style chicken: flat colours, a round white body with a fluffy two-puff tail, a tall head with a three-bump
+ * comb, two dot eyes, a yellow beak over an orange underside, a red wattle and orange legs with flat feet.
+ * Each part is its own group so it animates separately (chk-* rules in globals.css): the head bobs, comb and wattle
+ * wobble, eyes blink, tail sways, feet shuffle; a jump squashes, stretches and tucks the legs.
+ * When it's hit, the standing chicken squashes down and swaps for the flattened one.
  */
-function ChickenSprite({ state }: { state: "idle" | "hop" | "dead" | "won" }) {
-  if (state === "dead") {
-    return (
-      <svg viewBox="0 0 64 64" className="h-16 w-16">
-        <ellipse cx="32" cy="48" rx="23" ry="7" fill="#e5e7eb" />
-        <path d="M30 41c2-4 6-4 7 0" fill="#ef4444" />
-        <path d="M13 46l-6-3M51 46l6-3M18 50l-4 4M46 50l4 4" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
-        <path d="M25 44l4 4M29 44l-4 4M35 44l4 4M39 44l-4 4" stroke="#111827" strokeWidth="2" strokeLinecap="round" />
-        <path d="M8 40c3-1 5 0 6 2M54 39c-3-1-5 0-6 2" stroke="#f1f5f9" strokeWidth="3" strokeLinecap="round" fill="none" />
-      </svg>
-    );
-  }
+const CHK = { white: "#ffffff", shade: "#eef1f5", red: "#d9354a", beak: "#f6c443", beakUnder: "#f08a3a", leg: "#ef8a3c", eye: "#0f1720" };
+
+function StandingChicken({ state }: { state: "idle" | "hop" | "won" | "squash" }) {
   return (
-    <svg viewBox="0 0 64 64" className={`chk chk-${state} h-16 w-16 overflow-visible`}>
-      <ellipse className="chk-shadow" cx="31" cy="60" rx="13" ry="3" fill="#000" opacity=".25" />
-      {/* legs */}
-      <g className="chk-leg chk-leg-l"><path d="M27 50v8M27 58l-4 2M27 58l1 3M27 58l4 1" stroke="#f59e0b" strokeWidth="2.6" strokeLinecap="round" /></g>
-      <g className="chk-leg chk-leg-r"><path d="M35 50v8M35 58l-4 2M35 58l1 3M35 58l4 1" stroke="#f59e0b" strokeWidth="2.6" strokeLinecap="round" /></g>
+    <svg viewBox="0 0 100 112" className={`chk chk-${state} block h-full w-full overflow-visible`}>
+      <ellipse className="chk-shadow" cx="56" cy="108" rx="26" ry="4" fill="#000" opacity=".22" />
+      {/* legs + flat feet */}
+      <g className="chk-leg chk-leg-l"><path d="M47 92l2.5 13" stroke={CHK.leg} strokeWidth="5" strokeLinecap="round" /><rect x="42" y="103" width="15" height="4.4" rx="2.2" fill={CHK.leg} /></g>
+      <g className="chk-leg chk-leg-r"><path d="M68 92l2 11" stroke={CHK.leg} strokeWidth="5" strokeLinecap="round" /><rect x="64" y="101" width="15" height="4.4" rx="2.2" fill={CHK.leg} /></g>
       <g className="chk-body">
-        {/* tail feathers */}
-        <g className="chk-tail">
-          <path d="M17 34c-6-3-8-10-6-15 3 3 6 8 9 11z" fill="#f1f5f9" />
-          <path d="M18 31c-4-5-4-11-1-15 2 4 4 8 5 12z" fill="#ffffff" />
-          <path d="M16 37c-6-1-10-6-10-10 4 1 8 4 11 7z" fill="#e2e8f0" />
-        </g>
-        <ellipse cx="31" cy="39" rx="16.5" ry="13.5" fill="#ffffff" />
-        <ellipse cx="31" cy="44" rx="13" ry="7" fill="#f1f5f9" />
-        <ellipse cx="38" cy="29" rx="7.5" ry="9" fill="#ffffff" />
-        {/* wing */}
-        <g className="chk-wing">
-          <path d="M21 35c4-5 15-5 18 1-3 8-13 9-18-1z" fill="#eef2f7" stroke="#d6dde6" strokeWidth="1" />
-          <path d="M25 39c3 1 7 1 10 0M26 36c3 1 6 1 9 0" stroke="#d6dde6" strokeWidth="1" fill="none" strokeLinecap="round" />
-        </g>
+        {/* fluffy tail */}
+        <g className="chk-tail"><circle cx="25" cy="44" r="13.5" fill={CHK.white} /><circle cx="15" cy="62" r="11.5" fill={CHK.white} /></g>
+        <ellipse cx="54" cy="70" rx="38" ry="25" fill={CHK.white} />
+        {/* thighs */}
+        <ellipse cx="49" cy="93" rx="7.5" ry="4.5" fill={CHK.white} /><ellipse cx="68" cy="93" rx="7" ry="4" fill={CHK.white} />
       </g>
-      {/* head */}
       <g className="chk-head">
-        <g className="chk-comb"><path d="M35 15c-1-5 3-6 4-2 1-5 6-4 5 1 3-2 6 1 3 4-4 1-9 1-12-3z" fill="#ef4444" /></g>
-        <circle cx="41" cy="21" r="9.5" fill="#ffffff" />
-        <g className="chk-wattle"><path d="M47.5 26c2.2 1 2.4 5.5 0 6.5-2.3-1-2.3-5.5 0-6.5z" fill="#ef4444" /></g>
-        <path d="M49 19.5l7.5 2.8-7.5 1.4z" fill="#f59e0b" />
-        <g className="chk-beak"><path d="M49 23.4l6.4 .4-6.4 2z" fill="#ea8a0c" /></g>
-        <circle cx="44" cy="19" r="2.2" fill="#111827" />
-        <circle cx="44.8" cy="18.2" r=".75" fill="#ffffff" />
-        <ellipse className="chk-lid" cx="44" cy="19" rx="2.9" ry="2.9" fill="#ffffff" />
-        <circle cx="45.5" cy="23.5" r="1.4" fill="#fda4af" opacity=".7" />
+        <g className="chk-comb"><circle cx="58" cy="25" r="6" fill={CHK.red} /><circle cx="63" cy="17" r="6.5" fill={CHK.red} /><circle cx="71" cy="17" r="6.5" fill={CHK.red} /></g>
+        <rect x="51" y="20" width="44" height="68" rx="22" fill={CHK.white} />
+        <g className="chk-eyes"><circle cx="70" cy="37" r="2.9" fill={CHK.eye} /><circle cx="84.5" cy="34" r="2.9" fill={CHK.eye} /></g>
+        <g className="chk-wattle"><ellipse cx="81" cy="55" rx="4" ry="6" fill={CHK.red} /></g>
+        <g className="chk-beak">
+          <path d="M77 42.5L89.5 41.5Q91 42.5 89.6 44.6L79 47.6Q76.8 47.3 77 42.5z" fill={CHK.beak} />
+          <path d="M78.5 46.8L89.6 44.2Q89 46.6 86.5 47.2L80 49z" fill={CHK.beakUnder} />
+        </g>
       </g>
     </svg>
+  );
+}
+
+function FlatChicken() {
+  // Run over: a squashed pancake seen from above, legs sticking out, eyes screwed shut.
+  return (
+    <svg viewBox="0 0 130 80" className="chk-flat block h-full w-full overflow-visible">
+      <ellipse cx="66" cy="50" rx="56" ry="20" fill="#000" opacity=".18" />
+      <path d="M14 46l-8-3 3-7M12 46l-6 6" stroke={CHK.leg} strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M112 22l6-8 8 1M118 14l2-6" stroke={CHK.leg} strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <circle cx="30" cy="22" r="11" fill={CHK.white} /><circle cx="44" cy="15" r="11" fill={CHK.white} />
+      <ellipse cx="66" cy="42" rx="54" ry="24" transform="rotate(-8 66 42)" fill={CHK.white} />
+      <ellipse cx="44" cy="58" rx="30" ry="9" transform="rotate(-6 44 58)" fill={CHK.shade} />
+      <g transform="rotate(-18 62 30)"><circle cx="56" cy="31" r="5" fill={CHK.red} /><circle cx="63" cy="27" r="5.5" fill={CHK.red} /><circle cx="70" cy="28" r="5" fill={CHK.red} /></g>
+      <path d="M86 54q3-2.5 6 0M100 50q3-3 6 0" stroke={CHK.eye} strokeWidth="2.6" strokeLinecap="round" fill="none" />
+      <path d="M94 57l11-1q1 3-2 4.5l-8 2z" fill={CHK.beak} /><path d="M95 61.5l8-1.5q-1 2.3-3 2.8z" fill={CHK.beakUnder} />
+      <path d="M98 63q4 1 3.5 7-1 3-3.5 1.5-2.5-3 0-8.5z" fill={CHK.red} />
+    </svg>
+  );
+}
+
+function ChickenSprite({ state }: { state: "idle" | "hop" | "dead" | "won" }) {
+  if (state !== "dead") return <div className="h-[94px] w-[84px]"><StandingChicken state={state} /></div>;
+  return (
+    <div className="relative h-[94px] w-[84px]">
+      {/* squashes flat as the car lands, then the flattened chicken takes over */}
+      <div className="chk-squash-out absolute inset-0"><StandingChicken state="squash" /></div>
+      <div className="chk-splat-in absolute -left-[18px] top-[46px] h-[74px] w-[120px]"><FlatChicken /></div>
+    </div>
   );
 }
 
@@ -452,6 +463,7 @@ function Manhole({ open }: { open?: boolean }) {
 }
 
 const LANE_W = 112;
+const JUMP_MS = 340;
 
 function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number) => void; tester: boolean }) {
   const [bet, setBet] = useState(10);
@@ -460,6 +472,7 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [hopping, setHopping] = useState(false);
+  const [landing, setLanding] = useState<number | null>(null);
   const [traffic, setTraffic] = useState<{ id: number; lane: number; kind: VehicleKind; color: string; dur: number }[]>([]);
   const liveRound = round && round.status === "live";
   const over = round && round.status !== "live";
@@ -467,15 +480,16 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
   const lanes = ROAD - cars;
   const step = round?.step ?? 0;
   const dead = over && round.status === "lost";
-  const pos = dead ? round.hit : step;
+  const pos = dead ? round.hit : landing ?? step;
 
   const act = (fn: () => Promise<any>, hop = false) => start(async () => {
     setErr(null);
-    if (hop) { setHopping(true); setTimeout(() => setHopping(false), 380); }
-    const r = await safe(fn);
+    // A Go jumps straight away (into the next lane) while the server decides; the result shows once it lands.
+    if (hop) { setLanding(step + 1); setHopping(true); setTimeout(() => setHopping(false), JUMP_MS); }
+    const [r] = await Promise.all([safe(fn), new Promise((ok) => setTimeout(ok, hop ? JUMP_MS - 20 : 0))]);
+    setLanding(null);
     if (isErr(r)) return setErr(r.error);
-    // Let the hop land before the result shows.
-    setTimeout(() => { setRound(r.round); onBalance(r.balance); }, hop ? 180 : 0);
+    setRound(r.round); onBalance(r.balance);
   });
 
   // Background traffic in the lanes ahead, for a bit of life.
@@ -520,10 +534,6 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
       {over && <p className={`text-sm font-bold ${dead ? "text-red-500" : "text-[#22e36b]"}`}>{dead ? `Hit in lane ${round.hit}. Lost ${round.stake.toLocaleString("en-US")}.` : `Crossed ${round.step} lanes: +${(round.payout - round.stake).toLocaleString("en-US")}`}</p>}
       {tester && <p className="text-xs text-zinc-500">Test mode: bets are free.</p>}
     </>}>
-      <svg width="0" height="0" className="absolute" aria-hidden>
-        <filter id="chk-blur" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="0 2.2" /></filter>
-        <filter id="chk-blur-heavy" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="0.6 7" /></filter>
-      </svg>
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-y-0 left-0 flex transition-transform duration-500 ease-out" style={{ transform: `translateX(${-shift}px)` }}>
           {/* Start: sidewalk with a traffic light and a bush */}
@@ -545,11 +555,7 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
                 {/* Vehicles sit in a full-width centred column; the animation only moves them down the lane. */}
                 {traffic.filter((c) => c.lane === n && !isHit).map((c) => (
                   <div key={c.id} className="pointer-events-none absolute inset-x-0 top-0 z-[5] flex justify-center">
-                    <div className="anim-car-pass relative" style={{ animationDuration: `${c.dur}s` }}>
-                      {/* Motion blur: a stretched, faded smear trailing behind, plus a slight vertical blur on the vehicle. */}
-                      <div className="absolute inset-0 origin-bottom -translate-y-[18%] scale-y-[1.35] opacity-30 [filter:url(#chk-blur-heavy)]"><Vehicle kind={c.kind} color={c.color} /></div>
-                      <div className="relative [filter:url(#chk-blur)]"><Vehicle kind={c.kind} color={c.color} /></div>
-                    </div>
+                    <div className="anim-car-pass" style={{ animationDuration: `${c.dur}s` }}><Vehicle kind={c.kind} color={c.color} /></div>
                   </div>
                 ))}
                 {isHit && (
@@ -570,7 +576,7 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
           <div className="relative w-[150px] shrink-0 bg-[#1b2433]"><p className="absolute inset-x-0 top-1/2 text-center text-xs font-black uppercase tracking-[0.3em] text-[#22e36b]">Safe</p></div>
         </div>
         {/* The chicken hops lane to lane */}
-        <div className="absolute top-[47%] z-10 transition-transform duration-[380ms] ease-out" style={{ transform: `translateX(${(pos === 0 ? 75 : 150 + (pos - 1) * LANE_W + LANE_W / 2) - shift - 32}px)` }}>
+        <div className="absolute top-[38%] z-10 transition-transform duration-[340ms] [transition-timing-function:cubic-bezier(.45,.05,.3,1)]" style={{ transform: `translateX(${(pos === 0 ? 75 : 150 + (pos - 1) * LANE_W + LANE_W / 2) - shift - 42}px)` }}>
           <ChickenSprite state={chickenState} />
         </div>
       </div>
