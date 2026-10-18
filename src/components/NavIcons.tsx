@@ -6,6 +6,7 @@ export const NAV_ICONS = {
   mock: "M4 6h16M4 12h16M4 18h10",
   studio: "/team-studio-icon.svg",
   bets: "/sportsbook-icon.svg",
+  casino: "M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01",
   logout: "M15 17l5-5-5-5M20 12H9M12 21H4V3h8",
   collapse: "M15 6l-6 6 6 6",
   expand: "M9 6l6 6-6 6",
