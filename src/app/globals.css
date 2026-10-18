@@ -214,3 +214,16 @@ body {
 /* Run over: timed so the chicken squashes as the car's nose reaches it (about a quarter of carRunOver). */
 .chk-squash-out { animation: chkSquashOut .12s ease-in .15s forwards; transform-origin: 50% 100%; }
 .chk-splat-in { animation: chkSplatIn .34s cubic-bezier(.3, .9, .4, 1.2) .22s both; transform-origin: 50% 60%; }
+
+/* Casino game thumbnails: the sunburst turns on the selected and hovered tiles, the rocket's flame flickers,
+   and the chicken hops when you hover it. */
+@keyframes raysSpin { to { transform: rotate(360deg); } }
+.casino-rays { transform-origin: 50px 36px; }
+.casino-thumb.is-active .casino-rays, .casino-thumb:hover .casino-rays { animation: raysSpin 30s linear infinite; }
+@keyframes flameFlicker { from { transform: scaleY(.7); } to { transform: scaleY(1.15); } }
+.crash-flame { transform-box: fill-box; transform-origin: 50% 0; animation: flameFlicker .16s ease-in-out infinite alternate; }
+.crash-rocket { transition: transform .35s cubic-bezier(.3, .9, .4, 1.2); }
+.casino-thumb:hover .crash-rocket { transform: translateY(-3px); }
+.casino-thumb:hover .chk { animation: chkJump .34s cubic-bezier(.33, 0, .25, 1); transform-origin: 50% 100%; }
+.casino-thumb:hover .chk .chk-leg { animation: chkTuck .34s ease-in-out; }
+.casino-thumb:hover .chk .chk-shadow { animation: chkJumpShadow .34s ease-in-out; }

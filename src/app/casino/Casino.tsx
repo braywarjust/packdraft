@@ -28,11 +28,11 @@ const fmtX = (m: number) => `${m.toLocaleString("en-US", { minimumFractionDigits
 const C = { side: "#1a2535", stage: "#0f1620", field: "#0c121b", raised: "#2a3648", raised2: "#344257", green: "#22e36b" };
 
 type Initial = { crash: any; chicken: any; mines: any; blackjack: any };
-const GAMES: { id: Game; name: string; blurb: string }[] = [
-  { id: "crash", name: "Crash", blurb: "Cash out before it crashes" },
-  { id: "chicken", name: "Chicken", blurb: "Cross the road, lane by lane" },
-  { id: "blackjack", name: "Blackjack", blurb: "Beat the dealer to 21" },
-  { id: "mines", name: "Mines", blurb: "Find gems, dodge mines" },
+const GAMES: { id: Game; name: string; blurb: string; bg: string }[] = [
+  { id: "crash", name: "Crash", blurb: "Cash out before it crashes", bg: "linear-gradient(160deg,#f0abfc 0%,#a21caf 38%,#5b21b6 70%,#2e1065 100%)" },
+  { id: "chicken", name: "Chicken", blurb: "Cross the road, lane by lane", bg: "linear-gradient(160deg,#fcd34d 0%,#f97316 40%,#c2410c 72%,#7c2d12 100%)" },
+  { id: "blackjack", name: "Blackjack", blurb: "Beat the dealer to 21", bg: "linear-gradient(160deg,#86efac 0%,#16a34a 38%,#166534 70%,#052e16 100%)" },
+  { id: "mines", name: "Mines", blurb: "Find gems, dodge mines", bg: "linear-gradient(160deg,#7dd3fc 0%,#0ea5e9 34%,#1d4ed8 68%,#172554 100%)" },
 ];
 
 export function Casino({ game, initial, tester }: { game: Game; initial: Initial; tester: boolean }) {
@@ -41,20 +41,130 @@ export function Casino({ game, initial, tester }: { game: Game; initial: Initial
   const sync = (b: number) => { if (b !== balance) { setBalance(b); router.refresh(); } };
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {GAMES.map((g) => (
-          <Link key={g.id} href={`/casino?g=${g.id}`} scroll={false}
-            className={`rounded-xl p-3 ring-1 transition ${game === g.id ? "bg-brand text-white ring-brand" : "bg-panel text-zinc-700 ring-white/5 hover:bg-panel2"}`}>
-            <p className="font-black">{g.name}</p>
-            <p className={`text-xs ${game === g.id ? "text-white/75" : "text-zinc-500"}`}>{g.blurb}</p>
-          </Link>
-        ))}
+      <div className="grid grid-cols-2 gap-3 sm:max-w-[780px] sm:grid-cols-4">
+        {GAMES.map((g) => <GameThumb key={g.id} g={g} active={game === g.id} />)}
       </div>
       {game === "crash" && <Crash init={initial.crash} onBalance={sync} tester={tester} />}
       {game === "chicken" && <Chicken init={initial.chicken} onBalance={sync} tester={tester} />}
       {game === "blackjack" && <Blackjack init={initial.blackjack} onBalance={sync} tester={tester} />}
       {game === "mines" && <Mines init={initial.mines} onBalance={sync} tester={tester} />}
       <p className="text-center text-xs text-zinc-500">Pack Points only, no real money. Crash and Mines pay back 99% over the long run, Chicken 98%, Blackjack about 99.5% with perfect play.</p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- game thumbnails
+
+/** Sunburst behind each thumbnail's art: 16 wedges around a point just above the middle. */
+const RAYS = Array.from({ length: 16 }, (_, i) => {
+  const a = (i * Math.PI) / 8, b = a + Math.PI / 16;
+  const p = (t: number) => `${(50 + 95 * Math.cos(t)).toFixed(2)} ${(36 + 95 * Math.sin(t)).toFixed(2)}`;
+  return `M50 36L${p(a)}L${p(b)}Z`;
+}).join("");
+
+/** A square, casino-style game tile: bright gradient, sunburst, the game's art and its name. Sizes are in cqw so the art scales with the tile. */
+function GameThumb({ g, active }: { g: (typeof GAMES)[number]; active: boolean }) {
+  return (
+    <Link href={`/casino?g=${g.id}`} scroll={false} aria-current={active ? "page" : undefined} style={{ background: g.bg }}
+      className={`casino-thumb @container group relative block aspect-square overflow-hidden rounded-2xl transition duration-200 hover:-translate-y-1 ${active ? "is-active ring-[3px] ring-[#fff]" : "ring-1 ring-white/10 brightness-[.86] hover:brightness-100"}`}>
+      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden>
+        <defs>
+          <radialGradient id={`thumb-glow-${g.id}`} cx="50%" cy="36%" r="50%"><stop offset="0" stopColor="#fff" stopOpacity=".28" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
+        </defs>
+        <g className="casino-rays" fill="#fff" opacity=".09"><path d={RAYS} /></g>
+        <circle cx="50" cy="36" r="48" fill={`url(#thumb-glow-${g.id})`} />
+      </svg>
+      <div className="absolute inset-x-0 top-0 flex h-[70%] items-center justify-center transition-[scale] duration-300 group-hover:scale-[1.06]">
+        {g.id === "crash" ? <CrashArt /> : g.id === "chicken" ? <ChickenArt /> : g.id === "blackjack" ? <BlackjackArt /> : <MinesArt />}
+      </div>
+      <div className="absolute inset-x-0 bottom-0 px-3 pb-2.5">
+        <p className="text-xl font-black leading-tight text-white">{g.name}</p>
+        <p className="truncate text-[11px] font-semibold text-white/80">{g.blurb}</p>
+      </div>
+    </Link>
+  );
+}
+
+function CrashArt() {
+  // A multiplier line shooting up into the stars with a rocket riding the tip.
+  const stars: [number, number, number][] = [[10, 12, .9], [24, 30, .6], [36, 8, .7], [52, 22, .5], [90, 40, .7], [64, 4, .8], [8, 40, .5], [94, 12, .6], [80, 52, .5]];
+  return (
+    <svg viewBox="0 0 100 70" className="h-full w-[92%] overflow-visible">
+      <defs>
+        <linearGradient id="crash-thumb-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fde047" stopOpacity=".5" /><stop offset="1" stopColor="#fde047" stopOpacity="0" /></linearGradient>
+      </defs>
+      {stars.map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} fill="#fff" opacity=".8" />)}
+      <path d="M6 64Q48 62 72 22L72 64Z" fill="url(#crash-thumb-area)" />
+      <path d="M6 64Q48 62 72 22" stroke="#fde047" strokeWidth="3.4" strokeLinecap="round" fill="none" />
+      <g transform="translate(77 13) rotate(31) scale(1.2)">
+        <g className="crash-rocket">
+          <path className="crash-flame" d="M-3.4 7.5Q0 20 3.4 7.5z" fill="#f97316" />
+          <path className="crash-flame" d="M-1.8 7.5Q0 14 1.8 7.5z" fill="#fde047" />
+          <path d="M-4 1L-9 9L-3.6 7z" fill="#ef4444" /><path d="M4 1L9 9L3.6 7z" fill="#ef4444" />
+          <path d="M0-13C5-8 5.2 2 4 8L-4 8C-5.2 2-5-8 0-13z" fill="#fff" />
+          <path d="M0-13C2.6-10.6 3.8-8.6 4.4-6.4L-4.4-6.4C-3.8-8.6-2.6-10.6 0-13z" fill="#ef4444" />
+          <circle cy="-1.5" r="2.4" fill="#38bdf8" stroke="#1e3a8a" strokeWidth=".9" />
+        </g>
+      </g>
+    </svg>
+  );
+}
+
+function ChickenArt() {
+  // The chicken on its manhole, with a car barrelling down the next lane.
+  return (
+    <div className="relative h-full w-full">
+      <div className="absolute inset-y-0 left-[64%] border-l-[3px] border-dashed border-white/45" />
+      <div className="absolute -top-[10cqw] left-[70%]"><Vehicle kind="sedan" color="#2563eb" width="21cqw" /></div>
+      <div className="absolute bottom-[2%] left-[33%] flex -translate-x-1/2 flex-col items-center">
+        <div className="relative z-10 -mb-[9cqw] h-[40cqw] w-[36cqw]"><StandingChicken state="idle" /></div>
+        <Manhole className="h-[16cqw] w-[30cqw]" />
+      </div>
+    </div>
+  );
+}
+
+function MiniCard({ r, s, className }: { r: number; s: number; className: string }) {
+  return (
+    <div className={`absolute flex h-[36cqw] w-[25cqw] flex-col justify-between rounded-[2.4cqw] bg-[#fff] p-[2.2cqw] shadow-[0_6px_14px_rgba(0,0,0,.35)] transition-[rotate,translate] duration-300 ${className}`} style={{ color: s === 1 || s === 2 ? "#e11d48" : "#0b0f17" }}>
+      <p className="text-[8.5cqw] font-black leading-none">{RANK[r]}</p>
+      <Suit s={s} className="h-[12cqw] w-[12cqw] self-end" />
+    </div>
+  );
+}
+
+function Chip({ color, edge, className }: { color: string; edge: string; className: string }) {
+  return (
+    <svg viewBox="0 0 40 40" className={`absolute ${className}`}>
+      <circle cx="20" cy="20" r="19" fill={color} />
+      <circle cx="20" cy="20" r="15.5" fill="none" stroke={edge} strokeWidth="5" strokeDasharray="6.17 6" />
+      <circle cx="20" cy="20" r="10.5" fill={color} stroke={edge} strokeWidth="1.4" opacity=".95" />
+    </svg>
+  );
+}
+
+function BlackjackArt() {
+  // Blackjack in two cards, fanning out a little more on hover, with a couple of chips.
+  return (
+    <div className="relative h-full w-full">
+      <MiniCard r={1} s={0} className="left-[22%] top-[16%] -rotate-12 group-hover:-translate-x-[1.5cqw] group-hover:-rotate-[18deg]" />
+      <MiniCard r={13} s={1} className="left-[42%] top-[11%] rotate-[9deg] group-hover:translate-x-[1.5cqw] group-hover:rotate-[15deg]" />
+      <Chip color="#111827" edge="#facc15" className="left-[62%] top-[55%] w-[17cqw]" />
+      <Chip color="#dc2626" edge="#fff" className="left-[68%] top-[48%] w-[17cqw]" />
+    </div>
+  );
+}
+
+function MinesArt() {
+  // A corner of the board with two gems and a mine turned over.
+  const cells = ["", "gem", "", "", "bomb", "", "gem", "", ""];
+  return (
+    <div className="grid h-[46cqw] w-[46cqw] -rotate-6 grid-cols-3 gap-[1.8cqw]">
+      {cells.map((c, i) => (
+        <div key={i} className="grid place-items-center rounded-[2cqw]" style={c ? { background: "#0f1620" } : { background: "#2f3d52", boxShadow: "inset 0 -1cqw 0 #1f2a3a" }}>
+          {c === "gem" ? <GemIcon /> : c === "bomb" ? <BombIcon /> : null}
+        </div>
+      ))}
     </div>
   );
 }
@@ -353,7 +463,7 @@ const GLASS = "#0f172a";
 const TYRE = "#0b0f16";
 const tyres = (x1: number, x2: number, ys: number[], w = 7, h = 16) => ys.flatMap((y) => [<rect key={`a${y}`} x={x1} y={y} width={w} height={h} rx="2.5" fill={TYRE} />, <rect key={`b${y}`} x={x2} y={y} width={w} height={h} rx="2.5" fill={TYRE} />]);
 
-function Vehicle({ kind, color }: { kind: VehicleKind; color: string }) {
+function Vehicle({ kind, color, width }: { kind: VehicleKind; color: string; width?: string }) {
   const w = VEHICLE[kind].w;
   let body: React.ReactNode, h = 110;
   switch (kind) {
@@ -450,12 +560,12 @@ function Vehicle({ kind, color }: { kind: VehicleKind; color: string }) {
       </>;
       break;
   }
-  return <svg viewBox={`0 0 ${kind === "bike" ? 30 : 60} ${h}`} style={{ width: w }} className="block h-auto">{body}</svg>;
+  return <svg viewBox={`0 0 ${kind === "bike" ? 30 : 60} ${h}`} style={{ width: width ?? w }} className="block h-auto">{body}</svg>;
 }
 
-function Manhole({ open }: { open?: boolean }) {
+function Manhole({ open, className = "h-12 w-20" }: { open?: boolean; className?: string }) {
   return (
-    <svg viewBox="0 0 80 50" className="h-12 w-20">
+    <svg viewBox="0 0 80 50" className={className}>
       <ellipse cx="40" cy="25" rx="36" ry="22" fill="#2b3647" />
       <ellipse cx="40" cy="25" rx="30" ry="17" fill={open ? "#0b0f16" : "#344257"} stroke="#24303f" strokeWidth="3" />
       {!open && <path d="M28 17v16M36 15v20M44 15v20M52 17v16" stroke="#24303f" strokeWidth="4" strokeLinecap="round" />}
