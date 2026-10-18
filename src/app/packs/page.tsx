@@ -44,7 +44,7 @@ export default async function PacksPage() {
         </div>
         <div className="relative grid grid-cols-3 gap-px bg-black/20">
           {([
-            ["Your Pack Points", u.is_tester ? "Unlimited" : <Coins key="c" n={u.coins} />],
+            ["Your Pack Points", u.is_tester ? "Unlimited" : <Coins key="c" n={u.coins} live />],
             ["Unopened packs", String(inventory.length)],
             ["Slabs in the vault", vaultTotal.toLocaleString()],
           ] as [string, React.ReactNode][]).map(([k, v]) => (

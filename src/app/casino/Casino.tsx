@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Coins, CoinIcon } from "@/components/Coins";
+import { LiveNumber } from "@/components/LiveNumber";
 import { announceBalance } from "@/components/useLiveBalance";
 import * as A from "./actions";
 import { CRASH_RATE, crashRenderer } from "./crash-canvas";
@@ -205,12 +206,15 @@ function BetField({ value, onChange, disabled }: { value: number; onChange: (n: 
   );
 }
 
-function ProfitField({ label, mult, amount }: { label: string; mult: number; amount: number }) {
+/** live: the profit counts up with a pop each time it grows (Chicken lanes, Mines gems). */
+function ProfitField({ label, mult, amount, live }: { label: string; mult: number; amount: number; live?: boolean }) {
   return (
     <div>
       <Label left={`${label} (${fmtX(mult)})`} right={<Coins n={amount} />} />
       <div className="flex items-center justify-between rounded-lg px-3 py-2.5 ring-1 ring-white/10" style={{ background: C.field }}>
-        <span className="font-mono text-white">{amount.toLocaleString("en-US")}</span><CoinIcon className="text-emerald-500" />
+        {live
+          ? <LiveNumber value={amount} kind="pp" icon={<CoinIcon className="text-emerald-500" />} className="w-full flex-row-reverse justify-between font-mono text-white" />
+          : <><span className="font-mono text-white">{amount.toLocaleString("en-US")}</span><CoinIcon className="text-emerald-500" /></>}
       </div>
     </div>
   );
@@ -756,13 +760,13 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
       </div>
       {liveRound ? (
         <>
-          <BigButton onClick={() => act(A.chickenCashout)} disabled={pending || step === 0}>Cashout {step > 0 && <Coins n={Math.floor(round.stake * round.multiplier)} />}</BigButton>
+          <BigButton onClick={() => act(A.chickenCashout)} disabled={pending || step === 0}>Cashout {step > 0 && <Coins n={Math.floor(round.stake * round.multiplier)} live />}</BigButton>
           <BigButton tone="grey" onClick={() => act(A.chickenStep, true)} disabled={pending}>Go</BigButton>
         </>
       ) : (
         <BigButton onClick={() => act(() => A.chickenStart(bet, level))} disabled={pending}>Bet</BigButton>
       )}
-      <ProfitField label="Total Profit" mult={liveRound || (over && round.status === "won") ? round.multiplier : 1} amount={liveRound || (over && round.status === "won") ? Math.floor(round.stake * round.multiplier) - round.stake : 0} />
+      <ProfitField live label="Total Profit" mult={liveRound || (over && round.status === "won") ? round.multiplier : 1} amount={liveRound || (over && round.status === "won") ? Math.floor(round.stake * round.multiplier) - round.stake : 0} />
       <Err text={err} />
       {over && <p className={`text-sm font-bold ${dead ? "text-red-500" : "text-[#22e36b]"}`}>{dead ? `Hit in lane ${round.hit}. Lost ${round.stake.toLocaleString("en-US")}.` : `Crossed ${round.step} lanes: +${(round.payout - round.stake).toLocaleString("en-US")}`}</p>}
       {tester && <p className="text-xs text-zinc-500">Test mode: bets are free.</p>}
@@ -871,10 +875,10 @@ function Mines({ init, onBalance, tester }: { init: any; onBalance: (b: number) 
         </div>
       </div>
       {liveRound
-        ? <BigButton tone="green" onClick={() => act(A.minesCashout)} disabled={pending || picks.length === 0}>Cashout <Coins n={Math.floor(round.stake * mult)} /></BigButton>
+        ? <BigButton tone="green" onClick={() => act(A.minesCashout)} disabled={pending || picks.length === 0}>Cashout <Coins n={Math.floor(round.stake * mult)} live /></BigButton>
         : <BigButton onClick={() => act(() => A.minesStart(bet, count))} disabled={pending}>Bet</BigButton>}
       <BigButton tone="grey" onClick={() => pick("random")} disabled={!liveRound || pending}>Random Pick</BigButton>
-      <ProfitField label="Total Profit" mult={liveRound || (over && round.status === "won") ? mult : 1} amount={liveRound || (over && round.status === "won") ? Math.floor(round.stake * mult) - round.stake : 0} />
+      <ProfitField live label="Total Profit" mult={liveRound || (over && round.status === "won") ? mult : 1} amount={liveRound || (over && round.status === "won") ? Math.floor(round.stake * mult) - round.stake : 0} />
       {liveRound && <p className="text-sm text-zinc-500">Next gem: <span className="font-mono text-white">{fmtX(round.next)}</span></p>}
       <Err text={err} />
       {over && <p className={`text-sm font-bold ${round.status === "lost" ? "text-red-500" : "text-[#22e36b]"}`}>{round.status === "lost" ? `Boom. Lost ${round.stake.toLocaleString("en-US")}.` : `Cashed out at ${fmtX(round.multiplier)}: +${(round.payout - round.stake).toLocaleString("en-US")}`}</p>}

@@ -89,7 +89,7 @@ export function LineupEditor({
         </td>
         <td className="text-center text-xs text-zinc-500">{p ? `${p.played}/${p.total}` : ""}</td>
         <td className="text-right font-mono font-semibold text-zinc-800">{p ? <Fpts n={p.proj} /> : ""}</td>
-        <td className="pr-3 text-right font-mono font-bold">{p ? <Fpts n={p.pts} /> : ""}</td>
+        <td className="pr-3 text-right font-mono font-bold">{p ? <Fpts n={p.pts} live /> : ""}</td>
         {editable && (
           <td className="py-2 pr-3 text-right">
             <div className="flex justify-end gap-1.5">
@@ -134,7 +134,7 @@ export function LineupEditor({
             {STARTERS.map((s) => row(s, bySlot.get(s)))}
             <tr className="border-t border-line bg-panel2/60">
               <td colSpan={4} className="py-2 pl-3 text-xs font-bold uppercase text-zinc-500">Week total (starters only count)</td>
-              <td className="pr-3 text-right font-mono font-bold"><Fpts n={weekPts} /></td>{editable && <td />}
+              <td className="pr-3 text-right font-mono font-bold"><Fpts n={weekPts} live /></td>{editable && <td />}
             </tr>
             {bench.map((p) => row("BN", p))}
           </tbody>

@@ -83,7 +83,7 @@ function Checkout({ p, coins, tester, onPay, onDone, onCancel }: {
               <div className="relative flex items-start justify-between">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/70">PackDraft Wallet</p>
-                  <p className="mt-1 font-mono text-2xl font-black">{tester ? "Unlimited" : <Coins n={coins} />}</p>
+                  <p className="mt-1 font-mono text-2xl font-black">{tester ? "Unlimited" : <Coins n={coins} live />}</p>
                   <p className="text-[11px] text-white/70">Pack Points balance</p>
                 </div>
                 <Logo height={30} />
@@ -407,7 +407,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
               ) : (
                 <div className="card w-full max-w-xl space-y-3 p-4 text-center">
                   <p className="text-sm text-zinc-500">Pack value</p>
-                  <p className={`text-3xl font-black ${total >= rp.price ? "text-emerald-600" : "text-zinc-800"}`}><Coins n={total} /> <span className="text-base font-normal text-zinc-500">on a <Coins n={rp.price} /> pack {total >= rp.price ? "· W" : "· L"}</span></p>
+                  <p className={`text-3xl font-black ${total >= rp.price ? "text-emerald-600" : "text-zinc-800"}`}><Coins n={total} live from={0} /> <span className="text-base font-normal text-zinc-500">on a <Coins n={rp.price} /> pack {total >= rp.price ? "· W" : "· L"}</span></p>
                   <p className="text-xs text-zinc-400">Best pull: <span className={RARITIES[cards[cards.length - 1].rarity].text}>{cards[cards.length - 1].name}</span></p>
                   <div className="flex flex-wrap justify-center gap-2">
                     <button className="btn-ghost" disabled={cards.every((c) => sold.has(c.id) || c.rarity !== "common")}

@@ -42,8 +42,8 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
   const stats: [string, React.ReactNode][] = [
     ["Record", `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`],
     ["Standing", rank ? `${ord(rank)} of ${table.length}` : "-"],
-    ["Points for", <Fpts key="pf" n={t.points_for} iconClass="text-[0.8em]" />],
-    ["This week", <Fpts key="wk" n={tw.score} iconClass="text-[0.8em]" />],
+    ["Points for", <Fpts key="pf" n={t.points_for} iconClass="text-[0.8em]" live />],
+    ["This week", <Fpts key="wk" n={tw.score} iconClass="text-[0.8em]" live />],
     ["FAAB", `$${t.faab}`],
     ["Roster", `${players.length}/13`],
   ];

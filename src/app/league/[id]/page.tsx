@@ -138,8 +138,8 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                   </div>
                   {mine && (
                     <div className="grid grid-cols-2 gap-2 text-center">
-                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">This week</p><p className="font-black text-emerald-600"><Coins n={mine.week} /></p></div>
-                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">Season</p><p className="font-black text-white"><Coins n={mine.season} /></p></div>
+                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">This week</p><p className="font-black text-emerald-600"><Coins n={mine.week} live /></p></div>
+                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">Season</p><p className="font-black text-white"><Coins n={mine.season} live /></p></div>
                     </div>
                   )}
                   <Link href="/packs" className="btn-primary w-full">Spend them in the Pack Shop</Link>
@@ -179,7 +179,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                     </span>
                     <span className="relative text-right">
                       <span className="block font-mono text-sm font-black text-white">{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""}</span>
-                      <span className="block font-mono text-[10px] text-white/70"><Fpts n={t.points_for} /></span>
+                      <span className="block font-mono text-[10px] text-white/70"><Fpts n={t.points_for} live /></span>
                     </span>
                   </Link>
                 </li>

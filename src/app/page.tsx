@@ -134,8 +134,8 @@ export default async function Home() {
         </div>
         <div className="relative grid grid-cols-2 gap-px bg-black/20 sm:grid-cols-4">
           {([
-            ["Pack Points", user.is_tester ? "Unlimited" : <Coins key="c" n={user.coins} />, "/packs"],
-            ["Vault value", <Coins key="v" n={vault.v} />, "/collection"],
+            ["Pack Points", user.is_tester ? "Unlimited" : <Coins key="c" n={user.coins} live />, "/packs"],
+            ["Vault value", <Coins key="v" n={vault.v} live />, "/collection"],
             ["Unopened packs", String(packs.length), "/packs"],
             ["Open bets", bets.n ? <span key="b">{bets.n} · to win <Coins n={bets.toWin} /></span> : "None", "/bets"],
           ] as [string, React.ReactNode, string][]).map(([k, v, href]) => (
@@ -196,7 +196,7 @@ export default async function Home() {
                     {rank ? ` · ${rank} of ${size}` : ""}
                   </span>
                 </Link>
-                {earned && <span className="flex items-center gap-1 text-xs text-zinc-500">Earned this week <span className="font-bold text-emerald-600"><Coins n={earned.week} /></span></span>}
+                {earned && <span className="flex items-center gap-1 text-xs text-zinc-500">Earned this week <span className="font-bold text-emerald-600"><Coins n={earned.week} live /></span></span>}
               </div>
               {card ? (
                 <MatchupCard href={card.href} home={card.home} away={card.away} status={card.status} winProb={card.wp} mine />
@@ -280,7 +280,7 @@ export default async function Home() {
               {leaders.map((u, i) => (
                 <li key={u.name} className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2"><span className="w-4 text-zinc-400">{i + 1}</span><span className="h-3 w-3 rounded-full" style={{ background: u.color }} />{u.name}</span>
-                  <span className="font-mono"><Coins n={u.coins + u.vault} /></span>
+                  <span className="font-mono"><Coins n={u.coins + u.vault} live /></span>
                 </li>
               ))}
             </ol>

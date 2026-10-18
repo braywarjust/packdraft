@@ -1,5 +1,6 @@
 import { CoinIcon } from "./Coins";
 import { PP_PER_POINT } from "@/lib/economy-rate";
+import { LiveNumber } from "./LiveNumber";
 
 /**
  * Fantasy points (what players score in league matchups), shown with the Fantasy Points logo so they're never
@@ -21,7 +22,9 @@ export function FptIcon({ className = "", tone }: { className?: string; tone?: "
   );
 }
 
-export function Fpts({ n, digits = 1, className = "", iconClass = "", tone }: { n: number; digits?: number; className?: string; iconClass?: string; tone?: "blue" | "white" | "black" }) {
+/** live: animate when the points change (count up, icon pop, floating +N). Use it for scores that move during games. */
+export function Fpts({ n, digits = 1, className = "", iconClass = "", tone, live }: { n: number; digits?: number; className?: string; iconClass?: string; tone?: "blue" | "white" | "black"; live?: boolean }) {
+  if (live) return <LiveNumber value={+n.toFixed(digits)} digits={digits} kind="fp" icon={<FptIcon className={iconClass} tone={tone} />} className={`gap-[0.25em] ${className}`} />;
   const s = n.toFixed(digits);
   return (
     <span className={`inline-flex items-center gap-[0.25em] whitespace-nowrap ${className}`} title={`${s} fantasy points`}>

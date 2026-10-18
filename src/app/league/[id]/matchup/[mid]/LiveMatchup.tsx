@@ -95,7 +95,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
             </p>
             <p className="text-[10px] text-zinc-400">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
           </div>
-          <p className="font-mono text-lg font-black text-white"><Fpts n={p.pts} iconClass="text-[0.8em]" /></p>
+          <p className="font-mono text-lg font-black text-white"><Fpts n={p.pts} iconClass="text-[0.8em]" live /></p>
         </div>
       ) : <span className="flex flex-1 items-center px-4 text-sm text-zinc-500">Empty</span>}
     </div>

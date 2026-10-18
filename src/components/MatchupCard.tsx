@@ -31,7 +31,7 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
           <div className={`rounded-xl bg-black/50 px-3 py-1.5 shadow-lg ring-1 ring-white/10 backdrop-blur ${which === "away" ? "text-right" : ""}`}>
             {status === "pre" && <p className="text-[10px] font-black uppercase tracking-[0.25em] text-fpts">Projected</p>}
             <p className={`font-mono font-black leading-none text-white ${big ? "text-4xl" : "text-3xl"}`}>
-              <Fpts n={status === "pre" ? s.proj : s.score} iconClass="text-[0.75em]" />
+              <Fpts n={status === "pre" ? s.proj : s.score} iconClass="text-[0.75em]" live={status === "live"} />
             </p>
             {status === "live" && <p className="mt-1 font-mono text-xs font-bold text-white/85">proj <Fpts n={s.proj} /></p>}
           </div>
