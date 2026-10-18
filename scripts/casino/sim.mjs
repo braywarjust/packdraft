@@ -12,14 +12,17 @@ for (const target of [1.5, 2, 10]) {
   console.log(`Crash, cash out at ${target}x: RTP ${pct(ret / N)}`);
 }
 
-// Chicken: walk k lanes then cash out
-const P = { easy: 0.96, medium: 0.88, hard: 0.8, expert: 0.7 };
-const cmult = (p, k) => Math.floor(((1 - EDGE) / p ** k) * 100) / 100;
+// Chicken (Stake): 26-spot road with hidden cars, 2% edge; walk k lanes then cash out
+const CARS = { easy: 2, medium: 4, hard: 6, expert: 11 };
+const cmult = (c, k) => { let x = 0.98; for (let i = 0; i < k; i++) x *= (26 - i) / (26 - c - i); return Math.floor(x * 100 + 1e-9) / 100; };
+console.log("Chicken Medium lanes 1-6:", [1, 2, 3, 4, 5, 6].map((k) => cmult(4, k) + "x").join(" "));
 for (const [lvl, k] of [["easy", 8], ["medium", 5], ["hard", 3], ["expert", 2]]) {
-  const p = P[lvl]; let ret = 0;
-  for (let i = 0; i < N; i++) { let ok = true; for (let j = 0; j < k; j++) if (r() >= p) { ok = false; break; } if (ok) ret += cmult(p, k); }
+  const c = CARS[lvl]; let ret = 0;
+  for (let i = 0; i < N; i++) { const spots = [...Array(26).keys()]; for (let a = 25; a > 0; a--) { const b = Math.floor(r() * (a + 1)); [spots[a], spots[b]] = [spots[b], spots[a]]; }
+    const hit = Math.min(...spots.slice(0, c)) + 1; if (hit > k) ret += cmult(c, k); }
   console.log(`Chicken ${lvl}, cash out after ${k} lanes: RTP ${pct(ret / N)}`);
 }
+console.log("Mines 3 mines max multiplier:", (() => { let x = 0.99; for (let i = 0; i < 22; i++) x *= (25 - i) / (22 - i); return Math.floor(x * 100) / 100; })() + "x");
 
 // Mines: pick k tiles then cash out
 const mmult = (m, k) => { let x = 1 - EDGE; for (let i = 0; i < k; i++) x *= (25 - i) / (25 - m - i); return Math.floor(x * 100) / 100; };

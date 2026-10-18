@@ -12,10 +12,10 @@ export default async function CasinoPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <PageHeader icon="casino" eyebrow="Pack Points only · no real money" title="Casino"
-        description="Quick-fire games for your Pack Points: Crash, Chicken, Blackjack and Mines. Every game runs on the house's own odds, about 99% back over the long run." />
+        description="Quick-fire games for your Pack Points: Crash, Chicken, Blackjack and Mines. Same maths as Stake's originals: Crash and Mines pay back 99%, Chicken 98%, Blackjack about 99.5% played right." />
       <Casino game={game} tester={!!u.is_tester}
         initial={{
-          crash: { ...C.crashStatus(u.id), recent: C.crashRecent() },
+          crash: C.crashState(u.id),
           chicken: C.chickenState(u.id), mines: C.minesState(u.id), blackjack: C.bjState(u.id),
         }} />
     </>

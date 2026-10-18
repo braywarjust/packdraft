@@ -143,3 +143,19 @@ body {
   animation: packSheen 7s ease-in-out infinite alternate;
 }
 @media (prefers-reduced-motion: reduce) { .pack-sheen { animation: none; opacity: 0; } }
+
+/* ---------- Casino ---------- */
+@keyframes chickenIdle { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-3px) rotate(-2deg); } }
+@keyframes chickenHop { 0% { transform: translateY(0) scaleY(1); } 15% { transform: translateY(2px) scaleY(.88); } 55% { transform: translateY(-26px) scaleY(1.06); } 85% { transform: translateY(0) scaleY(.92); } 100% { transform: translateY(0) scaleY(1); } }
+@keyframes chickenWin { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(-14px) rotate(-6deg); } 60% { transform: translateY(0) rotate(4deg); } }
+@keyframes carPass { from { transform: translate(-50%, -120%); } to { transform: translate(-50%, 720px); } }
+@keyframes carHit { 0% { transform: translate(-50%, -260%); } 70% { transform: translate(-50%, -96%); } 82% { transform: translate(-50%, -104%); } 100% { transform: translate(-50%, -100%); } }
+@keyframes tilePop { 0% { transform: scale(.3); opacity: 0; } 65% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes cardDeal { from { transform: translate(260px, -260px) rotate(18deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.anim-chicken-idle { animation: chickenIdle 1.4s ease-in-out infinite; transform-origin: 50% 100%; }
+.anim-chicken-hop { animation: chickenHop .38s ease-out; transform-origin: 50% 100%; }
+.anim-chicken-win { animation: chickenWin .7s ease-in-out 2; transform-origin: 50% 100%; }
+.anim-car-pass { top: 0; animation: carPass linear forwards; }
+.anim-car-hit { animation: carHit .45s cubic-bezier(.3,.9,.4,1) forwards; }
+.anim-tile-pop { animation: tilePop .28s cubic-bezier(.3,.9,.4,1.3) both; }
+.anim-card-deal { animation: cardDeal .38s cubic-bezier(.2,.9,.3,1) both; }
