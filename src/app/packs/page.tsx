@@ -44,7 +44,7 @@ export default async function PacksPage() {
         </div>
         <div className="relative grid grid-cols-3 gap-px bg-black/20">
           {([
-            ["Your Pack Points", u.is_tester ? "Unlimited" : <Coins key="c" n={u.coins} live />],
+            ["Your Pack Points", <Coins key="c" n={u.coins} live />],
             ["Unopened packs", String(inventory.length)],
             ["Slabs in the vault", vaultTotal.toLocaleString()],
           ] as [string, React.ReactNode][]).map(([k, v]) => (
@@ -57,7 +57,7 @@ export default async function PacksPage() {
       </section>
 
 
-      <VendingMachine features={packFeatures(PACKS)} coins={u.is_tester ? 1_000_000_000 : u.coins} tester={!!u.is_tester} inventory={inventory} buy={buyPack} rip={ripPack} sell={sellCards} />
+      <VendingMachine features={packFeatures(PACKS)} coins={u.coins} inventory={inventory} buy={buyPack} rip={ripPack} sell={sellCards} />
 
       {/* Rarity tiers */}
       <section id="rarity" className="scroll-mt-36 space-y-3">

@@ -128,6 +128,7 @@ function open(): DatabaseSync {
   const userCols = (db.prepare("PRAGMA table_info(users)").all() as { name: string }[]).map((c) => c.name);
   if (!userCols.includes("is_tester")) db.exec("ALTER TABLE users ADD COLUMN is_tester INTEGER NOT NULL DEFAULT 0");
   if (fresh) carryOverUsers(db);
+  db.prepare("UPDATE users SET coins = ? WHERE is_tester = 1 AND coins < ?").run(TESTER_COINS, TESTER_FLOOR);
   db.exec("COMMIT");
   return db;
 }
@@ -175,6 +176,13 @@ export function one<T>(sql: string, ...params: Param[]): T | undefined {
   const r = db().prepare(sql).get(...params);
   return (r ? { ...r } : undefined) as T | undefined;
 }
+/** Test accounts play with a real (large) balance so every Pack Points change and animation shows; refilled when low. */
+export const TESTER_COINS = 1_000_000;
+const TESTER_FLOOR = 100_000;
+export function topUpTester(userId: number) {
+  run("UPDATE users SET coins = ? WHERE id = ? AND is_tester = 1 AND coins < ?", TESTER_COINS, userId, TESTER_FLOOR);
+}
+
 export function run(sql: string, ...params: Param[]) {
   return db().prepare(sql).run(...params);
 }

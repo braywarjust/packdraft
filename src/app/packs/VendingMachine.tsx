@@ -27,12 +27,12 @@ const BURST: Record<string, string> = { rookie: "#cbd5e1", starter: "#7dd3fc", p
  * Pretend store checkout: order summary, the Pack Points wallet as the payment card, a terms tick and a Pay button that
  * "processes" before the pack drops in. Buying always leads straight into opening.
  */
-function Checkout({ p, coins, tester, onPay, onDone, onCancel }: {
-  p: PackType; coins: number; tester: boolean; onPay: () => Promise<boolean>; onDone: () => void; onCancel: () => void;
+function Checkout({ p, coins, onPay, onDone, onCancel }: {
+  p: PackType; coins: number; onPay: () => Promise<boolean>; onDone: () => void; onCancel: () => void;
 }) {
   const [agree, setAgree] = useState(false);
   const [state, setState] = useState<"idle" | "processing" | "approved">("idle");
-  const total = tester ? 0 : p.price;
+  const total = p.price;
   const after = coins - total;
   const order = useMemo(() => `PD-${Math.floor(100000 + Math.random() * 900000)}`, []);
   const pay = async () => {
@@ -70,7 +70,6 @@ function Checkout({ p, coins, tester, onPay, onDone, onCancel }: {
             {line("Subtotal", <Coins n={p.price} />)}
             {line("Vault handling", "Free")}
             {line("Delivery", "Instant")}
-            {tester && line("Test account", <>-<Coins n={p.price} /></>)}
             <div className="my-2 border-t border-line" />
             {line(<span className="font-bold text-white">Total</span>, <span className="text-lg text-emerald-500"><Coins n={total} /></span>)}
           </div>
@@ -83,12 +82,12 @@ function Checkout({ p, coins, tester, onPay, onDone, onCancel }: {
               <div className="relative flex items-start justify-between">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/70">PackDraft Wallet</p>
-                  <p className="mt-1 font-mono text-2xl font-black">{tester ? "Unlimited" : <Coins n={coins} live />}</p>
+                  <p className="mt-1 font-mono text-2xl font-black"><Coins n={coins} live /></p>
                   <p className="text-[11px] text-white/70">Pack Points balance</p>
                 </div>
                 <Logo height={30} />
               </div>
-              {!tester && <p className="relative mt-3 flex justify-between border-t border-white/20 pt-2 text-xs"><span className="text-white/70">Balance after purchase</span><b className="font-mono"><Coins n={after} /></b></p>}
+              <p className="relative mt-3 flex justify-between border-t border-white/20 pt-2 text-xs"><span className="text-white/70">Balance after purchase</span><b className="font-mono"><Coins n={after} /></b></p>
             </div>
           </div>
 
@@ -191,8 +190,8 @@ function Confetti() {
   );
 }
 
-export function VendingMachine({ coins, inventory, buy, rip, sell, tester = false, features = {} }: {
-  coins: number; inventory: Inv[]; tester?: boolean; features?: Record<string, number[]>;
+export function VendingMachine({ coins, inventory, buy, rip, sell, features = {} }: {
+  coins: number; inventory: Inv[]; features?: Record<string, number[]>;
   buy: (type: string) => Act<{ ok: boolean; packId: number }>;
   rip: (packId: number) => Act<{ ok: boolean; cards: CardData[] }>;
   sell: (ids: number[]) => Act<{ ok: boolean; total: number }>;
@@ -269,9 +268,8 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
   return (
     <div className="space-y-8">
       {party && <Confetti />}
-      {(err || tester) && (
+      {err && (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {tester && <p className="text-sm text-zinc-500">Test mode: every pack is free.</p>}
           {err && <p className="text-sm font-semibold text-red-600">{err}</p>}
         </div>
       )}
@@ -302,7 +300,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
         <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 xl:grid-cols-6">
           {PACKS.filter((p) => p.kind !== "case").map((p) => {
             const busy = stage !== "idle";
-            const short = !tester && coins < p.price;
+            const short = coins < p.price;
             return (
               <button key={p.id} onClick={() => setCheckout(p)} disabled={busy || short}
                 title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${fmtOdds(p.odds.grail)}`}
@@ -329,7 +327,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
           <div className="flex flex-wrap justify-center gap-10">
             {PACKS.filter((p) => p.kind === "case").map((p) => {
               const busy = stage !== "idle";
-              const short = !tester && coins < p.price;
+              const short = coins < p.price;
               return (
                 <button key={p.id} onClick={() => setCheckout(p)} disabled={busy || short}
                   title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${fmtOdds(p.odds.grail)}`}
@@ -351,7 +349,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, tester = fals
       )}
 
 
-      {checkout && <Checkout p={checkout} coins={coins} tester={tester} onPay={() => doBuy(checkout.id)} onDone={dropIn} onCancel={() => setCheckout(null)} />}
+      {checkout && <Checkout p={checkout} coins={coins} onPay={() => doBuy(checkout.id)} onDone={dropIn} onCancel={() => setCheckout(null)} />}
 
       {/* Rip modal */}
       {(stage === "ready" || stage === "tearing" || stage === "cards") && rp && (

@@ -15,7 +15,7 @@ export default async function CasinoPage({ searchParams }: { searchParams: Promi
       <FallingCoins />
       <PageHeader icon="casino" eyebrow="Pack Points only · no real money" title="Casino"
         description="Quick-fire games for your Pack Points: Crash, Chicken, Blackjack and Mines. Same maths as Stake's originals: Crash and Mines pay back 99%, Chicken 98%, Blackjack about 99.5% played right." />
-      <Casino game={game} tester={!!u.is_tester}
+      <Casino game={game}
         initial={{
           crash: C.crashState(u.id),
           chicken: C.chickenState(u.id), mines: C.minesState(u.id), blackjack: C.bjState(u.id),

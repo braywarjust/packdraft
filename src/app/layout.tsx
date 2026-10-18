@@ -57,7 +57,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           {/* Pack Points balance on every page (desktop; the mobile top bar shows it too). */}
           <div className="pointer-events-none sticky top-0 z-30 hidden lg:block">
             <div className="mx-auto flex max-w-6xl justify-end px-8 pt-4 pr-20 2xl:pr-8">
-              <BalancePill coins={user.coins} tester={!!user.is_tester} />
+              <BalancePill coins={user.coins} />
             </div>
           </div>
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-8 lg:pt-2">{children}</main>

@@ -36,7 +36,7 @@ const GAMES: { id: Game; name: string; blurb: string; bg: string }[] = [
   { id: "mines", name: "Mines", blurb: "Find gems, dodge mines", bg: "linear-gradient(160deg,#7dd3fc 0%,#0ea5e9 34%,#1d4ed8 68%,#172554 100%)" },
 ];
 
-export function Casino({ game, initial, tester }: { game: Game; initial: Initial; tester: boolean }) {
+export function Casino({ game, initial }: { game: Game; initial: Initial }) {
   // New balances go straight to the header and sidebar (no page refresh, so nothing stutters mid-game).
   const shown = useRef<number>(initial.crash.balance);
   const sync = (b: number) => { if (b !== shown.current) { shown.current = b; announceBalance(b); } };
@@ -45,10 +45,10 @@ export function Casino({ game, initial, tester }: { game: Game; initial: Initial
       <div className="grid grid-cols-2 gap-3 sm:max-w-[780px] sm:grid-cols-4">
         {GAMES.map((g) => <GameThumb key={g.id} g={g} active={game === g.id} />)}
       </div>
-      {game === "crash" && <Crash init={initial.crash} onBalance={sync} tester={tester} />}
-      {game === "chicken" && <Chicken init={initial.chicken} onBalance={sync} tester={tester} />}
-      {game === "blackjack" && <Blackjack init={initial.blackjack} onBalance={sync} tester={tester} />}
-      {game === "mines" && <Mines init={initial.mines} onBalance={sync} tester={tester} />}
+      {game === "crash" && <Crash init={initial.crash} onBalance={sync} />}
+      {game === "chicken" && <Chicken init={initial.chicken} onBalance={sync} />}
+      {game === "blackjack" && <Blackjack init={initial.blackjack} onBalance={sync} />}
+      {game === "mines" && <Mines init={initial.mines} onBalance={sync} />}
       <p className="text-center text-xs text-zinc-500">Pack Points only, no real money. Crash and Mines pay back 99% over the long run, Chicken 98%, Blackjack about 99.5% with perfect play.</p>
     </div>
   );
@@ -246,7 +246,7 @@ const crashPhase = (g: any, now: number): CrashPhase => (g.crash != null ? "cras
  * changes; the browser keeps its clock in step with the server's and draws the multiplier, the curve and the rocket
  * itself every frame, straight to a canvas and a few text nodes, so nothing waits on a React render.
  */
-function Crash({ init, onBalance, tester }: { init: any; onBalance: (b: number) => void; tester: boolean }) {
+function Crash({ init, onBalance }: { init: any; onBalance: (b: number) => void }) {
   const [bet, setBet] = useState(10);
   const [target, setTarget] = useState(2);
   const [s, setS] = useState<any>(init);
@@ -453,7 +453,6 @@ function Crash({ init, onBalance, tester }: { init: any; onBalance: (b: number) 
       <p className="-mt-2 text-center text-[11px] text-zinc-500">Press Space to {inRound && phase === "running" ? "cash out" : "bet"}</p>
       <ProfitField label="Profit on Win" mult={target} amount={Math.max(0, Math.floor(bet * target) - bet)} />
       <Err text={err} />
-      {tester && <p className="text-xs text-zinc-500">Test mode: bets are free.</p>}
       <div className="rounded-lg p-3 text-sm ring-1 ring-white/5" style={{ background: C.field }}>
         <div className="flex items-center justify-between font-bold text-white">
           <span className="flex items-center gap-1.5"><svg viewBox="0 0 24 24" className="h-4 w-4 text-zinc-500" fill="currentColor"><circle cx="9" cy="8" r="3.5" /><path d="M2 20c0-4 3-6 7-6s7 2 7 6z" /><circle cx="17" cy="9" r="2.5" /><path d="M15 14c4 0 7 2 7 6h-5" /></svg>{s.players.length}</span>
@@ -699,7 +698,7 @@ function Manhole({ open, className = "h-12 w-20" }: { open?: boolean; className?
 const LANE_W = 112;
 const JUMP_MS = 340;
 
-function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number) => void; tester: boolean }) {
+function Chicken({ init, onBalance }: { init: any; onBalance: (b: number) => void }) {
   const [bet, setBet] = useState(10);
   const [level, setLevel] = useState<string>(init.round?.level ?? "medium");
   const [round, setRound] = useState<any>(init.round);
@@ -769,7 +768,6 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
       <ProfitField live label="Total Profit" mult={liveRound || (over && round.status === "won") ? round.multiplier : 1} amount={liveRound || (over && round.status === "won") ? Math.floor(round.stake * round.multiplier) - round.stake : 0} />
       <Err text={err} />
       {over && <p className={`text-sm font-bold ${dead ? "text-red-500" : "text-[#22e36b]"}`}>{dead ? `Hit in lane ${round.hit}. Lost ${round.stake.toLocaleString("en-US")}.` : `Crossed ${round.step} lanes: +${(round.payout - round.stake).toLocaleString("en-US")}`}</p>}
-      {tester && <p className="text-xs text-zinc-500">Test mode: bets are free.</p>}
     </>}>
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-y-0 left-0 flex transition-transform duration-500 ease-out" style={{ transform: `translateX(${-shift}px)` }}>
@@ -841,7 +839,7 @@ function BombIcon() {
   );
 }
 
-function Mines({ init, onBalance, tester }: { init: any; onBalance: (b: number) => void; tester: boolean }) {
+function Mines({ init, onBalance }: { init: any; onBalance: (b: number) => void }) {
   const [bet, setBet] = useState(10);
   const [count, setCount] = useState<number>(init.round?.count ?? 3);
   const [round, setRound] = useState<any>(init.round);
@@ -882,7 +880,6 @@ function Mines({ init, onBalance, tester }: { init: any; onBalance: (b: number) 
       {liveRound && <p className="text-sm text-zinc-500">Next gem: <span className="font-mono text-white">{fmtX(round.next)}</span></p>}
       <Err text={err} />
       {over && <p className={`text-sm font-bold ${round.status === "lost" ? "text-red-500" : "text-[#22e36b]"}`}>{round.status === "lost" ? `Boom. Lost ${round.stake.toLocaleString("en-US")}.` : `Cashed out at ${fmtX(round.multiplier)}: +${(round.payout - round.stake).toLocaleString("en-US")}`}</p>}
-      {tester && <p className="text-xs text-zinc-500">Test mode: bets are free.</p>}
     </>}>
       <div className="flex h-full flex-col items-center justify-center gap-6 p-6">
         <div className="grid w-full max-w-[520px] grid-cols-5 gap-3">
@@ -960,7 +957,7 @@ function ActionButton({ label, icon, onClick, disabled }: { label: string; icon:
   );
 }
 
-function Blackjack({ init, onBalance, tester }: { init: any; onBalance: (b: number) => void; tester: boolean }) {
+function Blackjack({ init, onBalance }: { init: any; onBalance: (b: number) => void }) {
   const [bet, setBet] = useState(10);
   const [round, setRound] = useState<any>(init.round);
   const [err, setErr] = useState<string | null>(null);
@@ -1001,7 +998,6 @@ function Blackjack({ init, onBalance, tester }: { init: any; onBalance: (b: numb
       <BigButton onClick={() => act(() => A.bjStart(bet))} disabled={!!liveRound || pending}>Bet</BigButton>
       <Err text={err} />
       {over && <p className={`text-sm font-bold ${won ? "text-[#22e36b]" : round.status === "push" ? "text-amber-400" : "text-red-500"}`}>{round.result}{round.payout ? `: paid ${round.payout.toLocaleString("en-US")}` : ""}</p>}
-      {tester && <p className="text-xs text-zinc-500">Test mode: bets are free.</p>}
     </>}>
       <div className="relative flex h-full min-h-[520px] flex-col items-center justify-between px-6 py-8">
         {/* Shoe */}

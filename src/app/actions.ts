@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import crypto from "node:crypto";
-import { all, one, run, tx, League, Team, Player, User } from "@/lib/db";
+import { all, one, run, topUpTester, tx, League, Team, Player, User } from "@/lib/db";
 import { clearSession, currentUser, hashPin, requireUser, setSession } from "@/lib/auth";
 import {
   getLeague, userTeam, leagueTeams, startDraft, advanceDraft, makePick, autoLineup, moveToSlot, roster, ROSTER_MAX,
@@ -438,12 +438,10 @@ export async function buyPack(packType: string) {
     const pack = PACK_BY_ID[packType];
     if (!pack) throw new Error("Unknown pack");
     const id = tx(() => {
+      topUpTester(u.id); // test accounts pay like everyone else, from a large balance that refills
       const fresh = one<User>("SELECT * FROM users WHERE id = ?", u.id)!;
-      // Test accounts open packs for free.
-      if (!fresh.is_tester) {
-        if (fresh.coins < pack.price) throw new Error("Not enough Pack Points");
-        run("UPDATE users SET coins = coins - ? WHERE id = ?", pack.price, u.id);
-      }
+      if (fresh.coins < pack.price) throw new Error("Not enough Pack Points");
+      run("UPDATE users SET coins = coins - ? WHERE id = ?", pack.price, u.id);
       return Number(run("INSERT INTO user_packs (user_id, pack_type, source, created_at) VALUES (?, ?, ?, ?)", u.id, packType, fresh.is_tester ? "Test pack" : "Vending machine", Date.now()).lastInsertRowid);
     });
     return { ok: true, packId: id };

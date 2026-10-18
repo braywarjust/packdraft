@@ -134,7 +134,7 @@ export default async function Home() {
         </div>
         <div className="relative grid grid-cols-2 gap-px bg-black/20 sm:grid-cols-4">
           {([
-            ["Pack Points", user.is_tester ? "Unlimited" : <Coins key="c" n={user.coins} live />, "/packs"],
+            ["Pack Points", <Coins key="c" n={user.coins} live />, "/packs"],
             ["Vault value", <Coins key="v" n={vault.v} live />, "/collection"],
             ["Unopened packs", String(packs.length), "/packs"],
             ["Open bets", bets.n ? <span key="b">{bets.n} · to win <Coins n={bets.toWin} /></span> : "None", "/bets"],

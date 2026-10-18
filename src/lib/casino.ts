@@ -9,7 +9,7 @@
 //             split once                                                       RTP ~99.5% with basic strategy
 // scripts/casino/sim.mjs re-checks these by simulation.
 import crypto from "node:crypto";
-import { all, one, run, tx } from "./db";
+import { all, one, run, topUpTester, tx } from "./db";
 
 export const MIN_BET = 0; // 0 = free play: try a game without risking anything (nothing won or lost)
 export const MAX_BET = 10_000;
@@ -44,10 +44,10 @@ function live(userId: number, game: Game) {
   return one<Round>("SELECT * FROM casino_rounds WHERE user_id = ? AND game = ? AND status = 'live' ORDER BY id DESC LIMIT 1", userId, game) ?? null;
 }
 
-/** Take Pack Points for a bet (test accounts play free). */
+/** Take Pack Points for a bet (test accounts are topped up first, so they never run dry). */
 function charge(userId: number, amount: number, what = "bet") {
+  topUpTester(userId);
   const u = user(userId);
-  if (u.is_tester) return;
   if (u.coins < amount) throw new Error(`Not enough Pack Points to ${what}`);
   run("UPDATE users SET coins = coins - ? WHERE id = ?", amount, userId);
 }
@@ -80,7 +80,7 @@ function settlePaid(r: Round, paid: number, state: object, status?: "won" | "los
   tx(() => {
     const done = run("UPDATE casino_rounds SET status = ?, payout = ?, multiplier = ?, state = ?, settled_at = ? WHERE id = ? AND status = 'live'",
       st, payout, multiplier ?? (r.stake ? payout / r.stake : 0), JSON.stringify(state), Date.now(), r.id);
-    if (Number(done.changes) && payout > 0 && !user(r.user_id).is_tester) run("UPDATE users SET coins = coins + ? WHERE id = ?", payout, r.user_id);
+    if (Number(done.changes) && payout > 0) run("UPDATE users SET coins = coins + ? WHERE id = ?", payout, r.user_id);
   });
   return payout;
 }
