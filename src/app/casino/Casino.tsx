@@ -265,31 +265,57 @@ function Crash({ init, onBalance, tester }: { init: any; onBalance: (b: number) 
 
 // ---------------------------------------------------------------- Chicken
 
+/**
+ * The chicken, built from separate parts that each animate on their own: legs shuffle, tail sways, wing flutters,
+ * head bobs and pecks, comb and wattle wobble, beak opens, eye blinks. The root state (idle/hop/won) changes how
+ * the parts move; see the chk-* rules in globals.css.
+ */
 function ChickenSprite({ state }: { state: "idle" | "hop" | "dead" | "won" }) {
+  if (state === "dead") {
+    return (
+      <svg viewBox="0 0 64 64" className="h-16 w-16">
+        <ellipse cx="32" cy="48" rx="23" ry="7" fill="#e5e7eb" />
+        <path d="M30 41c2-4 6-4 7 0" fill="#ef4444" />
+        <path d="M13 46l-6-3M51 46l6-3M18 50l-4 4M46 50l4 4" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
+        <path d="M25 44l4 4M29 44l-4 4M35 44l4 4M39 44l-4 4" stroke="#111827" strokeWidth="2" strokeLinecap="round" />
+        <path d="M8 40c3-1 5 0 6 2M54 39c-3-1-5 0-6 2" stroke="#f1f5f9" strokeWidth="3" strokeLinecap="round" fill="none" />
+      </svg>
+    );
+  }
   return (
-    <svg viewBox="0 0 64 64" className={`h-16 w-16 ${state === "idle" ? "anim-chicken-idle" : state === "hop" ? "anim-chicken-hop" : state === "won" ? "anim-chicken-win" : ""}`}>
-      {state === "dead" ? (
-        <g>
-          <ellipse cx="32" cy="46" rx="22" ry="7" fill="#e5e7eb" />
-          <path d="M14 44l-4-3M50 44l4-3" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
-          <path d="M24 42l4 4M28 42l-4 4M36 42l4 4M40 42l-4 4" stroke="#111827" strokeWidth="2" strokeLinecap="round" />
-          <path d="M30 38c1-3 4-3 5 0" fill="#ef4444" />
+    <svg viewBox="0 0 64 64" className={`chk chk-${state} h-16 w-16 overflow-visible`}>
+      <ellipse className="chk-shadow" cx="31" cy="60" rx="13" ry="3" fill="#000" opacity=".25" />
+      {/* legs */}
+      <g className="chk-leg chk-leg-l"><path d="M27 50v8M27 58l-4 2M27 58l1 3M27 58l4 1" stroke="#f59e0b" strokeWidth="2.6" strokeLinecap="round" /></g>
+      <g className="chk-leg chk-leg-r"><path d="M35 50v8M35 58l-4 2M35 58l1 3M35 58l4 1" stroke="#f59e0b" strokeWidth="2.6" strokeLinecap="round" /></g>
+      <g className="chk-body">
+        {/* tail feathers */}
+        <g className="chk-tail">
+          <path d="M17 34c-6-3-8-10-6-15 3 3 6 8 9 11z" fill="#f1f5f9" />
+          <path d="M18 31c-4-5-4-11-1-15 2 4 4 8 5 12z" fill="#ffffff" />
+          <path d="M16 37c-6-1-10-6-10-10 4 1 8 4 11 7z" fill="#e2e8f0" />
         </g>
-      ) : (
-        <g>
-          <ellipse cx="32" cy="58" rx="13" ry="3" fill="#000" opacity=".25" />
-          <path d="M26 54l-2 4M34 54l2 4" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
-          <path d="M13 34c-6 2-7 10-1 13 4 2 9 1 12-2" fill="#f1f1f1" />
-          <ellipse cx="30" cy="38" rx="17" ry="16" fill="#ffffff" />
-          <path d="M33 8c2-4 7-3 7 1 3-2 7 1 4 5" fill="#ef4444" />
-          <ellipse cx="38" cy="22" rx="10" ry="11" fill="#ffffff" />
-          <circle cx="42" cy="20" r="2.2" fill="#111827" />
-          <circle cx="42.7" cy="19.3" r=".7" fill="#fff" />
-          <path d="M47 23l8 3-8 3z" fill="#f59e0b" />
-          <path d="M45 29c2 1 2 5 0 6-2-1-2-5 0-6z" fill="#ef4444" />
-          <path d="M18 36c4 4 10 5 14 2" stroke="#e5e7eb" strokeWidth="3" fill="none" strokeLinecap="round" />
+        <ellipse cx="31" cy="39" rx="16.5" ry="13.5" fill="#ffffff" />
+        <ellipse cx="31" cy="44" rx="13" ry="7" fill="#f1f5f9" />
+        <ellipse cx="38" cy="29" rx="7.5" ry="9" fill="#ffffff" />
+        {/* wing */}
+        <g className="chk-wing">
+          <path d="M21 35c4-5 15-5 18 1-3 8-13 9-18-1z" fill="#eef2f7" stroke="#d6dde6" strokeWidth="1" />
+          <path d="M25 39c3 1 7 1 10 0M26 36c3 1 6 1 9 0" stroke="#d6dde6" strokeWidth="1" fill="none" strokeLinecap="round" />
         </g>
-      )}
+      </g>
+      {/* head */}
+      <g className="chk-head">
+        <g className="chk-comb"><path d="M35 15c-1-5 3-6 4-2 1-5 6-4 5 1 3-2 6 1 3 4-4 1-9 1-12-3z" fill="#ef4444" /></g>
+        <circle cx="41" cy="21" r="9.5" fill="#ffffff" />
+        <g className="chk-wattle"><path d="M47.5 26c2.2 1 2.4 5.5 0 6.5-2.3-1-2.3-5.5 0-6.5z" fill="#ef4444" /></g>
+        <path d="M49 19.5l7.5 2.8-7.5 1.4z" fill="#f59e0b" />
+        <g className="chk-beak"><path d="M49 23.4l6.4 .4-6.4 2z" fill="#ea8a0c" /></g>
+        <circle cx="44" cy="19" r="2.2" fill="#111827" />
+        <circle cx="44.8" cy="18.2" r=".75" fill="#ffffff" />
+        <ellipse className="chk-lid" cx="44" cy="19" rx="2.9" ry="2.9" fill="#ffffff" />
+        <circle cx="45.5" cy="23.5" r="1.4" fill="#fda4af" opacity=".7" />
+      </g>
     </svg>
   );
 }
@@ -299,9 +325,9 @@ type VehicleKind = "race" | "sedan" | "sports" | "taxi" | "police" | "pickup" | 
 const PAINT = ["#22c55e", "#ef4444", "#3b82f6", "#f59e0b", "#a855f7", "#ec4899", "#14b8a6", "#f97316", "#e5e7eb", "#64748b"];
 /** Width on screen and how long it takes to cross the screen (seconds, min-max). Buses lumber, bikes zip. */
 const VEHICLE: Record<VehicleKind, { w: number; speed: [number, number]; weight: number }> = {
-  sedan: { w: 50, speed: [1.3, 1.8], weight: 5 }, sports: { w: 50, speed: [0.9, 1.2], weight: 3 }, race: { w: 54, speed: [0.8, 1.05], weight: 2 },
-  taxi: { w: 50, speed: [1.3, 1.7], weight: 2 }, police: { w: 50, speed: [0.95, 1.25], weight: 1 }, pickup: { w: 52, speed: [1.4, 1.9], weight: 3 },
-  van: { w: 54, speed: [1.7, 2.2], weight: 2 }, bus: { w: 60, speed: [2.2, 2.8], weight: 1 }, bike: { w: 24, speed: [0.85, 1.1], weight: 2 },
+  sedan: { w: 50, speed: [0.8, 1.05], weight: 5 }, sports: { w: 50, speed: [0.55, 0.7], weight: 3 }, race: { w: 54, speed: [0.45, 0.6], weight: 2 },
+  taxi: { w: 50, speed: [0.8, 1.0], weight: 2 }, police: { w: 50, speed: [0.55, 0.75], weight: 1 }, pickup: { w: 52, speed: [0.85, 1.1], weight: 3 },
+  van: { w: 54, speed: [1.0, 1.3], weight: 2 }, bus: { w: 60, speed: [1.3, 1.6], weight: 1 }, bike: { w: 24, speed: [0.5, 0.65], weight: 2 },
 };
 const KINDS = (Object.keys(VEHICLE) as VehicleKind[]).flatMap((k) => Array(VEHICLE[k].weight).fill(k) as VehicleKind[]);
 const pickVehicle = (r = Math.random) => {
@@ -462,7 +488,7 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
       const car = { id: ++id, lane, ...pickVehicle() };
       setTraffic((x) => (x.some((c) => c.lane === lane) ? x : [...x.slice(-7), car]));
       setTimeout(() => setTraffic((x) => x.filter((c) => c.id !== car.id)), car.dur * 1000 + 100);
-    }, 700);
+    }, 480);
     return () => clearInterval(t);
   }, [pos, lanes]);
 
@@ -494,6 +520,10 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
       {over && <p className={`text-sm font-bold ${dead ? "text-red-500" : "text-[#22e36b]"}`}>{dead ? `Hit in lane ${round.hit}. Lost ${round.stake.toLocaleString("en-US")}.` : `Crossed ${round.step} lanes: +${(round.payout - round.stake).toLocaleString("en-US")}`}</p>}
       {tester && <p className="text-xs text-zinc-500">Test mode: bets are free.</p>}
     </>}>
+      <svg width="0" height="0" className="absolute" aria-hidden>
+        <filter id="chk-blur" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="0 2.2" /></filter>
+        <filter id="chk-blur-heavy" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="0.6 7" /></filter>
+      </svg>
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-y-0 left-0 flex transition-transform duration-500 ease-out" style={{ transform: `translateX(${-shift}px)` }}>
           {/* Start: sidewalk with a traffic light and a bush */}
@@ -515,7 +545,11 @@ function Chicken({ init, onBalance, tester }: { init: any; onBalance: (b: number
                 {/* Vehicles sit in a full-width centred column; the animation only moves them down the lane. */}
                 {traffic.filter((c) => c.lane === n && !isHit).map((c) => (
                   <div key={c.id} className="pointer-events-none absolute inset-x-0 top-0 z-[5] flex justify-center">
-                    <div className="anim-car-pass" style={{ animationDuration: `${c.dur}s` }}><Vehicle kind={c.kind} color={c.color} /></div>
+                    <div className="anim-car-pass relative" style={{ animationDuration: `${c.dur}s` }}>
+                      {/* Motion blur: a stretched, faded smear trailing behind, plus a slight vertical blur on the vehicle. */}
+                      <div className="absolute inset-0 origin-bottom -translate-y-[18%] scale-y-[1.35] opacity-30 [filter:url(#chk-blur-heavy)]"><Vehicle kind={c.kind} color={c.color} /></div>
+                      <div className="relative [filter:url(#chk-blur)]"><Vehicle kind={c.kind} color={c.color} /></div>
+                    </div>
                   </div>
                 ))}
                 {isHit && (
