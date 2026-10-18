@@ -8,6 +8,10 @@ import * as A from "./actions";
 
 type Game = "crash" | "chicken" | "blackjack" | "mines";
 type Res<T> = T | { error: string };
+/** Run a server action, turning a dropped connection into an error message instead of a crash. */
+async function safe<T>(fn: () => Promise<Res<T>>): Promise<Res<T>> {
+  try { return await fn(); } catch { return { error: "Connection lost. Try again." }; }
+}
 const isErr = <T,>(r: Res<T>): r is { error: string } => typeof r === "object" && r !== null && "error" in r;
 
 // Same curve as src/lib/casino.ts (client only animates; the server decides).
@@ -113,9 +117,12 @@ function Crash({ init, balance, onBalance, tester }: { init: any; balance: numbe
     const frame = () => { setMult(crashAt(Date.now() + offset.current - round.start)); if (!stop) raf = requestAnimationFrame(frame); };
     frame();
     const poll = setInterval(async () => {
-      const r = await A.crashStatus();
-      if (stop || isErr(r)) return;
-      if (r.round && r.round.status !== "live") { setRound(r.round); setRecent(r.recent); onBalance(r.balance); }
+      try {
+        const res = await fetch("/api/casino/crash", { cache: "no-store" });
+        const r = await res.json();
+        if (stop || !res.ok || isErr(r)) return;
+        if (r.round && r.round.status !== "live") { setRound(r.round); setRecent(r.recent); onBalance(r.balance); }
+      } catch { /* network blip (or the dev server reloading): try again on the next tick */ }
     }, 300);
     return () => { stop = true; cancelAnimationFrame(raf); clearInterval(poll); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -124,12 +131,12 @@ function Crash({ init, balance, onBalance, tester }: { init: any; balance: numbe
   const go = () => start(async () => {
     setErr(null);
     const a = Number(auto);
-    const r = await A.crashStart(bet, a >= 1.01 ? a : null);
+    const r = await safe(() => A.crashStart(bet, a >= 1.01 ? a : null));
     if (isErr(r)) return setErr(r.error);
     setRound(r.round); setMult(1); onBalance(r.balance);
   });
   const cash = () => start(async () => {
-    const r = await A.crashCashout();
+    const r = await safe(() => A.crashCashout());
     if (isErr(r)) return setErr(r.error);
     setRound(r.round); onBalance(r.balance);
   });
@@ -217,7 +224,7 @@ function Chicken({ init, balance, onBalance, tester }: { init: any; balance: num
     el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   }, [step]);
 
-  const call = (fn: () => Promise<any>) => start(async () => { setErr(null); const r = await fn(); if (isErr(r)) return setErr(r.error); setRound(r.round); onBalance(r.balance); });
+  const call = (fn: () => Promise<any>) => start(async () => { setErr(null); const r = await safe(fn); if (isErr(r)) return setErr(r.error); setRound(r.round); onBalance(r.balance); });
   const over = round && round.status !== "live";
   const lanes = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -293,7 +300,7 @@ function Mines({ init, balance, onBalance, tester }: { init: any; balance: numbe
   const [pending, start] = useTransition();
   const liveRound = round && round.status === "live";
   const over = round && round.status !== "live";
-  const call = (fn: () => Promise<any>) => start(async () => { setErr(null); const r = await fn(); if (isErr(r)) return setErr(r.error); setRound(r.round); onBalance(r.balance); });
+  const call = (fn: () => Promise<any>) => start(async () => { setErr(null); const r = await safe(fn); if (isErr(r)) return setErr(r.error); setRound(r.round); onBalance(r.balance); });
   const picks: number[] = round?.picks ?? [];
   const mines: number[] | null = round?.mines ?? null;
 
@@ -365,7 +372,7 @@ function Blackjack({ init, balance, onBalance, tester }: { init: any; balance: n
   const [pending, start] = useTransition();
   const liveRound = round && round.status === "live";
   const over = round && round.status !== "live";
-  const call = (fn: () => Promise<any>) => start(async () => { setErr(null); const r = await fn(); if (isErr(r)) return setErr(r.error); setRound(r.round); onBalance(r.balance); });
+  const call = (fn: () => Promise<any>) => start(async () => { setErr(null); const r = await safe(fn); if (isErr(r)) return setErr(r.error); setRound(r.round); onBalance(r.balance); });
   const total = (v: { total: number; soft: boolean }) => (v.soft && v.total < 21 ? `${v.total - 10}/${v.total}` : String(v.total));
   const won = over && round.payout > round.stake * (round.doubled ? 2 : 1);
 
