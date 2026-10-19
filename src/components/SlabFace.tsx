@@ -43,25 +43,29 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
   const w = Math.round((h * 710) / 1200);
   const px = (k: number, min = 0) => Math.max(min, Math.round(h * k * 10) / 10);
   const generic = s.kind === "generic";
-  const tiny = h < 180;
   const primary = generic ? "#1f63b5" : `#${s.color ?? "334155"}`;
   const alt = generic ? "#cc2b31" : s.alt && !/^(ffffff|000000)$/i.test(s.alt) ? `#${s.alt}` : primary;
   const logo = s.team ? `https://a.espncdn.com/i/teamlogos/nba/500/${s.team.toLowerCase()}.png` : null;
   const fptMask = "url(/fantasy-points.svg) center / contain no-repeat";
 
-  // Label sizing: every line shrinks to fit the room it has (Arial caps run ~0.68em wide).
+  // Label type: one size, all caps, for every line (Arial caps run ~0.68em wide). It shrinks only if a line can't fit.
   const casePad = px(0.035, 3);
   const labelPad = px(0.016, 2);
-  const labelIn = w - 2 * casePad - 2 * labelPad - px(0.016, 3);
-  const line = px(0.029, 6);
-  const fit = (text: string, max: number, room: number) => Math.max(4.5, Math.min(max, room / (Math.max(text.length, 1) * 0.68)));
+  const labelIn = w - 2 * casePad - 2 * labelPad - 2 * px(0.014, 2.5);
   const name = generic ? "ANY PLAYER" : s.name.toUpperCase();
   const full = (s.team_name ?? s.team).toUpperCase();
   const club = full.length > 14 ? full.split(" ").slice(-1)[0] : full;
   const team = generic ? "GENERIC SLAB" : `${club}${s.pos ? ` · ${s.pos}` : ""}`;
   const set = `2026 PACKDRAFT ${s.immortal ? "IMMORTAL" : RARITIES[s.rarity].label.toUpperCase()}`;
-  const multSize = line * 1.45;
-  const multW = (fmtMult(s.mult).length * 0.62 + 1.3) * multSize;
+  const num = generic ? "ANY" : `#${s.jersey ?? "-"}`;
+  const mult = fmtMult(s.mult);
+  const cw = 0.68;
+  const T = Math.max(4.5, Math.min(
+    px(0.025, 5.5),
+    labelIn / ((set.length + num.length + 1) * cw),
+    labelIn / (name.length * cw),
+    labelIn / ((team.length + mult.length + 3) * cw),
+  ));
 
   return (
     <div className={`relative grid place-items-center ${className}`} style={{ width: box, height: h }}>
@@ -72,34 +76,21 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
           background: "linear-gradient(160deg, #eef0f3 0%, #c3c8cf 18%, #dfe2e6 40%, #a9afb8 72%, #e4e7eb 100%)",
           boxShadow: "inset 0 0 0 1px rgba(255,255,255,.7), inset 0 0 0 3px rgba(0,0,0,.08), 0 10px 18px rgba(0,0,0,.35)",
         }}>
-        {/* Top label: white with a red border, plain black type */}
-        <div className="relative shrink-0 overflow-hidden"
-          style={{ background: "#ffffff", color: "#000000", border: `${px(0.008, 1.5)}px solid ${LABEL_RED}`, borderRadius: px(0.006, 1), padding: labelPad, fontFamily: SANS, lineHeight: 1.2 }}>
-          {!tiny && (
-            <div className="flex justify-between gap-1" style={{ fontSize: fit(set, line, labelIn * 0.8) }}>
-              <span className="truncate">{set}</span>
-              <span className="shrink-0">{generic ? "ANY" : `#${s.jersey ?? "-"}`}</span>
-            </div>
-          )}
-          <p className="truncate font-bold" style={{ fontSize: fit(name, line * 1.2, labelIn) }}>{name}</p>
-          <div className="flex items-center justify-between gap-1">
-            <div className="min-w-0">
-              <p className="truncate" style={{ fontSize: fit(team, line, labelIn - multW) }}>{team}</p>
-              {!tiny && <p className="truncate" style={{ fontSize: fit("FPTS BOOST", line * 0.8, labelIn - multW) }}>FPTS BOOST</p>}
-            </div>
-            <p className="flex shrink-0 items-center font-black" style={{ fontSize: multSize, gap: line * 0.16, lineHeight: 1 }}>
-              <span aria-hidden className="shrink-0" style={{ background: "#000000", width: line * 1.05, height: line * 1.05, mask: fptMask, WebkitMask: fptMask }} />
-              {fmtMult(s.mult)}
-            </p>
+        {/* Top label: white with a thick red border, plain black capitals all the same size */}
+        <div className="relative shrink-0 overflow-hidden uppercase"
+          style={{ background: "#ffffff", color: "#000000", border: `${px(0.014, 2.5)}px solid ${LABEL_RED}`, borderRadius: px(0.006, 1), padding: labelPad, fontFamily: SANS, fontSize: T, lineHeight: 1.3, letterSpacing: "0.02em" }}>
+          <div className="flex justify-between gap-1">
+            <span className="truncate">{set}</span>
+            <span className="shrink-0">{num}</span>
           </div>
-          {!tiny && (
-            <div className="flex items-end justify-between" style={{ marginTop: line * 0.25 }}>
-              {/* Barcode */}
-              <span className="block" style={{ width: "34%", height: line * 0.85, background: "repeating-linear-gradient(90deg, #000 0 1px, transparent 1px 2px, #000 2px 4px, transparent 4px 5px, #000 5px 6px, transparent 6px 8px)" }} />
-              <img src="/packdraft-logo-full.svg" alt="" draggable={false} className="select-none" style={{ height: line * 1.2 }} />
-              <span style={{ fontSize: line * 0.8, width: "34%", textAlign: "right" }}>{String(s.serial).padStart(6, "0")}</span>
-            </div>
-          )}
+          <p className="truncate font-bold">{name}</p>
+          <div className="flex items-center justify-between gap-1">
+            <span className="truncate">{team}</span>
+            <span className="flex shrink-0 items-center font-bold" style={{ gap: T * 0.25 }}>
+              <span aria-hidden className="shrink-0" style={{ background: "#000000", width: T * 1.05, height: T * 1.05, mask: fptMask, WebkitMask: fptMask }} />
+              {mult}
+            </span>
+          </div>
         </div>
 
         {/* Case window with the card in it */}
@@ -154,6 +145,8 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
           </div>
         </div>
 
+        {/* Shine: a soft band of light that sweeps across the slab now and then */}
+        <div className="slab-shine pointer-events-none absolute inset-0" style={{ animationDelay: `${-((s.serial * 7 + name.length * 13) % 50) / 10}s` }} />
         {/* Acrylic glare over the whole slab */}
         <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(115deg, rgba(255,255,255,.16) 0%, transparent 20%, transparent 66%, rgba(255,255,255,.12) 82%, transparent 100%)" }} />
       </div>
