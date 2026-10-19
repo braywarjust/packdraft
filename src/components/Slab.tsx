@@ -46,13 +46,31 @@ function Star({ x, y, size, delay }: { x: number; y: number; size: number; delay
   );
 }
 
-/** A small basketball (orange with seams). */
-function Ball({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
+/**
+ * A basketball: shaded leather, curved seams and a highlight, with a soft shadow. It turns slowly on its own, and when
+ * its slab or pack is hovered (any `.bball-host`) it bounces, squashes and spins. `variant` (0-3) picks one of four
+ * moves (a quick dribble, a big bounce, a rolling wobble, a double dribble) so a group of balls doesn't move in lockstep.
+ */
+function Ball({ className = "", style, variant = 0 }: { className?: string; style?: React.CSSProperties; variant?: number }) {
   return (
-    <svg viewBox="0 0 20 20" className={className} style={style} aria-hidden>
-      <circle cx="10" cy="10" r="9.2" fill="#f97316" stroke="#7c2d12" strokeWidth="0.9" />
-      <path d="M10 .8V19.2M.8 10H19.2M3.5 3.5C7 7 7 13 3.5 16.5M16.5 3.5C13 7 13 13 16.5 16.5" fill="none" stroke="#7c2d12" strokeWidth="0.9" />
-    </svg>
+    <span className={`bball bball-v${variant % 4} ${className}`} style={style} aria-hidden>
+      <span className="bball-shadow" />
+      <span className="bball-body">
+        <svg viewBox="0 0 40 40" className="bball-spin h-full w-full overflow-visible">
+          <defs>
+            <radialGradient id="bball-leather" cx="34%" cy="28%" r="78%">
+              <stop offset="0" stopColor="#ffb36b" /><stop offset=".42" stopColor="#f97316" /><stop offset=".85" stopColor="#c2410c" /><stop offset="1" stopColor="#7c2d12" />
+            </radialGradient>
+          </defs>
+          <circle cx="20" cy="20" r="18.6" fill="url(#bball-leather)" stroke="#431407" strokeWidth="1.1" />
+          <g fill="none" stroke="#3b1206" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M20 1.6V38.4" /><path d="M1.6 20H38.4" />
+            <path d="M7.2 6.4C14.2 12.6 14.2 27.4 7.2 33.6" /><path d="M32.8 6.4C25.8 12.6 25.8 27.4 32.8 33.6" />
+          </g>
+          <ellipse cx="13" cy="10.5" rx="6.5" ry="3.4" fill="#fff" opacity=".32" transform="rotate(-32 13 10.5)" />
+        </svg>
+      </span>
+    </span>
   );
 }
 
@@ -73,7 +91,7 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
   const club = s.team_name ? s.team_name.split(" ").slice(-1)[0] : s.team;
 
   return (
-    <div className={`@container relative shrink-0 ${className}`} style={{ width: size, height: size }}>
+    <div className={`bball-host @container relative shrink-0 ${className}`} style={{ width: size, height: size }}>
       <div className={`relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw] ${r === 4 ? "slab-frame-immortal" : ""} ${r >= 3 ? "slab-glow" : ""}`}
         style={{ background: FRAME[s.rarity] || undefined, ["--glow" as string]: `${tier}99`, boxShadow: r < 3 ? "0 8px 18px rgba(0,0,0,.35)" : undefined }}>
         <div className={`relative h-full w-full overflow-hidden rounded-[7cqw] ${r === 4 ? "slab-vivid" : ""}`}
@@ -91,7 +109,9 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
           {/* Tier effects behind the player */}
           {r >= 2 && STARS.slice(0, r >= 4 ? 7 : 4).map(([x, y, sz, d], i) => <Star key={i} x={x} y={y} size={sz} delay={d} />)}
           {r >= 3 && BALLS.slice(0, r >= 4 ? 4 : 2).map(([x, sz, d], i) => (
-            <Ball key={i} className="slab-ball pointer-events-none absolute" style={{ left: `${x}%`, bottom: "-12%", width: `${sz}cqw`, height: `${sz}cqw`, animationDelay: `${d}s` }} />
+            <span key={i} className="slab-ball pointer-events-none absolute" style={{ left: `${x}%`, bottom: "-12%", width: `${sz}cqw`, height: `${sz}cqw`, animationDelay: `${d}s` }}>
+              <Ball variant={i} className="h-full w-full" style={{ animationDelay: `${i * 0.13}s` }} />
+            </span>
           ))}
           {/* The player */}
           {s.photo && photoOk ? (
@@ -135,7 +155,7 @@ export function SlabCover({ rarity, size, className = "" }: { rarity: Rarity; si
   const r = RANK[rarity];
   const tier = RARITY_HEX[rarity];
   return (
-    <div className={`@container relative shrink-0 ${className}`} style={{ width: size, height: size }}>
+    <div className={`bball-host @container relative shrink-0 ${className}`} style={{ width: size, height: size }}>
       <div className={`relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw] ${r >= 3 ? "slab-glow" : ""}`}
         style={{ background: `linear-gradient(145deg, ${shade(tier, 0.5)}, ${tier} 45%, ${shade(tier, 0.3)} 70%, ${shade(tier, -0.45)})`, ["--glow" as string]: `${tier}99`, boxShadow: r < 3 ? "0 8px 18px rgba(0,0,0,.35)" : undefined }}>
         <div className="relative h-full w-full overflow-hidden rounded-[7cqw]" style={{ background: "linear-gradient(140deg, #0b4ea2 0%, #0253a4 48%, #8f1d22 100%)" }}>
@@ -147,8 +167,9 @@ export function SlabCover({ rarity, size, className = "" }: { rarity: Rarity; si
             <circle cx="50" cy="50" r="44" fill="url(#cover-glow)" />
           </svg>
           <div className="absolute inset-0 opacity-[.08]" style={{ backgroundImage: "repeating-linear-gradient(135deg, #fff 0 1px, transparent 1px 9px)" }} />
-          <img src="/packdraft-logo-full.svg" alt="" draggable={false} className="absolute left-1/2 top-1/2 w-[62%] -translate-x-1/2 -translate-y-1/2 select-none"
+          <img src="/packdraft-logo-full.svg" alt="" draggable={false} className="absolute left-1/2 top-[42%] w-[62%] -translate-x-1/2 -translate-y-1/2 select-none"
             style={{ filter: "drop-shadow(0 2cqw 3cqw rgba(0,0,0,.45))" }} />
+          <Ball variant={1} className="absolute bottom-[10%] left-[41.5%] h-[17cqw] w-[17cqw]" />
           <div className="slab-shimmer pointer-events-none absolute inset-0" />
         </div>
       </div>
