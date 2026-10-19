@@ -38,12 +38,14 @@ function shade(hex: string, amt: number) {
 /**
  * A Slab: a tarot-style card. Same box and card shape as the slab backs (0.6h wide, the card itself 710/1200 of the
  * height wide) so a reveal flips over in place. Roman numeral of his jersey up top, the player in an arched window over
- * his team colours and a faded team logo, the multiplier medallion, and a name plaque. Immortal slabs get a cycling
- * rainbow edge, a holo sheen, boosted colour and a pulsing glow.
+ * his team colours, and a name plaque. Two badges sit on the card's edge, partly off it: the team logo (top left) and
+ * the multiplier with the Fantasy Points logo (bottom centre). Immortal slabs get a cycling rainbow edge, a holo sheen,
+ * boosted colour and a pulsing glow.
  */
 export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; height: number; className?: string }) {
   const [photoOk, setPhotoOk] = useState(true);
   const h = height;
+  const box = Math.round(h * 0.6);
   const w = Math.round((h * 710) / 1200);
   const px = (k: number, min = 0) => Math.max(min, Math.round(h * k * 10) / 10);
   const generic = s.kind === "generic";
@@ -54,10 +56,22 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
   const logo = s.team ? `https://a.espncdn.com/i/teamlogos/nba/500/${s.team.toLowerCase()}.png` : null;
   const serif = "ui-serif, Georgia, 'Times New Roman', serif";
   const tiny = h < 180;
-  const label = generic ? "Any Player" : s.name;
+  // Name on two lines: first name small, last name as big as fits. Generic slabs read "Any / Player".
+  const parts = generic ? ["Any", "Player"] : s.name.split(" ");
+  const first = parts.length > 1 ? parts[0] : "";
+  const last = parts.length > 1 ? parts.slice(1).join(" ") : parts[0];
+  const inner = w - 2 * pad - px(0.05);
+  const fit = (text: string, max: number, k = 0.86) => Math.max(6, Math.min(h * max, inner / (Math.max(text.length, 1) * k)));
+  const club = s.team_name ? s.team_name.split(" ").slice(-1)[0] : s.team;
+  const sub = generic ? `Generic · ${RARITIES[s.rarity].label}` : `${club} · ${s.pos}`;
+  const numeral = s.immortal ? "IMMORTAL" : generic ? "★" : roman(Number(s.jersey ?? 0) || 0);
+  const fptMask = "url(/fantasy-points.svg) center / contain no-repeat";
+  const onTier = s.rarity === "grail" ? "#1c1300" : "#fff";
+  const logoSize = px(0.19, 26);
+  const pillH = px(0.095, 16);
 
   return (
-    <div className={`relative grid place-items-center ${className}`} style={{ width: Math.round(h * 0.6), height: h }}>
+    <div className={`relative grid place-items-center ${className}`} style={{ width: box, height: h }}>
       <div className={`relative h-full overflow-hidden ${s.immortal ? "slab-immortal" : ""}`}
         style={{
           width: w, borderRadius: px(0.04, 6), padding: pad,
@@ -74,19 +88,17 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
           {/* Inner gold rule */}
           <div className="pointer-events-none absolute" style={{ inset: px(0.014, 2), border: `1px solid ${GOLD}88`, borderRadius: px(0.024, 3) }} />
 
-          {/* Numeral */}
-          <div className="relative flex items-center justify-center gap-1.5" style={{ height: px(0.085), color: GOLD, fontFamily: serif }}>
-            <span style={{ fontSize: px(0.03, 6) }}>✦</span>
-            <span className="font-bold tracking-[0.18em]" style={{ fontSize: px(0.048, 8) }}>
-              {s.immortal ? "IMMORTAL" : generic ? "★" : roman(Number(s.jersey ?? 0) || 0)}
-            </span>
-            <span style={{ fontSize: px(0.03, 6) }}>✦</span>
+          {/* Numeral (kept clear of the logo badge on the left) */}
+          <div className="relative flex shrink-0 items-center justify-center gap-1" style={{ height: px(0.085), paddingLeft: px(0.1), paddingRight: px(0.02), color: GOLD, fontFamily: serif }}>
+            <span style={{ fontSize: px(0.026, 5) }}>✦</span>
+            <span className="truncate font-bold" style={{ fontSize: fit(numeral, 0.046, 1.05), letterSpacing: "0.14em" }}>{numeral}</span>
+            <span style={{ fontSize: px(0.026, 5) }}>✦</span>
           </div>
 
           {/* Arched window */}
-          <div className="relative mx-auto overflow-hidden"
+          <div className="relative mx-auto shrink-0 overflow-hidden"
             style={{
-              width: "84%", height: "60%", borderRadius: `${w}px ${w}px ${px(0.012, 2)}px ${px(0.012, 2)}px`,
+              width: "86%", height: "60%", borderRadius: `${w}px ${w}px ${px(0.012, 2)}px ${px(0.012, 2)}px`,
               border: `${px(0.006, 1)}px solid ${GOLD}`,
               background: `radial-gradient(90% 70% at 50% 35%, ${shade(primary, 0.15)}, ${primary} 45%, ${shade(secondary === "#0f172a" ? primary : secondary, -0.45)} 100%)`,
             }}>
@@ -99,7 +111,7 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
               </div>
             ) : (
               <>
-                {logo && <img src={logo} alt="" draggable={false} className="absolute left-1/2 top-[8%] -translate-x-1/2 select-none opacity-30" style={{ width: "88%" }} />}
+                {logo && <img src={logo} alt="" draggable={false} className="absolute left-1/2 top-[6%] -translate-x-1/2 select-none opacity-20" style={{ width: "92%" }} />}
                 {s.photo && photoOk ? (
                   <img src={s.photo} alt={s.name} draggable={false} onError={() => setPhotoOk(false)}
                     className="absolute bottom-0 left-1/2 max-w-none -translate-x-1/2 select-none"
@@ -111,38 +123,27 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
                 )}
               </>
             )}
-            {/* Bottom fade into the plaque */}
             <div className="absolute inset-x-0 bottom-0 h-1/4" style={{ background: "linear-gradient(transparent, rgba(0,0,0,.45))" }} />
           </div>
 
-          {/* Multiplier medallion, overlapping the bottom of the window */}
-          <div className="relative z-10 mx-auto grid place-items-center rounded-full font-black text-white"
-            style={{
-              width: px(0.16), height: px(0.16), marginTop: -px(0.08), fontSize: px(s.mult >= 10 ? 0.058 : 0.052, 9),
-              background: `radial-gradient(circle at 35% 30%, ${shade(tier, 0.45)}, ${tier} 55%, ${shade(tier, -0.45)})`,
-              border: `${px(0.008, 1.5)}px solid ${GOLD}`, boxShadow: `0 0 ${px(0.04)}px ${tier}aa, 0 4px 8px rgba(0,0,0,.5)`,
-              color: s.rarity === "grail" ? "#1c1300" : "#fff", letterSpacing: "-0.02em",
-            }}>
-            {fmtMult(s.mult)}
-          </div>
-
-          {/* Name plaque */}
-          <div className="relative flex flex-1 flex-col items-center justify-center px-1 text-center" style={{ fontFamily: serif }}>
-            <p className="w-full truncate font-bold uppercase leading-tight text-white" style={{ fontSize: Math.max(7, Math.min(h * 0.052, (w * 0.84) / (label.length * 0.9))), letterSpacing: "0.06em" }}>
-              {label}
+          {/* Name plaque; the bottom is left free for the multiplier badge */}
+          <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center text-center" style={{ fontFamily: serif, paddingBottom: pillH * 0.45, paddingInline: px(0.025) }}>
+            {first && !tiny && (
+              <p className="w-full truncate uppercase leading-none" style={{ fontSize: fit(first, 0.03), color: `${GOLD}ee`, letterSpacing: "0.12em" }}>{first}</p>
+            )}
+            <p className="w-full truncate font-bold uppercase leading-tight text-white" style={{ fontSize: fit(tiny ? s.name : last, 0.056), letterSpacing: "0.04em" }}>
+              {tiny && !generic ? s.name : last}
             </p>
             {!tiny && (
-              <p className="w-full truncate uppercase" style={{ fontSize: px(0.03, 7), color: `${GOLD}dd`, letterSpacing: "0.16em" }}>
-                {generic ? `Generic · ${RARITIES[s.rarity].label}` : `${s.team_name ?? s.team} · ${s.pos}`}
-              </p>
+              <p className="w-full truncate uppercase leading-none" style={{ fontSize: fit(sub, 0.026, 0.95), color: "#cbd5e1cc", letterSpacing: "0.14em" }}>{sub}</p>
             )}
           </div>
 
           {/* Corner pips */}
           {!tiny && (
             <>
-              <span className="absolute font-bold" style={{ left: px(0.03), bottom: px(0.022), fontSize: px(0.026, 6), color: `${GOLD}aa`, fontFamily: serif }}>#{s.serial}</span>
-              <span className="absolute font-bold" style={{ right: px(0.03), bottom: px(0.022), fontSize: px(0.026, 6), color: `${GOLD}aa`, fontFamily: serif }}>{RARITIES[s.rarity].label.toUpperCase()}</span>
+              <span className="absolute font-bold" style={{ left: px(0.03), bottom: px(0.022), fontSize: px(0.024, 6), color: `${GOLD}aa`, fontFamily: serif }}>#{s.serial}</span>
+              <span className="absolute font-bold" style={{ right: px(0.03), bottom: px(0.022), fontSize: px(0.024, 6), color: `${GOLD}aa`, fontFamily: serif }}>{RARITIES[s.rarity].label.toUpperCase()}</span>
             </>
           )}
 
@@ -150,6 +151,34 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
           <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(115deg, rgba(255,255,255,.16) 0%, transparent 28%, transparent 62%, rgba(255,255,255,.07) 80%, transparent 100%)" }} />
           {s.immortal && <div className="slab-holo pointer-events-none absolute inset-0" />}
         </div>
+      </div>
+
+      {/* Team logo badge, hanging off the top-left corner */}
+      <div className="absolute z-10 grid place-items-center rounded-full"
+        style={{
+          width: logoSize, height: logoSize, left: (box - w) / 2 - logoSize * 0.28, top: -logoSize * 0.22,
+          background: "radial-gradient(circle at 35% 30%, #ffffff, #e2e8f0 70%, #cbd5e1)",
+          border: `${px(0.01, 2)}px solid ${generic ? GOLD : primary}`, boxShadow: `0 0 0 ${px(0.004, 1)}px ${GOLD}, 0 4px 10px rgba(0,0,0,.45)`,
+        }}>
+        {generic ? (
+          <img src="/packdraft-logo-full.svg" alt="PackDraft" draggable={false} className="select-none object-contain" style={{ width: "80%" }} />
+        ) : logo ? (
+          <img src={logo} alt={s.team} title={s.team_name ?? s.team} draggable={false} className="select-none object-contain" style={{ width: "76%", height: "76%" }} />
+        ) : (
+          <span className="font-black text-zinc-900" style={{ fontSize: logoSize * 0.3 }}>{s.team}</span>
+        )}
+      </div>
+
+      {/* Multiplier badge: Fantasy Points logo + multiplier, hanging off the bottom edge */}
+      <div className="absolute left-1/2 z-10 flex -translate-x-1/2 items-center rounded-full font-black"
+        title={`${fmtMult(s.mult)} fantasy points`}
+        style={{
+          height: pillH, bottom: -pillH * 0.4, paddingInline: pillH * 0.32, gap: pillH * 0.16, fontSize: pillH * 0.56, color: onTier,
+          background: `linear-gradient(180deg, ${shade(tier, 0.35)}, ${tier} 55%, ${shade(tier, -0.35)})`,
+          border: `${px(0.008, 1.5)}px solid ${GOLD}`, boxShadow: `0 0 ${px(0.035)}px ${tier}aa, 0 4px 10px rgba(0,0,0,.5)`, letterSpacing: "-0.02em",
+        }}>
+        <span aria-hidden className="shrink-0" style={{ width: pillH * 0.62, height: pillH * 0.62, background: onTier, mask: fptMask, WebkitMask: fptMask }} />
+        {fmtMult(s.mult)}
       </div>
     </div>
   );
