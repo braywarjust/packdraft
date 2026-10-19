@@ -127,6 +127,8 @@ function open(): DatabaseSync {
   if (!cardCols.includes("slab_id")) db.exec("ALTER TABLE cards ADD COLUMN slab_id INTEGER");
   const userCols = (db.prepare("PRAGMA table_info(users)").all() as { name: string }[]).map((c) => c.name);
   if (!userCols.includes("is_tester")) db.exec("ALTER TABLE users ADD COLUMN is_tester INTEGER NOT NULL DEFAULT 0");
+  const leagueCols = (db.prepare("PRAGMA table_info(leagues)").all() as { name: string }[]).map((c) => c.name);
+  if (!leagueCols.includes("long_weeks")) db.exec("ALTER TABLE leagues ADD COLUMN long_weeks TEXT");
   if (fresh) carryOverUsers(db);
   db.prepare("UPDATE users SET coins = ? WHERE is_tester = 1 AND coins < ?").run(TESTER_COINS, TESTER_FLOOR);
   db.exec("COMMIT");
@@ -213,6 +215,8 @@ export type League = {
   season_weeks: number; invite_code: string; reward_win: string; reward_loss: string; reward_top: string;
   draft_status: string; draft_order: string | null; pick_deadline: number | null; last_pick_at: number | null;
   current_week: number; week_started_at: number | null; champion_team_id: number | null; created_at: number;
+  /** JSON array of week numbers that run two weeks instead of one (e.g. the All-Star break matchup). */
+  long_weeks?: string | null;
   // Branding (added by branding.ts ensureBranding)
   color?: string | null; alt_color?: string | null; abbr?: string | null; logo_url?: string | null;
 };

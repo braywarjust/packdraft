@@ -31,14 +31,19 @@ const isOut = (p: { injury: string | null }) => !!p.injury && /^out/i.test(p.inj
 
 // ---------- Weeks ----------
 
-/** Real leagues: week 1 runs from start_date to the first Sunday at least 4 days later, then Monday–Sunday. */
+/**
+ * Real leagues: week 1 runs from start_date to the first Sunday at least 4 days later, then Monday–Sunday.
+ * Weeks listed in long_weeks run two Monday–Sunday weeks (like ESPN's All-Star break matchup).
+ */
 export function weekRange(l: League, week: number): [string, string] {
+  const long = new Set<number>(l.long_weeks ? JSON.parse(l.long_weeks) : []);
   let s = l.start_date ?? etDate();
   let e = addDays(s, 4);
   while (weekday(e) !== 0) e = addDays(e, 1);
+  if (long.has(1)) e = addDays(e, 7);
   for (let w = 2; w <= week; w++) {
     s = addDays(e, 1);
-    e = addDays(s, 6);
+    e = addDays(s, long.has(w) ? 13 : 6);
   }
   return [s, e];
 }
