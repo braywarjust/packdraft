@@ -124,6 +124,29 @@ body {
 .anim-flash { animation: flash 1.5s ease-out; }
 .foil { background-image: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.35) 45%, transparent 60%); background-size: 200% 100%; animation: shine 2.5s linear infinite; }
 
+/* ---------- Slabs (components/Slab.tsx) and animated packs (components/PackArt.tsx): smooth, low-key motion ---------- */
+@property --slab-a { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes slabSpinA { to { --slab-a: 360deg; } }
+@keyframes slabTwinkle { 0%, 100% { opacity: 0; transform: scale(.4) rotate(0); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+@keyframes slabBall { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 12% { opacity: .95; } 50% { transform: translate(4cqw, -60cqw) rotate(180deg); } 88% { opacity: .9; } 100% { transform: translate(-2cqw, -125cqw) rotate(360deg); opacity: 0; } }
+@keyframes slabShimmer { 0%, 55% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
+@keyframes slabVivid { 0%, 100% { filter: saturate(1.35) hue-rotate(0deg); } 50% { filter: saturate(1.6) hue-rotate(18deg); } }
+.slab-rays { animation: raysSpin 40s linear infinite; }
+.slab-twinkle { animation: slabTwinkle 2.8s ease-in-out infinite; transform-origin: center; }
+.slab-ball { animation: slabBall 7.5s ease-in-out infinite; opacity: 0; }
+.slab-shimmer { background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .22) 50%, transparent 65%); background-size: 250% 100%; animation: slabShimmer 5s ease-in-out infinite; }
+.slab-holo { background: linear-gradient(125deg, transparent 15%, rgba(255, 0, 150, .22) 35%, rgba(0, 255, 200, .22) 50%, rgba(255, 220, 0, .22) 65%, transparent 85%); background-size: 250% 100%; mix-blend-mode: color-dodge; animation: shine 4s linear infinite; }
+.slab-glow { animation: pulseGlow 2.6s ease-in-out infinite; }
+.slab-vivid { animation: slabVivid 5s ease-in-out infinite; }
+.slab-frame-immortal { background: conic-gradient(from var(--slab-a), #f472b6, #fbbf24, #34d399, #38bdf8, #a78bfa, #f472b6); animation: slabSpinA 4s linear infinite, pulseGlow 2.6s ease-in-out infinite; }
+@keyframes packBob { 0%, 100% { transform: translateY(0) rotate(-.6deg); } 50% { transform: translateY(-3%) rotate(.6deg); } }
+@keyframes packFan { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4%); } }
+.pack-bob { animation: packBob 4.5s ease-in-out infinite; }
+.pack-fan { animation: packFan 3.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .slab-rays, .slab-twinkle, .slab-ball, .slab-shimmer, .slab-holo, .slab-glow, .slab-vivid, .slab-frame-immortal, .pack-bob, .pack-fan { animation: none; }
+}
+
 .flip { perspective: 1000px; }
 .flip-inner { transition: transform 0.7s cubic-bezier(0.3, 0.9, 0.3, 1); transform-style: preserve-3d; }
 .flip.flipped .flip-inner { transform: rotateY(180deg); }

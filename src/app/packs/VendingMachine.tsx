@@ -1,6 +1,6 @@
 "use client";
 
-import { PackSheen } from "@/components/PackSheen";
+import { PackArt as PackVisual } from "@/components/PackArt";
 import { OddsBar } from "@/components/OddsBar";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
@@ -9,7 +9,7 @@ import { CardData, GLOW, PlayerCard } from "@/components/PlayerCard";
 import { Logo } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
 import { SlabCount } from "@/components/SlabIcon";
-import { SlabBack } from "@/components/SlabBack";
+import { SlabCover } from "@/components/Slab";
 import { CheckIcon, LockIcon } from "@/components/Icons";
 import { useScrollLock } from "@/components/useScrollLock";
 
@@ -115,62 +115,10 @@ const CASE_SIZE = { sm: [116, 116], md: [220, 220], big: [336, 336] } as const;
 const artSize = (p: PackType, size: "sm" | "md" | "big") => (p.kind === "case" ? CASE_SIZE : PACK_SIZE)[size];
 const slabsLabel = (n: number) => `${n} slab${n === 1 ? "" : "s"}`;
 
-/** Pack image rendered in Blender (public/packs/{id}.png, see scripts/pack-renders). Falls back to the CSS wrapper. */
-function PackArt({ p, big, md, slabs }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[] }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) return <CssPackArt p={p} big={big} md={md} slabs={slabs} />;
+/** Animated pack art (components/PackArt) in the shop's standard boxes. */
+function PackArt({ p, big, md }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[] }) {
   const [w, h] = artSize(p, big ? "big" : md ? "md" : "sm");
-  const src = `/packs/${p.id}.png?v=8`;
-  return (
-    <span className="relative block" style={{ width: w, height: h }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={p.name} width={w} height={h} draggable={false} onError={() => setFailed(true)}
-        className="block select-none object-contain" style={{ width: w, height: h, filter: "drop-shadow(0 14px 18px rgba(0,0,0,.45))" }} />
-      <PackSheen src={src} seed={p.price} />
-    </span>
-  );
-}
-
-/** Foil pack wrapper: tier colours, crimped edges, PackDraft logo and a fan of real chase slabs from the vault. */
-function CssPackArt({ p, big, md, slabs = [] }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[] }) {
-  const size = big ? "big" : md ? "md" : "sm";
-  const [w, h] = PACK_SIZE[size];
-  const slabH = h * 0.44;
-  const fan = slabs.slice(0, size === "sm" ? 1 : 3);
-  const angles = fan.length === 3 ? [-14, 0, 14] : fan.length === 2 ? [-9, 9] : [0];
-  const crimp = "repeating-linear-gradient(90deg, rgba(255,255,255,.45) 0 5px, transparent 5px 10px)";
-  return (
-    <div className={`relative overflow-hidden rounded-lg bg-gradient-to-br ${p.color} shadow-2xl ring-1 ring-black/20`} style={{ width: w, height: h }}>
-      {/* sheen + texture */}
-      <div className="absolute inset-0" style={{ background: "radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.35), transparent 60%), radial-gradient(90% 60% at 50% 110%, rgba(0,0,0,.45), transparent 70%)" }} />
-      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.5) 0 1px, transparent 1px 9px)" }} />
-      <div className="foil absolute inset-0 opacity-70" />
-      {/* crimped seals */}
-      <div className="absolute inset-x-0 top-0" style={{ height: h * 0.045, background: crimp }} />
-      <div className="absolute inset-x-0 bottom-0" style={{ height: h * 0.045, background: crimp }} />
-      {/* logo */}
-      <div className="absolute inset-x-0 flex justify-center" style={{ top: h * 0.07 }}>
-        <Logo height={h * (size === "sm" ? 0.2 : 0.17)} style={{ filter: "drop-shadow(0 3px 6px rgba(0,0,0,.45))" }} />
-      </div>
-      {/* chase slabs */}
-      <div className="absolute inset-x-0 flex justify-center" style={{ top: h * 0.29, height: slabH }}>
-        {fan.map((id, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={id} src={`/api/slabs/${id}`} alt="" loading="lazy"
-            className="absolute top-0 object-cover object-center"
-            style={{
-              height: slabH, width: slabH * 0.6, transform: `translateX(${(i - (fan.length - 1) / 2) * slabH * 0.36}px) rotate(${angles[i]}deg)`,
-              transformOrigin: "50% 90%", filter: "drop-shadow(0 8px 10px rgba(0,0,0,.5))", zIndex: i === 1 ? 2 : 1,
-            }} />
-        ))}
-      </div>
-      {/* name band */}
-      <div className="absolute inset-x-0 z-10 bg-black/55 text-center backdrop-blur-[2px]" style={{ bottom: h * 0.06, paddingBlock: h * 0.025 }}>
-        <p className={`font-black uppercase leading-none tracking-tight text-white ${size === "big" ? "text-2xl" : size === "md" ? "text-base" : "text-[9px]"}`}>{p.name.replace(" Pack", "")}</p>
-        {size !== "sm" && <p className={`mt-0.5 font-semibold uppercase tracking-[0.2em] text-white/75 ${size === "big" ? "text-xs" : "text-[9px]"}`}>{slabsLabel(p.cards)}</p>}
-      </div>
-    </div>
-  );
+  return <PackVisual p={p} width={w} height={h} />;
 }
 
 function Confetti() {
@@ -296,7 +244,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
       )}
 
       <section id="packs" className="scroll-mt-36 space-y-3">
-        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One graded slab each. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
+        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One Slab each. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
         <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 xl:grid-cols-6">
           {PACKS.filter((p) => p.kind !== "case").map((p) => {
             const busy = stage !== "idle";
@@ -323,7 +271,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
       {/* The Mega Pack: presented like the others (the render is the buy button, price underneath). */}
       {PACKS.some((p) => p.kind === "case") && (
         <section id="mega" className="scroll-mt-36 space-y-3">
-          <div><h2 className="text-lg font-bold">Mega Pack</h2><p className="text-sm text-zinc-500">Five slabs in one big crate, with no Base tier at all.</p></div>
+          <div><h2 className="text-lg font-bold">Mega Pack</h2><p className="text-sm text-zinc-500">Five slabs in one big crate, every one Epic or better.</p></div>
           <div className="flex flex-wrap justify-center gap-10">
             {PACKS.filter((p) => p.kind === "case").map((p) => {
               const busy = stage !== "idle";
@@ -383,13 +331,13 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
                   return (
                     <button key={c.id} onClick={() => !isUp && flip(c)} className={`flip anim-deal ${isUp ? "flipped" : ""}`} style={{ animationDelay: `${i * 120}ms` }}>
                       <div className={hit && !isUp ? "anim-rumble [perspective:1000px]" : ""}>
-                      <div className="flip-inner relative h-[260px] w-44">{/* slab height only, so the slab itself is centred; its caption hangs below */}
-                        {/* Face-down slab (SlabBack): exactly the box and slab shape of the revealed scan (SlabImage at 260px),
-                            centred the same way, so the flip turns over in place. */}
+                      <div className="flip-inner relative h-[208px] w-[216px]">{/* slab height only, so the slab itself is centred; its caption hangs below */}
+                        {/* Face-down slab: the same 208px square as the revealed Slab, centred the same way, so it flips in place.
+                            Old graded slabs no longer drop, so every new pull is a square Slab. */}
                         <div className="flip-face absolute inset-0 flex flex-col items-center">
-                          <SlabBack height={260} rarity={c.rarity} />
+                          <SlabCover size={208} rarity={c.rarity} />
                         </div>
-                        <div className={`flip-face flip-back absolute inset-0 flex flex-col items-center rounded-xl ${isUp && !c.slab_id && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
+                        <div className={`flip-face flip-back absolute inset-0 flex flex-col items-center rounded-xl ${isUp && !c.slab_id && c.kind !== "slab" && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
                           <PlayerCard c={c} />
                           {sold.has(c.id) && <div className="absolute inset-0 grid place-items-center rounded-xl bg-white/85 text-sm font-bold text-zinc-900">SOLD</div>}
                         </div>

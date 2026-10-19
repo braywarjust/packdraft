@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { RARITIES, Rarity } from "@/lib/packs";
+import { Slab, type SlabData } from "@/components/Slab";
 import { Coins } from "@/components/Coins";
 
 export type CardData = {
@@ -7,7 +8,27 @@ export type CardData = {
   headshot?: string | null; jersey?: string | null; color?: string | null; alt?: string | null; logo?: string | null;
   slab_id?: number | null; s_year?: number | null; s_set?: string | null; s_no?: string | null; s_variant?: string | null;
   s_company?: string | null; s_grade?: string | null; s_cert?: string | null; s_flags?: string | null; s_source?: string | null;
+  kind?: string | null; team_name?: string | null; photo?: string | null;
 };
+
+/** Slab props for a new-style square Slab card. */
+export const slabOf = (c: CardData): SlabData => ({
+  name: c.name, team: c.team, team_name: c.team_name, pos: c.pos, rarity: c.rarity, serial: c.serial, jersey: c.jersey, color: c.color, alt: c.alt, photo: c.photo,
+});
+
+/** A square Slab with a short caption underneath. */
+export function SlabTile({ c, small }: { c: CardData; small?: boolean }) {
+  const size = small ? 176 : 208;
+  return (
+    <div className="flex flex-col items-center" style={{ width: size + 8 }}>
+      <Slab s={slabOf(c)} size={size} />
+      <div className="mt-2 w-full text-center">
+        <p className="truncate text-xs font-semibold text-zinc-900">{RARITIES[c.rarity].label}{c.serial ? <span className="font-normal text-zinc-500"> · #{c.serial}</span> : null}</p>
+        <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={c.value} /></p>
+      </div>
+    </div>
+  );
+}
 
 // Solid rarity badge. Hex colours on purpose: the dark theme remaps Tailwind's tint scales.
 const BADGE: Record<Rarity, string> = {
@@ -75,6 +96,7 @@ export const GLOW: Record<Rarity, string> = {
 const GRADE_WORD: Record<number, string> = { 10: "GEM MT", 9.5: "MINT+", 9: "MINT", 8.5: "NM-MT+", 8: "NM-MT" };
 
 export function PlayerCard({ c, small }: { c: CardData; small?: boolean }) {
+  if (c.kind === "slab") return <SlabTile c={c} small={small} />;
   if (c.slab_id) return <SlabCard c={c} small={small} />;
   const r = RARITIES[c.rarity];
   const primary = `#${c.color ?? "334155"}`;

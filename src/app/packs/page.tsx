@@ -3,14 +3,16 @@ import { unopenedPacks } from "@/lib/packs-server";
 import { BUYBACK_RATE, PACKS, RARITIES, RARITY_BLURB, RARITY_HEX, RARITY_ORDER, fmtOdds } from "@/lib/packs";
 import { VendingMachine } from "./VendingMachine";
 import { buyPack, ripPack, sellCards } from "../actions";
-import { catalogStats, ensureCatalog, packFeatures } from "@/lib/slabs";
-import { marketConfigured } from "@/lib/market";
-import { Coins, CoinIcon } from "@/components/Coins";
+import { packFeatures } from "@/lib/slabs";
+import Link from "next/link";
+import { slabPool, slabValue } from "@/lib/slab-cards";
+import { slabPlayerPhoto } from "@/lib/nba/photos";
+import { one } from "@/lib/db";
+import { Slab } from "@/components/Slab";
+import { Coins } from "@/components/Coins";
 import { Logo } from "@/components/Logo";
 import { OddsBar } from "@/components/OddsBar";
 import { PackThumb } from "@/components/PackThumb";
-import { SlabIcon } from "@/components/SlabIcon";
-import { RarityLibraryButton } from "@/components/RarityLibrary";
 import { NAV_ICONS, NavIcon } from "@/components/NavIcons";
 
 export const metadata = { title: "Pack Shop" };
@@ -18,10 +20,11 @@ export const metadata = { title: "Pack Shop" };
 export default async function PacksPage() {
   const u = await requireUser();
   const inventory = unopenedPacks(u.id);
-  ensureCatalog();
-  const stats = new Map(catalogStats().map((r) => [r.rarity, r]));
-  const vaultTotal = [...stats.values()].reduce((s, r) => s + r.n, 0) || 1;
-  const market = marketConfigured();
+  const poolSize = slabPool().length;
+  // The tier tiles all show the league's top player, so the only thing that changes between them is the tier.
+  const top = one<{ name: string; team: string; pos: string; jersey: string | null; headshot: string | null; color: string | null; alt: string | null; team_name: string }>(
+    "SELECT p.name, p.team, p.pos, p.jersey, p.headshot, t.color, t.alt, t.name team_name FROM players p JOIN nba_teams t ON t.abbr = p.team WHERE p.active = 1 ORDER BY p.proj DESC LIMIT 1");
+  const sample = top ? { ...top, photo: slabPlayerPhoto(top.name) ?? top.headshot } : null;
 
   return (
     <div className="space-y-8">
@@ -32,10 +35,10 @@ export default async function PacksPage() {
         <div className="relative flex flex-wrap items-center gap-6 p-6 sm:p-8">
           <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white/15 text-white ring-1 ring-white/25 backdrop-blur"><NavIcon d={NAV_ICONS.packs} size={36} /></span>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Mystery packs · real graded slabs</p>
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Mystery packs · NBA Slabs</p>
             <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Pack Shop</h1>
             <p className="mt-2 max-w-xl text-sm text-white/80">
-              Every pack holds real graded slabs from the vault. Rip it, keep what you love, or sell it straight back for {Math.round(BUYBACK_RATE * 100)}% of its market value.
+              Every pack holds Slabs: animated cards of active NBA players, from Common to Immortal. Rip it, collect your favourites, or sell it straight back for {Math.round(BUYBACK_RATE * 100)}% of its value.
             </p>
           </div>
           <div className="flex gap-2">
@@ -46,7 +49,7 @@ export default async function PacksPage() {
           {([
             ["Your Pack Points", <Coins key="c" n={u.coins} live />],
             ["Unopened packs", String(inventory.length)],
-            ["Slabs in the vault", vaultTotal.toLocaleString()],
+            ["Players in the pool", String(poolSize)],
           ] as [string, React.ReactNode][]).map(([k, v]) => (
             <div key={k} className="bg-black/25 px-5 py-3 backdrop-blur">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>
@@ -63,32 +66,22 @@ export default async function PacksPage() {
       <section id="rarity" className="scroll-mt-36 space-y-3">
         <div>
           <h2 className="text-lg font-bold">Rarity tiers</h2>
-          <p className="text-sm text-zinc-500">Every slab in the vault sits in one of five tiers, from the most common to the rarest. Tap a tier to see every slab you could pull from it.</p>
+          <p className="text-sm text-zinc-500">Every Slab is one active NBA player at one of five tiers. The rarer the tier, the more it moves. <Link href="/packs/pool" className="text-brand underline">Browse every player in the pool</Link>.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-          {RARITY_ORDER.map((r, i) => {
-            const st = stats.get(r);
-            const share = st ? (st.n / vaultTotal) * 100 : 0;
-            return (
-              <RarityLibraryButton key={r} rarity={r} className="card relative h-full overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>
-                  <span className="text-sm font-black uppercase tracking-wider">{RARITIES[r].label}</span>
-                  <span className="text-[10px] font-bold opacity-80">Tier {i + 1}</span>
-                </div>
-                <div className="space-y-2 p-4 text-sm">
-                  <p className="text-zinc-500">{RARITY_BLURB[r]}</p>
-                  <div className="space-y-1 text-xs">
-                    <p className="flex justify-between"><span className="text-zinc-500">Share of vault</span><b>{share < 2 ? share.toFixed(1) : Math.round(share)}%</b></p>
-                    <p className="flex justify-between"><span className="text-zinc-500">Slabs</span><b className="inline-flex items-center gap-1"><SlabIcon />{(st?.n ?? 0).toLocaleString()}</b></p>
-                    <p className="flex justify-between"><span className="text-zinc-500">Typical value</span><b>{st ? <Coins n={Math.round(st.avg)} /> : "-"}</b></p>
-                    <p className="flex justify-between"><span className="text-zinc-500">Range</span><span>{st ? <><Coins n={st.lo} />–<Coins n={st.hi} /></> : "-"}</span></p>
-                    <p className="flex justify-between"><span className="text-zinc-500">Pulled so far</span><b>{st?.owned ?? 0}</b></p>
-                  </div>
-                  <p className="pt-1 text-xs font-bold" style={{ color: RARITY_HEX[r] === "#64748b" ? "#9aa3b5" : RARITY_HEX[r] }}>Browse all {(st?.n ?? 0).toLocaleString()} slabs</p>
-                </div>
-              </RarityLibraryButton>
-            );
-          })}
+          {RARITY_ORDER.map((r, i) => (
+            <Link key={r} href={`/packs/pool?tier=${r}`} className="card relative h-full overflow-hidden transition hover:-translate-y-0.5 hover:brightness-110">
+              <div className="flex items-center justify-between px-4 py-2.5" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>
+                <span className="text-sm font-black uppercase tracking-wider">{RARITIES[r].label}</span>
+                <span className="text-[10px] font-bold opacity-80">Tier {i + 1}</span>
+              </div>
+              <div className="flex flex-col items-center gap-3 p-4 text-sm">
+                {sample && <Slab size={150} s={{ ...sample, rarity: r }} />}
+                <p className="text-center text-zinc-500">{RARITY_BLURB[r]}</p>
+                <p className="flex w-full justify-between text-xs"><span className="text-zinc-500">Average player worth</span><b><Coins n={slabValue(r, 20)} /></b></p>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -134,19 +127,15 @@ export default async function PacksPage() {
         </div>
       </section>
 
-      {/* Scoring */}
+      {/* How it works */}
       <section id="scoring" className="scroll-mt-36 card space-y-4 p-5 text-sm">
-        <div>
-          <h2 className="text-lg font-bold">How a slab&apos;s tier is set</h2>
-          <p className="text-zinc-500">A slab&apos;s tier comes from its value: Common under 75, Rare 75 to 249, Epic 250 to 999 and Mythic 1,000 and up. Immortal is its own tier: only the Ultra Heavy Hitters, record auction sales worth hundreds of thousands to millions, with odds of about 1 in 25,000 even in a GOAT Pack. Without a market price, a slab&apos;s value is estimated from a score of what collectors pay up for:</p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <h2 className="text-lg font-bold">How Slabs work</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {([
-            ["Grade", "Black Label / Pristine 10 +45, PSA 10 +25, other 10s +20, 9.5 +17, 9 +11, 8–8.5 +6"],
-            ["Player", "GOAT (Jordan, LeBron, Kobe) +32, legend +18, current star +12, active player +4"],
-            ["Hits", "Autograph +20, memorabilia +13 (Logoman +28), auto + patch combo +8"],
-            ["Card type", "Iconic 90s/modern insert +18, premium set +12, numbered / short print +8, rookie +8, parallel +4"],
-            ["Era", "Pre-1990 +12, 1990s +5, 2000s +3"],
+            ["The pool", `Every active NBA player (${poolSize} of them), with his photo, team logo and team colours. Better players come up a little more often.`],
+            ["Tiers", "Common, Rare, Epic, Mythic and Immortal. Each step up adds motion: a turning sunburst, shimmer, twinkling stars, floating basketballs, and a rainbow glow for Immortal."],
+            ["Value", "Set by the tier and how good the player is. An Immortal superstar is the most valuable slab there is."],
+            ["Collect and boost", `Keep them, sell them back for ${Math.round(BUYBACK_RATE * 100)}%, or put one on a player for a night's slab boost (worth more on his own slab).`],
           ] as const).map(([k, v]) => (
             <div key={k} className="rounded-xl bg-ink/40 p-3">
               <p className="mb-1 text-xs font-black uppercase tracking-wider text-brand">{k}</p>
@@ -154,12 +143,6 @@ export default async function PacksPage() {
             </div>
           ))}
         </div>
-        <p className="flex items-start gap-1.5 text-xs text-zinc-400">
-          <CoinIcon className="mt-0.5" />
-          {market.ebay
-            ? "Values come from live eBay listings for the exact cert, or the same card in the same grade. Heavy Hitters use Courtyard's fair market value. Values marked * are estimates."
-            : "Heavy Hitters use Courtyard's fair market value; other values marked * are estimates from the rarity score until eBay keys are added."}
-        </p>
       </section>
     </div>
   );

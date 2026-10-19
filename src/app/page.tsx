@@ -3,7 +3,8 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all, one, Game, Matchup, Team } from "@/lib/db";
 import { beforeOpener, boostableGame, getLeague, maybeFinalize, roster, standings, teamWeek, STARTERS } from "@/lib/league";
-import { unopenedPacks } from "@/lib/packs-server";
+import { cardsWhere, unopenedPacks } from "@/lib/packs-server";
+import { Slab } from "@/components/Slab";
 import { RARITIES, Rarity } from "@/lib/packs";
 import { ensureBranding, favoritePresetId, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
 import { teamBoosts } from "@/lib/boost";
@@ -16,7 +17,7 @@ import { TeamBadge, type BrandLite } from "@/components/TeamBadge";
 import { TeamLogo } from "@/components/TeamLogo";
 import { MatchupCard } from "@/components/MatchupCard";
 import { PackThumb } from "@/components/PackThumb";
-import { RarityBadge } from "@/components/PlayerCard";
+import { RarityBadge, slabOf } from "@/components/PlayerCard";
 import { BoltIcon } from "@/components/Icons";
 import { claimBonus } from "./actions";
 
@@ -32,9 +33,7 @@ export default async function Home() {
   const todayIso = new Date().toISOString().slice(0, 10);
   const today = etDate();
   const vault = one<{ v: number; n: number }>("SELECT COALESCE(SUM(value), 0) v, COUNT(*) n FROM cards WHERE user_id = ? AND sold = 0", user.id)!;
-  const bestSlabs = all<{ id: number; slab_id: number; player: string; rarity: Rarity; value: number; grade: string; company: string }>(
-    `SELECT c.id, c.slab_id, s.player, c.rarity, c.value, s.grade, s.company FROM cards c JOIN slabs s ON s.id = c.slab_id
-     WHERE c.user_id = ? AND c.sold = 0 ORDER BY c.value DESC LIMIT 4`, user.id);
+  const bestSlabs = cardsWhere("c.user_id = ? AND c.sold = 0 AND (c.slab_id IS NOT NULL OR c.kind = 'slab') ORDER BY c.value DESC LIMIT 4", user.id);
   const bets = (() => {
     try {
       return one<{ n: number; stake: number; toWin: number }>(
@@ -244,8 +243,8 @@ export default async function Home() {
             ) : (
               <div className="grid grid-cols-4 gap-2">
                 {bestSlabs.map((c) => (
-                  <Link key={c.id} href="/collection" className="flex flex-col items-center gap-1 text-center" title={`${c.player} · ${c.company} ${c.grade}`}>
-                    <img src={`/api/slabs/${c.slab_id}`} alt="" className="h-24 w-full object-contain drop-shadow-lg" />
+                  <Link key={c.id} href="/collection" className="flex flex-col items-center gap-1 text-center" title={c.kind === "slab" ? `${c.name} · ${RARITIES[c.rarity].label}` : `${c.name} · ${c.s_company} ${c.s_grade}`}>
+                    {c.kind === "slab" ? <Slab s={slabOf(c)} size={64} /> : <img src={`/api/slabs/${c.slab_id}`} alt="" className="h-24 w-full object-contain drop-shadow-lg" />}
                     <RarityBadge rarity={c.rarity} className="px-1.5 text-[8px]" />
                     <span className="text-[11px] font-semibold text-emerald-600"><Coins n={c.value} /></span>
                   </Link>

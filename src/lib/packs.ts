@@ -19,32 +19,31 @@ export const RARITIES: Record<Rarity, { label: string; mult: [number, number]; r
 // Internal keys stay common/rare/epic/legendary/grail; shown as Common, Rare, Epic, Mythic, Immortal.
 export const RARITY_HEX: Record<Rarity, string> = { common: "#64748b", rare: "#2563eb", epic: "#9333ea", legendary: "#dc2626", grail: "#bae6fd" };
 export const RARITY_BLURB: Record<Rarity, string> = {
-  common: "Everyday graded slabs. The bread and butter of every break.",
-  rare: "Inserts, parallels and better players. The cards you chase in a box.",
-  epic: "Short prints, autos, patches and gem grades. Rare enough to brag about.",
-  legendary: "The best of the vault: big names, low pops, on-card autos, Logomen, black labels and iconic rookies of legends.",
-  grail: "The Ultra Heavy Hitters only: record-setting slabs that sold for hundreds of thousands to millions. Almost impossible to pull.",
+  common: "The everyday slab. Clean team colours, no frills.",
+  rare: "A slow-turning sunburst and a light shimmer.",
+  epic: "Twinkling stars around the player.",
+  legendary: "Basketballs floating through a glowing frame.",
+  grail: "Everything at once: colour-shifting glow, sparkles and basketballs. The rarest slab there is.",
 };
 export const RARITY_ORDER: Rarity[] = ["common", "rare", "epic", "legendary", "grail"];
 
-// Immortal (the Ultra Heavy Hitters) can only come out of the GOAT Pack and the Mega Pack.
-// Tiers are value bands (Common <75, Rare 75-249, Epic 250-999, Mythic 1,000+), so odds are set per pack to keep the
-// floor reasonable and the average return near 90% (simulated against the vault: 86-112%, a bad 1,000 rip ~250).
+// Packs drop Slabs of active NBA players. A slab's value is fixed by its tier and how good the player is (slab-cards.ts),
+// so odds are set per pack to keep the average return near 90% (simulated against the player pool: 89-100%).
 export const PACKS: PackType[] = [
   { id: "rookie", name: "Rookie Pack", price: 25, cards: 1, color: "from-slate-500 to-slate-700", accent: "#94a3b8", blurb: "Cheap thrills. Every hit starts somewhere.",
-    odds: { common: 94.4, rare: 5, epic: 0.5, legendary: 0.1, grail: 0 } },
+    odds: { common: 94.4, rare: 5, epic: 0.5, legendary: 0.09, grail: 0.01 } },
   { id: "starter", name: "Starter Pack", price: 100, cards: 1, color: "from-sky-500 to-blue-700", accent: "#38bdf8", blurb: "Solid floor, real upside.",
-    odds: { common: 52, rare: 41, epic: 6, legendary: 1, grail: 0 } },
+    odds: { common: 50, rare: 42, epic: 7, legendary: 0.95, grail: 0.05 } },
   { id: "pro", name: "Pro Pack", price: 250, cards: 1, color: "from-emerald-500 to-teal-700", accent: "#34d399", blurb: "What weekly winners rip.",
-    odds: { common: 20, rare: 48, epic: 27, legendary: 5, grail: 0 } },
+    odds: { common: 20, rare: 48, epic: 27, legendary: 4.85, grail: 0.15 } },
   { id: "allpro", name: "All-Pro Pack", price: 500, cards: 1, color: "from-fuchsia-500 to-purple-700", accent: "#e879f9", blurb: "Boosted Epic odds.",
-    odds: { common: 2, rare: 36, epic: 46, legendary: 16, grail: 0 } },
+    odds: { common: 2, rare: 36, epic: 46, legendary: 15.6, grail: 0.4 } },
   { id: "hof", name: "Hall of Fame Pack", price: 1000, cards: 1, color: "from-amber-400 to-orange-600", accent: "#fbbf24", blurb: "Top scorer of the week gets one of these.",
-    odds: { common: 0, rare: 15, epic: 50, legendary: 35, grail: 0 } },
+    odds: { common: 0, rare: 15, epic: 40, legendary: 44, grail: 1 } },
   { id: "goat", name: "GOAT Pack", price: 2500, cards: 1, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Mythic chase.",
-    odds: { common: 0, rare: 0, epic: 32, legendary: 68, grail: 0.004 } },
+    odds: { common: 0, rare: 0, epic: 10, legendary: 82, grail: 8 } },
   { id: "megacase", name: "Mega Pack", price: 10000, cards: 5, kind: "case", color: "from-zinc-900 via-amber-500 to-zinc-900", accent: "#f5c15c", blurb: "Five slabs, all Epic or better. The big rip.",
-    odds: { common: 0, rare: 0, epic: 28, legendary: 72, grail: 0.0032 } },
+    odds: { common: 0, rare: 0, epic: 12, legendary: 83, grail: 5 } },
 ];
 export const PACK_BY_ID: Record<string, PackType> = Object.fromEntries(PACKS.map((p) => [p.id, p]));
 

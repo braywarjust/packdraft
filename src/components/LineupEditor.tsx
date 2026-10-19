@@ -7,6 +7,7 @@ import { Coins } from "./Coins";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { LivePlayer } from "@/lib/league";
+import { Slab, type SlabData } from "./Slab";
 import { Headshot, InjuryTag } from "./Headshot";
 import { Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
@@ -14,7 +15,7 @@ import { useScrollLock } from "@/components/useScrollLock";
 
 const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
 
-type BoostSlab = { cardId: number; slabId: number; playerId: number | null; player: string; label: string; grade: string; rarity: string; value: number; mult: number };
+type BoostSlab = { cardId: number; slabId: number | null; playerId: number | null; player: string; label: string; grade: string; rarity: string; value: number; mult: number; slab: SlabData | null };
 export type BoostProps = {
   slabs: BoostSlab[];
   boostable: { playerId: number; dayKey: string; day: string; taken: { name: string; mult: number } | null }[];
@@ -177,7 +178,7 @@ export function BoostModal({ boost, player, info, pending, onClose, run }: {
               <button key={s.cardId} disabled={pending} onClick={() => run(() => boost.set(player.id, s.cardId))}
                 className={`flex flex-col items-center gap-1 rounded-lg p-2 text-center transition hover:bg-panel2 disabled:opacity-40 ${own ? "ring-1 ring-amber-500/60" : ""}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/api/slabs/${s.slabId}`} alt="" loading="lazy" className="h-32 w-full object-contain" />
+                {s.slab ? <Slab s={s.slab} size={128} /> : <img src={`/api/slabs/${s.slabId}`} alt="" loading="lazy" className="h-32 w-full object-contain" />}
                 <span className="text-lg font-black text-amber-600">×{mult.toFixed(2)}</span>
                 <span className="line-clamp-2 text-[11px] text-zinc-500">{s.player}</span>
                 <span className="text-[11px] text-zinc-400">{own ? "Own-player bonus!" : <Coins n={s.value} />}</span>

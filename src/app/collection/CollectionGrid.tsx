@@ -4,7 +4,8 @@ import { askConfirm } from "@/components/Confirm";
 import { XIcon } from "@/components/Icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { CardData, PlayerCard, RarityBadge, SlabImage, slabBadges } from "@/components/PlayerCard";
+import { CardData, PlayerCard, RarityBadge, SlabImage, slabBadges, slabOf } from "@/components/PlayerCard";
+import { Slab } from "@/components/Slab";
 import { BUYBACK_RATE, RARITIES, fmtCoins } from "@/lib/packs";
 import { Logo, LogoWatermark } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
@@ -52,14 +53,16 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
               <div className="flex items-center gap-3">
                 <Logo height={34} />
                 <span className="hidden h-5 w-px bg-zinc-200 sm:block" />
-                <span className="hidden text-xs font-semibold uppercase tracking-[0.25em] text-zinc-400 sm:block">Slab Vault</span>
+                <span className="hidden text-xs font-semibold uppercase tracking-[0.25em] text-zinc-400 sm:block">{open.kind === "slab" ? "Slab" : "Slab Vault"}</span>
               </div>
               <button onClick={() => setOpen(null)} aria-label="Close" className="rounded-md p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900"><XIcon /></button>
             </div>
             <div className="relative grid gap-6 overflow-hidden p-6 md:grid-cols-[auto_1fr]">
             <LogoWatermark color="red" opacity={0.06} height={230} className="-bottom-12 -right-10" />
             <div className="relative flex justify-center p-2">
-              {open.slab_id ? (
+              {open.kind === "slab" ? (
+                <Slab s={slabOf(open)} size={Math.min(420, typeof window !== "undefined" ? window.innerWidth - 80 : 420)} />
+              ) : open.slab_id ? (
                 <SlabImage id={open.slab_id} alt={`${open.s_year} ${open.s_set} ${open.name}`} height={Math.min(560, typeof window !== "undefined" ? window.innerHeight * 0.7 : 560)} rarity={open.rarity} />
               ) : (
                 <PlayerCard c={open} />
@@ -67,7 +70,7 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
             </div>
             <div className="relative min-w-0 space-y-4">
               <div className="flex items-center gap-4">
-                {open.photo && (
+                {open.photo && open.kind !== "slab" && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={open.photo} alt={open.name} className="h-24 w-32 shrink-0 rounded-xl border border-zinc-200 bg-zinc-100 object-cover object-top"
                     onError={(e) => { e.currentTarget.style.display = "none"; }} />
@@ -75,6 +78,7 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
                 <div className="min-w-0">
                   <RarityBadge rarity={open.rarity} className="mb-1" />
                   <h2 className="text-2xl font-bold tracking-tight">{open.name}</h2>
+                  {open.kind === "slab" && <p className="text-zinc-500">{open.team_name ?? open.team} · {open.pos}{open.jersey ? ` · #${open.jersey}` : ""} · {RARITIES[open.rarity].label} #{open.serial}</p>}
                   {open.slab_id && (
                     <p className="text-zinc-500">{open.s_year} {open.s_set}{open.s_no ? ` #${open.s_no}` : ""}{open.s_variant ? ` · ${open.s_variant}` : ""}</p>
                   )}
@@ -87,7 +91,7 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
                 </div>
               )}
               <div className="rounded-xl border border-zinc-200 p-4">
-                <p className="text-xs text-zinc-500">Market value</p>
+                <p className="text-xs text-zinc-500">{open.kind === "slab" ? "Value" : "Market value"}</p>
                 <p className="text-3xl font-bold text-emerald-600"><Coins n={open.value} /></p>
                 <p className="mt-1 text-xs text-zinc-500">
                   {open.s_source === "auction"
@@ -98,6 +102,7 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
                     ? detail.match === "cert"
                       ? `This exact slab is listed on eBay (${detail.n} listing${detail.n > 1 ? "s" : ""}).`
                       : <>Median of {detail.n} eBay listings for this card in this grade{detail.low != null && <> (<Coins n={detail.low} />–<Coins n={detail.high!} />)</>}.</>
+                    : open.kind === "slab" ? "Set by the slab's tier and how good the player is."
                     : open.slab_id ? "Estimated from the rarity score. Add eBay keys to price from live listings." : "Generated card value."}
                 </p>
               </div>
