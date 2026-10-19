@@ -1,8 +1,8 @@
 "use client";
-/* eslint-disable @next/next/no-img-element */
 
 import { RARITY_HEX, RARITY_ORDER, type PackType } from "@/lib/packs";
 import { SlabBall } from "./Slab";
+import { AnimatedLogo } from "./AnimatedLogo";
 
 /** Sunburst wedges behind the pack art. */
 const RAYS = Array.from({ length: 14 }, (_, i) => {
@@ -27,7 +27,8 @@ function MiniSlab({ color, className = "", style }: { color: string; className?:
 }
 
 /**
- * Animated pack art: a foil pack in the pack's colours with crimped seals, a turning sunburst, the PackDraft logo, a fan
+ * Animated pack art: a foil pack in the pack's colours with crimped seals, a turning sunburst, the PackDraft logo (which
+ * plays its own animation on hover, see AnimatedLogo), a fan
  * square slab (five for the Mega Pack) gently bobbing out of it, twinkling sparkles, a slow foil shimmer and the pack's name. The whole pack
  * floats a little when `animate` is on. The Mega Pack is a wider crate holding five. Sized in cqw, so any box works.
  */
@@ -37,7 +38,7 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
   // One slab on single packs, the full five-slab fan on the Mega Pack.
   const fan = isCase ? [-26, -13, 0, 13, 26] : [0];
   return (
-    <div className={`bball-host @container relative shrink-0 ${className}`} style={{ width, height }}>
+    <div className={`bball-host logo-host @container relative shrink-0 ${className}`} style={{ width, height }}>
       <div className={`absolute inset-0 ${animate ? "pack-bob" : ""}`} style={{ filter: "drop-shadow(0 3cqw 4cqw rgba(0,0,0,.45))" }}>
         <div className={`relative h-full w-full overflow-hidden bg-gradient-to-br ${p.color} ${isCase ? "rounded-[8cqw]" : "rounded-[7cqw]"}`}
           style={{ boxShadow: "inset 0 0 0 1.2cqw rgba(255,255,255,.18), inset 0 -6cqw 10cqw rgba(0,0,0,.35)" }}>
@@ -59,7 +60,7 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
             </>
           )}
           {/* Logo */}
-          <img src="/packdraft-logo-full.svg" alt="" draggable={false} className={`absolute left-1/2 -translate-x-1/2 select-none ${isCase ? "top-[7%] w-[38%]" : "top-[10%] w-[58%]"}`}
+          <AnimatedLogo className={`absolute left-1/2 z-20 -translate-x-1/2 select-none ${isCase ? "top-[7%] w-[38%]" : "top-[10%] w-[58%]"}`}
             style={{ filter: "drop-shadow(0 1.5cqw 2.5cqw rgba(0,0,0,.4))" }} />
           {/* Fan of slabs */}
           <div className={`absolute inset-x-0 ${isCase ? "top-[30%] h-[36%]" : "top-[37%] h-[33%]"}`}>
