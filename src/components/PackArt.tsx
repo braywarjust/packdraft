@@ -2,7 +2,8 @@
 
 import type { PackType } from "@/lib/packs";
 import { useRef } from "react";
-import { Rays } from "./Slab";
+import { Rays, Slab } from "./Slab";
+import { usePackShowcase } from "./usePackShowcase";
 import { useOffscreenPause } from "./useOffscreenPause";
 import { AnimatedLogo } from "./AnimatedLogo";
 
@@ -12,14 +13,15 @@ const SPARKS: [number, number, number, number][] = [[14, 22, 7, 0], [84, 30, 5.5
 /**
  * Animated pack art: a padded foil pouch in the pack's colours, lit like a real object (a bright top edge, shaded sides
  * and bottom, a pillowed middle, a glossy highlight and a couple of soft creases) with a ground shadow under it. Inside:
- * a turning sunburst, the PackDraft logo (which plays its own animation on hover, see AnimatedLogo), a square slab
- * (five for the Mega Pack, a crate with a lid) gently bobbing, sparkles, a slow shimmer and the pack's name. It floats a
+ * a turning sunburst, the PackDraft logo (which plays its own animation on hover, see AnimatedLogo), a reel of ten
+ * slabs from the pack's tier of players sliding past, sparkles, a slow shimmer, and the pack's name with a slab icon
+ * that hops on hover. The Mega Pack is a crate with a lid. It floats a
  * little when `animate` is on and tilts toward you on hover. Sized in cqw, so any box works.
  */
 export function PackArt({ p, width, height, animate = true, className = "" }: { p: PackType; width: number; height: number; animate?: boolean; className?: string }) {
   const isCase = p.kind === "case";
-  // One slab on single packs, the full five-slab fan on the Mega Pack.
-  const fan = isCase ? [-26, -13, 0, 13, 26] : [0];
+  const reel = usePackShowcase(p.id);
+  const cover = Math.max(8, Math.round(height * (isCase ? 0.36 : 0.33)));
   const ref = useRef<HTMLDivElement>(null);
   useOffscreenPause(ref);
   return (
@@ -47,17 +49,16 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
           {/* Logo */}
           <AnimatedLogo className={`absolute left-1/2 z-20 -translate-x-1/2 select-none ${isCase ? "top-[7%] w-[38%]" : "top-[10%] w-[58%]"}`}
             style={{ filter: "drop-shadow(0 1.5cqw 2.5cqw rgba(0,0,0,.4))" }} />
-          {/* The slab icon, big; on hover it hops and tilts. The Mega Pack fans five that spread out one after another. */}
-          <div className={`absolute inset-x-0 ${isCase ? "top-[31%] h-[33%]" : "top-[35%] h-[31%]"}`}>
-            {fan.map((deg, i) => (
-              <span key={i} className={`pack-icon absolute top-0 h-full ${isCase ? "pack-icon-mega" : ""} ${animate ? "pack-fan" : ""}`}
-                style={{
-                  left: "50%", aspectRatio: "1.07", translate: `calc(-50% + ${deg * 0.8}cqw) 0`, rotate: `${deg * 0.55}deg`, zIndex: 40 - Math.abs(deg),
-                  animationDelay: `${i * 0.3}s`, ["--i" as string]: i, ["--hx" as string]: `calc(-50% + ${deg * 1.2}cqw)`, ["--hr" as string]: `${deg * 1.1}deg`,
-                }}>
-                <span className="pack-icon-glyph absolute inset-0" style={{ animationDelay: `${i * 0.08}s` }} />
-              </span>
-            ))}
+          {/* Showcase reel: ten slabs from this pack's tier of players slide past one at a time (better packs, better
+              players). The first slab is repeated at the end so the loop is seamless. The slabs themselves are still. */}
+          <div className={`absolute left-1/2 -translate-x-1/2 overflow-hidden rounded-[5cqw] ${isCase ? "top-[31%]" : "top-[35%]"}`} style={{ width: cover, height: cover }}>
+            {reel && reel.length > 0 && (
+              <div className={`flex h-full w-full ${animate ? "pack-reel" : ""}`} style={{ animationDelay: `${-((p.price * 7) % 28)}s` }}>
+                {[...reel, reel[0]].map((s, i) => (
+                  <div key={i} className="grid h-full w-full shrink-0 place-items-center"><Slab s={s} size={cover} still /></div>
+                ))}
+              </div>
+            )}
           </div>
           {/* Sparkles */}
           {animate && SPARKS.map(([x, y, s, d], i) => (
@@ -70,7 +71,9 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
             <p className={`font-black uppercase leading-none tracking-tight text-white ${isCase ? "text-[11cqw]" : "text-[13cqw]"}`} style={{ textShadow: "0 1cqw 2.5cqw rgba(0,0,0,.5)" }}>
               {p.name.replace(" Pack", "")}
             </p>
-            <p className="mt-[1.5cqw] text-[5.5cqw] font-bold uppercase tracking-[0.2em] text-white/80">{p.cards} slab{p.cards > 1 ? "s" : ""}</p>
+            <p className="mt-[1.5cqw] flex items-center justify-center gap-[1.5cqw] text-[5.5cqw] font-bold uppercase tracking-[0.2em] text-white/80">
+              <span className="pack-icon-glyph inline-block" style={{ width: "6cqw", height: "5.6cqw" }} />{p.cards} slab{p.cards > 1 ? "s" : ""}
+            </p>
           </div>
           {animate && <div className="slab-shimmer pointer-events-none absolute inset-0" />}
           {/* Glossy highlight: a soft glare up top and a specular streak, which slides a little on hover */}

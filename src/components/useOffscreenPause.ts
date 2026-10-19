@@ -15,12 +15,13 @@ function observer() {
   return io;
 }
 
-export function useOffscreenPause(ref: RefObject<HTMLElement | null>) {
+/** `enabled = false` leaves the element alone (e.g. a slab that is always still). */
+export function useOffscreenPause(ref: RefObject<HTMLElement | null>, enabled = true) {
   useEffect(() => {
     const el = ref.current;
     const o = observer();
-    if (!el || !o) return;
+    if (!el || !o || !enabled) return;
     o.observe(el);
     return () => o.unobserve(el);
-  }, [ref]);
+  }, [ref, enabled]);
 }

@@ -158,14 +158,13 @@ body {
 .pack-gloss { background: linear-gradient(112deg, transparent 10%, rgba(255, 255, 255, .32) 17%, transparent 27%, transparent 70%, rgba(255, 255, 255, .1) 76%, transparent 82%); background-size: 160% 100%; background-position: 0% 0; transition: background-position .6s ease; }
 .logo-host:hover .pack-gloss { background-position: 45% 0; }
 
-/* Pack covers (PackArt): the slab icon (the Collection nav mark). On hover it hops and tilts; on the Mega Pack the
-   five spread wider one after another (translate/rotate transition, staggered by --i) and hop in turn. */
+/* Pack covers (PackArt): the slab icon (the Collection nav mark) next to "1 slab" hops and tilts on hover. */
 .pack-icon-glyph { background: #fff; -webkit-mask: url(/collection-icon.svg) center / contain no-repeat; mask: url(/collection-icon.svg) center / contain no-repeat; filter: drop-shadow(0 1.5cqw 2.5cqw rgba(0, 0, 0, .4)); transform-origin: 50% 90%; }
-.pack-icon { transition: translate .5s cubic-bezier(.34, 1.56, .64, 1), rotate .5s cubic-bezier(.34, 1.56, .64, 1); transition-delay: calc(var(--i, 0) * 70ms); }
 @keyframes packIconHop { 0%, 100% { transform: translateY(0) rotate(0) scale(1); } 22% { transform: translateY(-14%) rotate(-7deg) scale(1.1); } 44% { transform: translateY(0) rotate(4deg) scale(.97, 1.03); } 62% { transform: translateY(-5%) rotate(-2deg) scale(1.03); } 80% { transform: translateY(0) rotate(0) scale(1); } }
 .logo-host:hover .pack-icon-glyph { animation: packIconHop 1.2s ease-in-out infinite; }
-.logo-host:hover .pack-icon-mega { translate: var(--hx) 0; rotate: var(--hr); }
-.logo-host:hover .pack-icon-mega .pack-icon-glyph { animation-delay: calc(var(--i, 0) * 120ms) !important; }
+/* Cover reel: ten slabs, each held ~2.7s then slid out as the next slides in (transform only). */
+@keyframes packReel { 0% { transform: translateX(0); } 7.5% { transform: translateX(0%); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 10% { transform: translateX(-100%); } 17.5% { transform: translateX(-100%); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 20% { transform: translateX(-200%); } 27.5% { transform: translateX(-200%); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 30% { transform: translateX(-300%); } 37.5% { transform: translateX(-300%); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 40% { transform: translateX(-400%); } 47.5% { transform: translateX(-400%); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 50% { transform: translateX(-500%); } 57.5% { transform: translateX(-500%); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 60% { transform: translateX(-600%); } 67.5% { transform: translateX(-600%); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 70% { transform: translateX(-700%); } 77.5% { transform: translateX(-700%); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 80% { transform: translateX(-800%); } 87.5% { transform: translateX(-800%); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 90% { transform: translateX(-900%); } 97.5% { transform: translateX(-900%); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 100% { transform: translateX(-1000%); } }
+.pack-reel { animation: packReel 28s linear infinite; will-change: transform; }
 
 @keyframes packBob { 0%, 100% { transform: translateY(0) rotate(-.6deg); } 50% { transform: translateY(-3%) rotate(.6deg); } }
 @keyframes packFan { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4%); } }
@@ -173,7 +172,7 @@ body {
 .pack-fan { animation: packFan 3.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .slab-comet,
-  .slab-rays, .slab-twinkle, .slab-ball, .slab-shimmer::before, .slab-holo::before, .slab-glow-layer, .slab-vivid, .slab-frame-spin, .pack-bob, .pack-fan, .pack-ground,
+  .slab-rays, .slab-twinkle, .slab-ball, .slab-shimmer::before, .slab-holo::before, .slab-glow-layer, .slab-vivid, .slab-frame-spin, .pack-bob, .pack-fan, .pack-ground, .pack-reel,
   .logo-host:hover .pdl-pop, .logo-host:hover .pdl-blue, .logo-host:hover .pdl-red, .logo-host:hover .pdl-letter, .logo-host:hover .pdl-ring, .logo-host:hover .pdl-shine, .logo-host:hover .pack-icon-glyph { animation: none; }
 }
 
