@@ -5,7 +5,8 @@ import { all } from "@/lib/db";
 import { userCards } from "@/lib/packs-server";
 import { BUYBACK_RATE, RARITIES, Rarity, fmtCoins } from "@/lib/packs";
 import { ActionButton } from "@/components/ActionButton";
-import { clearTestCards, sellCards } from "../actions";
+import { clearTestCards, sellCards, tradeUpSlabs } from "../actions";
+import { TradeUp } from "./TradeUp";
 import { PageHeader } from "@/components/PageHeader";
 import { CollectionGrid } from "./CollectionGrid";
 import { Coins } from "@/components/Coins";
@@ -17,6 +18,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
   const viewing = sp.u ? users.find((x) => x.id === Number(sp.u)) ?? me : me;
   const mine = viewing.id === me.id;
   let cards = userCards(viewing.id);
+  const allSlabs = cards.filter((c) => c.kind === "slab"); // trade-ups pick from all of them, whatever the filter
   const total = cards.reduce((s, c) => s + c.value, 0);
   const counts = Object.fromEntries(Object.keys(RARITIES).map((r) => [r, cards.filter((c) => c.rarity === r).length]));
   if (sp.r) cards = cards.filter((c) => c.rarity === sp.r);
@@ -45,6 +47,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
         <span className="mx-2 h-5 w-px bg-line" />
         <Link href={qs({ sort: undefined })} className={`tab ${!sp.sort ? "tab-active" : ""}`}>Top value</Link>
         <Link href={qs({ sort: "new" })} className={`tab ${sp.sort === "new" ? "tab-active" : ""}`}>Newest</Link>
+        {mine && <TradeUp cards={allSlabs} coins={me.coins} action={tradeUpSlabs} />}
         {mine && !!me.is_tester && (
           <ActionButton action={clearTestCards} className="btn-ghost" confirm="Delete all test pulls?">Clear test pulls</ActionButton>
         )}

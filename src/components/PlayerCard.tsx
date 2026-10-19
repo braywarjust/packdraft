@@ -8,7 +8,7 @@ export type CardData = {
   headshot?: string | null; jersey?: string | null; color?: string | null; alt?: string | null; logo?: string | null;
   slab_id?: number | null; s_year?: number | null; s_set?: string | null; s_no?: string | null; s_variant?: string | null;
   s_company?: string | null; s_grade?: string | null; s_cert?: string | null; s_flags?: string | null; s_source?: string | null;
-  kind?: string | null; team_name?: string | null; photo?: string | null;
+  kind?: string | null; team_name?: string | null; photo?: string | null; player_id?: number;
 };
 
 /** Slab props for a new-style square Slab card. */

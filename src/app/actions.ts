@@ -10,7 +10,7 @@ import {
   isLocked, executeTrade, startWeek, finalizeWeek, postSystem, processWaivers, ROUNDS, setBoost, clearBoost,
 } from "@/lib/league";
 import { PACK_BY_ID, BUYBACK_RATE } from "@/lib/packs";
-import { openPack, releaseSlab } from "@/lib/packs-server";
+import { openPack, releaseSlab, tradeUp } from "@/lib/packs-server";
 import { etDate } from "@/lib/nba/espn";
 import { placeBet } from "@/lib/bets";
 import { applyPreset, deletePreset, getPreset, saveLeagueBrand, savePreset, setFavoritePreset } from "@/lib/branding";
@@ -473,6 +473,16 @@ export async function sellCards(cardIds: number[]) {
     });
     revalidatePath("/", "layout");
     return { ok: true, total };
+  });
+}
+
+/** Trade five slabs of one rarity (plus the fee) for one slab of the next rarity up. */
+export async function tradeUpSlabs(cardIds: number[]) {
+  return wrap(async () => {
+    const u = await requireUser();
+    const card = tradeUp(u.id, cardIds);
+    revalidatePath("/", "layout");
+    return { ok: true, card };
   });
 }
 

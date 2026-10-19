@@ -1,8 +1,9 @@
 import crypto from "node:crypto";
 import { all, one, run, tx, User } from "./db";
-import { PACK_BY_ID, RARITIES, Rarity, fmtCoins } from "./packs";
+import { PACK_BY_ID, RARITIES, Rarity, TRADE_UP, TRADE_UP_COUNT, fmtCoins } from "./packs";
 import { postSystem } from "./league";
 import { ensureSlabCards, nextSerial, rollSlab, slabPool } from "./slab-cards";
+import { popularity, slabPrice } from "./slab-market";
 import { slabPlayerPhoto } from "./nba/photos";
 
 /**
@@ -65,6 +66,51 @@ export async function openPack(userId: number, packId: number): Promise<Card[]> 
     }
   }
   return cards;
+}
+
+/**
+ * Trade five of your Slabs of one tier (plus the fee) for one Slab of the next tier up. If all five are the same player
+ * you get him again a tier higher; otherwise the new slab's player is drawn like a pack pull. The five are used up
+ * (sold = 2, so they leave the collection but stay on record).
+ */
+export function tradeUp(userId: number, cardIds: number[]) {
+  ensureSlabCards();
+  const ids = [...new Set(cardIds)];
+  if (ids.length !== TRADE_UP_COUNT) throw new Error(`Pick exactly ${TRADE_UP_COUNT} slabs`);
+  const user = one<User>("SELECT * FROM users WHERE id = ?", userId)!;
+  const newId = tx(() => {
+    const cards = all<{ id: number; player_id: number; rarity: Rarity }>(
+      `SELECT id, player_id, rarity FROM cards WHERE user_id = ? AND sold = 0 AND kind = 'slab' AND id IN (${ids.map(() => "?").join(",")})`, userId, ...ids);
+    if (cards.length !== TRADE_UP_COUNT) throw new Error("Those slabs aren't all in your collection");
+    const tier = cards[0].rarity;
+    if (cards.some((c) => c.rarity !== tier)) throw new Error("All five slabs need to be the same rarity");
+    const step = TRADE_UP[tier];
+    if (!step) throw new Error(`${RARITIES[tier].label} is the top rarity, so it can't be traded up`);
+    const coins = one<{ coins: number }>("SELECT coins FROM users WHERE id = ?", userId)!.coins;
+    if (coins < step.fee) throw new Error(`Trading up to ${RARITIES[step.to].label} costs ${fmtCoins(step.fee)}`);
+    const pool = slabPool();
+    const same = cards.every((c) => c.player_id === cards[0].player_id);
+    let pick = same ? pool.find((p) => p.id === cards[0].player_id) : undefined;
+    if (!pick) {
+      const w = pool.map((p) => Math.max(3, p.proj) ** 0.7 * Math.sqrt(popularity(p.name)));
+      let x = rand() * w.reduce((s, v) => s + v, 0);
+      pick = pool[pool.length - 1];
+      for (let i = 0; i < pool.length; i++) if ((x -= w[i]) <= 0) { pick = pool[i]; break; }
+    }
+    run(`UPDATE cards SET sold = 2 WHERE id IN (${ids.map(() => "?").join(",")})`, ...ids);
+    run("UPDATE users SET coins = coins - ? WHERE id = ?", step.fee, userId);
+    const r = run(
+      `INSERT INTO cards (user_id, pack_id, player_id, slab_id, rarity, grade, serial, print_run, value, kind, created_at)
+       VALUES (?, 0, ?, NULL, ?, 0, ?, 0, ?, 'slab', ?)`,
+      userId, pick.id, step.to, nextSerial(pick.id, step.to), slabPrice(step.to, pick.idx), Date.now());
+    return Number(r.lastInsertRowid);
+  });
+  const card = cardsWhere("c.id = ?", newId)[0];
+  if ((card.rarity === "legendary" || card.rarity === "grail") && !user.is_tester) {
+    const msg = `${user.name} traded up five slabs into ${card.rarity === "grail" ? "an" : "a"} ${RARITIES[card.rarity].label.toUpperCase()} ${card.name} worth ${fmtCoins(card.value)}!`;
+    for (const l of all<{ league_id: number }>("SELECT DISTINCT league_id FROM teams WHERE user_id = ?", userId)) postSystem(l.league_id, msg);
+  }
+  return card;
 }
 
 export function userCards(userId: number) {
