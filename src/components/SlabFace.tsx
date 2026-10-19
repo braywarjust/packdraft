@@ -18,6 +18,8 @@ const REFRACTOR: Record<Rarity, string> = {
   grail: "linear-gradient(135deg, #fde68a, #d97706 40%, #fef3c7 60%, #92400e)",
 };
 const LABEL_RED = "#d6363c";
+/** The Fantasy Points blue, a shade deeper so it reads on the white label. */
+const FPTS_BLUE = "#0e8fd6";
 const SANS = "Arial, Helvetica, sans-serif";
 
 /** Lighten/darken a hex colour toward white (amt > 0) or black (amt < 0). */
@@ -54,17 +56,21 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
   const labelIn = w - 2 * casePad - 2 * labelPad - 2 * px(0.014, 2.5);
   const name = generic ? "ANY PLAYER" : s.name.toUpperCase();
   const full = (s.team_name ?? s.team).toUpperCase();
-  const club = full.length > 14 ? full.split(" ").slice(-1)[0] : full;
+  const club = full.length > 12 ? full.split(" ").slice(-1)[0] : full;
   const team = generic ? "GENERIC SLAB" : `${club}${s.pos ? ` · ${s.pos}` : ""}`;
   const set = `2026 PACKDRAFT ${s.immortal ? "IMMORTAL" : RARITIES[s.rarity].label.toUpperCase()}`;
   const num = generic ? "ANY" : `#${s.jersey ?? "-"}`;
   const mult = fmtMult(s.mult);
   const cw = 0.68;
+  // The multiplier is the loudest thing on the slab: big blue type with the Fantasy Points logo, as tall as the label.
+  const M = px(0.07, 13);
+  const multW = (mult.length * 0.6 + 1.05) * M;
+  const room = labelIn - multW - px(0.02, 3);
   const T = Math.max(4.5, Math.min(
-    px(0.025, 5.5),
-    labelIn / ((set.length + num.length + 1) * cw),
-    labelIn / (name.length * cw),
-    labelIn / ((team.length + mult.length + 3) * cw),
+    px(0.024, 5.5),
+    room / (set.length * cw),
+    room / (name.length * cw),
+    room / ((team.length + num.length + 1) * cw),
   ));
 
   return (
@@ -79,15 +85,15 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
         {/* Top label: white with a thick red border, plain black capitals all the same size */}
         <div className="relative shrink-0 overflow-hidden uppercase"
           style={{ background: "#ffffff", color: "#000000", border: `${px(0.014, 2.5)}px solid ${LABEL_RED}`, borderRadius: px(0.006, 1), padding: labelPad, fontFamily: SANS, fontSize: T, lineHeight: 1.3, letterSpacing: "0.02em" }}>
-          <div className="flex justify-between gap-1">
-            <span className="truncate">{set}</span>
-            <span className="shrink-0">{num}</span>
-          </div>
-          <p className="truncate font-bold">{name}</p>
           <div className="flex items-center justify-between gap-1">
-            <span className="truncate">{team}</span>
-            <span className="flex shrink-0 items-center font-bold" style={{ gap: T * 0.25 }}>
-              <span aria-hidden className="shrink-0" style={{ background: "#000000", width: T * 1.05, height: T * 1.05, mask: fptMask, WebkitMask: fptMask }} />
+            <div className="min-w-0" style={{ width: room }}>
+              <p className="truncate">{set}</p>
+              <p className="truncate font-bold">{name}</p>
+              <p className="truncate">{team} {num}</p>
+            </div>
+            <span className="flex shrink-0 items-center font-black" title={`${mult} fantasy points`}
+              style={{ fontSize: M, gap: M * 0.08, lineHeight: 1, letterSpacing: "-0.03em", color: FPTS_BLUE }}>
+              <span aria-hidden className="shrink-0" style={{ background: FPTS_BLUE, width: M * 0.85, height: M * 0.85, mask: fptMask, WebkitMask: fptMask }} />
               {mult}
             </span>
           </div>
@@ -145,8 +151,6 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
           </div>
         </div>
 
-        {/* Shine: a soft band of light that sweeps across the slab now and then */}
-        <div className="slab-shine pointer-events-none absolute inset-0" style={{ animationDelay: `${-((s.serial * 7 + name.length * 13) % 50) / 10}s` }} />
         {/* Acrylic glare over the whole slab */}
         <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(115deg, rgba(255,255,255,.16) 0%, transparent 20%, transparent 66%, rgba(255,255,255,.12) 82%, transparent 100%)" }} />
       </div>
