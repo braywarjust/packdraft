@@ -136,6 +136,10 @@ body {
   background-size: 250% 100%; mix-blend-mode: color-dodge; animation: shine 3.5s linear infinite;
 }
 
+/* The Fantasy Points logo next to a slab's multiplier (SlabMult). */
+@keyframes fptsPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(56, 189, 248, 0)); } 50% { transform: scale(1.18); filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.9)); } }
+.fpts-pulse { animation: fptsPulse 1.4s ease-in-out infinite; }
+
 .flip { perspective: 1000px; }
 .flip-inner { transition: transform 0.7s cubic-bezier(0.3, 0.9, 0.3, 1); transform-style: preserve-3d; }
 .flip.flipped .flip-inner { transform: rotateY(180deg); }

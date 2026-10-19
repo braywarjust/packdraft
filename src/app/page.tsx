@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { all, one, Game, Matchup, Team } from "@/lib/db";
 import { beforeOpener, boostableGame, getLeague, maybeFinalize, roster, standings, teamWeek, STARTERS } from "@/lib/league";
 import { cardsWhere, unopenedPacks } from "@/lib/packs-server";
-import { SlabFace } from "@/components/SlabFace";
+import { SlabFace, SlabMult } from "@/components/SlabFace";
 import { RARITIES, Rarity, fmtMult } from "@/lib/packs";
 import { ensureBranding, favoritePresetId, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
 import { teamBoosts } from "@/lib/boost";
@@ -246,7 +246,7 @@ export default async function Home() {
                 {bestSlabs.map((c) => (
                   <Link key={c.id} href="/collection" className="flex flex-col items-center gap-1 text-center" title={c.kind ? `${c.name} ${fmtMult(c.mult ?? 1)}` : `${c.name} · ${c.s_company} ${c.s_grade}`}>
                     {c.kind ? <SlabFace s={faceOf(c)} height={100} /> : <img src={`/api/slabs/${c.slab_id}`} alt="" className="h-24 w-full object-contain drop-shadow-lg" />}
-                    <RarityBadge rarity={c.rarity} className={`px-1.5 text-[8px] ${c.kind ? "mt-2" : ""}`} />
+                    {c.kind ? <SlabMult mult={c.mult ?? 1} size={13} /> : <RarityBadge rarity={c.rarity} className="px-1.5 text-[8px]" />}
                     <span className="text-[11px] font-semibold text-emerald-600"><Coins n={c.value} /></span>
                   </Link>
                 ))}

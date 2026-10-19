@@ -5,7 +5,7 @@ import { GENERIC_MULT, PLAYER_MULT, RARITIES, RARITY_ORDER, fmtMult, type Rarity
 import { ensureSlabCards, slabValue, starterPool } from "@/lib/slab-cards";
 import { slabPlayerPhoto } from "@/lib/nba/photos";
 import { PageHeader } from "@/components/PageHeader";
-import { SlabFace } from "@/components/SlabFace";
+import { SlabFace, SlabMult } from "@/components/SlabFace";
 import { Coins } from "@/components/Coins";
 
 export const metadata = { title: "Slab Pool" };
@@ -66,7 +66,8 @@ export default async function SlabPool({ searchParams }: { searchParams: Promise
           <div className="flex flex-wrap gap-4">
             <div className="flex flex-col items-center">
               <SlabFace height={230} s={{ kind: "generic", name: "Any Player", team: "", pos: "", rarity: tier, mult: GENERIC_MULT[tier]!, immortal, serial: 1 }} />
-              <p className="mt-2 text-xs font-semibold">Works on anyone</p>
+              <SlabMult mult={GENERIC_MULT[tier]!} size={20} className="mt-2" />
+              <p className="mt-1 text-xs font-semibold">Works on anyone</p>
               <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={slabValue("generic", tier, 0, immortal)} /></p>
             </div>
           </div>
@@ -87,7 +88,8 @@ export default async function SlabPool({ searchParams }: { searchParams: Promise
                   }} />
                   {rostered.has(p.id) && <span className="absolute -right-1 -top-1 rounded-full bg-emerald-500 px-1.5 text-[9px] font-black text-black">ON YOUR TEAM</span>}
                 </div>
-                <p className="mt-2 text-xs text-zinc-500">{owned.get(p.id) ? <b className="text-emerald-600">You own {owned.get(p.id)}</b> : "Not collected"}</p>
+                <SlabMult mult={PLAYER_MULT[tier]} size={20} className="mt-2" />
+                <p className="mt-1 text-xs text-zinc-500">{owned.get(p.id) ? <b className="text-emerald-600">You own {owned.get(p.id)}</b> : "Not collected"}</p>
                 <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={slabValue("player", tier, p.proj, immortal)} /></p>
               </div>
             );

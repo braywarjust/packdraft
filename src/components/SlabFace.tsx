@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { RARITIES, fmtMult, type Rarity } from "@/lib/packs";
+import { FptIcon } from "./Fpts";
 
 export type SlabFaceData = {
   kind: "player" | "generic"; name: string; team: string; team_name?: string | null; pos: string; rarity: Rarity; mult: number;
@@ -18,8 +19,6 @@ const REFRACTOR: Record<Rarity, string> = {
   grail: "linear-gradient(135deg, #fde68a, #d97706 40%, #fef3c7 60%, #92400e)",
 };
 const LABEL_RED = "#d6363c";
-/** The Fantasy Points blue, a shade deeper so it reads on the white label. */
-const FPTS_BLUE = "#0e8fd6";
 const SANS = "Arial, Helvetica, sans-serif";
 
 /** Lighten/darken a hex colour toward white (amt > 0) or black (amt < 0). */
@@ -32,7 +31,7 @@ function shade(hex: string, amt: number) {
 
 /**
  * A Slab, styled like a PSA graded slab. Clear acrylic case with a white, red-bordered label across the top in plain
- * black type (set, player, team on the left; multiplier with the Fantasy Points logo on the right), and the card
+ * black capitals (set and tier, jersey number, player, team), and the card
  * sitting in the case window below it: a refractor border in the tier colour, the player over his team colours with
  * his team logo, and a name strip. Nothing leaves the slab's edges. Same box and outline as the slab backs (0.6h wide,
  * the slab 710/1200 of the height wide) so a reveal flips over in place. Immortal slabs get a spinning rainbow
@@ -48,7 +47,6 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
   const primary = generic ? "#1f63b5" : `#${s.color ?? "334155"}`;
   const alt = generic ? "#cc2b31" : s.alt && !/^(ffffff|000000)$/i.test(s.alt) ? `#${s.alt}` : primary;
   const logo = s.team ? `https://a.espncdn.com/i/teamlogos/nba/500/${s.team.toLowerCase()}.png` : null;
-  const fptMask = "url(/fantasy-points.svg) center / contain no-repeat";
 
   // Label type: one size, all caps, for every line (Arial caps run ~0.68em wide). It shrinks only if a line can't fit.
   const casePad = px(0.035, 3);
@@ -60,17 +58,12 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
   const team = generic ? "GENERIC SLAB" : `${club}${s.pos ? ` · ${s.pos}` : ""}`;
   const set = `2026 PACKDRAFT ${s.immortal ? "IMMORTAL" : RARITIES[s.rarity].label.toUpperCase()}`;
   const num = generic ? "ANY" : `#${s.jersey ?? "-"}`;
-  const mult = fmtMult(s.mult);
   const cw = 0.68;
-  // The multiplier is the loudest thing on the slab: big blue type with the Fantasy Points logo, as tall as the label.
-  const M = px(0.07, 13);
-  const multW = (mult.length * 0.6 + 1.05) * M;
-  const room = labelIn - multW - px(0.02, 3);
   const T = Math.max(4.5, Math.min(
-    px(0.024, 5.5),
-    room / (set.length * cw),
-    room / (name.length * cw),
-    room / ((team.length + num.length + 1) * cw),
+    px(0.026, 5.5),
+    labelIn / ((set.length + num.length + 1) * cw),
+    labelIn / (name.length * cw),
+    labelIn / (team.length * cw),
   ));
 
   return (
@@ -85,18 +78,12 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
         {/* Top label: white with a thick red border, plain black capitals all the same size */}
         <div className="relative shrink-0 overflow-hidden uppercase"
           style={{ background: "#ffffff", color: "#000000", border: `${px(0.014, 2.5)}px solid ${LABEL_RED}`, borderRadius: px(0.006, 1), padding: labelPad, fontFamily: SANS, fontSize: T, lineHeight: 1.3, letterSpacing: "0.02em" }}>
-          <div className="flex items-center justify-between gap-1">
-            <div className="min-w-0" style={{ width: room }}>
-              <p className="truncate">{set}</p>
-              <p className="truncate font-bold">{name}</p>
-              <p className="truncate">{team} {num}</p>
-            </div>
-            <span className="flex shrink-0 items-center font-black" title={`${mult} fantasy points`}
-              style={{ fontSize: M, gap: M * 0.08, lineHeight: 1, letterSpacing: "-0.03em", color: FPTS_BLUE }}>
-              <span aria-hidden className="shrink-0" style={{ background: FPTS_BLUE, width: M * 0.85, height: M * 0.85, mask: fptMask, WebkitMask: fptMask }} />
-              {mult}
-            </span>
+          <div className="flex justify-between gap-1">
+            <span className="truncate">{set}</span>
+            <span className="shrink-0">{num}</span>
           </div>
+          <p className="truncate font-bold">{name}</p>
+          <p className="truncate">{team}</p>
         </div>
 
         {/* Case window with the card in it */}
@@ -155,5 +142,15 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
         <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(115deg, rgba(255,255,255,.16) 0%, transparent 20%, transparent 66%, rgba(255,255,255,.12) 82%, transparent 100%)" }} />
       </div>
     </div>
+  );
+}
+
+/** The slab's multiplier, shown under it: a pulsing Fantasy Points logo with the multiplier in Fantasy Points blue. */
+export function SlabMult({ mult, size = 18, className = "" }: { mult: number; size?: number; className?: string }) {
+  return (
+    <span className={`inline-flex items-center font-black leading-none text-fpts ${className}`} style={{ fontSize: size, gap: size * 0.25 }} title={`${fmtMult(mult)} fantasy points`}>
+      <span className="fpts-pulse inline-flex"><FptIcon tone="blue" className="!align-middle" /></span>
+      {fmtMult(mult)}
+    </span>
   );
 }
