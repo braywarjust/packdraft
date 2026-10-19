@@ -65,8 +65,7 @@ function Star({ x, y, size, delay }: { x: number; y: number; size: number; delay
  * and pulses a glow, Immortal adds a turning icy-blue frame and a frost sheen on top of all of it.
  * Everything is sized in cqw, so it scales to any `size`.
  */
-/** `still`: the card art without its own animation (used in the pack cover reels, where the reel itself moves). */
-export function Slab({ s, size, className = "", still = false }: { s: SlabData; size: number; className?: string; still?: boolean }) {
+export function Slab({ s, size, className = "" }: { s: SlabData; size: number; className?: string }) {
   const [photoOk, setPhotoOk] = useState(true);
   const r = RANK[s.rarity];
   const tier = RARITY_HEX[s.rarity];
@@ -75,10 +74,10 @@ export function Slab({ s, size, className = "", still = false }: { s: SlabData; 
   const logo = s.team ? `https://a.espncdn.com/i/teamlogos/nba/500/${s.team.toLowerCase()}.png` : null;
   const club = s.team_name ? s.team_name.split(" ").slice(-1)[0] : s.team;
   const ref = useRef<HTMLDivElement>(null);
-  useOffscreenPause(ref, !still);
+  useOffscreenPause(ref);
 
   return (
-    <div ref={ref} data-paused={still ? "" : undefined} className={`@container relative shrink-0 ${className}`} style={{ width: size, height: size, ["--glow" as string]: `${tier}99` }}>
+    <div ref={ref} className={`@container relative shrink-0 ${className}`} style={{ width: size, height: size, ["--glow" as string]: `${tier}99` }}>
       {/* Pulsing glow (Mythic+): its own layer, so only its opacity animates and nothing inside the card repaints */}
       {r >= 3 && <div className="slab-glow-layer pointer-events-none absolute inset-0 rounded-[9cqw]" />}
       <div className="relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw]"
