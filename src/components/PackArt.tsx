@@ -1,19 +1,14 @@
 "use client";
 
-import { RARITY_ORDER, type PackType } from "@/lib/packs";
+import type { PackType } from "@/lib/packs";
 import { useRef } from "react";
-import { Rays, SlabCover } from "./Slab";
+import { Rays, Slab } from "./Slab";
+import { PACK_FACES } from "@/lib/pack-faces";
 import { useOffscreenPause } from "./useOffscreenPause";
 import { AnimatedLogo } from "./AnimatedLogo";
 
 const SPARKS: [number, number, number, number][] = [[14, 22, 7, 0], [84, 30, 5.5, 1.2], [20, 62, 5, 2.1], [82, 66, 6, .6]];
 
-/** The tier a pack is "about": the best tier it drops at least 20% of the time (Rookie: Common, Starter: Rare,
- *  Pro and All-Pro: Epic, Hall of Fame and GOAT: Mythic). Its cover shows that tier's slab back, exactly as it looks
- *  face-down in a rip. */
-const headline = (p: PackType) => [...RARITY_ORDER].reverse().find((r) => p.odds[r] >= 20) ?? "common";
-/** The Mega Pack's five: Epic and Mythic either side of an Immortal. */
-const MEGA_FAN = ["epic", "legendary", "grail", "legendary", "epic"] as const;
 
 /**
  * Animated pack art: a padded foil pouch in the pack's colours, lit like a real object (a bright top edge, shaded sides
@@ -24,8 +19,8 @@ const MEGA_FAN = ["epic", "legendary", "grail", "legendary", "epic"] as const;
  */
 export function PackArt({ p, width, height, animate = true, className = "" }: { p: PackType; width: number; height: number; animate?: boolean; className?: string }) {
   const isCase = p.kind === "case";
-  const top = headline(p);
-  // The fan box is 36% (Mega) or 33% of the pack height; the slab backs fill it.
+  const faces = PACK_FACES[p.id] ?? PACK_FACES.rookie;
+  // The fan box is 36% (Mega) or 33% of the pack height; the cover slabs fill it.
   const coverSize = Math.max(8, Math.round(height * (isCase ? 0.36 : 0.33)));
   // One slab on single packs, the full five-slab fan on the Mega Pack.
   const fan = isCase ? [-26, -13, 0, 13, 26] : [0];
@@ -62,7 +57,7 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
               // Offsets use left/translate/rotate (not transform) so the bobbing animation's transform doesn't wipe them.
               <div key={i} className={`absolute top-0 aspect-square h-full ${animate ? "pack-fan" : ""}`}
                 style={{ left: `calc(50% + ${deg * (isCase ? 1.15 : 1.6)}cqw)`, translate: "-50% 0", rotate: `${deg * 0.8}deg`, transformOrigin: "50% 100%", animationDelay: `${i * 0.35}s`, zIndex: 40 - Math.abs(deg) }}>
-                <SlabCover rarity={isCase ? MEGA_FAN[i] : top} size={coverSize} logo={false} className="drop-shadow-[0_2cqw_3cqw_rgba(0,0,0,.4)]" />
+                <Slab s={{ ...faces[i % faces.length].player, rarity: faces[i % faces.length].rarity }} size={coverSize} className="drop-shadow-[0_2cqw_3cqw_rgba(0,0,0,.4)]" />
               </div>
             ))}
           </div>
