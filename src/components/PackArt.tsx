@@ -27,10 +27,11 @@ function MiniSlab({ color, className = "", style }: { color: string; className?:
 }
 
 /**
- * Animated pack art: a foil pack in the pack's colours with crimped seals, a turning sunburst, the PackDraft logo (which
- * plays its own animation on hover, see AnimatedLogo), a fan
- * square slab (five for the Mega Pack) gently bobbing out of it, twinkling sparkles, a slow foil shimmer and the pack's name. The whole pack
- * floats a little when `animate` is on. The Mega Pack is a wider crate holding five. Sized in cqw, so any box works.
+ * Animated pack art: a padded foil pouch in the pack's colours, lit like a real object (a bright top edge, shaded sides
+ * and bottom, a pillowed middle, a glossy highlight and a couple of soft creases) with a ground shadow under it. Inside:
+ * a turning sunburst, the PackDraft logo (which plays its own animation on hover, see AnimatedLogo), a square slab
+ * (five for the Mega Pack, a crate with a lid) gently bobbing, sparkles, a slow shimmer and the pack's name. It floats a
+ * little when `animate` is on and tilts toward you on hover. Sized in cqw, so any box works.
  */
 export function PackArt({ p, width, height, animate = true, className = "" }: { p: PackType; width: number; height: number; animate?: boolean; className?: string }) {
   const isCase = p.kind === "case";
@@ -39,9 +40,14 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
   const fan = isCase ? [-26, -13, 0, 13, 26] : [0];
   return (
     <div className={`bball-host logo-host @container relative shrink-0 ${className}`} style={{ width, height }}>
-      <div className={`absolute inset-0 ${animate ? "pack-bob" : ""}`} style={{ filter: "drop-shadow(0 3cqw 4cqw rgba(0,0,0,.45))" }}>
-        <div className={`relative h-full w-full overflow-hidden bg-gradient-to-br ${p.color} ${isCase ? "rounded-[8cqw]" : "rounded-[7cqw]"}`}
-          style={{ boxShadow: "inset 0 0 0 1.2cqw rgba(255,255,255,.18), inset 0 -6cqw 10cqw rgba(0,0,0,.35)" }}>
+      {/* Ground shadow: stays put while the pack floats, which is what makes it read as a real object */}
+      <div className={`pointer-events-none absolute bottom-[-5%] left-[12%] right-[12%] h-[7%] rounded-[50%] ${animate ? "pack-ground" : ""}`}
+        style={{ background: "radial-gradient(closest-side, rgba(0,0,0,.55), transparent)" }} />
+      <div className={`absolute inset-0 ${animate ? "pack-bob" : ""}`}>
+        <div className={`pack-tilt relative h-full w-full overflow-hidden bg-gradient-to-br ${p.color} ${isCase ? "rounded-[5cqw]" : "rounded-[5.5cqw]"}`}
+          style={{
+            boxShadow: "0 2cqw 4cqw rgba(0,0,0,.35), inset 0 0 0 .8cqw rgba(255,255,255,.22), inset 0 2.5cqw 3.5cqw rgba(255,255,255,.3), inset 0 -7cqw 9cqw rgba(0,0,0,.42), inset 4cqw 0 6cqw rgba(255,255,255,.1), inset -4cqw 0 6cqw rgba(0,0,0,.24)",
+          }}>
           {/* Sunburst + glow */}
           <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden>
             <defs>
@@ -52,12 +58,12 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
           </svg>
           {/* Foil texture */}
           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.55) 0 1px, transparent 1px 7px)" }} />
-          {/* Crimped seals */}
-          {!isCase && (
-            <>
-              <div className="absolute inset-x-0 top-0 h-[5.5%]" style={{ background: "repeating-linear-gradient(90deg, rgba(255,255,255,.5) 0 4%, rgba(0,0,0,.12) 4% 8%)" }} />
-              <div className="absolute inset-x-0 bottom-0 h-[5.5%]" style={{ background: "repeating-linear-gradient(90deg, rgba(255,255,255,.5) 0 4%, rgba(0,0,0,.12) 4% 8%)" }} />
-            </>
+          {/* Padded, pillowed body: darker toward the edges, with a couple of soft foil creases */}
+          <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(115% 85% at 50% 42%, transparent 52%, rgba(0,0,0,.3) 100%)" }} />
+          <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(162deg, transparent 38%, rgba(255,255,255,.09) 40%, transparent 45%), linear-gradient(24deg, transparent 60%, rgba(0,0,0,.09) 62%, transparent 67%), linear-gradient(98deg, transparent 18%, rgba(255,255,255,.06) 20%, transparent 24%)" }} />
+          {/* Crate lid on the Mega Pack */}
+          {isCase && (
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[22%]" style={{ background: "linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.08) 80%, rgba(0,0,0,.25))", boxShadow: "0 .8cqw 1.5cqw rgba(0,0,0,.25)" }} />
           )}
           {/* Logo */}
           <AnimatedLogo className={`absolute left-1/2 z-20 -translate-x-1/2 select-none ${isCase ? "top-[7%] w-[38%]" : "top-[10%] w-[58%]"}`}
@@ -86,6 +92,9 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
             <p className="mt-[1.5cqw] text-[5.5cqw] font-bold uppercase tracking-[0.2em] text-white/80">{p.cards} slab{p.cards > 1 ? "s" : ""}</p>
           </div>
           {animate && <div className="slab-shimmer pointer-events-none absolute inset-0" />}
+          {/* Glossy highlight: a soft glare up top and a specular streak, which slides a little on hover */}
+          <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(60% 28% at 30% 6%, rgba(255,255,255,.4), transparent 70%)" }} />
+          <div className="pack-gloss pointer-events-none absolute inset-0" />
         </div>
       </div>
     </div>
