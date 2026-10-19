@@ -62,7 +62,7 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
               // Offsets use left/translate/rotate (not transform) so the bobbing animation's transform doesn't wipe them.
               <div key={i} className={`absolute top-0 aspect-square h-full ${animate ? "pack-fan" : ""}`}
                 style={{ left: `calc(50% + ${deg * (isCase ? 1.15 : 1.6)}cqw)`, translate: "-50% 0", rotate: `${deg * 0.8}deg`, transformOrigin: "50% 100%", animationDelay: `${i * 0.35}s`, zIndex: 40 - Math.abs(deg) }}>
-                <SlabCover rarity={isCase ? MEGA_FAN[i] : top} size={coverSize} className="drop-shadow-[0_2cqw_3cqw_rgba(0,0,0,.4)]" />
+                <SlabCover rarity={isCase ? MEGA_FAN[i] : top} size={coverSize} logo={false} className="drop-shadow-[0_2cqw_3cqw_rgba(0,0,0,.4)]" />
               </div>
             ))}
           </div>

@@ -150,7 +150,8 @@ function Comets() {
  * icy blue sky with shooting stars smearing across, twinkling stars, an icy frame and a frost sheen. From Mythic up
  * the rim glows too.
  */
-export function SlabCover({ rarity, size, className = "" }: { rarity: Rarity; size: number; className?: string }) {
+/** `logo={false}` leaves the PackDraft logo off (the slabs shown on pack covers, where the pack has its own logo). */
+export function SlabCover({ rarity, size, className = "", logo = true }: { rarity: Rarity; size: number; className?: string; logo?: boolean }) {
   const r = RANK[rarity];
   const tier = RARITY_HEX[rarity];
   const ref = useRef<HTMLDivElement>(null);
@@ -168,8 +169,8 @@ export function SlabCover({ rarity, size, className = "" }: { rarity: Rarity; si
           {r === 4 && <Comets />}
           <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(44% 44% at 50% 50%, rgba(255,255,255,.2), transparent)" }} />
           <div className="absolute inset-0 opacity-[.08]" style={{ backgroundImage: "repeating-linear-gradient(135deg, #fff 0 1px, transparent 1px 9px)" }} />
-          <img src="/packdraft-logo-full.svg" alt="" draggable={false} className="absolute left-1/2 top-1/2 w-[62%] -translate-x-1/2 -translate-y-1/2 select-none"
-            style={{ filter: "drop-shadow(0 2cqw 3cqw rgba(0,0,0,.45))" }} />
+          {logo && <img src="/packdraft-logo-full.svg" alt="" draggable={false} className="absolute left-1/2 top-1/2 w-[62%] -translate-x-1/2 -translate-y-1/2 select-none"
+            style={{ filter: "drop-shadow(0 2cqw 3cqw rgba(0,0,0,.45))" }} />}
           <div className="slab-shimmer pointer-events-none absolute inset-0" />
           {r === 4 && <div className="slab-holo pointer-events-none absolute inset-0" />}
         </div>
