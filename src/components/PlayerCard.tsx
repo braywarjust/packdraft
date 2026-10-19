@@ -23,7 +23,7 @@ export function SlabTile({ c, small }: { c: CardData; small?: boolean }) {
   return (
     <div className="flex flex-col items-center" style={{ width: Math.round(h * 0.6) + 16 }}>
       <SlabFace s={faceOf(c)} height={h} />
-      <div className="mt-5 w-full text-center">
+      <div className="mt-2 w-full text-center">
         <span className="inline-flex items-center gap-1">
           <RarityBadge rarity={c.rarity} />
           {!!c.immortal && <span className="rounded-full bg-gradient-to-r from-pink-500 via-amber-400 to-cyan-400 px-1.5 py-px text-[8.5px] font-black uppercase leading-tight tracking-wide text-black shadow-sm">Immortal</span>}
