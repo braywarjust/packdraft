@@ -61,8 +61,8 @@ function Star({ x, y, size, delay }: { x: number; y: number; size: number; delay
 /**
  * A Slab: a square, casino-thumbnail-style card. The player over his team colours with a sunburst behind him, a big
  * faded team logo, a crisp team logo badge, his name, and a frame in the tier colour. Rarer tiers stack on smooth,
- * low-key animation: Rare turns the sunburst and adds a shimmer, Epic adds twinkling stars, Mythic fills in more stars
- * and pulses a glow, Immortal adds a turning icy-blue frame and a frost sheen on top of all of it.
+ * low-key animation: Rare turns the sunburst and adds a shimmer, Epic adds twinkling stars, Mythic fills in more stars,
+ * Immortal adds a turning icy-blue frame and a frost sheen on top of all of it.
  * Everything is sized in cqw, so it scales to any `size`.
  */
 export function Slab({ s, size, className = "" }: { s: SlabData; size: number; className?: string }) {
@@ -78,8 +78,6 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
 
   return (
     <div ref={ref} className={`@container relative shrink-0 ${className}`} style={{ width: size, height: size, ["--glow" as string]: `${tier}99` }}>
-      {/* Pulsing glow (Mythic+): its own layer, so only its opacity animates and nothing inside the card repaints */}
-      {r >= 3 && <div className="slab-glow-layer pointer-events-none absolute inset-0 rounded-[9cqw]" />}
       <div className="relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw]"
         style={{ background: FRAME[s.rarity] || "#bae6fd", boxShadow: "0 8px 18px rgba(0,0,0,.35)" }}>
         {/* Immortal's rainbow frame: a conic gradient spun as a layer behind the card */}
@@ -150,8 +148,7 @@ function Comets({ stars = true }: { stars?: boolean }) {
 /**
  * The face-down slab: the same square and frame as a Slab, filled with its tier colour (the same colours as the tier
  * badges), with a slowly turning sunburst and the logo. The same back sits on the pack covers. Immortal backs are an
- * icy blue sky with shooting stars smearing across, twinkling stars, an icy frame and a frost sheen. From Mythic up
- * the rim glows too.
+ * icy blue sky with shooting stars smearing across, twinkling stars, an icy frame and a frost sheen.
  */
 /** `logo={false}` leaves the PackDraft logo off (the slabs shown on pack covers, where the pack has its own logo). */
 export function SlabCover({ rarity, size, className = "", logo = true }: { rarity: Rarity; size: number; className?: string; logo?: boolean }) {
@@ -161,7 +158,6 @@ export function SlabCover({ rarity, size, className = "", logo = true }: { rarit
   useOffscreenPause(ref);
   return (
     <div ref={ref} className={`@container relative shrink-0 ${className}`} style={{ width: size, height: size, ["--glow" as string]: `${tier}99` }}>
-      {r >= 3 && <div className="slab-glow-layer pointer-events-none absolute inset-0 rounded-[9cqw]" />}
       <div className="relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw]"
         style={{ background: `linear-gradient(145deg, ${shade(tier, 0.5)}, ${tier} 45%, ${shade(tier, 0.3)} 70%, ${shade(tier, -0.45)})`, boxShadow: "0 8px 18px rgba(0,0,0,.35)" }}>
         {r === 4 && <div className="slab-frame-spin pointer-events-none absolute" />}

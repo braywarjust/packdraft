@@ -132,7 +132,6 @@ body {
 @keyframes slabBall { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 12% { opacity: .95; } 50% { transform: translate(4cqw, -60cqw) rotate(180deg); } 88% { opacity: .9; } 100% { transform: translate(-2cqw, -125cqw) rotate(360deg); opacity: 0; } }
 @keyframes slabShimmer { 0%, 55% { transform: translateX(-96%); } 100% { transform: translateX(36%); } }
 @keyframes slabHolo { from { transform: translateX(40%); } to { transform: translateX(-85%); } }
-@keyframes slabGlow { 0%, 100% { opacity: .45; transform: scale(.985); } 50% { opacity: 1; transform: scale(1); } }
 @keyframes slabVivid { 0%, 100% { filter: saturate(1.25) brightness(1); } 50% { filter: saturate(1.4) brightness(1.07); } }
 .slab-rays { animation: raysSpin 40s linear infinite; will-change: transform; }
 .slab-twinkle { animation: slabTwinkle 2.8s ease-in-out infinite; transform-origin: center; }
@@ -145,8 +144,6 @@ body {
 /* Immortal slab backs: comets streak across the icy sky. */
 @keyframes slabComet { 0% { transform: translate(0, 0) rotate(28deg); opacity: 0; } 8% { opacity: 1; } 55% { opacity: .9; } 70%, 100% { transform: translate(160cqw, 85cqw) rotate(28deg); opacity: 0; } }
 .slab-comet { background: linear-gradient(90deg, transparent, rgba(224, 242, 254, .55) 35%, #fff 90%, #fff); box-shadow: 0 0 2.5cqw 0.4cqw rgba(186, 230, 253, .9); transform-origin: 100% 50%; animation: slabComet 3.75s ease-in infinite; opacity: 0; }
-/* Glow: a static big shadow on its own layer that pulses in opacity (was an animated box-shadow, which repaints the card). */
-.slab-glow-layer { box-shadow: 0 0 45px 10px var(--glow); animation: slabGlow 2.6s ease-in-out infinite; will-change: opacity; }
 .slab-vivid { animation: slabVivid 5s ease-in-out infinite; }
 /* Immortal frame: an icy-blue conic square spun behind the card (was an animated @property angle, which repaints). */
 .slab-frame-spin { inset: -50%; background: conic-gradient(#f0f9ff, #7dd3fc, #e0f2fe, #38bdf8, #ffffff, #7dd3fc, #f0f9ff); animation: raysSpin 4s linear infinite; will-change: transform; }
@@ -185,7 +182,7 @@ body {
 .pack-fan { animation: packFan 3.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .slab-comet,
-  .slab-rays, .slab-twinkle, .slab-ball, .slab-shimmer::before, .slab-holo::before, .slab-glow-layer, .slab-vivid, .slab-frame-spin, .pack-bob, .pack-fan, .pack-ground,
+  .slab-rays, .slab-twinkle, .slab-ball, .slab-shimmer::before, .slab-holo::before, .slab-vivid, .slab-frame-spin, .pack-bob, .pack-fan, .pack-ground,
   .logo-host:hover .pdl-pop, .logo-host:hover .pdl-blue, .logo-host:hover .pdl-red, .logo-host:hover .pdl-letter, .logo-host:hover .pdl-ring, .logo-host:hover .pdl-shine, .logo-host:hover .pack-icon-glyph { animation: none; }
 }
 
