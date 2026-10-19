@@ -1,15 +1,11 @@
 "use client";
 
 import { RARITY_HEX, RARITY_ORDER, type PackType } from "@/lib/packs";
-import { SlabBall } from "./Slab";
+import { useRef } from "react";
+import { Rays, SlabBall } from "./Slab";
+import { useOffscreenPause } from "./useOffscreenPause";
 import { AnimatedLogo } from "./AnimatedLogo";
 
-/** Sunburst wedges behind the pack art. */
-const RAYS = Array.from({ length: 14 }, (_, i) => {
-  const a = (i * Math.PI) / 7, b = a + Math.PI / 14;
-  const p = (t: number) => `${(50 + 95 * Math.cos(t)).toFixed(2)} ${(46 + 95 * Math.sin(t)).toFixed(2)}`;
-  return `M50 46L${p(a)}L${p(b)}Z`;
-}).join("");
 const SPARKS: [number, number, number, number][] = [[14, 22, 7, 0], [84, 30, 5.5, 1.2], [20, 62, 5, 2.1], [82, 66, 6, .6]];
 
 /** The best tier a pack can drop (its chase), for the mini slabs peeking out of it. */
@@ -19,7 +15,7 @@ function MiniSlab({ color, className = "", style }: { color: string; className?:
   return (
     <div className={`absolute aspect-square rounded-[18%] p-[5%] shadow-[0_2cqw_4cqw_rgba(0,0,0,.45)] ${className}`}
       style={{ background: `linear-gradient(145deg, #fff, ${color} 55%, #0f172a)`, ...style }}>
-      <div className="grid h-full w-full place-items-center rounded-[14%]" style={{ background: "linear-gradient(140deg, #0b4ea2, #0253a4 50%, #8f1d22)" }}>
+      <div className="grid h-full w-full place-items-center rounded-[14%]" style={{ background: `radial-gradient(80% 80% at 50% 38%, ${color}55, #121a2b 60%, #0a0f1a)` }}>
         <SlabBall className="h-[50%] w-[50%]" />
       </div>
     </div>
@@ -38,8 +34,10 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
   const top = RARITY_HEX[chase(p)];
   // One slab on single packs, the full five-slab fan on the Mega Pack.
   const fan = isCase ? [-26, -13, 0, 13, 26] : [0];
+  const ref = useRef<HTMLDivElement>(null);
+  useOffscreenPause(ref);
   return (
-    <div className={`bball-host logo-host @container relative shrink-0 ${className}`} style={{ width, height }}>
+    <div ref={ref} className={`bball-host logo-host @container relative shrink-0 ${className}`} style={{ width, height }}>
       {/* Ground shadow: stays put while the pack floats, which is what makes it read as a real object */}
       <div className={`pointer-events-none absolute bottom-[-5%] left-[12%] right-[12%] h-[7%] rounded-[50%] ${animate ? "pack-ground" : ""}`}
         style={{ background: "radial-gradient(closest-side, rgba(0,0,0,.55), transparent)" }} />
@@ -49,13 +47,8 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
             boxShadow: "0 2cqw 4cqw rgba(0,0,0,.35), inset 0 0 0 .8cqw rgba(255,255,255,.22), inset 0 2.5cqw 3.5cqw rgba(255,255,255,.3), inset 0 -7cqw 9cqw rgba(0,0,0,.42), inset 4cqw 0 6cqw rgba(255,255,255,.1), inset -4cqw 0 6cqw rgba(0,0,0,.24)",
           }}>
           {/* Sunburst + glow */}
-          <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden>
-            <defs>
-              <radialGradient id={`pg-${p.id}`} cx="50%" cy="46%" r="50%"><stop offset="0" stopColor="#fff" stopOpacity=".38" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
-            </defs>
-            <g className={animate ? "slab-rays" : ""} style={{ transformOrigin: "50px 46px" }} fill="#fff" opacity=".1"><path d={RAYS} /></g>
-            <circle cx="50" cy="46" r="44" fill={`url(#pg-${p.id})`} />
-          </svg>
+          <Rays cy={46} opacity={0.1} spin={animate} />
+          <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(44% 44% at 50% 46%, rgba(255,255,255,.38), transparent)" }} />
           {/* Foil texture */}
           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.55) 0 1px, transparent 1px 7px)" }} />
           {/* Padded, pillowed body: darker toward the edges, with a couple of soft foil creases */}

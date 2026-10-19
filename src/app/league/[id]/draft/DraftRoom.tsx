@@ -33,7 +33,7 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
 
   useEffect(() => {
     load();
-    const poll = setInterval(load, 1500);
+    const poll = setInterval(() => { if (!document.hidden) load(); }, 1500); // no polling from background tabs
     const clock = setInterval(() => setTick(Date.now()), 250);
     return () => { clearInterval(poll); clearInterval(clock); };
   }, [load]);

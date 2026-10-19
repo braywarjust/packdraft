@@ -58,7 +58,7 @@ export function Chat({ leagueId, rivals, send, canPost }: {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 2000);
+    const t = setInterval(() => { if (!document.hidden) load(); }, 2000); // no polling from background tabs
     return () => clearInterval(t);
   }, [load]);
 

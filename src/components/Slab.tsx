@@ -1,7 +1,8 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useOffscreenPause } from "./useOffscreenPause";
 import { RARITIES, RARITY_HEX, type Rarity } from "@/lib/packs";
 
 export type SlabData = {
@@ -9,12 +10,24 @@ export type SlabData = {
   jersey?: string | null; color?: string | null; alt?: string | null; photo?: string | null;
 };
 
-/** Sunburst behind the art (same construction as the casino thumbnails): 16 wedges around a point above centre. */
-const RAYS = Array.from({ length: 16 }, (_, i) => {
+/**
+ * Big sunburst for the turning rays: drawn around the centre of a box twice the card's size, so the box can spin in
+ * place (an HTML transform the GPU handles, instead of re-drawing the SVG every frame) and still cover the corners.
+ */
+export const RAYS_BIG = Array.from({ length: 16 }, (_, i) => {
   const a = (i * Math.PI) / 8, b = a + Math.PI / 16;
-  const p = (t: number) => `${(50 + 95 * Math.cos(t)).toFixed(2)} ${(40 + 95 * Math.sin(t)).toFixed(2)}`;
-  return `M50 40L${p(a)}L${p(b)}Z`;
+  const p = (t: number) => `${(50 + 75 * Math.cos(t)).toFixed(2)} ${(50 + 75 * Math.sin(t)).toFixed(2)}`;
+  return `M50 50L${p(a)}L${p(b)}Z`;
 }).join("");
+
+/** A turning sunburst centred at (50%, cy%) of its card. */
+export function Rays({ cy = 40, opacity, spin }: { cy?: number; opacity: number; spin: boolean }) {
+  return (
+    <div className={`pointer-events-none absolute ${spin ? "slab-rays" : ""}`} style={{ width: "200%", height: "200%", left: "-50%", top: `${cy - 100}%` }} aria-hidden>
+      <svg viewBox="0 0 100 100" className="h-full w-full"><path d={RAYS_BIG} fill="#fff" opacity={opacity} /></svg>
+    </div>
+  );
+}
 
 /** Metallic frame per tier; Immortal's frame is a turning rainbow (slab-frame-immortal). */
 const FRAME: Record<Rarity, string> = {
@@ -87,21 +100,22 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
   const alt = s.alt && !/^(ffffff|000000)$/i.test(s.alt) ? `#${s.alt}` : shade(primary, -0.5);
   const logo = s.team ? `https://a.espncdn.com/i/teamlogos/nba/500/${s.team.toLowerCase()}.png` : null;
   const club = s.team_name ? s.team_name.split(" ").slice(-1)[0] : s.team;
+  const ref = useRef<HTMLDivElement>(null);
+  useOffscreenPause(ref);
 
   return (
-    <div className={`bball-host @container relative shrink-0 ${className}`} style={{ width: size, height: size }}>
-      <div className={`relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw] ${r === 4 ? "slab-frame-immortal" : ""} ${r >= 3 ? "slab-glow" : ""}`}
-        style={{ background: FRAME[s.rarity] || undefined, ["--glow" as string]: `${tier}99`, boxShadow: r < 3 ? "0 8px 18px rgba(0,0,0,.35)" : undefined }}>
+    <div ref={ref} className={`bball-host @container relative shrink-0 ${className}`} style={{ width: size, height: size, ["--glow" as string]: `${tier}99` }}>
+      {/* Pulsing glow (Mythic+): its own layer, so only its opacity animates and nothing inside the card repaints */}
+      {r >= 3 && <div className="slab-glow-layer pointer-events-none absolute inset-0 rounded-[9cqw]" />}
+      <div className="relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw]"
+        style={{ background: FRAME[s.rarity] || "#f472b6", boxShadow: "0 8px 18px rgba(0,0,0,.35)" }}>
+        {/* Immortal's rainbow frame: a conic gradient spun as a layer behind the card */}
+        {r === 4 && <div className="slab-frame-spin pointer-events-none absolute" />}
         <div className={`relative h-full w-full overflow-hidden rounded-[7cqw] ${r === 4 ? "slab-vivid" : ""}`}
           style={{ background: `linear-gradient(160deg, ${shade(primary, 0.35)} 0%, ${primary} 38%, ${shade(alt, -0.2)} 72%, ${shade(alt, -0.6)} 100%)` }}>
-          {/* Sunburst + glow (the sunburst turns from Rare up) */}
-          <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden>
-            <defs>
-              <radialGradient id={`sg-${s.rarity}`} cx="50%" cy="40%" r="50%"><stop offset="0" stopColor="#fff" stopOpacity=".3" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
-            </defs>
-            <g className={r >= 1 ? "slab-rays" : ""} style={{ transformOrigin: "50px 40px" }} fill="#fff" opacity={0.08 + r * 0.02}><path d={RAYS} /></g>
-            <circle cx="50" cy="40" r="46" fill={`url(#sg-${s.rarity})`} />
-          </svg>
+          {/* Sunburst (turns from Rare up) + glow */}
+          <Rays cy={40} opacity={0.08 + r * 0.02} spin={r >= 1} />
+          <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(46% 46% at 50% 40%, rgba(255,255,255,.3), transparent)" }} />
           {/* Big faded team logo behind the player */}
           {logo && <img src={logo} alt="" draggable={false} className="pointer-events-none absolute left-1/2 top-[6%] w-[78%] -translate-x-1/2 select-none opacity-20" />}
           {/* Tier effects behind the player */}
@@ -141,24 +155,23 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
 }
 
 /**
- * The face-down slab: the same square and frame as a Slab, in PackDraft blue and red with a slowly turning sunburst
- * and the logo. The rim glows in the tier colour, so a big pull still teases before the flip.
+ * The face-down slab: the same square and frame as a Slab, in deep ink with a soft glow of the tier colour, a slowly
+ * turning sunburst, the logo and a basketball. The rim is the tier colour (and glows from Mythic up), so a big pull
+ * still teases before the flip.
  */
 export function SlabCover({ rarity, size, className = "" }: { rarity: Rarity; size: number; className?: string }) {
   const r = RANK[rarity];
   const tier = RARITY_HEX[rarity];
+  const ref = useRef<HTMLDivElement>(null);
+  useOffscreenPause(ref);
   return (
-    <div className={`bball-host @container relative shrink-0 ${className}`} style={{ width: size, height: size }}>
-      <div className={`relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw] ${r >= 3 ? "slab-glow" : ""}`}
-        style={{ background: `linear-gradient(145deg, ${shade(tier, 0.5)}, ${tier} 45%, ${shade(tier, 0.3)} 70%, ${shade(tier, -0.45)})`, ["--glow" as string]: `${tier}99`, boxShadow: r < 3 ? "0 8px 18px rgba(0,0,0,.35)" : undefined }}>
-        <div className="relative h-full w-full overflow-hidden rounded-[7cqw]" style={{ background: "linear-gradient(140deg, #0b4ea2 0%, #0253a4 48%, #8f1d22 100%)" }}>
-          <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden>
-            <defs>
-              <radialGradient id="cover-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stopColor="#fff" stopOpacity=".28" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
-            </defs>
-            <g className="slab-rays" style={{ transformOrigin: "50px 40px" }} fill="#fff" opacity=".09"><path d={RAYS} transform="translate(0 10)" /></g>
-            <circle cx="50" cy="50" r="44" fill="url(#cover-glow)" />
-          </svg>
+    <div ref={ref} className={`bball-host @container relative shrink-0 ${className}`} style={{ width: size, height: size, ["--glow" as string]: `${tier}99` }}>
+      {r >= 3 && <div className="slab-glow-layer pointer-events-none absolute inset-0 rounded-[9cqw]" />}
+      <div className="relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw]"
+        style={{ background: `linear-gradient(145deg, ${shade(tier, 0.5)}, ${tier} 45%, ${shade(tier, 0.3)} 70%, ${shade(tier, -0.45)})`, boxShadow: "0 8px 18px rgba(0,0,0,.35)" }}>
+        <div className="relative h-full w-full overflow-hidden rounded-[7cqw]" style={{ background: `radial-gradient(75% 75% at 50% 42%, ${shade(tier, -0.35)} 0%, #121a2b 62%, #0a0f1a 100%)` }}>
+          <Rays cy={50} opacity={0.08} spin />
+          <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(44% 44% at 50% 50%, rgba(255,255,255,.2), transparent)" }} />
           <div className="absolute inset-0 opacity-[.08]" style={{ backgroundImage: "repeating-linear-gradient(135deg, #fff 0 1px, transparent 1px 9px)" }} />
           <img src="/packdraft-logo-full.svg" alt="" draggable={false} className="absolute left-1/2 top-[42%] w-[62%] -translate-x-1/2 -translate-y-1/2 select-none"
             style={{ filter: "drop-shadow(0 2cqw 3cqw rgba(0,0,0,.45))" }} />
