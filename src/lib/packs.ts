@@ -23,7 +23,7 @@ export const RARITY_BLURB: Record<Rarity, string> = {
   rare: "A slow-turning sunburst and a light shimmer.",
   epic: "Twinkling stars around the player.",
   legendary: "A pulsing glow around the frame and a sky full of stars.",
-  grail: "Everything at once: a rainbow frame, colour-shifting holo and sparkles. The rarest slab there is.",
+  grail: "Everything at once: a turning icy-blue frame, a frost sheen and sparkles. The rarest slab there is.",
 };
 export const RARITY_ORDER: Rarity[] = ["common", "rare", "epic", "legendary", "grail"];
 

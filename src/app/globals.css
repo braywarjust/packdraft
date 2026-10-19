@@ -133,7 +133,7 @@ body {
 @keyframes slabShimmer { 0%, 55% { transform: translateX(-96%); } 100% { transform: translateX(36%); } }
 @keyframes slabHolo { from { transform: translateX(40%); } to { transform: translateX(-85%); } }
 @keyframes slabGlow { 0%, 100% { opacity: .45; transform: scale(.985); } 50% { opacity: 1; transform: scale(1); } }
-@keyframes slabVivid { 0%, 100% { filter: saturate(1.35) hue-rotate(0deg); } 50% { filter: saturate(1.6) hue-rotate(18deg); } }
+@keyframes slabVivid { 0%, 100% { filter: saturate(1.25) brightness(1); } 50% { filter: saturate(1.4) brightness(1.07); } }
 .slab-rays { animation: raysSpin 40s linear infinite; will-change: transform; }
 .slab-twinkle { animation: slabTwinkle 2.8s ease-in-out infinite; transform-origin: center; }
 .slab-ball { animation: slabBall 7.5s ease-in-out infinite; opacity: 0; }
@@ -141,50 +141,15 @@ body {
 .slab-shimmer, .slab-holo { overflow: hidden; }
 .slab-shimmer::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 250%; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .22) 50%, transparent 65%); transform: translateX(-96%); animation: slabShimmer 5s ease-in-out infinite; }
 .slab-holo { mix-blend-mode: color-dodge; }
-.slab-holo::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 250%; background: linear-gradient(125deg, transparent 15%, rgba(255, 0, 150, .22) 35%, rgba(0, 255, 200, .22) 50%, rgba(255, 220, 0, .22) 65%, transparent 85%); transform: translateX(40%); animation: slabHolo 1.7s linear infinite; }
-/* Mythic slab backs: flames (teardrop gradients) flicker by scaling, embers drift up. Immortal: comets streak across. */
-@keyframes slabFlame { 0% { transform: scale(.92, 1.25) skewX(-3deg); opacity: .85; } 50% { transform: scale(.82, 1.55) skewX(4deg); opacity: 1; } 100% { transform: scale(1, 1.3) skewX(-1deg); opacity: .9; } }
-@keyframes slabEmber { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(3cqw, -55cqw); opacity: 0; } }
+.slab-holo::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 250%; background: linear-gradient(125deg, transparent 15%, rgba(186, 230, 253, .26) 35%, rgba(255, 255, 255, .3) 50%, rgba(125, 211, 252, .26) 65%, transparent 85%); transform: translateX(40%); animation: slabHolo 1.7s linear infinite; }
+/* Immortal slab backs: comets streak across the icy sky. */
 @keyframes slabComet { 0% { transform: translate(0, 0) rotate(28deg); opacity: 0; } 8% { opacity: 1; } 55% { opacity: .9; } 70%, 100% { transform: translate(160cqw, 85cqw) rotate(28deg); opacity: 0; } }
-.slab-flame { transform-origin: 50% 100%; animation: slabFlame .95s ease-in-out infinite alternate; }
-.slab-flame-outer { background: radial-gradient(circle at 62% 38%, #fdba74 0%, #f97316 38%, #dc2626 78%, #991b1b 100%); opacity: .95; }
-.slab-flame-core { background: radial-gradient(circle at 62% 38%, #fffbe6 0%, #fde047 45%, #f59e0b 100%); }
-.slab-ember { background: #fdba74; box-shadow: 0 0 1.2cqw #fb923c; animation: slabEmber 2.6s ease-out infinite; opacity: 0; }
 .slab-comet { background: linear-gradient(90deg, transparent, rgba(224, 242, 254, .55) 35%, #fff 90%, #fff); box-shadow: 0 0 2.5cqw 0.4cqw rgba(186, 230, 253, .9); transform-origin: 100% 50%; animation: slabComet 3.75s ease-in infinite; opacity: 0; }
 /* Glow: a static big shadow on its own layer that pulses in opacity (was an animated box-shadow, which repaints the card). */
 .slab-glow-layer { box-shadow: 0 0 45px 10px var(--glow); animation: slabGlow 2.6s ease-in-out infinite; will-change: opacity; }
 .slab-vivid { animation: slabVivid 5s ease-in-out infinite; }
-/* Immortal frame: a conic rainbow square spun behind the card (was an animated @property angle, which repaints). */
-.slab-frame-spin { inset: -50%; background: conic-gradient(#f472b6, #fbbf24, #34d399, #38bdf8, #a78bfa, #f472b6); animation: raysSpin 4s linear infinite; will-change: transform; }
-/* Basketballs (Slab.tsx Ball): a slow idle turn, and on hover of the slab or pack (.bball-host) one even dribble.
-   .bball-body bounces and squashes from the floor, .bball-spin turns the ball, .bball-shadow tracks the bounce. */
-.bball { display: inline-block; }
-.bball-body { position: absolute; inset: 0; transform-origin: 50% 100%; }
-.bball-spin { transform-origin: 50% 50%; animation: bballSpin 14s linear infinite; }
-.bball-shadow { position: absolute; left: 12%; right: 12%; bottom: -9%; height: 14%; border-radius: 50%; background: rgba(0, 0, 0, .35); filter: blur(1.5px); opacity: 0; transition: opacity .3s; }
-@keyframes bballSpin { to { transform: rotate(360deg); } }
-@keyframes bballDribble { 0%, 100% { transform: translateY(0) scale(1.1, .9); } 12% { transform: translateY(-6%) scale(.95, 1.05); } 50% { transform: translateY(-40%) scale(1, 1); } 88% { transform: translateY(-6%) scale(.95, 1.05); } }
-@keyframes bballShadow { 0%, 100% { transform: scale(1); opacity: .55; } 50% { transform: scale(.6); opacity: .22; } }
-.bball-host:hover .bball-body { animation: bballDribble .8s cubic-bezier(.45, 0, .55, 1) infinite; }
-.bball-host:hover .bball-spin { animation: bballSpin 1.6s linear infinite; }
-.bball-host:hover .bball-shadow { opacity: .5; animation: bballShadow .8s cubic-bezier(.45, 0, .55, 1) infinite; }
-
-/* Animated PackDraft logo (AnimatedLogo.tsx), played while its .logo-host (a pack) is hovered: the badge pops and
-   tilts, the blue and red halves split and snap back, the letters ripple up in turn, and a shine sweeps across. */
-.pdl-pop, .pdl-red, .pdl-blue, .pdl-letter, .pdl-ring { transform-box: fill-box; transform-origin: center; }
-@keyframes pdlPop { 0% { transform: scale(1) rotate(0); } 14% { transform: scale(1.12) rotate(-5deg); } 28% { transform: scale(1.03) rotate(3deg); } 40%, 100% { transform: scale(1.06) rotate(0); } }
-@keyframes pdlSplitBlue { 0%, 45%, 100% { transform: translateX(0); } 14% { transform: translateX(-7px) rotate(-2deg); } 30% { transform: translateX(1.5px); } }
-@keyframes pdlSplitRed { 0%, 45%, 100% { transform: translateX(0); } 14% { transform: translateX(7px) rotate(2deg); } 30% { transform: translateX(-1.5px); } }
-@keyframes pdlHop { 0%, 18%, 60%, 100% { transform: translateY(0) scale(1); } 32% { transform: translateY(-9px) scale(1.1); } 46% { transform: translateY(1.5px) scale(.97); } }
-@keyframes pdlRing { 0%, 40%, 100% { transform: scale(1); } 14% { transform: scale(1.035); } }
-@keyframes pdlShine { 0% { transform: skewX(-20deg) translateX(0); } 50%, 100% { transform: skewX(-20deg) translateX(560px); } }
-.logo-host:hover .pdl-pop { animation: pdlPop 2s cubic-bezier(.34, 1.4, .64, 1) infinite; }
-.logo-host:hover .pdl-blue { animation: pdlSplitBlue 2s cubic-bezier(.34, 1.4, .64, 1) infinite; }
-.logo-host:hover .pdl-red { animation: pdlSplitRed 2s cubic-bezier(.34, 1.4, .64, 1) infinite; }
-.logo-host:hover .pdl-letter { animation-name: pdlHop; animation-duration: 2s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
-.logo-host:hover .pdl-ring { animation: pdlRing 2s ease-out infinite; }
-.logo-host:hover .pdl-shine { animation: pdlShine 2s ease-in-out infinite; }
-
+/* Immortal frame: an icy-blue conic square spun behind the card (was an animated @property angle, which repaints). */
+.slab-frame-spin { inset: -50%; background: conic-gradient(#f0f9ff, #7dd3fc, #e0f2fe, #38bdf8, #ffffff, #7dd3fc, #f0f9ff); animation: raysSpin 4s linear infinite; will-change: transform; }
 /* Pack art (PackArt.tsx): a ground shadow that breathes with the float, a glossy streak, and a tilt toward you on hover. */
 @keyframes packGround { 0%, 100% { transform: scaleX(1); opacity: .9; } 50% { transform: scaleX(.86); opacity: .6; } }
 .pack-ground { animation: packGround 4.5s ease-in-out infinite; }
@@ -198,10 +163,9 @@ body {
 .pack-bob { animation: packBob 4.5s ease-in-out infinite; }
 .pack-fan { animation: packFan 3.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .slab-flame, .slab-ember, .slab-comet,
+  .slab-comet,
   .slab-rays, .slab-twinkle, .slab-ball, .slab-shimmer::before, .slab-holo::before, .slab-glow-layer, .slab-vivid, .slab-frame-spin, .pack-bob, .pack-fan, .pack-ground,
-  .logo-host:hover .pdl-pop, .logo-host:hover .pdl-blue, .logo-host:hover .pdl-red, .logo-host:hover .pdl-letter, .logo-host:hover .pdl-ring, .logo-host:hover .pdl-shine,
-  .bball-spin, .bball-host:hover .bball-body, .bball-host:hover .bball-spin, .bball-host:hover .bball-shadow { animation: none; }
+  .logo-host:hover .pdl-pop, .logo-host:hover .pdl-blue, .logo-host:hover .pdl-red, .logo-host:hover .pdl-letter, .logo-host:hover .pdl-ring, .logo-host:hover .pdl-shine { animation: none; }
 }
 
 .flip { perspective: 1000px; }

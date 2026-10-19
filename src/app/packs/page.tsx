@@ -134,7 +134,7 @@ export default async function PacksPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {([
             ["The pool", `Every active NBA player (${poolSize} of them), with his photo, team logo and team colours. Better players come up a little more often.`],
-            ["Tiers", "Common, Rare, Epic, Mythic and Immortal. Each step up adds motion: a turning sunburst, shimmer, twinkling stars, floating basketballs, and a rainbow glow for Immortal."],
+            ["Tiers", "Common, Rare, Epic, Mythic and Immortal. Each step up adds motion: a turning sunburst and shimmer, twinkling stars, a pulsing glow, and an icy-blue frame and frost sheen for Immortal."],
             ["Value", "Tier price × the player's price index: his ESPN fantasy points per game (last season, then this season as he plays) plus popularity. Prices move with his stats; injured players hold steady."],
             ["Collect and boost", `Keep them, sell them back for ${Math.round(BUYBACK_RATE * 100)}%, or put one on a player for a night's slab boost (worth more on his own slab).`],
           ] as const).map(([k, v]) => (
