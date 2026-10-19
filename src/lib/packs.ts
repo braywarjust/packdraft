@@ -9,7 +9,7 @@ export type PackType = {
   /** Percent of slabs that drop with the Immortal certification. */
   immortal: number;
 };
-// Tier keys: common/rare/epic/legendary/grail. A player slab's tier is its multiplier (1.5X up to 10X); generic slabs
+// Tier keys: common/rare/epic/legendary/grail. A player slab's tier is its multiplier range (1.10X up to 10X); generic slabs
 // only come in the bottom three tiers. Old graded slabs (pre-redesign) keep their tier as a value band.
 export type Rarity = "common" | "rare" | "epic" | "legendary" | "grail";
 
@@ -21,23 +21,31 @@ export const RARITIES: Record<Rarity, { label: string; ring: string; text: strin
   grail: { label: "Grail", ring: "ring-amber-300", text: "text-amber-300" },
 };
 
-/** Fantasy points multiplier printed on a player slab, per tier. */
-export const PLAYER_MULT: Record<Rarity, number> = { common: 1.5, rare: 2, epic: 3, legendary: 5, grail: 10 };
+/**
+ * Fantasy points multiplier range per tier. Every slab rolls its own exact multiplier inside its tier's range (to the
+ * hundredth, like 3.33X), weighted toward the low end, so the same player can drop in many versions and the top of a
+ * range is the one to chase. A perfect 10.00X is the rarest roll there is.
+ */
+export const PLAYER_RANGE: Record<Rarity, [number, number]> = {
+  common: [1.1, 1.99], rare: [2, 2.99], epic: [3, 4.49], legendary: [4.5, 7.49], grail: [7.5, 10],
+};
 /** Generic slabs work on anyone, so they stay small. */
-export const GENERIC_MULT: Partial<Record<Rarity, number>> = { common: 1.1, rare: 1.25, epic: 1.5 };
+export const GENERIC_RANGE: Partial<Record<Rarity, [number, number]>> = { common: [1.01, 1.14], rare: [1.15, 1.29], epic: [1.3, 1.5] };
 /** Tier odds for generic slabs (percent), the same in every pack. */
 export const GENERIC_ODDS: Partial<Record<Rarity, number>> = { common: 70, rare: 25, epic: 5 };
-/** "10X", "1.25X". */
-export const fmtMult = (m: number) => `${Number(m.toFixed(2))}X`;
+/** "10X", "3.30X", "1.25X". */
+export const fmtMult = (m: number) => (Math.abs(m - Math.round(m)) < 0.001 ? `${Math.round(m)}X` : `${m.toFixed(2)}X`);
+/** "4.50–7.49X". */
+export const fmtRange = ([lo, hi]: [number, number]) => `${lo.toFixed(2)}–${fmtMult(hi)}`;
 
 /** Solid tier colours (match the rarity badges) and what each tier means. */
 export const RARITY_HEX: Record<Rarity, string> = { common: "#64748b", rare: "#2563eb", epic: "#9333ea", legendary: "#dc2626", grail: "#f5b70a" };
 export const RARITY_BLURB: Record<Rarity, string> = {
-  common: "1.5X player slabs, and 1.1X generic slabs that work on anyone. The bread and butter of every rip.",
-  rare: "2X player slabs, and 1.25X generics.",
-  epic: "3X player slabs, and the best generics at 1.5X.",
-  legendary: "5X player slabs. Mostly role players; a 5X star is a real pull.",
-  grail: "10X player slabs, the rarest multiplier there is, and almost never on a superstar.",
+  common: "Player slabs from 1.10X to 1.99X, plus generics that work on anyone. The bread and butter of every rip.",
+  rare: "Player slabs from 2.00X to 2.99X.",
+  epic: "Player slabs from 3.00X to 4.49X, and the best generics, up to 1.50X.",
+  legendary: "Player slabs from 4.50X to 7.49X. Mostly role players; a Mythic star is a real pull.",
+  grail: "Player slabs from 7.50X all the way to 10X, almost never on a superstar. A perfect 10X is the rarest roll there is.",
 };
 export const RARITY_ORDER: Rarity[] = ["common", "rare", "epic", "legendary", "grail"];
 

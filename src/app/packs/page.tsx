@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { unopenedPacks } from "@/lib/packs-server";
 import Link from "next/link";
-import { BUYBACK_RATE, GENERIC_MULT, GENERIC_ODDS, PACKS, PLAYER_MULT, RARITIES, RARITY_BLURB, RARITY_HEX, RARITY_ORDER, fmtMult, fmtOdds, type Rarity } from "@/lib/packs";
+import { BUYBACK_RATE, GENERIC_ODDS, GENERIC_RANGE, PACKS, PLAYER_RANGE, RARITIES, RARITY_BLURB, RARITY_HEX, RARITY_ORDER, fmtOdds, fmtRange, type Rarity } from "@/lib/packs";
 import { slabValue, starterPool } from "@/lib/slab-cards";
 import { VendingMachine } from "./VendingMachine";
 import { buyPack, ripPack, sellCards } from "../actions";
@@ -66,13 +66,13 @@ export default async function PacksPage() {
             <Link key={r} href={`/packs/pool?tier=${r}`} className="card relative h-full overflow-hidden transition hover:-translate-y-0.5 hover:brightness-110">
               <div className="flex items-center justify-between px-4 py-2.5" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>
                 <span className="text-sm font-black uppercase tracking-wider">{RARITIES[r].label}</span>
-                <span className="text-xl font-black">{fmtMult(PLAYER_MULT[r])}</span>
+                <span className="text-base font-black">{fmtRange(PLAYER_RANGE[r])}</span>
               </div>
               <div className="space-y-2 p-4 text-sm">
                 <p className="text-zinc-500">{RARITY_BLURB[r]}</p>
                 <div className="space-y-1 text-xs">
-                  <p className="flex justify-between"><span className="text-zinc-500">Player slab</span><b>{fmtMult(PLAYER_MULT[r])}</b></p>
-                  <p className="flex justify-between"><span className="text-zinc-500">Generic slab</span><b>{GENERIC_MULT[r] ? fmtMult(GENERIC_MULT[r]!) : "-"}</b></p>
+                  <p className="flex justify-between"><span className="text-zinc-500">Player slab</span><b>{fmtRange(PLAYER_RANGE[r])}</b></p>
+                  <p className="flex justify-between"><span className="text-zinc-500">Generic slab</span><b>{GENERIC_RANGE[r] ? fmtRange(GENERIC_RANGE[r]!) : "-"}</b></p>
                   <p className="flex justify-between"><span className="text-zinc-500">Average starter worth</span><b><Coins n={slabValue("player", r, 34.5, false)} /></b></p>
                 </div>
               </div>
@@ -94,7 +94,7 @@ export default async function PacksPage() {
                 <th className="px-4 py-3 text-left">Pack</th>
                 <th className="px-2 py-3">Generic</th>
                 {RARITY_ORDER.map((r) => (
-                  <th key={r} className="px-2 py-3"><span className="inline-block rounded-full px-1.5 py-px text-[8.5px] font-black uppercase leading-tight" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>{fmtMult(PLAYER_MULT[r])}</span></th>
+                  <th key={r} className="px-2 py-3"><span className="inline-block rounded-full px-1.5 py-px text-[8.5px] font-black uppercase leading-tight" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>{RARITIES[r].label}</span></th>
                 ))}
                 <th className="px-2 py-3">Immortal</th>
                 <th className="px-4 py-3 text-right">Player slab mix</th>
@@ -135,7 +135,7 @@ export default async function PacksPage() {
           {([
             ["The pool", "Player slabs are of NBA starters only: the five highest-projected players on every team. Each one shows his photo, team logo and team colours."],
             ["Boosting", "Each night, every player on your fantasy team with a game can carry one slab. His fantasy points for that game, and the Pack Points they pay, are multiplied. It locks at tip-off and only counts if he starts."],
-            ["Collect your team", "A player slab only boosts that player, so you want slabs of the guys you drafted. Generic slabs fill the gaps on anyone, at 1.1X to 1.5X."],
+            ["Collect your team", "A player slab only boosts that player, so you want slabs of the guys you drafted. Generic slabs fill the gaps on anyone, at 1.01X to 1.50X. Every slab rolls its own exact multiplier, so you can keep chasing a better version of the same player."],
             ["Immortal", "A rare stamp on any slab: it glows, gets vibrant colours and is worth five times as much. The multiplier stays the same."],
           ] as const).map(([k, v]) => (
             <div key={k} className="rounded-xl bg-ink/40 p-3">

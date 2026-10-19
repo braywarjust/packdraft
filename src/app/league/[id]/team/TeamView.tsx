@@ -114,7 +114,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         </details>
       )}
       <PointsKey className="relative" />
-      <p className="relative text-xs text-zinc-400"><BoltIcon className="text-amber-600" /> Slab boost: each night, every player with a game can carry one of your Slabs, and his fantasy points for that game are multiplied by it (1.5X up to 10X for his own player slab, 1.1X to 1.5X for a generic). Each slab works once a night. It locks at his tip-off and only counts if he&apos;s in your starting lineup.</p>
+      <p className="relative text-xs text-zinc-400"><BoltIcon className="text-amber-600" /> Slab boost: each night, every player with a game can carry one of your Slabs, and his fantasy points for that game are multiplied by it (1.10X up to 10X for his own player slab, 1.01X to 1.50X for a generic). Each slab works once a night. It locks at his tip-off and only counts if he&apos;s in your starting lineup.</p>
       <p className="relative text-xs text-zinc-400">Lineups are daily. Each player locks at his own tip-off, so you can still swap guys who play later tonight. Points count for whatever slot a player was in when his game started.</p>
     </div>
   );

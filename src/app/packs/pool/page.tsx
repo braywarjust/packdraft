@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
-import { GENERIC_MULT, PLAYER_MULT, RARITIES, RARITY_ORDER, fmtMult, type Rarity } from "@/lib/packs";
+import { GENERIC_RANGE, PLAYER_RANGE, RARITIES, RARITY_ORDER, fmtRange, type Rarity } from "@/lib/packs";
 import { ensureSlabCards, slabValue, starterPool } from "@/lib/slab-cards";
 import { slabPlayerPhoto } from "@/lib/nba/photos";
 import { PageHeader } from "@/components/PageHeader";
@@ -44,7 +44,7 @@ export default async function SlabPool({ searchParams }: { searchParams: Promise
 
       <div className="flex flex-wrap items-center gap-2">
         {RARITY_ORDER.map((r) => (
-          <Link key={r} href={qs({ tier: r })} className={`tab ${tier === r ? "tab-active" : ""} ${RARITIES[r].text}`}>{fmtMult(PLAYER_MULT[r])} {RARITIES[r].label}</Link>
+          <Link key={r} href={qs({ tier: r })} className={`tab ${tier === r ? "tab-active" : ""} ${RARITIES[r].text}`}>{RARITIES[r].label} {fmtRange(PLAYER_RANGE[r])}</Link>
         ))}
         <span className="mx-2 h-5 w-px bg-line" />
         <Link href={qs({ imm: immortal ? undefined : "1" })} className={`tab ${immortal ? "tab-active" : ""}`}>Immortal</Link>
@@ -60,13 +60,13 @@ export default async function SlabPool({ searchParams }: { searchParams: Promise
         </form>
       </div>
 
-      {!sp.team && sp.mine !== "1" && GENERIC_MULT[tier] && (
+      {!sp.team && sp.mine !== "1" && GENERIC_RANGE[tier] && (
         <section className="space-y-2">
           <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">Generic</h2>
           <div className="flex flex-wrap gap-4">
             <div className="flex flex-col items-center">
-              <SlabFace height={230} s={{ kind: "generic", name: "Any Player", team: "", pos: "", rarity: tier, mult: GENERIC_MULT[tier]!, immortal, serial: 1 }} />
-              <SlabMult mult={GENERIC_MULT[tier]!} size={14} className="mt-2" />
+              <SlabFace height={230} s={{ kind: "generic", name: "Any Player", team: "", pos: "", rarity: tier, mult: GENERIC_RANGE[tier]![1], immortal, serial: 1 }} />
+              <SlabMult mult={GENERIC_RANGE[tier]![1]} range={GENERIC_RANGE[tier]} size={14} className="mt-2" />
               <p className="mt-1 text-xs font-semibold">Works on anyone</p>
               <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={slabValue("generic", tier, 0, immortal)} /></p>
             </div>
@@ -83,12 +83,12 @@ export default async function SlabPool({ searchParams }: { searchParams: Promise
               <div key={p.id} className="flex flex-col items-center">
                 <div className="relative">
                   <SlabFace height={230} s={{
-                    kind: "player", name: p.name, team: p.team, team_name: x?.team_name, pos: p.pos, rarity: tier, mult: PLAYER_MULT[tier], immortal, serial: 1,
+                    kind: "player", name: p.name, team: p.team, team_name: x?.team_name, pos: p.pos, rarity: tier, mult: PLAYER_RANGE[tier][1], immortal, serial: 1,
                     jersey: x?.jersey, color: x?.color, alt: x?.alt, photo: slabPlayerPhoto(p.name) ?? x?.headshot,
                   }} />
                   {rostered.has(p.id) && <span className="absolute -right-1 -top-1 rounded-full bg-emerald-500 px-1.5 text-[9px] font-black text-black">ON YOUR TEAM</span>}
                 </div>
-                <SlabMult mult={PLAYER_MULT[tier]} size={14} className="mt-2" />
+                <SlabMult mult={PLAYER_RANGE[tier][1]} range={PLAYER_RANGE[tier]} size={14} className="mt-2" />
                 <p className="mt-1 text-xs text-zinc-500">{owned.get(p.id) ? <b className="text-emerald-600">You own {owned.get(p.id)}</b> : "Not collected"}</p>
                 <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={slabValue("player", tier, p.proj, immortal)} /></p>
               </div>

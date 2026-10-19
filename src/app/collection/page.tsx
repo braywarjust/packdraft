@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { userCards } from "@/lib/packs-server";
-import { BUYBACK_RATE, PLAYER_MULT, RARITIES, Rarity, fmtCoins, fmtMult } from "@/lib/packs";
+import { BUYBACK_RATE, PLAYER_RANGE, RARITIES, Rarity, fmtCoins, fmtRange } from "@/lib/packs";
 import { ActionButton } from "@/components/ActionButton";
 import { clearTestCards, sellCards } from "../actions";
 import { PageHeader } from "@/components/PageHeader";
@@ -47,7 +47,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
       <div className="flex flex-wrap items-center gap-2">
         <Link href={qs({ r: undefined })} className={`tab ${!sp.r ? "tab-active" : ""}`}>All</Link>
         {(Object.keys(RARITIES) as Rarity[]).map((r) => (
-          <Link key={r} href={qs({ r })} className={`tab ${sp.r === r ? "tab-active" : ""} ${RARITIES[r].text}`}>{fmtMult(PLAYER_MULT[r])} {RARITIES[r].label} ({counts[r]})</Link>
+          <Link key={r} href={qs({ r })} className={`tab ${sp.r === r ? "tab-active" : ""} ${RARITIES[r].text}`}>{RARITIES[r].label} {fmtRange(PLAYER_RANGE[r])} ({counts[r]})</Link>
         ))}
         <span className="mx-2 h-5 w-px bg-line" />
         <Link href={qs({ f: sp.f === "team" ? undefined : "team" })} className={`tab ${sp.f === "team" ? "tab-active" : ""}`} title="Generic slabs and slabs of players on your fantasy rosters">Fits my team</Link>

@@ -1,12 +1,12 @@
-// Slabs: tarot-style player cards that come out of packs and boost your fantasy players.
+// Slabs: PSA-style slabs of NBA players that come out of packs and boost your fantasy players.
 //
-// Player slabs are of an NBA starter (the top 5 per team by projection) and carry a fantasy points multiplier set by
-// their tier: 1.5X, 2X, 3X, 5X or 10X. They only boost that player. The bigger the multiplier, the more the draw leans
-// toward role players, so a 10X on a superstar is the rarest pull there is. Generic slabs boost anyone, but only
-// 1.1X, 1.25X or 1.5X. Any slab can drop with the Immortal certification: it glows, gets vibrant colours and is worth
-// five times as much, but its multiplier is the same.
+// Player slabs are of an NBA starter (the top 5 per team by projection). Each rolls its own fantasy points multiplier
+// to the hundredth inside its tier's range (1.10X up to 10X), so the same player comes in many versions. They only
+// boost that player. The bigger the tier, the more the draw leans toward role players, so a high 10X roll on a
+// superstar is the rarest pull there is. Generic slabs boost anyone, but only 1.01X to 1.50X. Any slab can drop with
+// the Immortal certification: it glows, gets vibrant colours and is worth five times as much, same multiplier.
 import { all, one, run } from "./db";
-import { GENERIC_MULT, GENERIC_ODDS, PLAYER_MULT, Rarity, rollRarity, type PackType } from "./packs";
+import { GENERIC_ODDS, GENERIC_RANGE, PLAYER_RANGE, Rarity, rollRarity, type PackType } from "./packs";
 
 export type SlabKind = "player" | "generic";
 
@@ -21,9 +21,21 @@ export const IMMORTAL_VALUE = 5;
 
 const starFactor = (proj: number) => Math.min(4, Math.max(0.4, (proj / AVG_PROJ) ** 2));
 
-export function slabValue(kind: SlabKind, rarity: Rarity, proj: number, immortal: boolean) {
+const rangeOf = (kind: SlabKind, rarity: Rarity): [number, number] => (kind === "generic" ? GENERIC_RANGE[rarity] ?? [1.01, 1.14] : PLAYER_RANGE[rarity]);
+/** The typical (average) roll in a range: rolls lean low, lo + (hi - lo) × u². */
+export const typicalMult = (kind: SlabKind, rarity: Rarity) => { const [lo, hi] = rangeOf(kind, rarity); return lo + (hi - lo) / 3; };
+
+/** A tier's exact multiplier, to the hundredth, leaning toward the bottom of the range. */
+export function rollMult(kind: SlabKind, rarity: Rarity, rand: () => number) {
+  const [lo, hi] = rangeOf(kind, rarity);
+  return Math.round((lo + (hi - lo) * rand() ** 2) * 100) / 100;
+}
+
+/** Value: the tier's base for this player, scaled by how good the roll is within the tier (squared), ×5 if Immortal. */
+export function slabValue(kind: SlabKind, rarity: Rarity, proj: number, immortal: boolean, mult = typicalMult(kind, rarity)) {
   const base = kind === "generic" ? GENERIC_BASE[rarity] ?? 10 : PLAYER_BASE[rarity] * starFactor(proj);
-  return Math.max(1, Math.round(base * (immortal ? IMMORTAL_VALUE : 1)));
+  const roll = (mult / typicalMult(kind, rarity)) ** 2;
+  return Math.max(1, Math.round(base * roll * (immortal ? IMMORTAL_VALUE : 1)));
 }
 
 let ready = false;
@@ -53,14 +65,16 @@ export function rollSlab(pack: PackType, pool: PoolPlayer[], rand: () => number)
   const immortal = rand() < pack.immortal / 100;
   if (rand() < pack.generic / 100) {
     const rarity = rollRarity(GENERIC_ODDS, rand());
-    return { kind: "generic", rarity, mult: GENERIC_MULT[rarity] ?? 1.1, playerId: 0, immortal, value: slabValue("generic", rarity, 0, immortal) };
+    const mult = rollMult("generic", rarity, rand);
+    return { kind: "generic", rarity, mult, playerId: 0, immortal, value: slabValue("generic", rarity, 0, immortal, mult) };
   }
   const rarity = rollRarity(pack.odds, rand());
   const w = pool.map((p) => Math.max(0.2, p.proj / AVG_PROJ) ** -STAR_DODGE[rarity]);
   let x = rand() * w.reduce((s, v) => s + v, 0);
   let pick = pool[pool.length - 1];
   for (let i = 0; i < pool.length; i++) if ((x -= w[i]) <= 0) { pick = pool[i]; break; }
-  return { kind: "player", rarity, mult: PLAYER_MULT[rarity], playerId: pick.id, immortal, value: slabValue("player", rarity, pick.proj, immortal) };
+  const mult = rollMult("player", rarity, rand);
+  return { kind: "player", rarity, mult, playerId: pick.id, immortal, value: slabValue("player", rarity, pick.proj, immortal, mult) };
 }
 
 /** Print number for a new slab: how many of this player (or generic) at this tier have been pulled, plus one. */

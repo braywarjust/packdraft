@@ -15,7 +15,7 @@ import { useScrollLock } from "@/components/useScrollLock";
 
 type Inv = { id: number; pack_type: string; source: string; created_at: number };
 type Act<T> = Promise<T | { error: string }>;
-/** 5X, 10X and Immortal slabs count as case hits: their face-down card shakes before the flip. */
+/** Mythic, Grail and Immortal slabs count as case hits: their face-down card shakes before the flip. */
 const isBigHit = (c: CardData) => c.rarity === "legendary" || c.rarity === "grail" || !!c.immortal;
 const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, grail: 4 };
 
@@ -60,7 +60,7 @@ function Checkout({ p, coins, onPay, onDone, onCancel }: {
               <p className="font-black text-white">{p.name}</p>
               <SlabCount n={p.cards} className="text-xs text-zinc-400" />
               <OddsBar odds={p.odds} />
-              <p className="text-[11px] text-zinc-500">5X or better <b className="text-red-500">{bigOdds(p)}%</b>{p.odds.grail > 0 && <> · 10X {fmtOdds(p.odds.grail)}</>} · Immortal {fmtOdds(p.immortal)}</p>
+              <p className="text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{bigOdds(p)}%</b>{p.odds.grail > 0 && <> · Grail {fmtOdds(p.odds.grail)}</>} · Immortal {fmtOdds(p.immortal)}</p>
             </div>
             <p className="self-start font-mono font-black text-white"><Coins n={p.price} /></p>
           </div>
@@ -114,7 +114,7 @@ const PACK_SIZE = { sm: [88, 112], md: [176, 224], big: [264, 336] } as const;
 const CASE_SIZE = { sm: [116, 116], md: [220, 220], big: [336, 336] } as const;
 const artSize = (p: PackType, size: "sm" | "md" | "big") => (p.kind === "case" ? CASE_SIZE : PACK_SIZE)[size];
 const slabsLabel = (n: number) => `${n} slab${n === 1 ? "" : "s"}`;
-/** Chance a slab is a 5X or 10X player slab, after the generic share. */
+/** Chance a slab is a Mythic or Grail player slab, after the generic share. */
 const bigOdds = (p: PackType) => {
   const v = ((p.odds.legendary + p.odds.grail) * (100 - p.generic)) / 100;
   return v.toFixed(v < 1 ? 2 : 1).replace(/\.0+$/, "");
@@ -308,7 +308,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
             const short = coins < p.price;
             return (
               <button key={p.id} onClick={() => setCheckout(p)} disabled={busy || short}
-                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · 5X or better ${bigOdds(p)}% · Immortal ${fmtOdds(p.immortal)}`}
+                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic or better ${bigOdds(p)}% · Immortal ${fmtOdds(p.immortal)}`}
                 className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                 <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                   <PackArt p={p} md slabs={features[p.id]} />
@@ -317,7 +317,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
                   <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
                   <span className="w-36 space-y-1">
                     <OddsBar odds={p.odds} />
-                    <span className="block text-center text-[11px] text-zinc-500">5X or better <b className="text-red-500">{bigOdds(p)}%</b></span>
+                    <span className="block text-center text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{bigOdds(p)}%</b></span>
                   </span>
               </button>
             );
@@ -335,7 +335,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
               const short = coins < p.price;
               return (
                 <button key={p.id} onClick={() => setCheckout(p)} disabled={busy || short}
-                  title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · 5X or better ${bigOdds(p)}% · Immortal ${fmtOdds(p.immortal)}`}
+                  title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic or better ${bigOdds(p)}% · Immortal ${fmtOdds(p.immortal)}`}
                   className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                   <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                     <PackArt p={p} md />
@@ -344,7 +344,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
                   <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
                   <span className="w-36 space-y-1">
                     <OddsBar odds={p.odds} />
-                    <span className="block text-center text-[11px] text-zinc-500">5X or better <b className="text-red-500">{bigOdds(p)}%</b></span>
+                    <span className="block text-center text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{bigOdds(p)}%</b></span>
                   </span>
                 </button>
               );
