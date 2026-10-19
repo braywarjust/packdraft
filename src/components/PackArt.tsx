@@ -2,20 +2,23 @@
 
 import { RARITY_HEX, RARITY_ORDER, type PackType } from "@/lib/packs";
 import { useRef } from "react";
-import { Rays, SlabBall } from "./Slab";
+import { Rays, SlabBall, coverFill } from "./Slab";
 import { useOffscreenPause } from "./useOffscreenPause";
 import { AnimatedLogo } from "./AnimatedLogo";
 
 const SPARKS: [number, number, number, number][] = [[14, 22, 7, 0], [84, 30, 5.5, 1.2], [20, 62, 5, 2.1], [82, 66, 6, .6]];
 
-/** The best tier a pack can drop (its chase), for the mini slabs peeking out of it. */
-const chase = (p: PackType) => [...RARITY_ORDER].reverse().find((r) => p.odds[r] > 0) ?? "common";
+/** The tier a pack is "about": the best tier it drops at least 20% of the time (Rookie: Common, Starter: Rare,
+ *  Pro and All-Pro: Epic, Hall of Fame and GOAT: Mythic). Its cover slab is a little slab back in that colour. */
+const headline = (p: PackType) => [...RARITY_ORDER].reverse().find((r) => p.odds[r] >= 20) ?? "common";
+/** The Mega Pack's five: Epic and Mythic either side of an Immortal. */
+const MEGA_FAN = ["epic", "legendary", "grail", "legendary", "epic"] as const;
 
 function MiniSlab({ color, className = "", style }: { color: string; className?: string; style?: React.CSSProperties }) {
   return (
     <div className={`absolute aspect-square rounded-[18%] p-[5%] shadow-[0_2cqw_4cqw_rgba(0,0,0,.45)] ${className}`}
       style={{ background: `linear-gradient(145deg, #fff, ${color} 55%, #0f172a)`, ...style }}>
-      <div className="grid h-full w-full place-items-center rounded-[14%]" style={{ background: `radial-gradient(80% 80% at 50% 38%, ${color}55, #121a2b 60%, #0a0f1a)` }}>
+      <div className="grid h-full w-full place-items-center rounded-[14%]" style={{ background: coverFill(color) }}>
         <SlabBall className="h-[50%] w-[50%]" />
       </div>
     </div>
@@ -31,7 +34,7 @@ function MiniSlab({ color, className = "", style }: { color: string; className?:
  */
 export function PackArt({ p, width, height, animate = true, className = "" }: { p: PackType; width: number; height: number; animate?: boolean; className?: string }) {
   const isCase = p.kind === "case";
-  const top = RARITY_HEX[chase(p)];
+  const top = RARITY_HEX[headline(p)];
   // One slab on single packs, the full five-slab fan on the Mega Pack.
   const fan = isCase ? [-26, -13, 0, 13, 26] : [0];
   const ref = useRef<HTMLDivElement>(null);
@@ -67,7 +70,7 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
               // Offsets use left/translate/rotate (not transform) so the bobbing animation's transform doesn't wipe them.
               <div key={i} className={`absolute top-0 aspect-square h-full ${animate ? "pack-fan" : ""}`}
                 style={{ left: `calc(50% + ${deg * (isCase ? 1.15 : 1.6)}cqw)`, translate: "-50% 0", rotate: `${deg * 0.8}deg`, transformOrigin: "50% 100%", animationDelay: `${i * 0.35}s`, zIndex: 40 - Math.abs(deg) }}>
-                <MiniSlab color={i === Math.floor(fan.length / 2) ? top : "#cbd5e1"} className="inset-0" />
+                <MiniSlab color={isCase ? RARITY_HEX[MEGA_FAN[i]] : top} className="inset-0" />
               </div>
             ))}
           </div>

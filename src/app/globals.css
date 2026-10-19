@@ -142,6 +142,15 @@ body {
 .slab-shimmer::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 250%; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .22) 50%, transparent 65%); transform: translateX(-96%); animation: slabShimmer 5s ease-in-out infinite; }
 .slab-holo { mix-blend-mode: color-dodge; }
 .slab-holo::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 250%; background: linear-gradient(125deg, transparent 15%, rgba(255, 0, 150, .22) 35%, rgba(0, 255, 200, .22) 50%, rgba(255, 220, 0, .22) 65%, transparent 85%); transform: translateX(40%); animation: slabHolo 1.7s linear infinite; }
+/* Mythic slab backs: flames (teardrop gradients) flicker by scaling, embers drift up. Immortal: comets streak across. */
+@keyframes slabFlame { 0% { transform: scale(.92, 1.25) skewX(-3deg); opacity: .85; } 50% { transform: scale(.82, 1.55) skewX(4deg); opacity: 1; } 100% { transform: scale(1, 1.3) skewX(-1deg); opacity: .9; } }
+@keyframes slabEmber { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(3cqw, -55cqw); opacity: 0; } }
+@keyframes slabComet { 0% { transform: translate(0, 0) rotate(28deg); opacity: 0; } 8% { opacity: 1; } 55% { opacity: .9; } 70%, 100% { transform: translate(160cqw, 85cqw) rotate(28deg); opacity: 0; } }
+.slab-flame { transform-origin: 50% 100%; animation: slabFlame .95s ease-in-out infinite alternate; }
+.slab-flame-outer { background: radial-gradient(circle at 62% 38%, #fdba74 0%, #f97316 38%, #dc2626 78%, #991b1b 100%); opacity: .95; }
+.slab-flame-core { background: radial-gradient(circle at 62% 38%, #fffbe6 0%, #fde047 45%, #f59e0b 100%); }
+.slab-ember { background: #fdba74; box-shadow: 0 0 1.2cqw #fb923c; animation: slabEmber 2.6s ease-out infinite; opacity: 0; }
+.slab-comet { background: linear-gradient(90deg, transparent, rgba(224, 242, 254, .55) 35%, #fff 90%, #fff); box-shadow: 0 0 2.5cqw 0.4cqw rgba(186, 230, 253, .9); transform-origin: 100% 50%; animation: slabComet 3.75s ease-in infinite; opacity: 0; }
 /* Glow: a static big shadow on its own layer that pulses in opacity (was an animated box-shadow, which repaints the card). */
 .slab-glow-layer { box-shadow: 0 0 45px 10px var(--glow); animation: slabGlow 2.6s ease-in-out infinite; will-change: opacity; }
 .slab-vivid { animation: slabVivid 5s ease-in-out infinite; }
@@ -189,6 +198,7 @@ body {
 .pack-bob { animation: packBob 4.5s ease-in-out infinite; }
 .pack-fan { animation: packFan 3.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
+  .slab-flame, .slab-ember, .slab-comet,
   .slab-rays, .slab-twinkle, .slab-ball, .slab-shimmer::before, .slab-holo::before, .slab-glow-layer, .slab-vivid, .slab-frame-spin, .pack-bob, .pack-fan, .pack-ground,
   .logo-host:hover .pdl-pop, .logo-host:hover .pdl-blue, .logo-host:hover .pdl-red, .logo-host:hover .pdl-letter, .logo-host:hover .pdl-ring, .logo-host:hover .pdl-shine,
   .bball-spin, .bball-host:hover .bball-body, .bball-host:hover .bball-spin, .bball-host:hover .bball-shadow { animation: none; }

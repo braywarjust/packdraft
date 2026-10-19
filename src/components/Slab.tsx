@@ -59,7 +59,7 @@ function Star({ x, y, size, delay }: { x: number; y: number; size: number; delay
 }
 
 /**
- * A basketball: shaded leather, curved seams and a highlight, with a soft shadow. It turns slowly on its own, and when
+ * A minimal basketball: a flat orange circle with three thin seams and a soft shadow. It turns slowly on its own, and when
  * its slab or pack is hovered (any `.bball-host`) it dribbles: one even bounce with squash and stretch and a spin.
  */
 function Ball({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
@@ -68,17 +68,10 @@ function Ball({ className = "", style }: { className?: string; style?: React.CSS
       <span className="bball-shadow" />
       <span className="bball-body">
         <svg viewBox="0 0 40 40" className="bball-spin h-full w-full overflow-visible">
-          <defs>
-            <radialGradient id="bball-leather" cx="34%" cy="28%" r="78%">
-              <stop offset="0" stopColor="#ffb36b" /><stop offset=".42" stopColor="#f97316" /><stop offset=".85" stopColor="#c2410c" /><stop offset="1" stopColor="#7c2d12" />
-            </radialGradient>
-          </defs>
-          <circle cx="20" cy="20" r="18.6" fill="url(#bball-leather)" stroke="#431407" strokeWidth="1.1" />
-          <g fill="none" stroke="#3b1206" strokeWidth="1.5" strokeLinecap="round">
-            <path d="M20 1.6V38.4" /><path d="M1.6 20H38.4" />
-            <path d="M7.2 6.4C14.2 12.6 14.2 27.4 7.2 33.6" /><path d="M32.8 6.4C25.8 12.6 25.8 27.4 32.8 33.6" />
+          <circle cx="20" cy="20" r="18" fill="#f97316" />
+          <g fill="none" stroke="#7c2d12" strokeWidth="1.6" strokeLinecap="round" opacity=".85">
+            <path d="M2 20H38" /><path d="M12 4.2C17 10 17 30 12 35.8" /><path d="M28 4.2C23 10 23 30 28 35.8" />
           </g>
-          <ellipse cx="13" cy="10.5" rx="6.5" ry="3.4" fill="#fff" opacity=".32" transform="rotate(-32 13 10.5)" />
         </svg>
       </span>
     </span>
@@ -154,10 +147,50 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
   );
 }
 
+/** The slab back's fill in a tier colour (also used by the little slabs on pack covers). */
+export const coverFill = (tier: string) => `radial-gradient(80% 80% at 50% 40%, ${shade(tier, 0.28)} 0%, ${tier} 42%, ${shade(tier, -0.55)} 100%)`;
+
+// Flames: [left %, size cqw, delay s, core?]. Outer tongues are orange-red; smaller yellow cores burn in front of them.
+const FLAMES: [number, number, number, boolean][] = [
+  [0, 26, 0, false], [16, 32, 0.3, false], [35, 36, 0.12, false], [56, 32, 0.45, false], [74, 27, 0.22, false],
+  [10, 17, 0.2, true], [29, 20, 0.5, true], [48, 23, 0.05, true], [67, 18, 0.38, true],
+];
+const EMBERS: [number, number][] = [[18, 0], [34, 0.9], [50, 1.7], [66, 0.5], [82, 1.3], [44, 2.2]];
+const COMETS: [number, number][] = [[-10, 0], [20, 1.25], [-30, 2.5]]; // start top %, delay s
+
+/** Mythic backs: a fire burning up from the bottom, with embers floating off it. */
+function Fire() {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[60%]" aria-hidden>
+      {FLAMES.map(([x, sz, d, core], i) => (
+        // The outer span flickers (scale from its base); the inner one is the teardrop, a square with one sharp
+        // corner turned to point up.
+        <span key={i} className="slab-flame absolute" style={{ left: `${x}%`, bottom: `-${sz * 0.12}cqw`, width: `${sz}cqw`, height: `${sz}cqw`, animationDelay: `${d}s`, animationDuration: core ? ".7s" : ".95s" }}>
+          <span className={`absolute inset-0 rotate-[-45deg] rounded-[50%_0_50%_50%] ${core ? "slab-flame-core" : "slab-flame-outer"}`} />
+        </span>
+      ))}
+      {EMBERS.map(([x, d], i) => <span key={i} className="slab-ember absolute bottom-[8%] h-[1.6cqw] w-[1.6cqw] rounded-full" style={{ left: `${x}%`, animationDelay: `${d}s` }} />)}
+    </div>
+  );
+}
+
+/** Immortal backs: shooting stars smearing across a twinkling sky. */
+function Comets() {
+  return (
+    <div className="pointer-events-none absolute inset-0" aria-hidden>
+      {COMETS.map(([y, d], i) => (
+        <span key={i} className="slab-comet absolute rounded-full" style={{ left: "-40%", width: "46cqw", height: "2cqw", top: `${y + 30}%`, animationDelay: `${d}s` }} />
+      ))}
+      {STARS.map(([x, y, sz, d], i) => <Star key={i} x={x} y={y} size={sz} delay={d} />)}
+    </div>
+  );
+}
+
 /**
- * The face-down slab: the same square and frame as a Slab, in deep ink with a soft glow of the tier colour, a slowly
- * turning sunburst, the logo and a basketball. The rim is the tier colour (and glows from Mythic up), so a big pull
- * still teases before the flip.
+ * The face-down slab: the same square and frame as a Slab, filled with its tier colour (the same colours as the tier
+ * badges and the slabs on the pack covers), with a slowly turning sunburst, the logo and a basketball. Mythic backs
+ * burn with an animated fire and embers; Immortal backs get shooting stars smearing across a twinkling sky and a holo
+ * sweep. From Mythic up the rim glows too.
  */
 export function SlabCover({ rarity, size, className = "" }: { rarity: Rarity; size: number; className?: string }) {
   const r = RANK[rarity];
@@ -169,14 +202,20 @@ export function SlabCover({ rarity, size, className = "" }: { rarity: Rarity; si
       {r >= 3 && <div className="slab-glow-layer pointer-events-none absolute inset-0 rounded-[9cqw]" />}
       <div className="relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw]"
         style={{ background: `linear-gradient(145deg, ${shade(tier, 0.5)}, ${tier} 45%, ${shade(tier, 0.3)} 70%, ${shade(tier, -0.45)})`, boxShadow: "0 8px 18px rgba(0,0,0,.35)" }}>
-        <div className="relative h-full w-full overflow-hidden rounded-[7cqw]" style={{ background: `radial-gradient(75% 75% at 50% 42%, ${shade(tier, -0.35)} 0%, #121a2b 62%, #0a0f1a 100%)` }}>
-          <Rays cy={50} opacity={0.08} spin />
+        {r === 4 && <div className="slab-frame-spin pointer-events-none absolute" />}
+        {/* Immortal's back is a night sky (its pale tier blue at the centre fading to deep violet) so the comets show */}
+        <div className="relative h-full w-full overflow-hidden rounded-[7cqw]"
+          style={{ background: r === 4 ? "radial-gradient(85% 85% at 50% 40%, #bae6fd 0%, #818cf8 30%, #4c1d95 65%, #1e1b4b 100%)" : coverFill(tier) }}>
+          <Rays cy={50} opacity={r === 4 ? 0.16 : 0.12} spin />
+          {r === 3 && <Fire />}
+          {r === 4 && <Comets />}
           <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(44% 44% at 50% 50%, rgba(255,255,255,.2), transparent)" }} />
           <div className="absolute inset-0 opacity-[.08]" style={{ backgroundImage: "repeating-linear-gradient(135deg, #fff 0 1px, transparent 1px 9px)" }} />
           <img src="/packdraft-logo-full.svg" alt="" draggable={false} className="absolute left-1/2 top-[42%] w-[62%] -translate-x-1/2 -translate-y-1/2 select-none"
             style={{ filter: "drop-shadow(0 2cqw 3cqw rgba(0,0,0,.45))" }} />
           <Ball className="absolute bottom-[10%] left-[41.5%] h-[17cqw] w-[17cqw]" />
           <div className="slab-shimmer pointer-events-none absolute inset-0" />
+          {r === 4 && <div className="slab-holo pointer-events-none absolute inset-0" />}
         </div>
       </div>
     </div>
