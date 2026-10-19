@@ -15,8 +15,8 @@ import { useScrollLock } from "@/components/useScrollLock";
 
 type Inv = { id: number; pack_type: string; source: string; created_at: number };
 type Act<T> = Promise<T | { error: string }>;
-/** Mythic, Grail and Immortal slabs count as case hits: their face-down card shakes before the flip. */
-const isBigHit = (c: CardData) => c.rarity === "legendary" || c.rarity === "grail" || !!c.immortal;
+/** Heavy Hitters and the top two rarity tiers count as case hits: their face-down card shakes before the flip. */
+const isBigHit = (c: CardData) => c.s_source === "courtyard" || c.s_source === "auction" || c.rarity === "legendary" || c.rarity === "grail";
 const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, grail: 4 };
 
 // 1-slab packs are the skinny frosted crate renders (~0.79 wide:tall).
@@ -60,7 +60,7 @@ function Checkout({ p, coins, onPay, onDone, onCancel }: {
               <p className="font-black text-white">{p.name}</p>
               <SlabCount n={p.cards} className="text-xs text-zinc-400" />
               <OddsBar odds={p.odds} />
-              <p className="text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{bigOdds(p)}%</b>{p.odds.grail > 0 && <> · Grail {fmtOdds(p.odds.grail)}</>} · Immortal {fmtOdds(p.immortal)}</p>
+              <p className="text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{(p.odds.legendary + p.odds.grail).toFixed(1).replace(/\.0$/, "")}%</b>{p.odds.grail > 0 && <> · Immortal {fmtOdds(p.odds.grail)}</>}</p>
             </div>
             <p className="self-start font-mono font-black text-white"><Coins n={p.price} /></p>
           </div>
@@ -114,11 +114,6 @@ const PACK_SIZE = { sm: [88, 112], md: [176, 224], big: [264, 336] } as const;
 const CASE_SIZE = { sm: [116, 116], md: [220, 220], big: [336, 336] } as const;
 const artSize = (p: PackType, size: "sm" | "md" | "big") => (p.kind === "case" ? CASE_SIZE : PACK_SIZE)[size];
 const slabsLabel = (n: number) => `${n} slab${n === 1 ? "" : "s"}`;
-/** Chance a slab is a Mythic or Grail player slab, after the generic share. */
-const bigOdds = (p: PackType) => {
-  const v = ((p.odds.legendary + p.odds.grail) * (100 - p.generic)) / 100;
-  return v.toFixed(v < 1 ? 2 : 1).replace(/\.0+$/, "");
-};
 
 /** Pack image rendered in Blender (public/packs/{id}.png, see scripts/pack-renders). Falls back to the CSS wrapper. */
 function PackArt({ p, big, md, slabs }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[] }) {
@@ -255,7 +250,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
 
   const flip = (c: CardData) => {
     setFlipped((f) => new Set(f).add(c.id));
-    if (isBigHit(c)) { setParty(true); setTimeout(() => setParty(false), 4500); }
+    if (c.rarity === "legendary" || c.rarity === "grail") { setParty(true); setTimeout(() => setParty(false), 4500); }
   };
 
   const sellIds = async (ids: number[]) => {
@@ -301,14 +296,14 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
       )}
 
       <section id="packs" className="scroll-mt-36 space-y-3">
-        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One Slab each. Pricier packs mean fewer generics and bigger multipliers. Tap a pack to check out and rip it. <a href="/packs/pool" className="text-brand underline">See every slab in the pool</a>.</p></div>
+        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One graded slab each. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
         <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 xl:grid-cols-6">
           {PACKS.filter((p) => p.kind !== "case").map((p) => {
             const busy = stage !== "idle";
             const short = coins < p.price;
             return (
               <button key={p.id} onClick={() => setCheckout(p)} disabled={busy || short}
-                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic or better ${bigOdds(p)}% · Immortal ${fmtOdds(p.immortal)}`}
+                title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${fmtOdds(p.odds.grail)}`}
                 className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                 <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                   <PackArt p={p} md slabs={features[p.id]} />
@@ -317,7 +312,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
                   <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
                   <span className="w-36 space-y-1">
                     <OddsBar odds={p.odds} />
-                    <span className="block text-center text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{bigOdds(p)}%</b></span>
+                    <span className="block text-center text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{(p.odds.legendary + p.odds.grail).toFixed(p.odds.legendary + p.odds.grail < 1 ? 2 : 1).replace(/\.0$/, "")}%</b></span>
                   </span>
               </button>
             );
@@ -328,14 +323,14 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
       {/* The Mega Pack: presented like the others (the render is the buy button, price underneath). */}
       {PACKS.some((p) => p.kind === "case") && (
         <section id="mega" className="scroll-mt-36 space-y-3">
-          <div><h2 className="text-lg font-bold">Mega Pack</h2><p className="text-sm text-zinc-500">Five player slabs in one big crate, every one 3X or better.</p></div>
+          <div><h2 className="text-lg font-bold">Mega Pack</h2><p className="text-sm text-zinc-500">Five slabs in one big crate, with no Base tier at all.</p></div>
           <div className="flex flex-wrap justify-center gap-10">
             {PACKS.filter((p) => p.kind === "case").map((p) => {
               const busy = stage !== "idle";
               const short = coins < p.price;
               return (
                 <button key={p.id} onClick={() => setCheckout(p)} disabled={busy || short}
-                  title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic or better ${bigOdds(p)}% · Immortal ${fmtOdds(p.immortal)}`}
+                  title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${fmtOdds(p.odds.grail)}`}
                   className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                   <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                     <PackArt p={p} md />
@@ -344,7 +339,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
                   <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
                   <span className="w-36 space-y-1">
                     <OddsBar odds={p.odds} />
-                    <span className="block text-center text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{bigOdds(p)}%</b></span>
+                    <span className="block text-center text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{(p.odds.legendary + p.odds.grail).toFixed(p.odds.legendary + p.odds.grail < 1 ? 2 : 1).replace(/\.0$/, "")}%</b></span>
                   </span>
                 </button>
               );
@@ -392,9 +387,9 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
                         {/* Face-down slab (SlabBack): exactly the box and slab shape of the revealed scan (SlabImage at 260px),
                             centred the same way, so the flip turns over in place. */}
                         <div className="flip-face absolute inset-0 flex flex-col items-center">
-                          <SlabBack height={260} rarity={c.rarity} immortal={!!c.immortal} />
+                          <SlabBack height={260} rarity={c.rarity} />
                         </div>
-                        <div className={`flip-face flip-back absolute inset-0 flex flex-col items-center rounded-xl ${isUp && !c.slab_id && !c.immortal && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
+                        <div className={`flip-face flip-back absolute inset-0 flex flex-col items-center rounded-xl ${isUp && !c.slab_id && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
                           <PlayerCard c={c} />
                           {sold.has(c.id) && <div className="absolute inset-0 grid place-items-center rounded-xl bg-white/85 text-sm font-bold text-zinc-900">SOLD</div>}
                         </div>

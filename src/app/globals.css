@@ -124,47 +124,6 @@ body {
 .anim-flash { animation: flash 1.5s ease-out; }
 .foil { background-image: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.35) 45%, transparent 60%); background-size: 200% 100%; animation: shine 2.5s linear infinite; }
 
-/* Immortal Slabs (see SlabFace): a rainbow edge that spins, a pulsing gold glow and a moving holo sheen. */
-@property --imm { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
-@keyframes immSpin { to { --imm: 360deg; } }
-.slab-immortal {
-  background: conic-gradient(from var(--imm), #ff3d7f, #ffb800, #3dffa8, #3db8ff, #b43dff, #ff3d7f);
-  animation: immSpin 3s linear infinite, pulseGlow 1.8s ease-in-out infinite;
-}
-.slab-holo {
-  background: linear-gradient(120deg, transparent 20%, rgba(255, 0, 150, 0.32) 35%, rgba(0, 255, 200, 0.32) 50%, rgba(255, 220, 0, 0.32) 65%, transparent 80%);
-  background-size: 250% 100%; mix-blend-mode: color-dodge; animation: shine 3.5s linear infinite;
-}
-
-/* The Fantasy Points logo next to a slab's multiplier (SlabMult). */
-@keyframes fptsPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(56, 189, 248, 0)); } 50% { transform: scale(1.18); filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.9)); } }
-.fpts-pulse { animation: fptsPulse 1.4s ease-in-out infinite; }
-
-/* Slab card backgrounds (see SlabFace). Driven by CSS variables so one set works for every team and tier:
-   --c1 / --c2 team colours, --c1d a dark team shade, --tier the tier colour, --fx strength (0-1). */
-@keyframes slabDrift { from { background-position: 0% 0%, 100% 100%, 0 0; } to { background-position: 100% 60%, 0% 40%, 0 0; } }
-@keyframes slabSpin { to { transform: rotate(360deg); } }
-/* 24px stripes at 115deg repeat every 24 / sin(115deg) = 26.48px across, so 10 of them loop seamlessly. */
-@keyframes slabSlide { from { background-position: 0 0; } to { background-position: 264.8px 0; } }
-.slab-bg {
-  background:
-    radial-gradient(55% 45% at 30% 30%, var(--c1), transparent 70%),
-    radial-gradient(55% 45% at 70% 70%, var(--c2), transparent 70%),
-    linear-gradient(165deg, var(--c1), var(--c1d));
-  background-size: 180% 180%, 180% 180%, 100% 100%;
-  animation: slabDrift 8s ease-in-out infinite alternate;
-}
-.slab-rays {
-  inset: -60%; opacity: calc(var(--fx) * 0.55);
-  background: repeating-conic-gradient(from 0deg at 50% 50%, var(--tier) 0deg 6deg, transparent 6deg 18deg);
-  mix-blend-mode: soft-light; animation: slabSpin 40s linear infinite;
-}
-.slab-streaks {
-  inset: 0; opacity: calc(var(--fx) * 0.5);
-  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.55) 0 2px, transparent 2px 24px);
-  animation: slabSlide 6s linear infinite;
-}
-
 .flip { perspective: 1000px; }
 .flip-inner { transition: transform 0.7s cubic-bezier(0.3, 0.9, 0.3, 1); transform-style: preserve-3d; }
 .flip.flipped .flip-inner { transform: rotateY(180deg); }

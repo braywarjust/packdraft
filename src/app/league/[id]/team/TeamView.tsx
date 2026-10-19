@@ -1,10 +1,11 @@
 import { BoltIcon } from "@/components/Icons";
 import { TeamBadge } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand, userPresets } from "@/lib/branding";
+import { Coins } from "@/components/Coins";
 import Link from "next/link";
-import { all, one, Team } from "@/lib/db";
+import { one, Team } from "@/lib/db";
 import { boostableGame, getLeague, roster, standings, teamWeek } from "@/lib/league";
-import { boostSlabs, ensureBoosts } from "@/lib/boost";
+import { OWN_PLAYER_BONUS, boostSlabs, teamBoosts } from "@/lib/boost";
 import { currentUser } from "@/lib/auth";
 import { TeamCourt } from "@/components/TeamCourt";
 import { AutoRefresh } from "@/components/AutoRefresh";
@@ -22,15 +23,16 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
   // Slab boosts: who can still be boosted for his next game, and what each of those days is already boosted with.
   const me = editable ? await currentUser() : null;
   const presets = me ? userPresets(me.id) : [];
+  const boosts = teamBoosts(t.id);
+  const nameOf = new Map(players.map((p) => [p.id, p.name]));
   const boostable = l.draft_status === "done" && !l.champion_team_id
     ? roster(t.id).flatMap((p) => {
         const g = boostableGame(l, p);
-        return g ? [{ playerId: p.id, dayKey: g.key, day: g.label }] : [];
+        if (!g) return [];
+        const taken = [...boosts.values()].find((b) => b.day_key === g.key);
+        return [{ playerId: p.id, dayKey: g.key, day: g.label, taken: taken && taken.player_id !== p.id ? { name: nameOf.get(taken.player_id) ?? "another player", mult: taken.mult } : null }];
       })
     : [];
-  ensureBoosts();
-  const busy = me ? Object.fromEntries(all<{ card_id: number; day_key: string; name: string }>(
-    "SELECT b.card_id, b.day_key, p.name FROM slab_boosts b JOIN players p ON p.id = b.player_id WHERE b.user_id = ?", me.id).map((r) => [`${r.card_id}|${r.day_key}`, r.name])) : {};
 
   const b = teamBrand(t);
   const table = standings(l.id);
@@ -88,7 +90,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
             autoSet={editable ? autoSet.bind(null, leagueId) : undefined}
             drop={editable ? dropPlayer.bind(null, leagueId) : undefined}
             boost={editable && me ? {
-              slabs: boostSlabs(me.id), boostable, busy,
+              slabs: boostSlabs(me.id), boostable, ownBonus: OWN_PLAYER_BONUS,
               set: boostPlayer.bind(null, leagueId), clear: unboostPlayer.bind(null, leagueId),
             } : undefined}
           />
@@ -114,7 +116,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         </details>
       )}
       <PointsKey className="relative" />
-      <p className="relative text-xs text-zinc-400"><BoltIcon className="text-amber-600" /> Slab boost: each night, every player with a game can carry one of your Slabs, and his fantasy points for that game are multiplied by it (1.10X up to 10X for his own player slab, 1.01X to 1.50X for a generic). Each slab works once a night. It locks at his tip-off and only counts if he&apos;s in your starting lineup.</p>
+      <p className="relative text-xs text-zinc-400"><BoltIcon className="text-amber-600" /> Slab boost: once a day, back one of your players with one of your slabs and his points for that game are multiplied (×1.00 for a <Coins n={25} /> slab up to ×3.00, set by the slab&apos;s market value; +{OWN_PLAYER_BONUS.toFixed(1)}× if it&apos;s his own slab). It locks at his tip-off and only counts if he&apos;s in your starting lineup.</p>
       <p className="relative text-xs text-zinc-400">Lineups are daily. Each player locks at his own tip-off, so you can still swap guys who play later tonight. Points count for whatever slot a player was in when his game started.</p>
     </div>
   );

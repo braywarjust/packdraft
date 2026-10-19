@@ -1,6 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import { RARITIES, Rarity, fmtMult } from "@/lib/packs";
-import { SlabFace, SlabMult, type SlabFaceData } from "@/components/SlabFace";
+import { RARITIES, Rarity } from "@/lib/packs";
 import { Coins } from "@/components/Coins";
 
 export type CardData = {
@@ -8,38 +7,12 @@ export type CardData = {
   headshot?: string | null; jersey?: string | null; color?: string | null; alt?: string | null; logo?: string | null;
   slab_id?: number | null; s_year?: number | null; s_set?: string | null; s_no?: string | null; s_variant?: string | null;
   s_company?: string | null; s_grade?: string | null; s_cert?: string | null; s_flags?: string | null; s_source?: string | null;
-  kind?: "player" | "generic" | null; mult?: number | null; immortal?: number | boolean; team_name?: string | null; photo?: string | null;
 };
-
-/** The SlabFace props for a new-style Slab card. */
-export const faceOf = (c: CardData): SlabFaceData => ({
-  kind: c.kind ?? "player", name: c.name, team: c.team, team_name: c.team_name, pos: c.pos, rarity: c.rarity, mult: c.mult ?? 1,
-  immortal: !!c.immortal, serial: c.serial, jersey: c.jersey, color: c.color, alt: c.alt, photo: c.photo,
-});
-
-/** A Slab with a short caption underneath: tier, name, value. */
-export function SlabTile({ c, small }: { c: CardData; small?: boolean }) {
-  const h = small ? 230 : 260;
-  return (
-    <div className="flex flex-col items-center" style={{ width: Math.round(h * 0.6) + 16 }}>
-      <SlabFace s={faceOf(c)} height={h} />
-      <div className="mt-2 w-full text-center">
-        <SlabMult mult={c.mult ?? 1} size={14} className="mb-1.5" />
-        <span className="flex items-center justify-center gap-1">
-          <RarityBadge rarity={c.rarity} />
-          {!!c.immortal && <span className="rounded-full bg-gradient-to-r from-pink-500 via-amber-400 to-cyan-400 px-1.5 py-px text-[8.5px] font-black uppercase leading-tight tracking-wide text-black shadow-sm">Immortal</span>}
-        </span>
-        <p className="mt-1 truncate text-xs font-semibold text-zinc-900">{c.kind === "generic" ? `Generic ${fmtMult(c.mult ?? 1)}` : c.name}</p>
-        <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={c.value} /></p>
-      </div>
-    </div>
-  );
-}
 
 // Solid rarity badge. Hex colours on purpose: the dark theme remaps Tailwind's tint scales.
 const BADGE: Record<Rarity, string> = {
   common: "bg-[#64748b] text-white", rare: "bg-[#2563eb] text-white", epic: "bg-[#9333ea] text-white",
-  legendary: "bg-[#dc2626] text-white", grail: "bg-[#f5b70a] text-black",
+  legendary: "bg-[#dc2626] text-white", grail: "bg-[#bae6fd] text-black",
 };
 export function RarityBadge({ rarity, className = "" }: { rarity: Rarity; className?: string }) {
   return (
@@ -97,12 +70,11 @@ const FRAME: Record<Rarity, string> = {
   grail: "from-emerald-300 via-cyan-300 via-50% to-fuchsia-400",
 };
 export const GLOW: Record<Rarity, string> = {
-  common: "rgba(148,163,184,0.25)", rare: "rgba(37,99,235,0.5)", epic: "rgba(147,51,234,0.55)", legendary: "rgba(220,38,38,0.65)", grail: "rgba(245,183,10,0.85)",
+  common: "rgba(148,163,184,0.25)", rare: "rgba(37,99,235,0.5)", epic: "rgba(147,51,234,0.55)", legendary: "rgba(220,38,38,0.65)", grail: "rgba(186,230,253,0.85)",
 };
 const GRADE_WORD: Record<number, string> = { 10: "GEM MT", 9.5: "MINT+", 9: "MINT", 8.5: "NM-MT+", 8: "NM-MT" };
 
 export function PlayerCard({ c, small }: { c: CardData; small?: boolean }) {
-  if (c.kind) return <SlabTile c={c} small={small} />;
   if (c.slab_id) return <SlabCard c={c} small={small} />;
   const r = RARITIES[c.rarity];
   const primary = `#${c.color ?? "334155"}`;
