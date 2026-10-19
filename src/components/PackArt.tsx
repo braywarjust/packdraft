@@ -2,8 +2,7 @@
 
 import type { PackType } from "@/lib/packs";
 import { useRef } from "react";
-import { Rays, Slab } from "./Slab";
-import { PACK_FACES } from "@/lib/pack-faces";
+import { Rays } from "./Slab";
 import { useOffscreenPause } from "./useOffscreenPause";
 import { AnimatedLogo } from "./AnimatedLogo";
 
@@ -19,9 +18,6 @@ const SPARKS: [number, number, number, number][] = [[14, 22, 7, 0], [84, 30, 5.5
  */
 export function PackArt({ p, width, height, animate = true, className = "" }: { p: PackType; width: number; height: number; animate?: boolean; className?: string }) {
   const isCase = p.kind === "case";
-  const faces = PACK_FACES[p.id] ?? PACK_FACES.rookie;
-  // The fan box is 36% (Mega) or 33% of the pack height; the cover slabs fill it.
-  const coverSize = Math.max(8, Math.round(height * (isCase ? 0.36 : 0.33)));
   // One slab on single packs, the full five-slab fan on the Mega Pack.
   const fan = isCase ? [-26, -13, 0, 13, 26] : [0];
   const ref = useRef<HTMLDivElement>(null);
@@ -51,14 +47,16 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
           {/* Logo */}
           <AnimatedLogo className={`absolute left-1/2 z-20 -translate-x-1/2 select-none ${isCase ? "top-[7%] w-[38%]" : "top-[10%] w-[58%]"}`}
             style={{ filter: "drop-shadow(0 1.5cqw 2.5cqw rgba(0,0,0,.4))" }} />
-          {/* Fan of slabs */}
-          <div className={`absolute inset-x-0 ${isCase ? "top-[30%] h-[36%]" : "top-[37%] h-[33%]"}`}>
+          {/* The slab icon, big; on hover it hops and tilts. The Mega Pack fans five that spread out one after another. */}
+          <div className={`absolute inset-x-0 ${isCase ? "top-[31%] h-[33%]" : "top-[35%] h-[31%]"}`}>
             {fan.map((deg, i) => (
-              // Offsets use left/translate/rotate (not transform) so the bobbing animation's transform doesn't wipe them.
-              <div key={i} className={`absolute top-0 aspect-square h-full ${animate ? "pack-fan" : ""}`}
-                style={{ left: `calc(50% + ${deg * (isCase ? 1.15 : 1.6)}cqw)`, translate: "-50% 0", rotate: `${deg * 0.8}deg`, transformOrigin: "50% 100%", animationDelay: `${i * 0.35}s`, zIndex: 40 - Math.abs(deg) }}>
-                <Slab s={{ ...faces[i % faces.length].player, rarity: faces[i % faces.length].rarity }} size={coverSize} className="drop-shadow-[0_2cqw_3cqw_rgba(0,0,0,.4)]" />
-              </div>
+              <span key={i} className={`pack-icon absolute top-0 h-full ${isCase ? "pack-icon-mega" : ""} ${animate ? "pack-fan" : ""}`}
+                style={{
+                  left: "50%", aspectRatio: "1.07", translate: `calc(-50% + ${deg * 0.8}cqw) 0`, rotate: `${deg * 0.55}deg`, zIndex: 40 - Math.abs(deg),
+                  animationDelay: `${i * 0.3}s`, ["--i" as string]: i, ["--hx" as string]: `calc(-50% + ${deg * 1.2}cqw)`, ["--hr" as string]: `${deg * 1.1}deg`,
+                }}>
+                <span className="pack-icon-glyph absolute inset-0" style={{ animationDelay: `${i * 0.08}s` }} />
+              </span>
             ))}
           </div>
           {/* Sparkles */}
