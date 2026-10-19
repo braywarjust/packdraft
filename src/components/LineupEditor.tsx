@@ -1,37 +1,37 @@
 "use client";
 
 import { askConfirm } from "./Confirm";
-import { BoltIcon, LockIcon, StarIcon, XIcon } from "./Icons";
+import { BoltIcon, LockIcon, XIcon } from "./Icons";
 import { TeamLogo } from "./TeamLogo";
-import { Coins } from "./Coins";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { LivePlayer } from "@/lib/league";
 import { Slab, type SlabData } from "./Slab";
 import { Headshot, InjuryTag } from "./Headshot";
-import { Fpts } from "@/components/Fpts";
+import { FptIcon, Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
 import { useScrollLock } from "@/components/useScrollLock";
 
 const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
 
-type BoostSlab = { cardId: number; slabId: number | null; playerId: number | null; player: string; label: string; grade: string; rarity: string; value: number; mult: number; slab: SlabData | null };
+type BoostSlab = { cardId: number; playerId: number; player: string; label: string; rarity: string; value: number; mult: number; slab: SlabData };
 export type BoostProps = {
+  /** The manager's equippable slabs (not already equipped somewhere). */
   slabs: BoostSlab[];
-  boostable: { playerId: number; dayKey: string; day: string; taken: { name: string; mult: number } | null }[];
-  ownBonus: number;
+  /** Players a slab can go on right now: his next game this week, and the slab already on it (if any). */
+  boostable: { playerId: number; dayKey: string; day: string; equipped: BoostSlab | null }[];
   set: (playerId: number, cardId: number) => Promise<unknown>;
   clear: (playerId: number) => Promise<unknown>;
 };
 
-/** Bolt + "×2.31" chip for a boosted player. */
+/** Fantasy Points logo + "1.43x" chip for a player with a slab equipped. */
 export function BoostChip({ boost }: { boost: LivePlayer["boost"] }) {
   if (!boost) return null;
   const live = boost.state === "in";
   return (
-    <span title={`Slab boost ×${boost.mult.toFixed(2)}${boost.own ? " (own-player bonus)" : ""}${boost.state === "pre" ? " on his next game" : ""}`}
-      className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-black ${live ? "animate-pulse bg-amber-400 text-black" : "bg-amber-50 text-amber-600"}`}>
-      <BoltIcon />×{boost.mult.toFixed(2)}{boost.own && <StarIcon className="ml-0.5" />}
+    <span title={`Slab equipped: ${boost.mult.toFixed(2)}x fantasy points${boost.state === "pre" ? " on his next game" : ""}`}
+      className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-black ${live ? "animate-pulse bg-fpts text-black" : "bg-fpts/15 text-fpts"}`}>
+      <FptIcon tone={live ? "black" : "blue"} />{boost.mult.toFixed(2)}x
     </span>
   );
 }
@@ -150,46 +150,44 @@ export function LineupEditor({
   );
 }
 
-/** Slab picker for boosting one player's next game. */
+/** Slab picker: equip one of his own slabs on his next game (used up when that game ends). */
 export function BoostModal({ boost, player, info, pending, onClose, run }: {
   boost: BoostProps; player: LivePlayer; info: BoostProps["boostable"][number] | undefined; pending: boolean;
   onClose: () => void; run: (fn: () => Promise<unknown>) => void;
 }) {
   useScrollLock(true);
+  const mine = boost.slabs.filter((s) => s.playerId === player.id);
+  const on = info?.equipped ?? null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" onClick={onClose}>
       <div className="card flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-line/60 p-4">
           <div>
-            <p className="flex items-center gap-1.5 font-bold"><BoltIcon className="text-amber-600" /> Boost {player.name}</p>
-            <p className="text-xs text-zinc-500">
-              {info?.day} · projected <Fpts n={player.proj} /> fantasy points.
-              {info?.taken && <span className="text-amber-600"> This replaces today&apos;s boost on {info.taken.name} (×{info.taken.mult.toFixed(2)}).</span>}
-            </p>
+            <p className="flex items-center gap-1.5 font-bold"><FptIcon tone="blue" /> Equip a slab on {player.name}</p>
+            <p className="text-xs text-zinc-500">{info?.day} · projected <Fpts n={player.proj} /> fantasy points. His slab multiplies his fantasy points for that game, then it&apos;s used up.</p>
           </div>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900" aria-label="Close"><XIcon /></button>
         </div>
-        <div className="grid flex-1 grid-cols-2 gap-3 overflow-y-auto p-4 scrollbar-thin sm:grid-cols-4">
-          {boost.slabs.length === 0 && <p className="col-span-full text-sm text-zinc-500">You don&apos;t have any slabs yet. Rip some packs first.</p>}
-          {boost.slabs.map((s) => {
-            const own = s.playerId === player.id;
-            const mult = s.mult + (own ? boost.ownBonus : 0);
-            return (
-              <button key={s.cardId} disabled={pending} onClick={() => run(() => boost.set(player.id, s.cardId))}
-                className={`flex flex-col items-center gap-1 rounded-lg p-2 text-center transition hover:bg-panel2 disabled:opacity-40 ${own ? "ring-1 ring-amber-500/60" : ""}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {s.slab ? <Slab s={s.slab} size={128} /> : <img src={`/api/slabs/${s.slabId}`} alt="" loading="lazy" className="h-32 w-full object-contain" />}
-                <span className="text-lg font-black text-amber-600">×{mult.toFixed(2)}</span>
-                <span className="line-clamp-2 text-[11px] text-zinc-500">{s.player}</span>
-                <span className="text-[11px] text-zinc-400">{own ? "Own-player bonus!" : <Coins n={s.value} />}</span>
-              </button>
-            );
-          })}
+        <div className="grid flex-1 grid-cols-2 justify-items-center gap-3 overflow-y-auto p-4 scrollbar-thin sm:grid-cols-4">
+          {on && (
+            <div className="flex flex-col items-center gap-1 rounded-lg bg-panel2 p-2 text-center ring-2 ring-fpts">
+              <Slab s={on.slab} size={128} />
+              <span className="text-[11px] font-bold text-fpts">Equipped</span>
+            </div>
+          )}
+          {mine.length === 0 && !on && <p className="col-span-full text-sm text-zinc-500">You don&apos;t have any {player.name} slabs. Rip packs to find one.</p>}
+          {mine.map((s) => (
+            <button key={s.cardId} disabled={pending} onClick={() => run(() => boost.set(player.id, s.cardId))}
+              className="flex flex-col items-center gap-1 rounded-lg p-2 text-center transition hover:bg-panel2 disabled:opacity-40">
+              <Slab s={s.slab} size={128} />
+              <span className="text-[11px] text-zinc-500">{s.label}{on ? " · swap in" : ""}</span>
+            </button>
+          ))}
         </div>
         <div className="flex items-center justify-between border-t border-line/60 px-4 py-2 text-xs text-zinc-500">
-          <span>One boost per day. It locks at his tip-off and only counts if he starts.</span>
-          {player.boost?.state === "pre" && (
-            <button className="text-red-600 hover:underline" onClick={() => run(() => boost.clear(player.id))}>Remove boost</button>
+          <span>One slab per player per game. It locks at tip-off, only counts if he starts, and leaves your collection when the game ends.</span>
+          {on && player.boost?.state === "pre" && (
+            <button className="text-red-600 hover:underline" onClick={() => run(() => boost.clear(player.id))}>Unequip</button>
           )}
         </div>
       </div>

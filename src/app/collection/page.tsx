@@ -3,6 +3,8 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { userCards } from "@/lib/packs-server";
+import { equippedSlabs } from "@/lib/boost";
+import { dayLabel } from "@/lib/nba/espn";
 import { RARITIES, Rarity } from "@/lib/packs";
 import { ActionButton } from "@/components/ActionButton";
 import { clearTestCards, tradeUpSlabs } from "../actions";
@@ -17,8 +19,14 @@ export default async function Collection({ searchParams }: { searchParams: Promi
   const users = all<{ id: number; name: string }>("SELECT id, name FROM users ORDER BY name");
   const viewing = sp.u ? users.find((x) => x.id === Number(sp.u)) ?? me : me;
   const mine = viewing.id === me.id;
-  let cards = userCards(viewing.id);
-  const allSlabs = cards.filter((c) => c.kind === "slab"); // trade-ups pick from all of them, whatever the filter
+  // Slabs equipped for a game that hasn't finished yet are marked (and can't be traded up until they're unequipped).
+  const equips = equippedSlabs(viewing.id);
+  const when = (k: string) => (k.startsWith("sim:") ? k.replace(/^sim:W(\d+):G(\d+)$/, (_, w, g) => `Week ${w} game ${Number(g) + 1}`) : dayLabel(k));
+  let cards = userCards(viewing.id).map((c) => {
+    const e = equips.get(c.id);
+    return e ? { ...c, equipped: `Equipped · ${when(e.day_key)} · ${e.league}` } : c;
+  });
+  const allSlabs = cards.filter((c) => c.kind === "slab" && !("equipped" in c && c.equipped)); // trade-ups pick from all of them, whatever the filter
   const total = cards.reduce((s, c) => s + c.value, 0);
   const counts = Object.fromEntries(Object.keys(RARITIES).map((r) => [r, cards.filter((c) => c.rarity === r).length]));
   if (sp.r) cards = cards.filter((c) => c.rarity === sp.r);

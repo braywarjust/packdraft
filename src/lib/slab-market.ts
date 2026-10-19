@@ -12,6 +12,7 @@ import { all, one, run } from "./db";
 import { fpts, type Line } from "./scoring";
 import { etDate } from "./nba/espn";
 import type { Rarity } from "./packs";
+import { multValue } from "./slab-cards";
 
 /** Pack Points value of a slab of a 1.0-index player (a ~20 fantasy points a game starter), per tier. */
 export const TIER_BASE: Record<Rarity, number> = { common: 8, rare: 49, epic: 172, legendary: 800, grail: 5600 };
@@ -89,9 +90,9 @@ export function snapshotPrices(force = false) {
     run(`INSERT INTO slab_prices (player_id, date_et, idx, score, gp, updated_at) VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT (player_id, date_et) DO UPDATE SET idx = excluded.idx, score = excluded.score, gp = excluded.gp, updated_at = excluded.updated_at`,
       pid, today, v.idx, v.score, v.gp, now);
-  for (const c of all<{ id: number; player_id: number; rarity: Rarity }>("SELECT id, player_id, rarity FROM cards WHERE kind = 'slab' AND sold = 0")) {
+  for (const c of all<{ id: number; player_id: number; rarity: Rarity; mult: number | null }>("SELECT id, player_id, rarity, mult FROM cards WHERE kind = 'slab' AND sold = 0")) {
     const v = idx.get(c.player_id);
-    if (v) run("UPDATE cards SET value = ? WHERE id = ?", slabPrice(c.rarity, v.idx), c.id);
+    if (v) run("UPDATE cards SET value = ? WHERE id = ?", Math.max(1, Math.round(slabPrice(c.rarity, v.idx) * multValue(c.rarity, c.mult))), c.id);
   }
   run("INSERT INTO meta (key, value) VALUES ('slab_prices_at', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", String(now));
 }

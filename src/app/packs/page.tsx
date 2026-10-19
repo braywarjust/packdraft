@@ -5,7 +5,7 @@ import { VendingMachine } from "./VendingMachine";
 import { buyPack, ripPack } from "../actions";
 import { packFeatures } from "@/lib/slabs";
 import Link from "next/link";
-import { slabPool } from "@/lib/slab-cards";
+import { MULT_RANGE, slabPool } from "@/lib/slab-cards";
 import { slabPrice } from "@/lib/slab-market";
 import { SlabCover } from "@/components/Slab";
 import { Coins } from "@/components/Coins";
@@ -73,6 +73,7 @@ export default async function PacksPage() {
               <div className="flex flex-col items-center gap-3 p-4 text-sm">
                 <SlabCover size={150} rarity={r} />
                 <p className="text-center text-zinc-500">{RARITY_BLURB[r]}</p>
+                <p className="flex w-full justify-between text-xs"><span className="text-zinc-500">Multiplier stamp</span><b className="text-fpts">{MULT_RANGE[r][0].toFixed(2)}x–{MULT_RANGE[r][1].toFixed(2)}x</b></p>
                 <p className="flex w-full justify-between text-xs"><span className="text-zinc-500">20 pts/game player</span><b><Coins n={slabPrice(r, 1)} /></b></p>
               </div>
             </Link>
@@ -130,7 +131,7 @@ export default async function PacksPage() {
             ["The pool", `Every active NBA player (${poolSize} of them), with his photo, team logo and team colours. Better players come up a little more often.`],
             ["Tiers", "Common, Rare, Epic, Mythic and Immortal. Each step up adds motion: a turning sunburst and shimmer, twinkling stars, a fuller star field, and an icy-blue frame and frost sheen for Immortal."],
             ["Value", "Tier price × the player's price index: his ESPN fantasy points per game (last season, then this season as he plays) plus popularity. Prices move with his stats; injured players hold steady."],
-            ["Collect and boost", "Slabs are yours to keep (they can't be sold back). Trade five of a rarity up for a rarer one, or put one on a player for a night's slab boost (worth more on his own slab)."],
+            ["Equip and collect", "Every slab has a multiplier stamp from 1.10x to 2.00x (a 2.00x Immortal is the rarest, rarest of all on a star). If the player is on your fantasy team, equip his slab on one of his games for that many times his fantasy points; it's used up when the game ends. Slabs can't be sold back, but five of a rarity trade up for a rarer one."],
           ] as const).map(([k, v]) => (
             <div key={k} className="rounded-xl bg-ink/40 p-3">
               <p className="mb-1 text-xs font-black uppercase tracking-wider text-brand">{k}</p>

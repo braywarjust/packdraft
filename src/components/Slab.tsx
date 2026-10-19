@@ -8,6 +8,8 @@ import { RARITIES, RARITY_HEX, type Rarity } from "@/lib/packs";
 export type SlabData = {
   name: string; team: string; team_name?: string | null; pos: string; rarity: Rarity; serial?: number;
   jersey?: string | null; color?: string | null; alt?: string | null; photo?: string | null;
+  /** Fantasy points multiplier this slab gives when equipped (shown as the blue stamp). */
+  mult?: number | null;
 };
 
 /**
@@ -104,6 +106,15 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
           {/* Shimmer from Rare up; holo for Immortal */}
           {r >= 1 && <div className="slab-shimmer pointer-events-none absolute inset-0" />}
           {r === 4 && <div className="slab-holo pointer-events-none absolute inset-0" />}
+          {/* Multiplier stamp: the Fantasy Points logo and the multiplier, in Fantasy Points blue */}
+          {s.mult != null && (
+            <span className="absolute right-[5%] top-[26%] z-10 flex items-center gap-[1cqw] rounded-[2.5cqw] px-[2.4cqw] py-[1.4cqw] text-[6.5cqw] font-black leading-none text-fpts"
+              style={{ background: "rgba(8, 12, 22, .8)", boxShadow: "inset 0 0 0 .5cqw rgba(56, 189, 248, .55), 0 1cqw 2cqw rgba(0,0,0,.35)" }}
+              title={`${s.mult.toFixed(2)}x fantasy points when equipped`}>
+              <span aria-hidden className="inline-block shrink-0 bg-fpts" style={{ width: "6cqw", height: "6cqw", mask: "url(/fantasy-points.svg) center / contain no-repeat", WebkitMask: "url(/fantasy-points.svg) center / contain no-repeat" }} />
+              {s.mult.toFixed(2)}x
+            </span>
+          )}
           {/* Team logo badge and tier pill */}
           {logo && (
             <span className="absolute left-[5%] top-[5%] grid h-[17cqw] w-[17cqw] place-items-center rounded-full shadow-[0_1cqw_2cqw_rgba(0,0,0,.35)]" style={{ background: "#ffffff" }}>

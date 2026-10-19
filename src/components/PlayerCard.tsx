@@ -8,12 +8,14 @@ export type CardData = {
   headshot?: string | null; jersey?: string | null; color?: string | null; alt?: string | null; logo?: string | null;
   slab_id?: number | null; s_year?: number | null; s_set?: string | null; s_no?: string | null; s_variant?: string | null;
   s_company?: string | null; s_grade?: string | null; s_cert?: string | null; s_flags?: string | null; s_source?: string | null;
-  kind?: string | null; team_name?: string | null; photo?: string | null; player_id?: number;
+  kind?: string | null; team_name?: string | null; photo?: string | null; player_id?: number; mult?: number | null;
+  /** "Equipped · Wed, Oct 22 · NBA" while a slab waits for its game. */
+  equipped?: string | null;
 };
 
 /** Slab props for a new-style square Slab card. */
 export const slabOf = (c: CardData): SlabData => ({
-  name: c.name, team: c.team, team_name: c.team_name, pos: c.pos, rarity: c.rarity, serial: c.serial, jersey: c.jersey, color: c.color, alt: c.alt, photo: c.photo,
+  name: c.name, team: c.team, team_name: c.team_name, pos: c.pos, rarity: c.rarity, serial: c.serial, jersey: c.jersey, color: c.color, alt: c.alt, photo: c.photo, mult: c.mult,
 });
 
 /** A square Slab with a short caption underneath. */
@@ -21,10 +23,13 @@ export function SlabTile({ c, small }: { c: CardData; small?: boolean }) {
   const size = small ? 176 : 208;
   return (
     <div className="flex flex-col items-center" style={{ width: size + 8 }}>
-      <Slab s={slabOf(c)} size={size} />
+      <div className="relative">
+        <Slab s={slabOf(c)} size={size} className={c.equipped ? "rounded-[9cqw] ring-2 ring-fpts ring-offset-2 ring-offset-[#171c27]" : ""} />
+        {c.equipped && <span className="absolute -top-2 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-fpts px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-black shadow">Equipped</span>}
+      </div>
       <div className="mt-2 w-full text-center">
         <p className="truncate text-xs font-semibold text-zinc-900">{RARITIES[c.rarity].label}{c.serial ? <span className="font-normal text-zinc-500"> · #{c.serial}</span> : null}</p>
-        <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={c.value} /></p>
+        {c.equipped ? <p className="truncate text-[11px] font-semibold text-fpts">{c.equipped}</p> : <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={c.value} /></p>}
       </div>
     </div>
   );

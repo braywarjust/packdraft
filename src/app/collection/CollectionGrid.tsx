@@ -7,6 +7,7 @@ import { Slab } from "@/components/Slab";
 import { RARITIES } from "@/lib/packs";
 import { Logo, LogoWatermark } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
+import { FptIcon } from "@/components/Fpts";
 import { useScrollLock } from "@/components/useScrollLock";
 
 export type GridCard = CardData & {
@@ -74,6 +75,7 @@ export function CollectionGrid({ cards }: { cards: GridCard[]; mine?: boolean })
                 <div className="min-w-0">
                   <RarityBadge rarity={open.rarity} className="mb-1" />
                   <h2 className="text-2xl font-bold tracking-tight">{open.name}</h2>
+                  {open.equipped && <p className="mt-1 text-sm font-bold text-fpts">{open.equipped}. It&apos;s used up when that game ends; unequip it from your team page before tip-off to keep it.</p>}
                   {open.kind === "slab" && <p className="text-zinc-500">{open.team_name ?? open.team} · {open.pos}{open.jersey ? ` · #${open.jersey}` : ""} · {RARITIES[open.rarity].label} #{open.serial}</p>}
                   {open.slab_id && (
                     <p className="text-zinc-500">{open.s_year} {open.s_set}{open.s_no ? ` #${open.s_no}` : ""}{open.s_variant ? ` · ${open.s_variant}` : ""}</p>
@@ -84,6 +86,13 @@ export function CollectionGrid({ cards }: { cards: GridCard[]; mine?: boolean })
                 <div className="flex flex-wrap gap-1.5">
                   <span className="rounded-md bg-brand px-2 py-0.5 text-xs font-bold text-white">{open.s_company} {open.s_grade}</span>
                   {slabBadges(open.s_flags).map((b) => <span key={b} className="rounded-md border border-zinc-200 px-2 py-0.5 text-xs font-semibold text-zinc-600">{b}</span>)}
+                </div>
+              )}
+              {open.kind === "slab" && open.mult != null && (
+                <div className="rounded-xl border border-fpts/40 bg-fpts/5 p-4">
+                  <p className="text-xs text-zinc-500">Fantasy points buff</p>
+                  <p className="flex items-center gap-1.5 text-3xl font-black text-fpts"><FptIcon tone="blue" />{open.mult.toFixed(2)}x</p>
+                  <p className="mt-1 text-xs text-zinc-500">One use. If {open.name} is on your fantasy team, equip it on one of his games from your team page and his fantasy points for that game are multiplied by {open.mult.toFixed(2)}. The slab leaves your collection when the game ends.</p>
                 </div>
               )}
               <div className="rounded-xl border border-zinc-200 p-4">

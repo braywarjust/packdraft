@@ -2,7 +2,8 @@ import crypto from "node:crypto";
 import { all, one, run, tx, User } from "./db";
 import { PACK_BY_ID, RARITIES, Rarity, TRADE_UP, TRADE_UP_COUNT, fmtCoins } from "./packs";
 import { postSystem } from "./league";
-import { ensureSlabCards, nextSerial, rollSlab, slabPool } from "./slab-cards";
+import { ensureSlabCards, multValue, nextSerial, rollMult, rollSlab, slabPool } from "./slab-cards";
+import { ensureBoosts } from "./boost";
 import { popularity, slabPrice } from "./slab-market";
 import { slabPlayerPhoto } from "./nba/photos";
 
@@ -13,6 +14,8 @@ import { slabPlayerPhoto } from "./nba/photos";
 export type Card = {
   id: number; player_id: number; slab_id: number | null; kind: string | null; name: string; pos: string; team: string; rarity: Rarity; grade: number;
   serial: number; print_run: number; value: number; sold: number; created_at: number; team_name: string | null; photo: string | null;
+  /** Fantasy points multiplier stamped on a Slab (1.10–2.00). */
+  mult: number | null;
   headshot: string | null; jersey: string | null; color: string | null; alt: string | null; logo: string | null;
   // Graded slab details (null otherwise)
   s_year: number | null; s_set: string | null; s_no: string | null; s_variant: string | null; s_company: string | null; s_grade: string | null;
@@ -47,9 +50,9 @@ export async function openPack(userId: number, packId: number): Promise<Card[]> 
     for (let i = 0; i < pack.cards; i++) {
       const s = rollSlab(pack, pool, rand);
       const r = run(
-        `INSERT INTO cards (user_id, pack_id, player_id, slab_id, rarity, grade, serial, print_run, value, kind, created_at)
-         VALUES (?, ?, ?, NULL, ?, 0, ?, 0, ?, 'slab', ?)`,
-        userId, packId, s.playerId, s.rarity, nextSerial(s.playerId, s.rarity), s.value, Date.now());
+        `INSERT INTO cards (user_id, pack_id, player_id, slab_id, rarity, grade, serial, print_run, value, kind, mult, created_at)
+         VALUES (?, ?, ?, NULL, ?, 0, ?, 0, ?, 'slab', ?, ?)`,
+        userId, packId, s.playerId, s.rarity, nextSerial(s.playerId, s.rarity), s.value, s.mult, Date.now());
       out.push(Number(r.lastInsertRowid));
     }
     run("UPDATE user_packs SET opened_at = ? WHERE id = ?", Date.now(), packId);
@@ -82,6 +85,9 @@ export function tradeUp(userId: number, cardIds: number[]) {
     const cards = all<{ id: number; player_id: number; rarity: Rarity }>(
       `SELECT id, player_id, rarity FROM cards WHERE user_id = ? AND sold = 0 AND kind = 'slab' AND id IN (${ids.map(() => "?").join(",")})`, userId, ...ids);
     if (cards.length !== TRADE_UP_COUNT) throw new Error("Those slabs aren't all in your collection");
+    ensureBoosts();
+    if (one("SELECT 1 FROM slab_equips WHERE consumed_at IS NULL AND card_id IN (" + ids.map(() => "?").join(",") + ")", ...ids))
+      throw new Error("One of those slabs is equipped for a game. Unequip it first");
     const tier = cards[0].rarity;
     if (cards.some((c) => c.rarity !== tier)) throw new Error("All five slabs need to be the same rarity");
     const step = TRADE_UP[tier];
@@ -97,12 +103,13 @@ export function tradeUp(userId: number, cardIds: number[]) {
       pick = pool[pool.length - 1];
       for (let i = 0; i < pool.length; i++) if ((x -= w[i]) <= 0) { pick = pool[i]; break; }
     }
+    const mult = rollMult(step.to, pick.proj, rand);
     run(`UPDATE cards SET sold = 2 WHERE id IN (${ids.map(() => "?").join(",")})`, ...ids);
     run("UPDATE users SET coins = coins - ? WHERE id = ?", step.fee, userId);
     const r = run(
-      `INSERT INTO cards (user_id, pack_id, player_id, slab_id, rarity, grade, serial, print_run, value, kind, created_at)
-       VALUES (?, 0, ?, NULL, ?, 0, ?, 0, ?, 'slab', ?)`,
-      userId, pick.id, step.to, nextSerial(pick.id, step.to), slabPrice(step.to, pick.idx), Date.now());
+      `INSERT INTO cards (user_id, pack_id, player_id, slab_id, rarity, grade, serial, print_run, value, kind, mult, created_at)
+       VALUES (?, 0, ?, NULL, ?, 0, ?, 0, ?, 'slab', ?, ?)`,
+      userId, pick.id, step.to, nextSerial(pick.id, step.to), Math.max(1, Math.round(slabPrice(step.to, pick.idx) * multValue(step.to, mult))), mult, Date.now());
     return Number(r.lastInsertRowid);
   });
   const card = cardsWhere("c.id = ?", newId)[0];

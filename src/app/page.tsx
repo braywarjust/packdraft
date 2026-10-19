@@ -7,7 +7,7 @@ import { cardsWhere, unopenedPacks } from "@/lib/packs-server";
 import { Slab } from "@/components/Slab";
 import { RARITIES, Rarity } from "@/lib/packs";
 import { ensureBranding, favoritePresetId, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
-import { teamBoosts } from "@/lib/boost";
+import { boostSlabs, teamBoosts } from "@/lib/boost";
 import { earnings } from "@/lib/economy";
 import { winProb } from "@/lib/sim";
 import { dayLabel, etDate } from "@/lib/nba/espn";
@@ -66,12 +66,13 @@ export default async function Home() {
     const hurt = tw.players.filter((p) => p.slot !== "BN" && p.injury && /^out/i.test(p.injury)).length;
     if (empty) alerts.push({ href: `/league/${l.id}/team`, tone: "red", text: `${l.name}: ${empty} empty starting slot${empty > 1 ? "s" : ""}`, brand });
     if (hurt) alerts.push({ href: `/league/${l.id}/team`, tone: "amber", text: `${l.name}: ${hurt} starter${hurt > 1 ? "s are" : " is"} listed OUT`, brand });
-    // Unused slab boost today (real leagues: someone plays today and nobody is boosted for today).
+    // A slab of one of his players who plays today, not equipped yet.
     if (vault.n > 0 && l.mode !== "sim") {
       const boosts = teamBoosts(t.id);
-      const canBoostToday = roster(t.id).some((p) => boostableGame(l, p)?.key === today);
-      if (canBoostToday && ![...boosts.values()].some((b) => b.day_key === today))
-        alerts.push({ href: `/league/${l.id}/team`, tone: "blue", text: `${l.name}: today's slab boost is unused`, brand });
+      const mine = new Set(boostSlabs(user.id).map((x) => x.playerId));
+      const ready = roster(t.id).filter((p) => mine.has(p.id) && boostableGame(l, p)?.key === today && !boosts.has(`${p.id}|${today}`));
+      if (ready.length)
+        alerts.push({ href: `/league/${l.id}/team`, tone: "blue", text: `${l.name}: equip your ${ready[0].name} slab${ready.length > 1 ? ` (+${ready.length - 1} more)` : ""} before tonight's game`, brand });
     }
     const m = one<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ? AND (home_team_id = ? OR away_team_id = ?)", l.id, l.current_week, t.id, t.id);
     let card = null;

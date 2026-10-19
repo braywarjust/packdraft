@@ -1,73 +1,89 @@
-// Slab boosts: once a day, each fantasy team can back ONE of its players with one of the manager's slabs.
-// That player's fantasy points for that day's game are multiplied (so the boost counts in the matchup and in
-// the Pack Points it pays). Better slabs = bigger multipliers, backed by the slab's market value:
+// Slab equips: a Slab is a one-time fantasy points buff for the player on it. If you have a slab of a player on your
+// fantasy team, you can equip it on him before one of his games this week: his fantasy points for that game (in the
+// matchup, and the Pack Points they pay) are multiplied by the slab's stamped multiplier (1.10x to 2.00x). Each player
+// can carry one slab per game and each slab can only be equipped once. It locks at tip-off, and when that game is over
+// the slab is used up and leaves your collection (cards.sold = 3). Until then the collection shows it as equipped.
 //
-//   multiplier = 1 + 0.5 × log10(slab market value / 25), from 1.00× up to 3.00×
-//     $25 → 1.00×   $250 → 1.50×   $2,500 → 2.00×   $25,000 → 2.50×
-//   + 0.50× when the slab is OF the boosted player (own-player bonus)
+// A game's key is its date for real leagues and its game number (sim:W1:G2) for simulated weeks.
+// The rules live in league.ts (setBoost / clearBoost / consumeEquips / teamWeek).
 //
-// A "day" is the date of the game for real leagues and the game number (G1, G2…) for simulated weeks.
-// The boost locks when the player's game tips off. The rules live in league.ts (setBoost / teamWeek).
+// Before this, boosts were one per team per day with any slab (league_boosts). Those rows still count for the games
+// they were set on.
 import { all, one, run } from "./db";
-import { slabValue } from "./slabs";
 import { RARITIES, type Rarity } from "./packs";
 import { slabPlayerPhoto } from "./nba/photos";
+import { ensureSlabCards } from "./slab-cards";
 import type { SlabData } from "@/components/Slab";
-
-export const OWN_PLAYER_BONUS = 0.5;
-
-export function slabMultiplier(value: number) {
-  return Math.round(Math.min(3, Math.max(1, 1 + 0.5 * Math.log10(Math.max(1, value) / 25))) * 100) / 100;
-}
 
 let ready = false;
 export function ensureBoosts() {
   if (ready) return;
+  ensureSlabCards();
   run(`CREATE TABLE IF NOT EXISTS league_boosts (
     league_id INTEGER NOT NULL, team_id INTEGER NOT NULL, user_id INTEGER NOT NULL, day_key TEXT NOT NULL,
     player_id INTEGER NOT NULL, card_id INTEGER NOT NULL, mult REAL NOT NULL, own INTEGER NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL, PRIMARY KEY (team_id, day_key))`);
+  run(`CREATE TABLE IF NOT EXISTS slab_equips (
+    league_id INTEGER NOT NULL, team_id INTEGER NOT NULL, user_id INTEGER NOT NULL, day_key TEXT NOT NULL,
+    player_id INTEGER NOT NULL, card_id INTEGER NOT NULL UNIQUE, mult REAL NOT NULL, created_at INTEGER NOT NULL,
+    consumed_at INTEGER, PRIMARY KEY (team_id, day_key, player_id))`);
   ready = true;
 }
 
-export type Boost = { league_id: number; team_id: number; user_id: number; day_key: string; player_id: number; card_id: number; mult: number; own: number; slab_id: number };
+export type Boost = { league_id: number; team_id: number; user_id: number; day_key: string; player_id: number; card_id: number; mult: number; own: number; slab_id: number | null };
 
-/** A team's boosts, keyed by `${playerId}|${dayKey}`. */
+/** A team's boosts (old one-a-day boosts and slab equips, used or not), keyed by `${playerId}|${dayKey}`. */
 export function teamBoosts(teamId: number) {
   ensureBoosts();
-  const rows = all<Boost>("SELECT b.*, c.slab_id FROM league_boosts b JOIN cards c ON c.id = b.card_id WHERE b.team_id = ?", teamId);
-  return new Map(rows.map((b) => [`${b.player_id}|${b.day_key}`, b]));
+  const old = all<Boost>("SELECT b.*, c.slab_id FROM league_boosts b LEFT JOIN cards c ON c.id = b.card_id WHERE b.team_id = ?", teamId);
+  const equips = all<Boost>("SELECT e.league_id, e.team_id, e.user_id, e.day_key, e.player_id, e.card_id, e.mult, 1 own, NULL slab_id FROM slab_equips e WHERE e.team_id = ?", teamId);
+  return new Map([...old, ...equips].map((b) => [`${b.player_id}|${b.day_key}`, b]));
 }
 
-/** The manager's unsold slabs (graded vault slabs and new Slabs) with their base multiplier, best first. */
-export function boostSlabs(userId: number) {
-  const graded = all<{ card_id: number; slab_id: number; player: string; player_id: number | null; year: number | null; set_name: string | null; grade: string; company: string; rarity: string; mkt_value: number | null; est_value: number }>(
-    `SELECT c.id card_id, s.id slab_id, s.player, s.player_id, s.year, s.set_name, s.grade, s.company, s.rarity, s.mkt_value, s.est_value
-     FROM cards c JOIN slabs s ON s.id = c.slab_id WHERE c.user_id = ? AND c.sold = 0`, userId)
-    .map((s) => ({ cardId: s.card_id, slabId: s.slab_id as number | null, playerId: s.player_id, player: s.player, label: `${s.year ?? ""} ${s.set_name ?? ""}`.trim(), grade: `${s.company} ${s.grade}`, rarity: s.rarity, value: slabValue(s), mult: slabMultiplier(slabValue(s)), slab: null as SlabData | null }));
-  const slabs = all<{ id: number; player_id: number; rarity: Rarity; value: number; serial: number; name: string; team: string; pos: string; jersey: string | null; headshot: string | null; color: string | null; alt: string | null; team_name: string | null }>(
-    `SELECT c.id, c.player_id, c.rarity, c.value, c.serial, p.name, p.team, p.pos, p.jersey, p.headshot, t.color, t.alt, t.name team_name
-     FROM cards c JOIN players p ON p.id = c.player_id LEFT JOIN nba_teams t ON t.abbr = p.team WHERE c.user_id = ? AND c.sold = 0 AND c.kind = 'slab'`, userId)
+export type BoostSlab = { cardId: number; playerId: number; player: string; rarity: Rarity; mult: number; value: number; label: string; slab: SlabData };
+
+/** The manager's unused Slabs that can still be equipped (not already equipped somewhere), best multiplier first. */
+export function boostSlabs(userId: number): BoostSlab[] {
+  return slabRows(userId, "AND c.id NOT IN (SELECT card_id FROM slab_equips WHERE consumed_at IS NULL)");
+}
+/** The manager's Slabs that are equipped and waiting for their game. */
+export function equippedSlabCards(userId: number): BoostSlab[] {
+  return slabRows(userId, "AND c.id IN (SELECT card_id FROM slab_equips WHERE consumed_at IS NULL)");
+}
+function slabRows(userId: number, where: string): BoostSlab[] {
+  ensureBoosts();
+  return all<{ id: number; player_id: number; rarity: Rarity; value: number; serial: number; mult: number; name: string; team: string; pos: string; jersey: string | null; headshot: string | null; color: string | null; alt: string | null; team_name: string | null }>(
+    `SELECT c.id, c.player_id, c.rarity, c.value, c.serial, c.mult, p.name, p.team, p.pos, p.jersey, p.headshot, t.color, t.alt, t.name team_name
+     FROM cards c JOIN players p ON p.id = c.player_id LEFT JOIN nba_teams t ON t.abbr = p.team
+     WHERE c.user_id = ? AND c.sold = 0 AND c.kind = 'slab' AND c.mult IS NOT NULL ${where}
+     ORDER BY c.mult DESC, c.value DESC`, userId)
     .map((c) => ({
-      cardId: c.id, slabId: null, playerId: c.player_id, player: c.name, label: `${RARITIES[c.rarity].label} #${c.serial}`, grade: RARITIES[c.rarity].label, rarity: c.rarity as string,
-      value: c.value, mult: slabMultiplier(c.value),
-      slab: { name: c.name, team: c.team, team_name: c.team_name, pos: c.pos, rarity: c.rarity, serial: c.serial, jersey: c.jersey, color: c.color, alt: c.alt, photo: slabPlayerPhoto(c.name) ?? c.headshot } as SlabData,
+      cardId: c.id, playerId: c.player_id, player: c.name, rarity: c.rarity, mult: c.mult, value: c.value, label: `${RARITIES[c.rarity].label} #${c.serial}`,
+      slab: { name: c.name, team: c.team, team_name: c.team_name, pos: c.pos, rarity: c.rarity, serial: c.serial, jersey: c.jersey, color: c.color, alt: c.alt, photo: slabPlayerPhoto(c.name) ?? c.headshot, mult: c.mult },
     }));
-  return [...graded, ...slabs].sort((a, b) => b.value - a.value);
 }
 
-/** Boost multiplier for one of the manager's slabs on a player (graded vault slab or new Slab). */
+/** The multiplier one of the manager's Slabs gives a player, or an error if it can't be equipped on him. */
 export function cardMultiplier(cardId: number, userId: number, playerId: number) {
-  const c = one<{ kind: string | null; player_id: number; value: number; slab_id: number | null }>(
-    "SELECT kind, player_id, value, slab_id FROM cards WHERE id = ? AND user_id = ? AND sold = 0", cardId, userId);
+  ensureBoosts();
+  const c = one<{ kind: string | null; player_id: number; mult: number | null; name: string | null }>(
+    "SELECT c.kind, c.player_id, c.mult, p.name FROM cards c LEFT JOIN players p ON p.id = c.player_id WHERE c.id = ? AND c.user_id = ? AND c.sold = 0", cardId, userId);
   if (!c) throw new Error("That slab isn't in your collection");
-  let value: number, slabPlayer: number | null;
-  if (c.kind === "slab") { value = c.value; slabPlayer = c.player_id; }
-  else {
-    const s = one<{ player_id: number | null; mkt_value: number | null; est_value: number }>("SELECT player_id, mkt_value, est_value FROM slabs WHERE id = ?", c.slab_id ?? 0);
-    if (!s) throw new Error("That slab can't boost");
-    value = slabValue(s); slabPlayer = s.player_id;
-  }
-  const own = slabPlayer === playerId;
-  return { mult: Math.round((slabMultiplier(value) + (own ? OWN_PLAYER_BONUS : 0)) * 100) / 100, own };
+  if (c.kind !== "slab" || !c.mult) throw new Error("Only Slabs with a multiplier stamp can be equipped");
+  if (c.player_id !== playerId) throw new Error(`That's a ${c.name ?? "different player"} slab. Slabs only work on their own player`);
+  return { mult: c.mult, own: true };
+}
+
+/** Use up an equipped slab: its game is over. */
+export function consumeEquip(cardId: number) {
+  run("UPDATE slab_equips SET consumed_at = ? WHERE card_id = ? AND consumed_at IS NULL", Date.now(), cardId);
+  run("UPDATE cards SET sold = 3 WHERE id = ? AND sold = 0", cardId);
+}
+
+/** The manager's equipped (not yet used) slabs: card id → where and when. */
+export function equippedSlabs(userId: number) {
+  ensureBoosts();
+  return new Map(all<{ card_id: number; day_key: string; league: string; player: string }>(
+    `SELECT e.card_id, e.day_key, l.name league, p.name player FROM slab_equips e JOIN leagues l ON l.id = e.league_id JOIN players p ON p.id = e.player_id
+     WHERE e.user_id = ? AND e.consumed_at IS NULL`, userId).map((r) => [r.card_id, r]));
 }
