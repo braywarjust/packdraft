@@ -93,6 +93,8 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
           {logo && <img src={logo} alt="" draggable={false} className="pointer-events-none absolute left-1/2 top-[6%] w-[78%] -translate-x-1/2 select-none opacity-20" />}
           {/* Tier effects behind the player */}
           {r >= 2 && STARS.slice(0, r >= 3 ? 7 : 4).map(([x, y, sz, d], i) => <Star key={i} x={x} y={y} size={sz} delay={d} />)}
+          {/* Immortal: the shooting stars from its back smear across behind the player */}
+          {r === 4 && <Comets stars={false} />}
           {/* The player */}
           {s.photo && photoOk ? (
             <img src={s.photo} alt={s.name} draggable={false} onError={() => setPhotoOk(false)}
@@ -132,14 +134,14 @@ export const coverFill = (tier: string) => `radial-gradient(80% 80% at 50% 40%, 
 
 const COMETS: [number, number][] = [[-10, 0], [20, 1.25], [-30, 2.5]]; // start top %, delay s
 
-/** Immortal backs: shooting stars smearing across a twinkling sky. */
-function Comets() {
+/** Immortal: shooting stars smearing across a twinkling sky (the back), or just the comets (behind the player). */
+function Comets({ stars = true }: { stars?: boolean }) {
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden>
       {COMETS.map(([y, d], i) => (
         <span key={i} className="slab-comet absolute rounded-full" style={{ left: "-40%", width: "46cqw", height: "2cqw", top: `${y + 30}%`, animationDelay: `${d}s` }} />
       ))}
-      {STARS.map(([x, y, sz, d], i) => <Star key={i} x={x} y={y} size={sz} delay={d} />)}
+      {stars && STARS.map(([x, y, sz, d], i) => <Star key={i} x={x} y={y} size={sz} delay={d} />)}
     </div>
   );
 }
