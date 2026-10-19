@@ -1,8 +1,8 @@
 import { requireUser } from "@/lib/auth";
 import { unopenedPacks } from "@/lib/packs-server";
-import { BUYBACK_RATE, PACKS, RARITIES, RARITY_BLURB, RARITY_HEX, RARITY_ORDER, fmtOdds } from "@/lib/packs";
+import { PACKS, RARITIES, RARITY_BLURB, RARITY_HEX, RARITY_ORDER, fmtOdds } from "@/lib/packs";
 import { VendingMachine } from "./VendingMachine";
-import { buyPack, ripPack, sellCards } from "../actions";
+import { buyPack, ripPack } from "../actions";
 import { packFeatures } from "@/lib/slabs";
 import Link from "next/link";
 import { slabPool } from "@/lib/slab-cards";
@@ -39,7 +39,7 @@ export default async function PacksPage() {
             <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Mystery packs · NBA Slabs</p>
             <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Pack Shop</h1>
             <p className="mt-2 max-w-xl text-sm text-white/80">
-              Every pack holds Slabs: animated cards of active NBA players, from Common to Immortal. Rip it, collect your favourites, or sell it straight back for {Math.round(BUYBACK_RATE * 100)}% of its value.
+              Every pack holds Slabs: animated cards of active NBA players, from Common to Immortal. Rip it, collect your favourites, and trade five up for a rarer one.
             </p>
           </div>
           <div className="flex gap-2">
@@ -61,7 +61,7 @@ export default async function PacksPage() {
       </section>
 
 
-      <VendingMachine features={packFeatures(PACKS)} coins={u.coins} inventory={inventory} buy={buyPack} rip={ripPack} sell={sellCards} />
+      <VendingMachine features={packFeatures(PACKS)} coins={u.coins} inventory={inventory} buy={buyPack} rip={ripPack} />
 
       {/* Rarity tiers */}
       <section id="rarity" className="scroll-mt-36 space-y-3">
@@ -136,7 +136,7 @@ export default async function PacksPage() {
             ["The pool", `Every active NBA player (${poolSize} of them), with his photo, team logo and team colours. Better players come up a little more often.`],
             ["Tiers", "Common, Rare, Epic, Mythic and Immortal. Each step up adds motion: a turning sunburst and shimmer, twinkling stars, a pulsing glow, and an icy-blue frame and frost sheen for Immortal."],
             ["Value", "Tier price × the player's price index: his ESPN fantasy points per game (last season, then this season as he plays) plus popularity. Prices move with his stats; injured players hold steady."],
-            ["Collect and boost", `Keep them, sell them back for ${Math.round(BUYBACK_RATE * 100)}%, or put one on a player for a night's slab boost (worth more on his own slab).`],
+            ["Collect and boost", "Slabs are yours to keep (they can't be sold back). Trade five of a rarity up for a rarer one, or put one on a player for a night's slab boost (worth more on his own slab)."],
           ] as const).map(([k, v]) => (
             <div key={k} className="rounded-xl bg-ink/40 p-3">
               <p className="mb-1 text-xs font-black uppercase tracking-wider text-brand">{k}</p>

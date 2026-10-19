@@ -3,9 +3,9 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { userCards } from "@/lib/packs-server";
-import { BUYBACK_RATE, RARITIES, Rarity, fmtCoins } from "@/lib/packs";
+import { RARITIES, Rarity } from "@/lib/packs";
 import { ActionButton } from "@/components/ActionButton";
-import { clearTestCards, sellCards, tradeUpSlabs } from "../actions";
+import { clearTestCards, tradeUpSlabs } from "../actions";
 import { TradeUp } from "./TradeUp";
 import { PageHeader } from "@/components/PageHeader";
 import { CollectionGrid } from "./CollectionGrid";
@@ -23,7 +23,6 @@ export default async function Collection({ searchParams }: { searchParams: Promi
   const counts = Object.fromEntries(Object.keys(RARITIES).map((r) => [r, cards.filter((c) => c.rarity === r).length]));
   if (sp.r) cards = cards.filter((c) => c.rarity === sp.r);
   if (sp.sort === "new") cards = [...cards].sort((a, b) => b.created_at - a.created_at);
-  const commons = cards.filter((c) => c.rarity === "common");
   const qs = (o: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
     const merged = { r: sp.r, sort: sp.sort, u: sp.u, ...o };
@@ -51,18 +50,11 @@ export default async function Collection({ searchParams }: { searchParams: Promi
         {mine && !!me.is_tester && (
           <ActionButton action={clearTestCards} className="btn-ghost" confirm="Delete all test pulls?">Clear test pulls</ActionButton>
         )}
-        {mine && commons.length > 0 && (
-          <span className="ml-auto">
-            <ActionButton action={sellCards.bind(null, commons.map((c) => c.id))} confirm={`Sell ${commons.length} commons for ${fmtCoins(commons.reduce((s, c) => s + Math.floor(c.value * BUYBACK_RATE), 0))}?`}>
-              Bulk sell commons
-            </ActionButton>
-          </span>
-        )}
       </div>
       {cards.length === 0 && (
         <div className="card p-8 text-center text-zinc-500">No cards yet. <Link className="text-brand underline" href="/packs">Hit the vending machine</Link>.</div>
       )}
-      <CollectionGrid cards={cards} mine={mine} sell={sellCards} />
+      <CollectionGrid cards={cards} mine={mine} />
     </div>
   );
 }

@@ -1,12 +1,10 @@
 "use client";
 
-import { askConfirm } from "@/components/Confirm";
 import { XIcon } from "@/components/Icons";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { CardData, PlayerCard, RarityBadge, SlabImage, slabBadges, slabOf } from "@/components/PlayerCard";
 import { Slab } from "@/components/Slab";
-import { BUYBACK_RATE, RARITIES, fmtCoins } from "@/lib/packs";
+import { RARITIES } from "@/lib/packs";
 import { Logo, LogoWatermark } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
 import { useScrollLock } from "@/components/useScrollLock";
@@ -22,11 +20,9 @@ function certUrl(c: GridCard) {
   return `https://www.ebay.com/sch/i.html?_nkw=${c.s_cert}`;
 }
 
-export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine: boolean; sell: (ids: number[]) => Promise<unknown> }) {
-  const router = useRouter();
+export function CollectionGrid({ cards }: { cards: GridCard[]; mine?: boolean }) {
   const [open, setOpen] = useState<GridCard | null>(null);
   useScrollLock(!!open);
-  const [pending, start] = useTransition();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(null);
     window.addEventListener("keydown", onKey);
@@ -122,22 +118,6 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
                     {factors.map((f) => <span key={f} className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-700">{f}</span>)}
                   </div>
                 </div>
-              )}
-              {mine && (
-                <button
-                  className="btn-lime"
-                  disabled={pending}
-                  onClick={async () => {
-                    if (!(await askConfirm(`Sell ${open.name} back for ${fmtCoins(Math.floor(open.value * BUYBACK_RATE))}?`, { confirmLabel: "Sell" }))) return;
-                    start(async () => {
-                      await sell([open.id]);
-                      setOpen(null);
-                      router.refresh();
-                    });
-                  }}
-                >
-                  Sell back for <Coins n={Math.floor(open.value * BUYBACK_RATE)} />
-                </button>
               )}
             </div>
             </div>

@@ -4,7 +4,7 @@ import { PackArt as PackVisual } from "@/components/PackArt";
 import { OddsBar } from "@/components/OddsBar";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
-import { PACKS, PACK_BY_ID, PackType, RARITIES, Rarity, BUYBACK_RATE, fmtOdds } from "@/lib/packs";
+import { PACKS, PACK_BY_ID, PackType, RARITIES, Rarity, fmtOdds } from "@/lib/packs";
 import { CardData, GLOW, PlayerCard } from "@/components/PlayerCard";
 import { Logo } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
@@ -138,11 +138,10 @@ function Confetti() {
   );
 }
 
-export function VendingMachine({ coins, inventory, buy, rip, sell, features = {} }: {
+export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
   coins: number; inventory: Inv[]; features?: Record<string, number[]>;
   buy: (type: string) => Act<{ ok: boolean; packId: number }>;
   rip: (packId: number) => Act<{ ok: boolean; cards: CardData[] }>;
-  sell: (ids: number[]) => Act<{ ok: boolean; total: number }>;
 }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -151,7 +150,6 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
   const [packType, setPackType] = useState<string>("pro");
   const [cards, setCards] = useState<CardData[]>([]);
   const [flipped, setFlipped] = useState<Set<number>>(new Set());
-  const [sold, setSold] = useState<Set<number>>(new Set());
   const [err, setErr] = useState("");
   const [party, setParty] = useState(false);
   const packRef = useRef<HTMLButtonElement>(null);
@@ -191,7 +189,6 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
     // Reveal worst first, best last, for maximum drama.
     setCards([...r.cards].sort((a, b) => RANK[a.rarity] - RANK[b.rarity] || a.value - b.value));
     setFlipped(new Set());
-    setSold(new Set());
     setStage("cards");
     router.refresh();
   };
@@ -199,13 +196,6 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
   const flip = (c: CardData) => {
     setFlipped((f) => new Set(f).add(c.id));
     if (c.rarity === "legendary" || c.rarity === "grail") { setParty(true); setTimeout(() => setParty(false), 4500); }
-  };
-
-  const sellIds = async (ids: number[]) => {
-    const r = await sell(ids);
-    if ("error" in r) return setErr(r.error);
-    setSold((s) => { const n = new Set(s); ids.forEach((i) => n.add(i)); return n; });
-    router.refresh();
   };
 
   const close = () => { setStage("idle"); setCards([]); setPackId(null); router.refresh(); };
@@ -339,7 +329,6 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
                         </div>
                         <div className={`flip-face flip-back absolute inset-0 flex flex-col items-center rounded-xl ${isUp && !c.slab_id && c.kind !== "slab" && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
                           <PlayerCard c={c} />
-                          {sold.has(c.id) && <div className="absolute inset-0 grid place-items-center rounded-xl bg-white/85 text-sm font-bold text-zinc-900">SOLD</div>}
                         </div>
                       </div>
                       </div>
@@ -356,14 +345,7 @@ export function VendingMachine({ coins, inventory, buy, rip, sell, features = {}
                   <p className={`text-3xl font-black ${total >= rp.price ? "text-emerald-600" : "text-zinc-800"}`}><Coins n={total} live from={0} /> <span className="text-base font-normal text-zinc-500">on a <Coins n={rp.price} /> pack {total >= rp.price ? "· W" : "· L"}</span></p>
                   <p className="text-xs text-zinc-400">Best pull: <span className={RARITIES[cards[cards.length - 1].rarity].text}>{cards[cards.length - 1].name}</span></p>
                   <div className="flex flex-wrap justify-center gap-2">
-                    <button className="btn-ghost" disabled={cards.every((c) => sold.has(c.id) || c.rarity !== "common")}
-                      onClick={() => sellIds(cards.filter((c) => c.rarity === "common" && !sold.has(c.id)).map((c) => c.id))}>
-                      Sell commons ({Math.round(BUYBACK_RATE * 100)}%)
-                    </button>
-                    <button className="btn-ghost" disabled={cards.every((c) => sold.has(c.id))} onClick={() => sellIds(cards.filter((c) => !sold.has(c.id)).map((c) => c.id))}>
-                      Sell all for <Coins n={cards.filter((c) => !sold.has(c.id)).reduce((s, c) => s + Math.floor(c.value * BUYBACK_RATE), 0)} />
-                    </button>
-                    <button className="btn-primary" onClick={close}>Keep & close</button>
+                    <button className="btn-primary" onClick={close}>Add to collection</button>
                   </div>
                 </div>
               )}

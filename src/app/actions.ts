@@ -9,8 +9,8 @@ import {
   getLeague, userTeam, leagueTeams, startDraft, advanceDraft, makePick, autoLineup, moveToSlot, roster, ROSTER_MAX,
   isLocked, executeTrade, startWeek, finalizeWeek, postSystem, processWaivers, ROUNDS, setBoost, clearBoost,
 } from "@/lib/league";
-import { PACK_BY_ID, BUYBACK_RATE } from "@/lib/packs";
-import { openPack, releaseSlab, tradeUp } from "@/lib/packs-server";
+import { PACK_BY_ID } from "@/lib/packs";
+import { openPack, tradeUp } from "@/lib/packs-server";
 import { etDate } from "@/lib/nba/espn";
 import { placeBet } from "@/lib/bets";
 import { applyPreset, deletePreset, getPreset, saveLeagueBrand, savePreset, setFavoritePreset } from "@/lib/branding";
@@ -453,26 +453,6 @@ export async function ripPack(packId: number) {
     const u = await requireUser();
     const cards = await openPack(u.id, packId);
     return { ok: true, cards };
-  });
-}
-
-export async function sellCards(cardIds: number[]) {
-  return wrap(async () => {
-    const u = await requireUser();
-    let total = 0;
-    tx(() => {
-      for (const id of cardIds) {
-        const c = one<{ value: number }>("SELECT value FROM cards WHERE id = ? AND user_id = ? AND sold = 0", id, u.id);
-        if (!c) continue;
-        const pay = Math.floor(c.value * BUYBACK_RATE);
-        total += pay;
-        run("UPDATE cards SET sold = 1 WHERE id = ?", id);
-        releaseSlab(id);
-        run("UPDATE users SET coins = coins + ? WHERE id = ?", pay, u.id);
-      }
-    });
-    revalidatePath("/", "layout");
-    return { ok: true, total };
   });
 }
 
