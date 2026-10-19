@@ -139,35 +139,18 @@ body {
 .slab-glow { animation: pulseGlow 2.6s ease-in-out infinite; }
 .slab-vivid { animation: slabVivid 5s ease-in-out infinite; }
 .slab-frame-immortal { background: conic-gradient(from var(--slab-a), #f472b6, #fbbf24, #34d399, #38bdf8, #a78bfa, #f472b6); animation: slabSpinA 4s linear infinite, pulseGlow 2.6s ease-in-out infinite; }
-/* Basketballs (Slab.tsx Ball): a slow idle turn, and on hover of the slab or pack (.bball-host) one of four moves.
-   .bball-body bounces/rolls and squashes from the floor, .bball-spin turns the ball, .bball-shadow tracks the bounce. */
-.bball { position: relative; display: inline-block; }
+/* Basketballs (Slab.tsx Ball): a slow idle turn, and on hover of the slab or pack (.bball-host) one even dribble.
+   .bball-body bounces and squashes from the floor, .bball-spin turns the ball, .bball-shadow tracks the bounce. */
+.bball { display: inline-block; }
 .bball-body { position: absolute; inset: 0; transform-origin: 50% 100%; }
 .bball-spin { transform-origin: 50% 50%; animation: bballSpin 14s linear infinite; }
 .bball-shadow { position: absolute; left: 12%; right: 12%; bottom: -9%; height: 14%; border-radius: 50%; background: rgba(0, 0, 0, .35); filter: blur(1.5px); opacity: 0; transition: opacity .3s; }
 @keyframes bballSpin { to { transform: rotate(360deg); } }
-@keyframes bballSpinBack { to { transform: rotate(-360deg); } }
-/* v0: quick dribble with squash and stretch */
-@keyframes bballDribble { 0%, 100% { transform: translateY(0) scale(1.12, .86); } 12% { transform: translateY(-6%) scale(.94, 1.07); } 50% { transform: translateY(-38%) scale(1, 1); } 88% { transform: translateY(-6%) scale(.95, 1.06); } }
-/* v1: a big, floaty bounce */
-@keyframes bballBig { 0%, 100% { transform: translateY(0) scale(1.15, .84); } 10% { transform: translateY(-10%) scale(.92, 1.1); } 50% { transform: translateY(-70%) scale(1, 1); } 90% { transform: translateY(-10%) scale(.93, 1.08); } }
-/* v2: rolling wobble side to side with a little hop */
-@keyframes bballRoll { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-16%, -10%); } 50% { transform: translate(0, 0) scale(1.06, .94); } 75% { transform: translate(16%, -10%); } }
-/* v3: double dribble (low, low, high) */
-@keyframes bballDouble { 0%, 100% { transform: translateY(0) scale(1.1, .88); } 16% { transform: translateY(-22%); } 32% { transform: translateY(0) scale(1.08, .9); } 48% { transform: translateY(-22%); } 64% { transform: translateY(0) scale(1.12, .86); } 82% { transform: translateY(-55%) scale(.97, 1.03); } }
-@keyframes bballShadow { 0%, 100% { transform: scale(1); opacity: .55; } 50% { transform: scale(.55); opacity: .2; } }
-.bball-host:hover .bball-shadow { opacity: .5; }
-.bball-host:hover .bball-v0 .bball-body { animation: bballDribble .62s cubic-bezier(.45, 0, .55, 1) infinite; animation-delay: inherit; }
-.bball-host:hover .bball-v1 .bball-body { animation: bballBig 1.05s cubic-bezier(.45, 0, .55, 1) infinite; animation-delay: inherit; }
-.bball-host:hover .bball-v2 .bball-body { animation: bballRoll 1.3s ease-in-out infinite; animation-delay: inherit; }
-.bball-host:hover .bball-v3 .bball-body { animation: bballDouble 1.25s cubic-bezier(.45, 0, .55, 1) infinite; animation-delay: inherit; }
-.bball-host:hover .bball-v0 .bball-spin { animation: bballSpin .9s linear infinite; }
-.bball-host:hover .bball-v1 .bball-spin { animation: bballSpinBack 1.6s linear infinite; }
-.bball-host:hover .bball-v2 .bball-spin { animation: bballSpin 1.3s ease-in-out infinite alternate; }
-.bball-host:hover .bball-v3 .bball-spin { animation: bballSpin 1.1s linear infinite; }
-.bball-host:hover .bball-v0 .bball-shadow { animation: bballShadow .62s cubic-bezier(.45, 0, .55, 1) infinite; animation-delay: inherit; }
-.bball-host:hover .bball-v1 .bball-shadow { animation: bballShadow 1.05s cubic-bezier(.45, 0, .55, 1) infinite; animation-delay: inherit; }
-.bball-host:hover .bball-v3 .bball-shadow { animation: bballShadow 1.25s cubic-bezier(.45, 0, .55, 1) infinite; animation-delay: inherit; }
+@keyframes bballDribble { 0%, 100% { transform: translateY(0) scale(1.1, .9); } 12% { transform: translateY(-6%) scale(.95, 1.05); } 50% { transform: translateY(-40%) scale(1, 1); } 88% { transform: translateY(-6%) scale(.95, 1.05); } }
+@keyframes bballShadow { 0%, 100% { transform: scale(1); opacity: .55; } 50% { transform: scale(.6); opacity: .22; } }
+.bball-host:hover .bball-body { animation: bballDribble .8s cubic-bezier(.45, 0, .55, 1) infinite; }
+.bball-host:hover .bball-spin { animation: bballSpin 1.6s linear infinite; }
+.bball-host:hover .bball-shadow { opacity: .5; animation: bballShadow .8s cubic-bezier(.45, 0, .55, 1) infinite; }
 
 @keyframes packBob { 0%, 100% { transform: translateY(0) rotate(-.6deg); } 50% { transform: translateY(-3%) rotate(.6deg); } }
 @keyframes packFan { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4%); } }

@@ -28,7 +28,6 @@ const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3
 
 // Fixed spots (percent of the slab) for the tier effects, so server and client render the same thing.
 const STARS: [number, number, number, number][] = [[12, 18, 4.2, 0], [84, 14, 3.4, 0.7], [76, 40, 2.8, 1.5], [18, 46, 3, 2.1], [52, 9, 2.6, 1.1], [90, 58, 2.4, 2.6], [8, 66, 2.6, 0.4]];
-const BALLS: [number, number, number][] = [[14, 9, 0], [82, 12, 2.2], [68, 7, 4.1], [28, 10, 5.6]]; // left %, size cqw, delay s
 
 /** Lighten (amt > 0) or darken (amt < 0) a hex colour. */
 function shade(hex: string, amt: number) {
@@ -48,12 +47,11 @@ function Star({ x, y, size, delay }: { x: number; y: number; size: number; delay
 
 /**
  * A basketball: shaded leather, curved seams and a highlight, with a soft shadow. It turns slowly on its own, and when
- * its slab or pack is hovered (any `.bball-host`) it bounces, squashes and spins. `variant` (0-3) picks one of four
- * moves (a quick dribble, a big bounce, a rolling wobble, a double dribble) so a group of balls doesn't move in lockstep.
+ * its slab or pack is hovered (any `.bball-host`) it dribbles: one even bounce with squash and stretch and a spin.
  */
-function Ball({ className = "", style, variant = 0 }: { className?: string; style?: React.CSSProperties; variant?: number }) {
+function Ball({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <span className={`bball bball-v${variant % 4} ${className}`} style={style} aria-hidden>
+    <span className={`bball ${/\babsolute\b/.test(className) ? "" : "relative"} ${className}`} style={style} aria-hidden>
       <span className="bball-shadow" />
       <span className="bball-body">
         <svg viewBox="0 0 40 40" className="bball-spin h-full w-full overflow-visible">
@@ -77,7 +75,7 @@ function Ball({ className = "", style, variant = 0 }: { className?: string; styl
 /**
  * A Slab: a square, casino-thumbnail-style card. The player over his team colours with a sunburst behind him, a big
  * faded team logo, a crisp team logo badge, his name, and a frame in the tier colour. Rarer tiers stack on smooth,
- * low-key animation: Rare turns the sunburst and adds a shimmer, Epic adds twinkling stars, Mythic floats basketballs
+ * low-key animation: Rare turns the sunburst and adds a shimmer, Epic adds twinkling stars, Mythic fills in more stars
  * and pulses a glow, Immortal shifts colour through a rainbow frame and holo sheen on top of all of it.
  * Everything is sized in cqw, so it scales to any `size`.
  */
@@ -107,12 +105,7 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
           {/* Big faded team logo behind the player */}
           {logo && <img src={logo} alt="" draggable={false} className="pointer-events-none absolute left-1/2 top-[6%] w-[78%] -translate-x-1/2 select-none opacity-20" />}
           {/* Tier effects behind the player */}
-          {r >= 2 && STARS.slice(0, r >= 4 ? 7 : 4).map(([x, y, sz, d], i) => <Star key={i} x={x} y={y} size={sz} delay={d} />)}
-          {r >= 3 && BALLS.slice(0, r >= 4 ? 4 : 2).map(([x, sz, d], i) => (
-            <span key={i} className="slab-ball pointer-events-none absolute" style={{ left: `${x}%`, bottom: "-12%", width: `${sz}cqw`, height: `${sz}cqw`, animationDelay: `${d}s` }}>
-              <Ball variant={i} className="h-full w-full" style={{ animationDelay: `${i * 0.13}s` }} />
-            </span>
-          ))}
+          {r >= 2 && STARS.slice(0, r >= 3 ? 7 : 4).map(([x, y, sz, d], i) => <Star key={i} x={x} y={y} size={sz} delay={d} />)}
           {/* The player */}
           {s.photo && photoOk ? (
             <img src={s.photo} alt={s.name} draggable={false} onError={() => setPhotoOk(false)}
@@ -169,7 +162,7 @@ export function SlabCover({ rarity, size, className = "" }: { rarity: Rarity; si
           <div className="absolute inset-0 opacity-[.08]" style={{ backgroundImage: "repeating-linear-gradient(135deg, #fff 0 1px, transparent 1px 9px)" }} />
           <img src="/packdraft-logo-full.svg" alt="" draggable={false} className="absolute left-1/2 top-[42%] w-[62%] -translate-x-1/2 -translate-y-1/2 select-none"
             style={{ filter: "drop-shadow(0 2cqw 3cqw rgba(0,0,0,.45))" }} />
-          <Ball variant={1} className="absolute bottom-[10%] left-[41.5%] h-[17cqw] w-[17cqw]" />
+          <Ball className="absolute bottom-[10%] left-[41.5%] h-[17cqw] w-[17cqw]" />
           <div className="slab-shimmer pointer-events-none absolute inset-0" />
         </div>
       </div>

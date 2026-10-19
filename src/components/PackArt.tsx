@@ -15,12 +15,12 @@ const SPARKS: [number, number, number, number][] = [[14, 22, 7, 0], [84, 30, 5.5
 /** The best tier a pack can drop (its chase), for the mini slabs peeking out of it. */
 const chase = (p: PackType) => [...RARITY_ORDER].reverse().find((r) => p.odds[r] > 0) ?? "common";
 
-function MiniSlab({ color, variant, className = "", style }: { color: string; variant: number; className?: string; style?: React.CSSProperties }) {
+function MiniSlab({ color, className = "", style }: { color: string; className?: string; style?: React.CSSProperties }) {
   return (
     <div className={`absolute aspect-square rounded-[18%] p-[5%] shadow-[0_2cqw_4cqw_rgba(0,0,0,.45)] ${className}`}
       style={{ background: `linear-gradient(145deg, #fff, ${color} 55%, #0f172a)`, ...style }}>
       <div className="grid h-full w-full place-items-center rounded-[14%]" style={{ background: "linear-gradient(140deg, #0b4ea2, #0253a4 50%, #8f1d22)" }}>
-        <SlabBall variant={variant} className="h-[50%] w-[50%]" style={{ animationDelay: `${variant * 0.11}s` }} />
+        <SlabBall className="h-[50%] w-[50%]" />
       </div>
     </div>
   );
@@ -28,13 +28,14 @@ function MiniSlab({ color, variant, className = "", style }: { color: string; va
 
 /**
  * Animated pack art: a foil pack in the pack's colours with crimped seals, a turning sunburst, the PackDraft logo, a fan
- * of square slabs gently bobbing out of it, twinkling sparkles, a slow foil shimmer and the pack's name. The whole pack
+ * square slab (five for the Mega Pack) gently bobbing out of it, twinkling sparkles, a slow foil shimmer and the pack's name. The whole pack
  * floats a little when `animate` is on. The Mega Pack is a wider crate holding five. Sized in cqw, so any box works.
  */
 export function PackArt({ p, width, height, animate = true, className = "" }: { p: PackType; width: number; height: number; animate?: boolean; className?: string }) {
   const isCase = p.kind === "case";
   const top = RARITY_HEX[chase(p)];
-  const fan = isCase ? [-26, -13, 0, 13, 26] : [-15, 0, 15];
+  // One slab on single packs, the full five-slab fan on the Mega Pack.
+  const fan = isCase ? [-26, -13, 0, 13, 26] : [0];
   return (
     <div className={`bball-host @container relative shrink-0 ${className}`} style={{ width, height }}>
       <div className={`absolute inset-0 ${animate ? "pack-bob" : ""}`} style={{ filter: "drop-shadow(0 3cqw 4cqw rgba(0,0,0,.45))" }}>
@@ -61,12 +62,12 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
           <img src="/packdraft-logo-full.svg" alt="" draggable={false} className={`absolute left-1/2 -translate-x-1/2 select-none ${isCase ? "top-[7%] w-[38%]" : "top-[10%] w-[58%]"}`}
             style={{ filter: "drop-shadow(0 1.5cqw 2.5cqw rgba(0,0,0,.4))" }} />
           {/* Fan of slabs */}
-          <div className={`absolute inset-x-0 ${isCase ? "top-[30%] h-[36%]" : "top-[36%] h-[30%]"}`}>
+          <div className={`absolute inset-x-0 ${isCase ? "top-[30%] h-[36%]" : "top-[37%] h-[33%]"}`}>
             {fan.map((deg, i) => (
               // Offsets use left/translate/rotate (not transform) so the bobbing animation's transform doesn't wipe them.
               <div key={i} className={`absolute top-0 aspect-square h-full ${animate ? "pack-fan" : ""}`}
                 style={{ left: `calc(50% + ${deg * (isCase ? 1.15 : 1.6)}cqw)`, translate: "-50% 0", rotate: `${deg * 0.8}deg`, transformOrigin: "50% 100%", animationDelay: `${i * 0.35}s`, zIndex: 40 - Math.abs(deg) }}>
-                <MiniSlab color={i === Math.floor(fan.length / 2) ? top : "#cbd5e1"} variant={i} className="inset-0" />
+                <MiniSlab color={i === Math.floor(fan.length / 2) ? top : "#cbd5e1"} className="inset-0" />
               </div>
             ))}
           </div>
