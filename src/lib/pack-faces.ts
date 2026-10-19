@@ -2,7 +2,7 @@
 // colours and NBA.com photo (taken 2026-10-19) so the pack art needs no data loading; refresh it if one is traded.
 import type { Rarity } from "./packs";
 
-type Face = { name: string; team: string; team_name: string; pos: string; jersey: string | null; color: string | null; alt: string | null; photo: string | null };
+type Face = { name: string; team: string; team_name: string; pos: string; jersey: string | null; color: string | null; alt: string | null; photo: string | null; action?: string };
 const P: Record<string, Face> = {
   "Cooper Flagg": { name: "Cooper Flagg", team: "DAL", team_name: "Dallas Mavericks", pos: "F", jersey: "32", color: "0064b1", alt: "bbc4ca", photo: "https://cdn.nba.com/headshots/nba/latest/1040x760/1642843.png" },
   "Anthony Edwards": { name: "Anthony Edwards", team: "MIN", team_name: "Minnesota Timberwolves", pos: "G", jersey: "5", color: "266092", alt: "79bc43", photo: "https://cdn.nba.com/headshots/nba/latest/1040x760/1630162.png" },
@@ -24,7 +24,7 @@ export const PACK_FACES: Record<string, { player: Face; rarity: Rarity }[]> = {
   hof: [{ player: P["Giannis Antetokounmpo"], rarity: "legendary" }],
   goat: [{ player: P["LeBron James"], rarity: "legendary" }],
   megacase: [
-    { player: P["Anthony Edwards"], rarity: "epic" }, { player: P["Luka Doncic"], rarity: "legendary" }, { player: P["Nikola Jokic"], rarity: "grail" },
+    { player: P["Anthony Edwards"], rarity: "epic" }, { player: P["Luka Doncic"], rarity: "legendary" }, { player: { ...P["Nikola Jokic"], action: "/immortal/3112335.webp" }, rarity: "grail" },
     { player: P["Shai Gilgeous-Alexander"], rarity: "legendary" }, { player: P["Victor Wembanyama"], rarity: "epic" },
   ],
 };

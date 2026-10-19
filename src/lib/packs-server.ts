@@ -5,6 +5,7 @@ import { postSystem } from "./league";
 import { ensureSlabCards, nextSerial, rollSlab, slabPool } from "./slab-cards";
 import { popularity, slabPrice } from "./slab-market";
 import { slabPlayerPhoto } from "./nba/photos";
+import { immortalArt } from "./immortal-art";
 
 /**
  * A card in someone's collection. New cards are Slabs (kind 'slab'): an active player at a tier. Older cards are
@@ -13,6 +14,8 @@ import { slabPlayerPhoto } from "./nba/photos";
 export type Card = {
   id: number; player_id: number; slab_id: number | null; kind: string | null; name: string; pos: string; team: string; rarity: Rarity; grade: number;
   serial: number; print_run: number; value: number; sold: number; created_at: number; team_name: string | null; photo: string | null;
+  /** Immortal variant close-up (immortal-art.ts), when this is an Immortal of a player who has one. */
+  action?: string | null;
   headshot: string | null; jersey: string | null; color: string | null; alt: string | null; logo: string | null;
   // Graded slab details (null otherwise)
   s_year: number | null; s_set: string | null; s_no: string | null; s_variant: string | null; s_company: string | null; s_grade: string | null;
@@ -27,7 +30,9 @@ const CARD_SELECT = `SELECT c.*, COALESCE(s.player, p.name) name, COALESCE(p.pos
 /** Cards matching a WHERE clause, with the best player photo (the big NBA.com one when the name matches, else ESPN's). */
 export function cardsWhere(where: string, ...params: (string | number)[]) {
   ensureSlabCards();
-  return all<Card>(`${CARD_SELECT} WHERE ${where}`, ...params).map((c) => ({ ...c, photo: slabPlayerPhoto(c.name ?? "") ?? c.headshot }));
+  return all<Card>(`${CARD_SELECT} WHERE ${where}`, ...params).map((c) => ({
+    ...c, photo: slabPlayerPhoto(c.name ?? "") ?? c.headshot, action: c.kind === "slab" && c.rarity === "grail" ? immortalArt(c.player_id) : null,
+  }));
 }
 
 const rand = () => crypto.randomInt(0, 1_000_000) / 1_000_000;

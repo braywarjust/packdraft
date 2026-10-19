@@ -8,6 +8,8 @@ import { RARITIES, RARITY_HEX, type Rarity } from "@/lib/packs";
 export type SlabData = {
   name: string; team: string; team_name?: string | null; pos: string; rarity: Rarity; serial?: number;
   jersey?: string | null; color?: string | null; alt?: string | null; photo?: string | null;
+  /** Immortal variant: a close-up of him on the court, shown full-bleed instead of the cutout photo. */
+  action?: string | null;
 };
 
 /**
@@ -95,8 +97,16 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
           {r >= 2 && STARS.slice(0, r >= 3 ? 7 : 4).map(([x, y, sz, d], i) => <Star key={i} x={x} y={y} size={sz} delay={d} />)}
           {/* Immortal: the shooting stars from its back smear across behind the player */}
           {r === 4 && <Comets stars={false} />}
+          {/* Immortal variant: his on-court close-up fills the card (the comets and holo still play over it) */}
+          {r === 4 && s.action && (
+            <>
+              <img src={s.action} alt={s.name} draggable={false} className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover" />
+              <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(85% 85% at 50% 38%, transparent 55%, rgba(8,47,73,.55) 100%)" }} />
+              <Comets stars={false} />
+            </>
+          )}
           {/* The player */}
-          {s.photo && photoOk ? (
+          {r === 4 && s.action ? null : s.photo && photoOk ? (
             <img src={s.photo} alt={s.name} draggable={false} onError={() => setPhotoOk(false)}
               className="pointer-events-none absolute bottom-[19%] left-1/2 w-[112%] max-w-none -translate-x-1/2 select-none"
               style={{ filter: "drop-shadow(0 1.5cqw 2.5cqw rgba(0,0,0,.45))", maskImage: "linear-gradient(to bottom, #000 80%, transparent 99%)", WebkitMaskImage: "linear-gradient(to bottom, #000 80%, transparent 99%)" }} />

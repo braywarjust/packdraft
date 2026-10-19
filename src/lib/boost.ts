@@ -12,6 +12,7 @@ import { all, one, run } from "./db";
 import { slabValue } from "./slabs";
 import { RARITIES, type Rarity } from "./packs";
 import { slabPlayerPhoto } from "./nba/photos";
+import { immortalArt } from "./immortal-art";
 import type { SlabData } from "@/components/Slab";
 
 export const OWN_PLAYER_BONUS = 0.5;
@@ -51,7 +52,7 @@ export function boostSlabs(userId: number) {
     .map((c) => ({
       cardId: c.id, slabId: null, playerId: c.player_id, player: c.name, label: `${RARITIES[c.rarity].label} #${c.serial}`, grade: RARITIES[c.rarity].label, rarity: c.rarity as string,
       value: c.value, mult: slabMultiplier(c.value),
-      slab: { name: c.name, team: c.team, team_name: c.team_name, pos: c.pos, rarity: c.rarity, serial: c.serial, jersey: c.jersey, color: c.color, alt: c.alt, photo: slabPlayerPhoto(c.name) ?? c.headshot } as SlabData,
+      slab: { name: c.name, team: c.team, team_name: c.team_name, pos: c.pos, rarity: c.rarity, serial: c.serial, jersey: c.jersey, color: c.color, alt: c.alt, photo: slabPlayerPhoto(c.name) ?? c.headshot, action: c.rarity === "grail" ? immortalArt(c.player_id) : null } as SlabData,
     }));
   return [...graded, ...slabs].sort((a, b) => b.value - a.value);
 }

@@ -5,6 +5,7 @@ import { RARITIES, RARITY_ORDER, type Rarity } from "@/lib/packs";
 import { ensureSlabCards, slabPool } from "@/lib/slab-cards";
 import { slabPrice } from "@/lib/slab-market";
 import { slabPlayerPhoto } from "@/lib/nba/photos";
+import { immortalArt } from "@/lib/immortal-art";
 import { PageHeader } from "@/components/PageHeader";
 import { Slab, SlabCover } from "@/components/Slab";
 import { Coins } from "@/components/Coins";
@@ -60,7 +61,7 @@ export default async function SlabPool({ searchParams }: { searchParams: Promise
           const x = info.get(p.id);
           return (
             <div key={p.id} className="flex flex-col items-center">
-              <Slab size={176} s={{ name: p.name, team: p.team, team_name: x?.team_name, pos: p.pos, rarity: tier, jersey: x?.jersey, color: x?.color, alt: x?.alt, photo: slabPlayerPhoto(p.name) ?? x?.headshot }} />
+              <Slab size={176} s={{ name: p.name, team: p.team, team_name: x?.team_name, pos: p.pos, rarity: tier, jersey: x?.jersey, color: x?.color, alt: x?.alt, photo: slabPlayerPhoto(p.name) ?? x?.headshot, action: tier === "grail" ? immortalArt(p.id) : null }} />
               <PlayerButton id={p.id} className="mt-2 text-xs font-semibold text-fpts">Price &amp; stats</PlayerButton>
               <p className="text-xs text-zinc-500">{owned.get(p.id) ? <b className="text-emerald-600">You own {owned.get(p.id)}</b> : rostered.has(p.id) ? "On your fantasy team" : "Not collected"}</p>
               <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={slabPrice(tier, p.idx)} /></p>
