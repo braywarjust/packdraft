@@ -183,7 +183,7 @@ export function BoostModal({ boost, player, info, pending, onClose, run }: {
                 title={elsewhere ? `Already on ${on} tonight` : undefined}
                 className={`flex flex-col items-center gap-1 rounded-lg p-2 text-center transition hover:bg-panel2 disabled:cursor-not-allowed ${elsewhere ? "opacity-40" : ""} ${here ? "ring-2 ring-amber-500" : ""}`}>
                 <SlabFace height={170} s={{ kind: s.playerId == null ? "generic" : "player", name: s.player, team: s.team, pos: s.pos, rarity: s.rarity, mult: s.mult, immortal: s.immortal, serial: s.serial, jersey: s.jersey, color: s.color, alt: s.alt, photo: s.photo }} />
-                <SlabMult mult={s.mult} size={18} className="mt-1" />
+                <SlabMult mult={s.mult} size={13} className="mt-1" />
                 <span className="text-[11px] font-semibold text-zinc-300">{s.playerId == null ? "Any player" : s.player}</span>
                 <span className="text-[11px] text-zinc-500">{here ? "On him now" : elsewhere ? `On ${on} tonight` : s.playerId == null ? "Generic" : "His own slab"}</span>
               </button>

@@ -146,9 +146,9 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
 }
 
 /** The slab's multiplier, shown under it: a pulsing Fantasy Points logo with the multiplier in Fantasy Points blue. */
-export function SlabMult({ mult, size = 18, className = "" }: { mult: number; size?: number; className?: string }) {
+export function SlabMult({ mult, size = 14, className = "" }: { mult: number; size?: number; className?: string }) {
   return (
-    <span className={`inline-flex items-center font-black leading-none text-fpts ${className}`} style={{ fontSize: size, gap: size * 0.25 }} title={`${fmtMult(mult)} fantasy points`}>
+    <span className={`inline-flex items-center font-semibold leading-none text-fpts ${className}`} style={{ fontSize: size, gap: size * 0.25 }} title={`${fmtMult(mult)} fantasy points`}>
       <span className="fpts-pulse inline-flex"><FptIcon tone="blue" className="!align-middle" /></span>
       {fmtMult(mult)}
     </span>

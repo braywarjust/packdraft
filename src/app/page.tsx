@@ -246,7 +246,7 @@ export default async function Home() {
                 {bestSlabs.map((c) => (
                   <Link key={c.id} href="/collection" className="flex flex-col items-center gap-1 text-center" title={c.kind ? `${c.name} ${fmtMult(c.mult ?? 1)}` : `${c.name} · ${c.s_company} ${c.s_grade}`}>
                     {c.kind ? <SlabFace s={faceOf(c)} height={100} /> : <img src={`/api/slabs/${c.slab_id}`} alt="" className="h-24 w-full object-contain drop-shadow-lg" />}
-                    {c.kind ? <SlabMult mult={c.mult ?? 1} size={13} /> : <RarityBadge rarity={c.rarity} className="px-1.5 text-[8px]" />}
+                    {c.kind ? <SlabMult mult={c.mult ?? 1} size={11} /> : <RarityBadge rarity={c.rarity} className="px-1.5 text-[8px]" />}
                     <span className="text-[11px] font-semibold text-emerald-600"><Coins n={c.value} /></span>
                   </Link>
                 ))}
