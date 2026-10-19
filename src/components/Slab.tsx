@@ -116,9 +116,10 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
             style={{ background: r === 4 ? "linear-gradient(90deg,#e0f2fe,#7dd3fc,#e0f2fe)" : tier, color: r === 4 ? "#0c4a6e" : "#fff" }}>
             {RARITIES[s.rarity].label}
           </span>
-          {/* Name band */}
-          <div className="absolute inset-x-0 bottom-0 px-[6cqw] pb-[4.5cqw] pt-[9cqw]" style={{ background: "linear-gradient(transparent, rgba(0,0,0,.55) 45%)" }}>
-            <p className="truncate text-[9cqw] font-black leading-[1.05] text-white" style={{ textShadow: "0 1cqw 2cqw rgba(0,0,0,.5)" }}>{s.name}</p>
+          {/* Name plate: a rounded rectangle along the bottom with a stripe in the tier colour */}
+          <div className="absolute inset-x-[4%] bottom-[4%] overflow-hidden rounded-[3.5cqw] px-[4.5cqw] py-[2.6cqw]"
+            style={{ background: "rgba(8, 12, 22, .72)", boxShadow: `inset 0 0 0 .4cqw rgba(255,255,255,.12), inset 1.4cqw 0 0 ${r === 4 ? "#7dd3fc" : tier}, 0 1cqw 2.5cqw rgba(0,0,0,.35)` }}>
+            <p className="truncate text-[8.5cqw] font-black leading-[1.05] text-white">{s.name}</p>
             <p className="truncate text-[5cqw] font-bold uppercase tracking-wide text-white/80">
               {club}{s.pos ? ` · ${s.pos}` : ""}{s.jersey ? ` · #${s.jersey}` : ""}
             </p>
