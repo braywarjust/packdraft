@@ -4,6 +4,7 @@ import { backfillFinals, ensureSchedule, maybeSyncPlayers, refreshLive } from ".
 import { dailyWaivers, getLeague, tickLeague, weekRange } from "../league";
 import { ensureCatalog } from "../slabs";
 import { settleBets } from "../bets";
+import { snapshotPrices } from "../slab-market";
 
 let busy = false;
 export async function tick() {
@@ -26,6 +27,7 @@ export async function tick() {
       tickLeague(id);
     }
     settleBets();
+    snapshotPrices();
   } finally {
     busy = false;
   }

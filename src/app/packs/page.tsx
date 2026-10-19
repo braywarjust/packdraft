@@ -5,7 +5,8 @@ import { VendingMachine } from "./VendingMachine";
 import { buyPack, ripPack, sellCards } from "../actions";
 import { packFeatures } from "@/lib/slabs";
 import Link from "next/link";
-import { slabPool, slabValue } from "@/lib/slab-cards";
+import { slabPool } from "@/lib/slab-cards";
+import { slabPrice } from "@/lib/slab-market";
 import { slabPlayerPhoto } from "@/lib/nba/photos";
 import { one } from "@/lib/db";
 import { Slab } from "@/components/Slab";
@@ -78,7 +79,7 @@ export default async function PacksPage() {
               <div className="flex flex-col items-center gap-3 p-4 text-sm">
                 {sample && <Slab size={150} s={{ ...sample, rarity: r }} />}
                 <p className="text-center text-zinc-500">{RARITY_BLURB[r]}</p>
-                <p className="flex w-full justify-between text-xs"><span className="text-zinc-500">Average player worth</span><b><Coins n={slabValue(r, 20)} /></b></p>
+                <p className="flex w-full justify-between text-xs"><span className="text-zinc-500">20 pts/game player</span><b><Coins n={slabPrice(r, 1)} /></b></p>
               </div>
             </Link>
           ))}
@@ -134,7 +135,7 @@ export default async function PacksPage() {
           {([
             ["The pool", `Every active NBA player (${poolSize} of them), with his photo, team logo and team colours. Better players come up a little more often.`],
             ["Tiers", "Common, Rare, Epic, Mythic and Immortal. Each step up adds motion: a turning sunburst, shimmer, twinkling stars, floating basketballs, and a rainbow glow for Immortal."],
-            ["Value", "Set by the tier and how good the player is. An Immortal superstar is the most valuable slab there is."],
+            ["Value", "Tier price × the player's price index: his ESPN fantasy points per game (last season, then this season as he plays) plus popularity. Prices move with his stats; injured players hold steady."],
             ["Collect and boost", `Keep them, sell them back for ${Math.round(BUYBACK_RATE * 100)}%, or put one on a player for a night's slab boost (worth more on his own slab).`],
           ] as const).map(([k, v]) => (
             <div key={k} className="rounded-xl bg-ink/40 p-3">
