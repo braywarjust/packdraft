@@ -49,7 +49,7 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
             <div className="pointer-events-none absolute inset-x-0 top-0 h-[22%]" style={{ background: "linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.08) 80%, rgba(0,0,0,.25))", boxShadow: "0 .8cqw 1.5cqw rgba(0,0,0,.25)" }} />
           )}
           {/* Logo */}
-          <AnimatedLogo className={`absolute left-1/2 z-20 -translate-x-1/2 select-none ${isCase ? "top-[7%] w-[38%]" : "top-[10%] w-[58%]"}`}
+          <AnimatedLogo className={`absolute left-1/2 z-[60] -translate-x-1/2 select-none ${isCase ? "top-[7%] w-[38%]" : "top-[10%] w-[58%]"}`}
             style={{ filter: "drop-shadow(0 1.5cqw 2.5cqw rgba(0,0,0,.4))" }} />
           {/* Fan of slabs */}
           <div className={`absolute inset-x-0 ${isCase ? "top-[30%] h-[36%]" : "top-[37%] h-[33%]"}`}>

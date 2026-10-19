@@ -234,15 +234,16 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
       )}
 
       <section id="packs" className="scroll-mt-36 space-y-3">
-        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One Slab each. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
-        <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 xl:grid-cols-6">
-          {PACKS.filter((p) => p.kind !== "case").map((p) => {
+        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One Slab each, five in the Mega Pack. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
+        {/* All seven packs in one row; scrolls sideways when the screen is too narrow. */}
+        <div className="-mx-2 flex snap-x gap-6 overflow-x-auto px-2 pb-4 pt-3 scrollbar-thin">
+          {PACKS.map((p) => {
             const busy = stage !== "idle";
             const short = coins < p.price;
             return (
               <button key={p.id} onClick={() => setCheckout(p)} disabled={busy || short}
                 title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${fmtOdds(p.odds.grail)}`}
-                className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
+                className="group flex shrink-0 snap-start flex-col items-center justify-end gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
                 <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
                   <PackArt p={p} md slabs={features[p.id]} />
                 </div>
@@ -258,33 +259,6 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
         </div>
       </section>
 
-      {/* The Mega Pack: presented like the others (the render is the buy button, price underneath). */}
-      {PACKS.some((p) => p.kind === "case") && (
-        <section id="mega" className="scroll-mt-36 space-y-3">
-          <div><h2 className="text-lg font-bold">Mega Pack</h2><p className="text-sm text-zinc-500">Five slabs in one big crate, every one Epic or better.</p></div>
-          <div className="flex flex-wrap justify-center gap-10">
-            {PACKS.filter((p) => p.kind === "case").map((p) => {
-              const busy = stage !== "idle";
-              const short = coins < p.price;
-              return (
-                <button key={p.id} onClick={() => setCheckout(p)} disabled={busy || short}
-                  title={short ? "Not enough Pack Points" : `${p.name}: ${p.blurb} ${slabsLabel(p.cards)} · Mythic ${p.odds.legendary}% · Immortal ${fmtOdds(p.odds.grail)}`}
-                  className="group flex flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed">
-                  <div className={`transition duration-200 ${short || busy ? "" : "group-hover:-translate-y-2 group-hover:rotate-[-2deg] group-hover:drop-shadow-[0_18px_24px_rgba(0,0,0,.45)]"} ${busyId === p.id ? "animate-pulse" : ""}`}>
-                    <PackArt p={p} md />
-                  </div>
-                  <span className={`text-lg font-bold ${short ? "text-zinc-500 opacity-60" : "text-emerald-600"}`} title={short ? "Not enough Pack Points" : undefined}><Coins n={p.price} /></span>
-                  <SlabCount n={p.cards} className="-mt-2 text-xs font-semibold text-white" />
-                  <span className="w-36 space-y-1">
-                    <OddsBar odds={p.odds} />
-                    <span className="block text-center text-[11px] text-zinc-500">Mythic or better <b className="text-red-500">{(p.odds.legendary + p.odds.grail).toFixed(p.odds.legendary + p.odds.grail < 1 ? 2 : 1).replace(/\.0$/, "")}%</b></span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
 
 
       {checkout && <Checkout p={checkout} coins={coins} onPay={() => doBuy(checkout.id)} onDone={dropIn} onCancel={() => setCheckout(null)} />}

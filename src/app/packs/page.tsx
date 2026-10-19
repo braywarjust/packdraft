@@ -7,9 +7,7 @@ import { packFeatures } from "@/lib/slabs";
 import Link from "next/link";
 import { slabPool } from "@/lib/slab-cards";
 import { slabPrice } from "@/lib/slab-market";
-import { slabPlayerPhoto } from "@/lib/nba/photos";
-import { one } from "@/lib/db";
-import { Slab } from "@/components/Slab";
+import { SlabCover } from "@/components/Slab";
 import { Coins } from "@/components/Coins";
 import { Logo } from "@/components/Logo";
 import { OddsBar } from "@/components/OddsBar";
@@ -22,10 +20,6 @@ export default async function PacksPage() {
   const u = await requireUser();
   const inventory = unopenedPacks(u.id);
   const poolSize = slabPool().length;
-  // The tier tiles all show the league's top player, so the only thing that changes between them is the tier.
-  const top = one<{ name: string; team: string; pos: string; jersey: string | null; headshot: string | null; color: string | null; alt: string | null; team_name: string }>(
-    "SELECT p.name, p.team, p.pos, p.jersey, p.headshot, t.color, t.alt, t.name team_name FROM players p JOIN nba_teams t ON t.abbr = p.team WHERE p.active = 1 ORDER BY p.proj DESC LIMIT 1");
-  const sample = top ? { ...top, photo: slabPlayerPhoto(top.name) ?? top.headshot } : null;
 
   return (
     <div className="space-y-8">
@@ -77,7 +71,7 @@ export default async function PacksPage() {
                 <span className="text-[10px] font-bold opacity-80">Tier {i + 1}</span>
               </div>
               <div className="flex flex-col items-center gap-3 p-4 text-sm">
-                {sample && <Slab size={150} s={{ ...sample, rarity: r }} />}
+                <SlabCover size={150} rarity={r} />
                 <p className="text-center text-zinc-500">{RARITY_BLURB[r]}</p>
                 <p className="flex w-full justify-between text-xs"><span className="text-zinc-500">20 pts/game player</span><b><Coins n={slabPrice(r, 1)} /></b></p>
               </div>
