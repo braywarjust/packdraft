@@ -3,8 +3,9 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all, one, Game, Matchup, Team } from "@/lib/db";
 import { beforeOpener, boostableGame, getLeague, maybeFinalize, roster, standings, teamWeek, STARTERS } from "@/lib/league";
-import { unopenedPacks } from "@/lib/packs-server";
-import { RARITIES, Rarity } from "@/lib/packs";
+import { cardsWhere, unopenedPacks } from "@/lib/packs-server";
+import { SlabFace } from "@/components/SlabFace";
+import { RARITIES, Rarity, fmtMult } from "@/lib/packs";
 import { ensureBranding, favoritePresetId, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
 import { teamBoosts } from "@/lib/boost";
 import { earnings } from "@/lib/economy";
@@ -16,7 +17,7 @@ import { TeamBadge, type BrandLite } from "@/components/TeamBadge";
 import { TeamLogo } from "@/components/TeamLogo";
 import { MatchupCard } from "@/components/MatchupCard";
 import { PackThumb } from "@/components/PackThumb";
-import { RarityBadge } from "@/components/PlayerCard";
+import { RarityBadge, faceOf } from "@/components/PlayerCard";
 import { BoltIcon } from "@/components/Icons";
 import { claimBonus } from "./actions";
 
@@ -32,9 +33,8 @@ export default async function Home() {
   const todayIso = new Date().toISOString().slice(0, 10);
   const today = etDate();
   const vault = one<{ v: number; n: number }>("SELECT COALESCE(SUM(value), 0) v, COUNT(*) n FROM cards WHERE user_id = ? AND sold = 0", user.id)!;
-  const bestSlabs = all<{ id: number; slab_id: number; player: string; rarity: Rarity; value: number; grade: string; company: string }>(
-    `SELECT c.id, c.slab_id, s.player, c.rarity, c.value, s.grade, s.company FROM cards c JOIN slabs s ON s.id = c.slab_id
-     WHERE c.user_id = ? AND c.sold = 0 ORDER BY c.value DESC LIMIT 4`, user.id);
+  const bestSlabs = cardsWhere("c.user_id = ? AND c.sold = 0 AND (c.kind IS NOT NULL OR c.slab_id IS NOT NULL) ORDER BY c.value DESC LIMIT 4", user.id);
+  const newSlabs = one<{ n: number }>("SELECT COUNT(*) n FROM cards WHERE user_id = ? AND sold = 0 AND kind IS NOT NULL", user.id)?.n ?? 0;
   const bets = (() => {
     try {
       return one<{ n: number; stake: number; toWin: number }>(
@@ -42,8 +42,8 @@ export default async function Home() {
     } catch { return { n: 0, stake: 0, toWin: 0 }; }
   })();
   const games = all<Game>("SELECT * FROM games WHERE date_et = ? ORDER BY state = 'in' DESC, start_ts", today);
-  const pulls = all<{ user: string; name: string; rarity: Rarity; value: number; slab_id: number | null }>(
-    `SELECT u.name user, COALESCE(s.player, p.name) name, c.rarity, c.value, c.slab_id FROM cards c JOIN users u ON u.id = c.user_id LEFT JOIN slabs s ON s.id = c.slab_id LEFT JOIN players p ON p.id = c.player_id
+  const pulls = all<{ user: string; name: string; rarity: Rarity; value: number; slab_id: number | null; kind: string | null; mult: number | null; immortal: number }>(
+    `SELECT u.name user, COALESCE(s.player, p.name, 'Generic') name, c.rarity, c.value, c.slab_id, c.kind, c.mult, c.immortal FROM cards c JOIN users u ON u.id = c.user_id LEFT JOIN slabs s ON s.id = c.slab_id LEFT JOIN players p ON p.id = c.player_id
      WHERE u.is_tester = 0 AND c.sold = 0 ORDER BY c.value DESC LIMIT 5`);
   const leaders = all<{ name: string; color: string; coins: number; vault: number }>(
     `SELECT u.name, u.color, u.coins, COALESCE((SELECT SUM(value) FROM cards c WHERE c.user_id = u.id AND c.sold = 0), 0) vault
@@ -68,11 +68,11 @@ export default async function Home() {
     if (empty) alerts.push({ href: `/league/${l.id}/team`, tone: "red", text: `${l.name}: ${empty} empty starting slot${empty > 1 ? "s" : ""}`, brand });
     if (hurt) alerts.push({ href: `/league/${l.id}/team`, tone: "amber", text: `${l.name}: ${hurt} starter${hurt > 1 ? "s are" : " is"} listed OUT`, brand });
     // Unused slab boost today (real leagues: someone plays today and nobody is boosted for today).
-    if (vault.n > 0 && l.mode !== "sim") {
+    if (newSlabs > 0 && l.mode !== "sim") {
       const boosts = teamBoosts(t.id);
       const canBoostToday = roster(t.id).some((p) => boostableGame(l, p)?.key === today);
       if (canBoostToday && ![...boosts.values()].some((b) => b.day_key === today))
-        alerts.push({ href: `/league/${l.id}/team`, tone: "blue", text: `${l.name}: today's slab boost is unused`, brand });
+        alerts.push({ href: `/league/${l.id}/team`, tone: "blue", text: `${l.name}: nobody is boosted tonight`, brand });
     }
     const m = one<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ? AND (home_team_id = ? OR away_team_id = ?)", l.id, l.current_week, t.id, t.id);
     let card = null;
@@ -244,8 +244,8 @@ export default async function Home() {
             ) : (
               <div className="grid grid-cols-4 gap-2">
                 {bestSlabs.map((c) => (
-                  <Link key={c.id} href="/collection" className="flex flex-col items-center gap-1 text-center" title={`${c.player} · ${c.company} ${c.grade}`}>
-                    <img src={`/api/slabs/${c.slab_id}`} alt="" className="h-24 w-full object-contain drop-shadow-lg" />
+                  <Link key={c.id} href="/collection" className="flex flex-col items-center gap-1 text-center" title={c.kind ? `${c.name} ${fmtMult(c.mult ?? 1)}` : `${c.name} · ${c.s_company} ${c.s_grade}`}>
+                    {c.kind ? <SlabFace s={faceOf(c)} height={100} /> : <img src={`/api/slabs/${c.slab_id}`} alt="" className="h-24 w-full object-contain drop-shadow-lg" />}
                     <RarityBadge rarity={c.rarity} className="px-1.5 text-[8px]" />
                     <span className="text-[11px] font-semibold text-emerald-600"><Coins n={c.value} /></span>
                   </Link>
@@ -267,7 +267,7 @@ export default async function Home() {
             <ul className="space-y-2">
               {pulls.map((c, i) => (
                 <li key={i} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="min-w-0 truncate"><span className={`font-semibold ${RARITIES[c.rarity].text}`}>{c.name}</span> <span className="text-zinc-400">· {c.user}</span></span>
+                  <span className="min-w-0 truncate"><span className={`font-semibold ${RARITIES[c.rarity].text}`}>{c.kind ? `${fmtMult(c.mult ?? 1)} ` : ""}{c.name}</span>{!!c.immortal && <span className="ml-1 text-[10px] font-black text-amber-400">IMMORTAL</span>} <span className="text-zinc-400">· {c.user}</span></span>
                   <span className="shrink-0 font-mono text-emerald-600"><Coins n={c.value} /></span>
                 </li>
               ))}

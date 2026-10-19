@@ -3,10 +3,12 @@
 import { askConfirm } from "./Confirm";
 import { BoltIcon, LockIcon, StarIcon, XIcon } from "./Icons";
 import { TeamLogo } from "./TeamLogo";
-import { Coins } from "./Coins";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { LivePlayer } from "@/lib/league";
+import type { BoostSlab } from "@/lib/boost";
+import { SlabFace } from "./SlabFace";
+import { fmtMult } from "@/lib/packs";
 import { Headshot, InjuryTag } from "./Headshot";
 import { Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
@@ -14,11 +16,11 @@ import { useScrollLock } from "@/components/useScrollLock";
 
 const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
 
-type BoostSlab = { cardId: number; slabId: number; playerId: number | null; player: string; label: string; grade: string; rarity: string; value: number; mult: number };
 export type BoostProps = {
   slabs: BoostSlab[];
-  boostable: { playerId: number; dayKey: string; day: string; taken: { name: string; mult: number } | null }[];
-  ownBonus: number;
+  boostable: { playerId: number; dayKey: string; day: string }[];
+  /** `${cardId}|${dayKey}` → the player that slab is already on that night (any league). */
+  busy: Record<string, string>;
   set: (playerId: number, cardId: number) => Promise<unknown>;
   clear: (playerId: number) => Promise<unknown>;
 };
@@ -28,9 +30,9 @@ export function BoostChip({ boost }: { boost: LivePlayer["boost"] }) {
   if (!boost) return null;
   const live = boost.state === "in";
   return (
-    <span title={`Slab boost ×${boost.mult.toFixed(2)}${boost.own ? " (own-player bonus)" : ""}${boost.state === "pre" ? " on his next game" : ""}`}
+    <span title={`Slab boost ${fmtMult(boost.mult)}${boost.own ? " (his own slab)" : ""}${boost.state === "pre" ? " on his next game" : ""}`}
       className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-black ${live ? "animate-pulse bg-amber-400 text-black" : "bg-amber-50 text-amber-600"}`}>
-      <BoltIcon />×{boost.mult.toFixed(2)}{boost.own && <StarIcon className="ml-0.5" />}
+      <BoltIcon />{fmtMult(boost.mult)}{boost.own && <StarIcon className="ml-0.5" />}
     </span>
   );
 }
@@ -149,12 +151,14 @@ export function LineupEditor({
   );
 }
 
-/** Slab picker for boosting one player's next game. */
+/** Slab picker for boosting one player's next game: his own player slabs, then generic slabs. */
 export function BoostModal({ boost, player, info, pending, onClose, run }: {
   boost: BoostProps; player: LivePlayer; info: BoostProps["boostable"][number] | undefined; pending: boolean;
   onClose: () => void; run: (fn: () => Promise<unknown>) => void;
 }) {
   useScrollLock(true);
+  const fits = boost.slabs.filter((s) => s.playerId === player.id || s.playerId == null);
+  const own = fits.filter((s) => s.playerId === player.id).length;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" onClick={onClose}>
       <div className="card flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
@@ -162,31 +166,31 @@ export function BoostModal({ boost, player, info, pending, onClose, run }: {
           <div>
             <p className="flex items-center gap-1.5 font-bold"><BoltIcon className="text-amber-600" /> Boost {player.name}</p>
             <p className="text-xs text-zinc-500">
-              {info?.day} · projected <Fpts n={player.proj} /> fantasy points.
-              {info?.taken && <span className="text-amber-600"> This replaces today&apos;s boost on {info.taken.name} (×{info.taken.mult.toFixed(2)}).</span>}
+              {info?.day} · projected <Fpts n={player.proj} /> fantasy points.{" "}
+              {own ? `You have ${own} ${player.name} slab${own > 1 ? "s" : ""}.` : `No ${player.name} slabs yet, so only generics fit.`}
             </p>
           </div>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900" aria-label="Close"><XIcon /></button>
         </div>
-        <div className="grid flex-1 grid-cols-2 gap-3 overflow-y-auto p-4 scrollbar-thin sm:grid-cols-4">
-          {boost.slabs.length === 0 && <p className="col-span-full text-sm text-zinc-500">You don&apos;t have any slabs yet. Rip some packs first.</p>}
-          {boost.slabs.map((s) => {
-            const own = s.playerId === player.id;
-            const mult = s.mult + (own ? boost.ownBonus : 0);
+        <div className="grid flex-1 grid-cols-2 justify-items-center gap-3 overflow-y-auto p-4 scrollbar-thin sm:grid-cols-4">
+          {fits.length === 0 && <p className="col-span-full text-sm text-zinc-500">None of your slabs fit him. Rip packs for {player.name} slabs or generic slabs.</p>}
+          {fits.map((s) => {
+            const on = info ? boost.busy[`${s.cardId}|${info.dayKey}`] : undefined;
+            const here = player.boost?.cardId === s.cardId;
+            const elsewhere = !!on && !here;
             return (
-              <button key={s.cardId} disabled={pending} onClick={() => run(() => boost.set(player.id, s.cardId))}
-                className={`flex flex-col items-center gap-1 rounded-lg p-2 text-center transition hover:bg-panel2 disabled:opacity-40 ${own ? "ring-1 ring-amber-500/60" : ""}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/api/slabs/${s.slabId}`} alt="" loading="lazy" className="h-32 w-full object-contain" />
-                <span className="text-lg font-black text-amber-600">×{mult.toFixed(2)}</span>
-                <span className="line-clamp-2 text-[11px] text-zinc-500">{s.player}</span>
-                <span className="text-[11px] text-zinc-400">{own ? "Own-player bonus!" : <Coins n={s.value} />}</span>
+              <button key={s.cardId} disabled={pending || elsewhere || here} onClick={() => run(() => boost.set(player.id, s.cardId))}
+                title={elsewhere ? `Already on ${on} tonight` : undefined}
+                className={`flex flex-col items-center gap-1 rounded-lg p-2 text-center transition hover:bg-panel2 disabled:cursor-not-allowed ${elsewhere ? "opacity-40" : ""} ${here ? "ring-2 ring-amber-500" : ""}`}>
+                <SlabFace height={170} s={{ kind: s.playerId == null ? "generic" : "player", name: s.player, team: s.team, pos: s.pos, rarity: s.rarity, mult: s.mult, immortal: s.immortal, serial: s.serial, jersey: s.jersey, color: s.color, alt: s.alt, photo: s.photo }} />
+                <span className="text-lg font-black text-amber-600">{fmtMult(s.mult)}</span>
+                <span className="text-[11px] text-zinc-500">{here ? "On him now" : elsewhere ? `On ${on} tonight` : s.playerId == null ? "Generic" : "His own slab"}</span>
               </button>
             );
           })}
         </div>
         <div className="flex items-center justify-between border-t border-line/60 px-4 py-2 text-xs text-zinc-500">
-          <span>One boost per day. It locks at his tip-off and only counts if he starts.</span>
+          <span>One slab per player per night. It locks at his tip-off and only counts if he starts.</span>
           {player.boost?.state === "pre" && (
             <button className="text-red-600 hover:underline" onClick={() => run(() => boost.clear(player.id))}>Remove boost</button>
           )}

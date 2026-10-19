@@ -4,8 +4,9 @@ import { askConfirm } from "@/components/Confirm";
 import { XIcon } from "@/components/Icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { CardData, PlayerCard, RarityBadge, SlabImage, slabBadges } from "@/components/PlayerCard";
-import { BUYBACK_RATE, RARITIES, fmtCoins } from "@/lib/packs";
+import { CardData, PlayerCard, RarityBadge, SlabImage, faceOf, slabBadges } from "@/components/PlayerCard";
+import { SlabFace } from "@/components/SlabFace";
+import { BUYBACK_RATE, RARITIES, fmtCoins, fmtMult } from "@/lib/packs";
 import { Logo, LogoWatermark } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
 import { useScrollLock } from "@/components/useScrollLock";
@@ -52,14 +53,16 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
               <div className="flex items-center gap-3">
                 <Logo height={34} />
                 <span className="hidden h-5 w-px bg-zinc-200 sm:block" />
-                <span className="hidden text-xs font-semibold uppercase tracking-[0.25em] text-zinc-400 sm:block">Slab Vault</span>
+                <span className="hidden text-xs font-semibold uppercase tracking-[0.25em] text-zinc-400 sm:block">{open.kind ? "Slab" : "Slab Vault"}</span>
               </div>
               <button onClick={() => setOpen(null)} aria-label="Close" className="rounded-md p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900"><XIcon /></button>
             </div>
             <div className="relative grid gap-6 overflow-hidden p-6 md:grid-cols-[auto_1fr]">
             <LogoWatermark color="red" opacity={0.06} height={230} className="-bottom-12 -right-10" />
             <div className="relative flex justify-center p-2">
-              {open.slab_id ? (
+              {open.kind ? (
+                <SlabFace s={faceOf(open)} height={Math.min(520, typeof window !== "undefined" ? window.innerHeight * 0.68 : 520)} />
+              ) : open.slab_id ? (
                 <SlabImage id={open.slab_id} alt={`${open.s_year} ${open.s_set} ${open.name}`} height={Math.min(560, typeof window !== "undefined" ? window.innerHeight * 0.7 : 560)} rarity={open.rarity} />
               ) : (
                 <PlayerCard c={open} />
@@ -67,15 +70,19 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
             </div>
             <div className="relative min-w-0 space-y-4">
               <div className="flex items-center gap-4">
-                {open.photo && (
+                {open.photo && !open.kind && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={open.photo} alt={open.name} className="h-24 w-32 shrink-0 rounded-xl border border-zinc-200 bg-zinc-100 object-cover object-top"
                     onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 )}
                 <div className="min-w-0">
-                  <RarityBadge rarity={open.rarity} className="mb-1" />
-                  <h2 className="text-2xl font-bold tracking-tight">{open.name}</h2>
-                  {open.slab_id && (
+                  <span className="mb-1 flex items-center gap-1">
+                    <RarityBadge rarity={open.rarity} />
+                    {!!open.immortal && <span className="rounded-full bg-gradient-to-r from-pink-500 via-amber-400 to-cyan-400 px-1.5 py-px text-[8.5px] font-black uppercase leading-tight tracking-wide text-black">Immortal</span>}
+                  </span>
+                  <h2 className="text-2xl font-bold tracking-tight">{open.kind === "generic" ? "Generic Slab" : open.name}</h2>
+                  {open.kind && <p className="text-zinc-500">{open.kind === "generic" ? "Works on any player on your team" : `${open.team_name ?? open.team} · ${open.pos}`} · #{open.serial}</p>}
+                  {!!open.slab_id && (
                     <p className="text-zinc-500">{open.s_year} {open.s_set}{open.s_no ? ` #${open.s_no}` : ""}{open.s_variant ? ` · ${open.s_variant}` : ""}</p>
                   )}
                 </div>
@@ -86,8 +93,18 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
                   {slabBadges(open.s_flags).map((b) => <span key={b} className="rounded-md border border-zinc-200 px-2 py-0.5 text-xs font-semibold text-zinc-600">{b}</span>)}
                 </div>
               )}
+              {open.kind && (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-4">
+                  <p className="text-xs text-zinc-500">Fantasy points multiplier</p>
+                  <p className="text-3xl font-black text-amber-500">{fmtMult(open.mult ?? 1)}</p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Put it on {open.kind === "generic" ? "any player on your fantasy team" : open.name} for a night from your team page: his fantasy points for that game, and the Pack Points they pay, are multiplied by {fmtMult(open.mult ?? 1)}.
+                    {open.immortal ? " The Immortal stamp makes it glow and worth five times as much; the multiplier is the same." : ""}
+                  </p>
+                </div>
+              )}
               <div className="rounded-xl border border-zinc-200 p-4">
-                <p className="text-xs text-zinc-500">Market value</p>
+                <p className="text-xs text-zinc-500">{open.kind ? "Value" : "Market value"}</p>
                 <p className="text-3xl font-bold text-emerald-600"><Coins n={open.value} /></p>
                 <p className="mt-1 text-xs text-zinc-500">
                   {open.s_source === "auction"
@@ -98,6 +115,7 @@ export function CollectionGrid({ cards, mine, sell }: { cards: GridCard[]; mine:
                     ? detail.match === "cert"
                       ? `This exact slab is listed on eBay (${detail.n} listing${detail.n > 1 ? "s" : ""}).`
                       : <>Median of {detail.n} eBay listings for this card in this grade{detail.low != null && <> (<Coins n={detail.low} />–<Coins n={detail.high!} />)</>}.</>
+                    : open.kind ? "Set by the multiplier, how good the player is, and the Immortal stamp."
                     : open.slab_id ? "Estimated from the rarity score. Add eBay keys to price from live listings." : "Generated card value."}
                 </p>
               </div>

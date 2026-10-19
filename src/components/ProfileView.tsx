@@ -3,7 +3,8 @@ import Link from "next/link";
 import type { ProfileLook } from "@/lib/profile-look";
 import { TeamBadge, TeamName, type BrandLite } from "./TeamBadge";
 import { TeamLogo } from "./TeamLogo";
-import { PlayerCard, RarityBadge, SlabImage, type CardData } from "./PlayerCard";
+import { PlayerCard, RarityBadge, SlabImage, faceOf, type CardData } from "./PlayerCard";
+import { SlabFace } from "./SlabFace";
 import { Coins } from "./Coins";
 import { SlabIcon } from "./SlabIcon";
 import { CrownIcon, StarIcon } from "./Icons";
@@ -69,7 +70,9 @@ function Section({ title, icon, children, action }: { title: string; icon?: Reac
 }
 
 function Showcase({ cards, look, c1, c2 }: { cards: CardData[]; look: ProfileLook; c1: string; c2: string }) {
-  const slab = (c: CardData, h: number) => c.slab_id
+  const slab = (c: CardData, h: number) => c.kind
+    ? <SlabFace s={faceOf(c)} height={h} />
+    : c.slab_id
     ? <SlabImage id={c.slab_id} alt={c.name} height={h} rarity={c.rarity} className="drop-shadow-[0_18px_24px_rgba(0,0,0,.55)]" />
     : <PlayerCard c={c} small={h < 260} />;
   const caption = (c: CardData) => (

@@ -2,67 +2,66 @@ export type PackType = {
   id: string; name: string; price: number; cards: number; color: string; accent: string; blurb: string;
   /** "case" = the multi-slab Mega Pack (wide crate art). Everything is called a pack in the UI. */
   kind?: "pack" | "case";
-  // Rarity odds (percent). Higher packs shift weight toward the top tiers.
+  /** Multiplier-tier odds for player slabs (percent). Higher packs shift weight toward the big multipliers. */
   odds: Record<Rarity, number>;
+  /** Percent of slabs that are generic (any-player) slabs instead of player slabs. */
+  generic: number;
+  /** Percent of slabs that drop with the Immortal certification. */
+  immortal: number;
 };
+// Tier keys: common/rare/epic/legendary/grail. A player slab's tier is its multiplier (1.5X up to 10X); generic slabs
+// only come in the bottom three tiers. Old graded slabs (pre-redesign) keep their tier as a value band.
 export type Rarity = "common" | "rare" | "epic" | "legendary" | "grail";
 
-export const RARITIES: Record<Rarity, { label: string; mult: [number, number]; ring: string; text: string; printRun: number }> = {
-  common: { label: "Common", mult: [0.6, 1.4], ring: "ring-slate-400", text: "text-zinc-700", printRun: 999 },
-  rare: { label: "Rare", mult: [0.6, 1.4], ring: "ring-blue-500", text: "text-blue-400", printRun: 299 },
-  epic: { label: "Epic", mult: [0.6, 1.4], ring: "ring-purple-500", text: "text-purple-400", printRun: 99 },
-  legendary: { label: "Mythic", mult: [1, 3], ring: "ring-red-500", text: "text-red-500", printRun: 25 },
-  grail: { label: "Immortal", mult: [6, 15], ring: "ring-sky-200", text: "text-sky-200", printRun: 1 },
+export const RARITIES: Record<Rarity, { label: string; ring: string; text: string }> = {
+  common: { label: "Common", ring: "ring-slate-400", text: "text-zinc-700" },
+  rare: { label: "Rare", ring: "ring-blue-500", text: "text-blue-400" },
+  epic: { label: "Epic", ring: "ring-purple-500", text: "text-purple-400" },
+  legendary: { label: "Mythic", ring: "ring-red-500", text: "text-red-500" },
+  grail: { label: "Grail", ring: "ring-amber-300", text: "text-amber-300" },
 };
 
-/** Solid tier colours (match the rarity badges) and what each tier means in hobby terms. */
-// Internal keys stay common/rare/epic/legendary/grail; shown as Common, Rare, Epic, Mythic, Immortal.
-export const RARITY_HEX: Record<Rarity, string> = { common: "#64748b", rare: "#2563eb", epic: "#9333ea", legendary: "#dc2626", grail: "#bae6fd" };
+/** Fantasy points multiplier printed on a player slab, per tier. */
+export const PLAYER_MULT: Record<Rarity, number> = { common: 1.5, rare: 2, epic: 3, legendary: 5, grail: 10 };
+/** Generic slabs work on anyone, so they stay small. */
+export const GENERIC_MULT: Partial<Record<Rarity, number>> = { common: 1.1, rare: 1.25, epic: 1.5 };
+/** Tier odds for generic slabs (percent), the same in every pack. */
+export const GENERIC_ODDS: Partial<Record<Rarity, number>> = { common: 70, rare: 25, epic: 5 };
+/** "10X", "1.25X". */
+export const fmtMult = (m: number) => `${Number(m.toFixed(2))}X`;
+
+/** Solid tier colours (match the rarity badges) and what each tier means. */
+export const RARITY_HEX: Record<Rarity, string> = { common: "#64748b", rare: "#2563eb", epic: "#9333ea", legendary: "#dc2626", grail: "#f5b70a" };
 export const RARITY_BLURB: Record<Rarity, string> = {
-  common: "Everyday graded slabs. The bread and butter of every break.",
-  rare: "Inserts, parallels and better players. The cards you chase in a box.",
-  epic: "Short prints, autos, patches and gem grades. Rare enough to brag about.",
-  legendary: "The best of the vault: big names, low pops, on-card autos, Logomen, black labels and iconic rookies of legends.",
-  grail: "The Ultra Heavy Hitters only: record-setting slabs that sold for hundreds of thousands to millions. Almost impossible to pull.",
+  common: "1.5X player slabs, and 1.1X generic slabs that work on anyone. The bread and butter of every rip.",
+  rare: "2X player slabs, and 1.25X generics.",
+  epic: "3X player slabs, and the best generics at 1.5X.",
+  legendary: "5X player slabs. Mostly role players; a 5X star is a real pull.",
+  grail: "10X player slabs, the rarest multiplier there is, and almost never on a superstar.",
 };
 export const RARITY_ORDER: Rarity[] = ["common", "rare", "epic", "legendary", "grail"];
 
-// Immortal (the Ultra Heavy Hitters) can only come out of the GOAT Pack and the Mega Pack.
-// Tiers are value bands (Common <75, Rare 75-249, Epic 250-999, Mythic 1,000+), so odds are set per pack to keep the
-// floor reasonable and the average return near 90% (simulated against the vault: 86-112%, a bad 1,000 rip ~250).
+// Slab values are fixed per tier and player (see slab-cards.ts), so odds are set per pack to keep the average return
+// near 90% of the price (simulated against the starter pool: 87-101%).
 export const PACKS: PackType[] = [
-  { id: "rookie", name: "Rookie Pack", price: 25, cards: 1, color: "from-slate-500 to-slate-700", accent: "#94a3b8", blurb: "Cheap thrills. Every hit starts somewhere.",
-    odds: { common: 94.4, rare: 5, epic: 0.5, legendary: 0.1, grail: 0 } },
+  { id: "rookie", name: "Rookie Pack", price: 25, cards: 1, color: "from-slate-500 to-slate-700", accent: "#94a3b8", blurb: "Cheap thrills. Mostly generics.",
+    generic: 60, immortal: 0.5, odds: { common: 88, rare: 10.5, epic: 1.3, legendary: 0.18, grail: 0.02 } },
   { id: "starter", name: "Starter Pack", price: 100, cards: 1, color: "from-sky-500 to-blue-700", accent: "#38bdf8", blurb: "Solid floor, real upside.",
-    odds: { common: 52, rare: 41, epic: 6, legendary: 1, grail: 0 } },
+    generic: 40, immortal: 1, odds: { common: 50, rare: 35, epic: 12, legendary: 2.7, grail: 0.3 } },
   { id: "pro", name: "Pro Pack", price: 250, cards: 1, color: "from-emerald-500 to-teal-700", accent: "#34d399", blurb: "What weekly winners rip.",
-    odds: { common: 20, rare: 48, epic: 27, legendary: 5, grail: 0 } },
+    generic: 25, immortal: 1.5, odds: { common: 25, rare: 40, epic: 27, legendary: 7, grail: 1 } },
   { id: "allpro", name: "All-Pro Pack", price: 500, cards: 1, color: "from-fuchsia-500 to-purple-700", accent: "#e879f9", blurb: "Boosted Epic odds.",
-    odds: { common: 2, rare: 36, epic: 46, legendary: 16, grail: 0 } },
+    generic: 10, immortal: 2, odds: { common: 3, rare: 38, epic: 43, legendary: 14.2, grail: 1.8 } },
   { id: "hof", name: "Hall of Fame Pack", price: 1000, cards: 1, color: "from-amber-400 to-orange-600", accent: "#fbbf24", blurb: "Top scorer of the week gets one of these.",
-    odds: { common: 0, rare: 15, epic: 50, legendary: 35, grail: 0 } },
-  { id: "goat", name: "GOAT Pack", price: 2500, cards: 1, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Mythic chase.",
-    odds: { common: 0, rare: 0, epic: 32, legendary: 68, grail: 0.004 } },
-  { id: "megacase", name: "Mega Pack", price: 10000, cards: 5, kind: "case", color: "from-zinc-900 via-amber-500 to-zinc-900", accent: "#f5c15c", blurb: "Five slabs, all Epic or better. The big rip.",
-    odds: { common: 0, rare: 0, epic: 28, legendary: 72, grail: 0.0032 } },
+    generic: 0, immortal: 3, odds: { common: 0, rare: 20, epic: 45, legendary: 31, grail: 4 } },
+  { id: "goat", name: "GOAT Pack", price: 2500, cards: 1, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. 10X chase.",
+    generic: 0, immortal: 5, odds: { common: 0, rare: 0, epic: 30, legendary: 56, grail: 14 } },
+  { id: "megacase", name: "Mega Pack", price: 10000, cards: 5, kind: "case", color: "from-zinc-900 via-amber-500 to-zinc-900", accent: "#f5c15c", blurb: "Five player slabs, all 3X or better.",
+    generic: 0, immortal: 5, odds: { common: 0, rare: 0, epic: 40, legendary: 49, grail: 11 } },
 ];
 export const PACK_BY_ID: Record<string, PackType> = Object.fromEntries(PACKS.map((p) => [p.id, p]));
 
 export const BUYBACK_RATE = 0.9;
-
-function expectedPerCard(odds: PackType["odds"]) {
-  let ev = 0;
-  for (const [r, pct] of Object.entries(odds)) {
-    const [lo, hi] = RARITIES[r as Rarity].mult;
-    ev += (pct / 100) * ((lo + hi) / 2);
-  }
-  return ev;
-}
-
-/** Scale card values so a pack returns ~92% of its price on average (like real "vending machine" packs). */
-export function valueScale(pack: PackType) {
-  return 0.92 / (pack.cards * expectedPerCard(pack.odds));
-}
 
 /** "8.5%", or "1 in 25,000" for odds too small to read as a percentage. */
 export function fmtOdds(pct: number) {
@@ -71,23 +70,14 @@ export function fmtOdds(pct: number) {
   return `1 in ${Math.round(100 / pct).toLocaleString("en-US")}`;
 }
 
-export function rollRarity(odds: PackType["odds"], r: number): Rarity {
+export function rollRarity(odds: Partial<Record<Rarity, number>>, r: number): Rarity {
   let acc = 0;
   const order: Rarity[] = ["grail", "legendary", "epic", "rare", "common"];
   for (const k of order) {
-    acc += odds[k] / 100;
+    acc += (odds[k] ?? 0) / 100;
     if (r < acc) return k;
   }
   return "common";
-}
-
-export function gradeFor(r: number) {
-  // PSA-style grades, gem mints are rare.
-  if (r < 0.06) return 10;
-  if (r < 0.3) return 9.5;
-  if (r < 0.65) return 9;
-  if (r < 0.88) return 8.5;
-  return 8;
 }
 
 /** Plain-text Pack Points (for confirm dialogs, chat messages, titles). In JSX use <Coins n={...} />. */
