@@ -68,11 +68,14 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
             </svg>
           ))}
           {/* Name band */}
-          <div className={`absolute inset-x-0 text-center ${isCase ? "bottom-[7%]" : "bottom-[9%]"}`}>
+          {/* Above the cover slabs (z-50), so their drop shadow never darkens the name */}
+          <div className={`absolute inset-x-0 z-50 text-center ${isCase ? "bottom-[7%]" : "bottom-[9%]"}`}>
             <p className={`font-black uppercase leading-none tracking-tight text-white ${isCase ? "text-[11cqw]" : "text-[13cqw]"}`} style={{ textShadow: "0 1cqw 2.5cqw rgba(0,0,0,.5)" }}>
               {p.name.replace(" Pack", "")}
             </p>
-            <p className="mt-[1.5cqw] text-[5.5cqw] font-bold uppercase tracking-[0.2em] text-white/80">{p.cards} slab{p.cards > 1 ? "s" : ""}</p>
+            <p className="mt-[1.5cqw] flex items-center justify-center gap-[1.5cqw] text-[5.5cqw] font-bold uppercase tracking-[0.2em] text-white/80">
+              <span className="pack-icon-glyph inline-block" style={{ width: "6cqw", height: "5.6cqw" }} />{p.cards} slab{p.cards > 1 ? "s" : ""}
+            </p>
           </div>
           {animate && <div className="slab-shimmer pointer-events-none absolute inset-0" />}
           {/* Glossy highlight: a soft glare up top and a specular streak, which slides a little on hover */}
