@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useState } from "react";
-import { RARITIES, fmtMult, fmtRange, type Rarity } from "@/lib/packs";
+import { RARITIES, RARITY_HEX, fmtMult, fmtRange, type Rarity } from "@/lib/packs";
 import { FptIcon } from "./Fpts";
 
 export type SlabFaceData = {
@@ -19,6 +19,9 @@ const REFRACTOR: Record<Rarity, string> = {
   grail: "linear-gradient(135deg, #fde68a, #d97706 40%, #fef3c7 60%, #92400e)",
 };
 const LABEL_RED = "#d6363c";
+const POSITION: Record<string, string> = { G: "GUARD", F: "FORWARD", C: "CENTER" };
+/** How strong the animated background is per tier (Immortal pushes it further). */
+const FX: Record<Rarity, number> = { common: 0.3, rare: 0.4, epic: 0.5, legendary: 0.65, grail: 0.8 };
 const SANS = "Arial, Helvetica, sans-serif";
 
 /** Lighten/darken a hex colour toward white (amt > 0) or black (amt < 0). */
@@ -52,18 +55,17 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
   const casePad = px(0.035, 3);
   const labelPad = px(0.016, 2);
   const labelIn = w - 2 * casePad - 2 * labelPad - 2 * px(0.014, 2.5);
-  const name = generic ? "ANY PLAYER" : s.name.toUpperCase();
-  const full = (s.team_name ?? s.team).toUpperCase();
-  const club = full.length > 12 ? full.split(" ").slice(-1)[0] : full;
-  const team = generic ? "GENERIC SLAB" : `${club}${s.pos ? ` · ${s.pos}` : ""}`;
+  // No player name anywhere on the slab: the photo and team logo say who it is.
+  const team = generic ? "GENERIC SLAB" : (s.team_name ?? s.team).toUpperCase();
+  const pos = generic ? "WORKS ON ANY PLAYER" : POSITION[s.pos] ?? s.pos;
   const set = `2026 PACKDRAFT ${s.immortal ? "IMMORTAL" : RARITIES[s.rarity].label.toUpperCase()}`;
   const num = generic ? "ANY" : `#${s.jersey ?? "-"}`;
   const cw = 0.68;
   const T = Math.max(4.5, Math.min(
     px(0.026, 5.5),
     labelIn / ((set.length + num.length + 1) * cw),
-    labelIn / (name.length * cw),
     labelIn / (team.length * cw),
+    labelIn / (pos.length * cw),
   ));
 
   return (
@@ -82,8 +84,8 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
             <span className="truncate">{set}</span>
             <span className="shrink-0">{num}</span>
           </div>
-          <p className="truncate font-bold">{name}</p>
-          <p className="truncate">{team}</p>
+          <p className="truncate font-bold">{team}</p>
+          <p className="truncate">{pos}</p>
         </div>
 
         {/* Case window with the card in it */}
@@ -94,45 +96,38 @@ export function SlabFace({ s, height, className = "" }: { s: SlabFaceData; heigh
               height: "94%", aspectRatio: "2.5 / 3.5", maxWidth: "92%", padding: px(0.014, 2), borderRadius: px(0.008, 1),
               background: s.immortal ? undefined : REFRACTOR[s.rarity], ["--glow" as string]: "rgba(255, 200, 80, .75)",
             }}>
-            <div className="relative h-full w-full overflow-hidden"
+            <div className="slab-bg relative h-full w-full overflow-hidden"
               style={{
                 borderRadius: px(0.004, 1),
-                background: `linear-gradient(165deg, ${shade(primary, 0.1)} 0%, ${primary} 45%, ${shade(alt, -0.4)} 100%)`,
+                ["--c1" as string]: primary, ["--c2" as string]: alt, ["--c1d" as string]: shade(primary, -0.55),
+                ["--tier" as string]: RARITY_HEX[s.rarity], ["--fx" as string]: FX[s.rarity] * (s.immortal ? 1.3 : 1),
                 filter: s.immortal ? "saturate(1.6) contrast(1.08)" : undefined,
               }}>
-              {/* Arena light streaks */}
-              <div className="absolute inset-0 opacity-20" style={{ background: "repeating-linear-gradient(115deg, rgba(255,255,255,.5) 0 2px, transparent 2px 16px)" }} />
+              {/* Animated background: team colours drift (slab-bg), tier-coloured rays turn, light streaks slide by */}
+              <div className="slab-rays pointer-events-none absolute" />
+              <div className="slab-streaks pointer-events-none absolute" />
               {generic ? (
-                <div className="absolute inset-x-0 top-0 grid place-items-center" style={{ bottom: "15%" }}>
-                  <img src="/packdraft-logo-full.svg" alt="PackDraft" draggable={false} className="select-none" style={{ width: "80%", filter: "drop-shadow(0 4px 8px rgba(0,0,0,.4))" }} />
+                <div className="absolute inset-0 grid place-items-center">
+                  <img src="/packdraft-logo-full.svg" alt="PackDraft" draggable={false} className="select-none" style={{ width: "82%", filter: "drop-shadow(0 4px 8px rgba(0,0,0,.4))" }} />
                 </div>
               ) : (
                 <>
-                  {logo && <img src={logo} alt="" draggable={false} className="absolute left-1/2 top-[3%] -translate-x-1/2 select-none opacity-25" style={{ width: "95%" }} />}
                   {s.photo && photoOk ? (
                     <img src={s.photo} alt={s.name} draggable={false} onError={() => setPhotoOk(false)}
                       className="absolute left-1/2 max-w-none -translate-x-1/2 select-none"
-                      style={{ width: "170%", bottom: "14%", filter: "drop-shadow(0 6px 10px rgba(0,0,0,.5))" }} />
+                      style={{ width: "165%", bottom: "27%", maskImage: "linear-gradient(to bottom, #000 72%, transparent 98%)", WebkitMaskImage: "linear-gradient(to bottom, #000 72%, transparent 98%)" }} />
                   ) : (
-                    <span className="absolute inset-x-0 top-0 grid place-items-center font-black text-white/85" style={{ bottom: "15%", fontSize: px(0.12) }}>
+                    <span className="absolute inset-x-0 top-0 grid place-items-center font-black text-white/85" style={{ bottom: "32%", fontSize: px(0.12) }}>
                       {s.name.split(" ").map((x) => x[0]).join("").slice(0, 2)}
                     </span>
                   )}
+                  {/* Big team logo under the photo */}
+                  {logo && (
+                    <img src={logo} alt={s.team_name ?? s.team} draggable={false} className="absolute left-1/2 -translate-x-1/2 select-none object-contain"
+                      style={{ width: "62%", height: "36%", bottom: "-1%", filter: "drop-shadow(0 4px 8px rgba(0,0,0,.55))" }} />
+                  )}
                 </>
               )}
-              {/* Name strip with the team logo, inside the card */}
-              <div className="absolute inset-x-0 bottom-0 flex items-center gap-[4%] px-[5%]"
-                style={{ height: "15%", background: `linear-gradient(90deg, ${shade(primary, -0.5)}, ${shade(primary, -0.2)})`, borderTop: `1px solid ${shade(alt, 0.35)}` }}>
-                <span className="min-w-0 flex-1 truncate font-black uppercase italic text-white"
-                  style={{ fontFamily: SANS, fontSize: Math.max(5, Math.min(px(0.03), (w * 0.5) / (Math.max(name.length, 1) * 0.62))) }}>
-                  {name}
-                </span>
-                {logo && !generic && (
-                  <span className="grid shrink-0 place-items-center rounded-full" style={{ background: "#ffffff", width: px(0.056, 9), height: px(0.056, 9) }}>
-                    <img src={logo} alt={s.team} draggable={false} className="select-none object-contain" style={{ width: "82%", height: "82%" }} />
-                  </span>
-                )}
-              </div>
               {s.immortal && <div className="slab-holo pointer-events-none absolute inset-0" />}
             </div>
           </div>
