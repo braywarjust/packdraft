@@ -9,6 +9,8 @@
 # play there, not on your Mac.
 set -euo pipefail
 TARGET="${1:?usage: push-data.sh ubuntu@<server-ip>}"
+# Optional: SSH_KEY=~/path/to/key bash deploy/push-data.sh ubuntu@<ip>
+KEYOPT=(); [ -n "${SSH_KEY:-}" ] && KEYOPT=(-i "$SSH_KEY")
 cd "$(dirname "$0")/.."
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
@@ -16,10 +18,10 @@ mkdir -p "$STAGE/data"
 sqlite3 data/packdraft-nba.db ".backup '$STAGE/data/packdraft-nba.db'"
 cp data/.secret "$STAGE/data/" 2>/dev/null || true
 for d in uploads thumbs slabs library; do [ -d "data/$d" ] && cp -R "data/$d" "$STAGE/data/"; done
-tar -C "$STAGE/data" -czf "$STAGE/packdraft-data.tgz" .
+COPYFILE_DISABLE=1 tar -C "$STAGE/data" -czf "$STAGE/packdraft-data.tgz" .
 echo "==> Copying $(du -h "$STAGE/packdraft-data.tgz" | cut -f1) to $TARGET"
-scp "$STAGE/packdraft-data.tgz" "$TARGET:/tmp/packdraft-data.tgz"
-ssh "$TARGET" 'set -e
+scp "${KEYOPT[@]}" "$STAGE/packdraft-data.tgz" "$TARGET:/tmp/packdraft-data.tgz"
+ssh "${KEYOPT[@]}" "$TARGET" 'set -e
   sudo systemctl stop packdraft
   cd /opt/packdraft/data.nosync
   [ -f packdraft-nba.db ] && mkdir -p backups && mv packdraft-nba.db "backups/replaced-$(date +%Y%m%d-%H%M%S).db" || true
