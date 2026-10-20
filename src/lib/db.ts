@@ -129,6 +129,11 @@ function open(): DatabaseSync {
   if (!userCols.includes("is_tester")) db.exec("ALTER TABLE users ADD COLUMN is_tester INTEGER NOT NULL DEFAULT 0");
   const leagueCols = (db.prepare("PRAGMA table_info(leagues)").all() as { name: string }[]).map((c) => c.name);
   if (!leagueCols.includes("long_weeks")) db.exec("ALTER TABLE leagues ADD COLUMN long_weeks TEXT");
+  if (!leagueCols.includes("playoff_teams")) db.exec("ALTER TABLE leagues ADD COLUMN playoff_teams INTEGER NOT NULL DEFAULT 4");
+  if (!leagueCols.includes("playoff_seeds")) db.exec("ALTER TABLE leagues ADD COLUMN playoff_seeds TEXT");
+  const matchupCols = (db.prepare("PRAGMA table_info(matchups)").all() as { name: string }[]).map((c) => c.name);
+  if (!matchupCols.includes("kind")) db.exec("ALTER TABLE matchups ADD COLUMN kind TEXT");
+  if (!matchupCols.includes("slot")) db.exec("ALTER TABLE matchups ADD COLUMN slot INTEGER");
   const playerCols = (db.prepare("PRAGMA table_info(players)").all() as { name: string }[]).map((c) => c.name);
   if (!playerCols.includes("elig")) db.exec("ALTER TABLE players ADD COLUMN elig TEXT");
   if (fresh) carryOverUsers(db);
@@ -221,6 +226,10 @@ export type League = {
   current_week: number; week_started_at: number | null; champion_team_id: number | null; created_at: number;
   /** JSON array of week numbers that run two weeks instead of one (e.g. the All-Star break matchup). */
   long_weeks?: string | null;
+  /** How many teams make the playoffs (ESPN-style bracket, one round per week after the regular season). */
+  playoff_teams?: number;
+  /** JSON array of team ids in seed order, set when the regular season ends. */
+  playoff_seeds?: string | null;
   // Branding (added by branding.ts ensureBranding)
   color?: string | null; alt_color?: string | null; abbr?: string | null; logo_url?: string | null;
 };
@@ -233,4 +242,8 @@ export type Team = {
 export type Matchup = {
   id: number; league_id: number; week: number; home_team_id: number; away_team_id: number;
   home_score: number | null; away_score: number | null; final: number;
+  /** null for the regular season, 'playoff' for the winners' bracket, 'consolation' for the 3rd place game. */
+  kind?: string | null;
+  /** Bracket position within the playoff round. */
+  slot?: number | null;
 };

@@ -480,6 +480,7 @@ export function finalizeWeek(l: League) {
     const week = fresh.current_week;
     if (one("SELECT 1 FROM matchups WHERE league_id = ? AND week = ? AND final = 1", l.id, week)) return;
     const ms = all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ?", l.id, week);
+    const playoffs = isPlayoffWeek(fresh, week);
     const teamMap = new Map(leagueTeams(l.id).map((t) => [t.id, t]));
     const scores: { teamId: number; pts: number }[] = [];
     const lines: string[] = [];
@@ -489,29 +490,58 @@ export function finalizeWeek(l: League) {
       run("UPDATE matchups SET home_score = ?, away_score = ?, final = 1 WHERE id = ?", hs, as, m.id);
       scores.push({ teamId: m.home_team_id, pts: hs }, { teamId: m.away_team_id, pts: as });
       const res = (tid: number, me: number, opp: number) => {
+        // Playoff games don't count toward the regular-season record (same as ESPN).
         const col = me > opp ? "wins" : me < opp ? "losses" : "ties";
-        run(`UPDATE teams SET ${col} = ${col} + 1, points_for = points_for + ?, points_against = points_against + ? WHERE id = ?`, me, opp, tid);
+        if (!playoffs) run(`UPDATE teams SET ${col} = ${col} + 1, points_for = points_for + ?, points_against = points_against + ? WHERE id = ?`, me, opp, tid);
         const t = teamMap.get(tid)!;
-        if (t.user_id) awardPack(t.user_id, me >= opp ? fresh.reward_win : fresh.reward_loss, `${fresh.name} · Week ${week} ${me > opp ? "win" : me < opp ? "loss" : "tie"}`);
+        if (t.user_id) awardPack(t.user_id, me >= opp ? fresh.reward_win : fresh.reward_loss, `${fresh.name} · ${weekName(fresh, week)} ${me > opp ? "win" : me < opp ? "loss" : "tie"}`);
       };
       res(m.home_team_id, hs, as);
       res(m.away_team_id, as, hs);
+      // Playoff matchups are scheduled with the higher seed at home, and a tie goes to the higher seed.
       const [w, lo] = hs >= as ? [m.home_team_id, m.away_team_id] : [m.away_team_id, m.home_team_id];
-      lines.push(`**${teamMap.get(w)!.name}** ${Math.max(hs, as).toFixed(1)} def. ${teamMap.get(lo)!.name} ${Math.min(hs, as).toFixed(1)}`);
+      lines.push(hs === as && playoffs
+        ? `**${teamMap.get(w)!.name}** and ${teamMap.get(lo)!.name} tie at ${hs.toFixed(1)}; ${teamMap.get(w)!.name} advances as the higher seed`
+        : `**${teamMap.get(w)!.name}** ${Math.max(hs, as).toFixed(1)} def. ${teamMap.get(lo)!.name} ${Math.min(hs, as).toFixed(1)}`);
     }
-    if (!scores.length) return;
-    scores.sort((a, b) => b.pts - a.pts);
-    const top = teamMap.get(scores[0].teamId)!;
-    if (top.user_id) awardPack(top.user_id, fresh.reward_top, `${fresh.name} · Week ${week} top score`);
-    const bottom = teamMap.get(scores[scores.length - 1].teamId)!;
-    postSystem(l.id, `Week ${week} final!\n${lines.join("\n")}\n\nTop score: ${top.name} (${scores[0].pts.toFixed(1)}) earns a ${PACK_BY_ID[fresh.reward_top]?.name}.\nWinners got a ${PACK_BY_ID[fresh.reward_win]?.name ?? "pack"}.\nBasement: ${bottom.name} (${scores[scores.length - 1].pts.toFixed(1)}). Roast accordingly.`);
-    if (week >= fresh.season_weeks) {
-      const champ = all<Team>("SELECT * FROM teams WHERE league_id = ? ORDER BY wins DESC, points_for DESC LIMIT 1", l.id)[0];
+    if (!scores.length && !playoffs) return;
+    const name = weekName(fresh, week);
+    if (scores.length) {
+      scores.sort((a, b) => b.pts - a.pts);
+      const top = teamMap.get(scores[0].teamId)!;
+      if (top.user_id) awardPack(top.user_id, fresh.reward_top, `${fresh.name} · ${name} top score`);
+      const bottom = teamMap.get(scores[scores.length - 1].teamId)!;
+      postSystem(l.id, `${name} final!\n${lines.join("\n")}\n\nTop score: ${top.name} (${scores[0].pts.toFixed(1)}) earns a ${PACK_BY_ID[fresh.reward_top]?.name}.\nWinners got a ${PACK_BY_ID[fresh.reward_win]?.name ?? "pack"}.${playoffs ? "" : `\nBasement: ${bottom.name} (${scores[scores.length - 1].pts.toFixed(1)}). Roast accordingly.`}`);
+    }
+    const info = playoffInfo(fresh);
+    const crown = (champId: number) => {
+      const champ = teamMap.get(champId)!;
       run("UPDATE leagues SET week_started_at = NULL, champion_team_id = ? WHERE id = ?", champ.id, l.id);
       if (champ.user_id) awardPack(champ.user_id, "goat", `${fresh.name} · Champion`);
       postSystem(l.id, `${champ.name} wins the ${fresh.name} championship and a GOAT Pack!`);
+    };
+    const advance = () => run("UPDATE leagues SET week_started_at = NULL, current_week = current_week + 1 WHERE id = ?", l.id);
+    if (week < fresh.season_weeks) advance();
+    else if (week === fresh.season_weeks) {
+      // Regular season over: lock the seeds and set Playoff Round 1.
+      const seeded = standings(l.id).slice(0, info.teams);
+      if (info.rounds === 0) crown(seeded[0].id);
+      else {
+        run("UPDATE leagues SET playoff_seeds = ? WHERE id = ?", JSON.stringify(seeded.map((t) => t.id)), l.id);
+        advance();
+        schedulePlayoffRound(getLeague(l.id)!, 1);
+        postSystem(l.id, `The regular season is over! Playoff seeds:\n${seeded.map((t, i) => `${i + 1}. ${t.name} (${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""})`).join("\n")}\n\nPlayoff Round 1 starts now.`);
+      }
     } else {
-      run("UPDATE leagues SET week_started_at = NULL, current_week = current_week + 1 WHERE id = ?", l.id);
+      const round = week - fresh.season_weeks;
+      const b = bracket(getLeague(l.id)!);
+      if (round >= info.rounds) crown(b.champion ?? b.rounds.at(-1)![0].a!);
+      else {
+        advance();
+        schedulePlayoffRound(getLeague(l.id)!, round + 1);
+        const next = b.rounds[round];
+        postSystem(l.id, `${weekName(fresh, week + 1)}${round + 1 === info.rounds ? " (the championship)" : ""} is set:\n${next.map((x) => `${teamMap.get(x.a!)?.name ?? "TBD"} vs ${teamMap.get(x.b!)?.name ?? "TBD"}`).join("\n")}`);
+      }
     }
   });
   processWaivers(l.id);
@@ -572,8 +602,112 @@ export function executeTrade(tradeId: number) {
   });
 }
 
+// ---------- Standings & playoffs (ESPN style) ----------
+
+/**
+ * Regular-season standings, ESPN style: win percentage (ties count half), then head-to-head record between the
+ * tied teams, then total points for.
+ */
 export function standings(leagueId: number) {
-  return all<Team>("SELECT * FROM teams WHERE league_id = ? ORDER BY wins DESC, ties DESC, points_for DESC", leagueId);
+  const teams = all<Team>("SELECT * FROM teams WHERE league_id = ?", leagueId);
+  const pct = (w: number, lo: number, t: number) => (w + lo + t ? (w + t / 2) / (w + lo + t) : 0);
+  const games = all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND final = 1 AND kind IS NULL", leagueId);
+  const groups = new Map<number, Team[]>();
+  for (const t of teams) {
+    const k = Math.round(pct(t.wins, t.losses, t.ties) * 1e6);
+    (groups.get(k) ?? groups.set(k, []).get(k)!).push(t);
+  }
+  return [...groups.keys()].sort((a, b) => b - a).flatMap((k) => {
+    const g = groups.get(k)!;
+    if (g.length < 2) return g;
+    const ids = new Set(g.map((t) => t.id));
+    const h2h = new Map(g.map((t) => [t.id, { w: 0, l: 0, t: 0 }]));
+    for (const m of games) {
+      if (!ids.has(m.home_team_id) || !ids.has(m.away_team_id)) continue;
+      const hs = m.home_score ?? 0, as = m.away_score ?? 0;
+      const h = h2h.get(m.home_team_id)!, a = h2h.get(m.away_team_id)!;
+      if (hs > as) { h.w++; a.l++; } else if (as > hs) { a.w++; h.l++; } else { h.t++; a.t++; }
+    }
+    const hp = (t: Team) => { const r = h2h.get(t.id)!; return pct(r.w, r.l, r.t); };
+    return [...g].sort((a, b) => hp(b) - hp(a) || b.points_for - a.points_for);
+  });
+}
+
+/** Playoff shape: how many teams get in, how many rounds (one matchup period each), and the last week of the season. */
+export function playoffInfo(l: League) {
+  const n = Math.min(l.playoff_teams ?? 4, leagueTeams(l.id).length);
+  const rounds = n >= 2 ? Math.ceil(Math.log2(n)) : 0;
+  return { teams: n, rounds, lastWeek: l.season_weeks + rounds };
+}
+export const isPlayoffWeek = (l: League, week: number) => week > l.season_weeks;
+/** "Week 7", "Playoff Round 1", ... */
+export const weekName = (l: League, week: number) => (week > l.season_weeks ? `Playoff Round ${week - l.season_weeks}` : `Week ${week}`);
+export const weekShort = (l: League, week: number) => (week > l.season_weeks ? `PO R${week - l.season_weeks}` : `Wk ${week}`);
+
+/** Seed positions in bracket order, e.g. 4 → [1, 4, 2, 3] so round 1 is 1v4 and 2v3, and their winners meet. */
+function bracketOrder(size: number): number[] {
+  let order = [1, 2];
+  while (order.length < size) order = order.flatMap((s) => [s, order.length * 2 + 1 - s]);
+  return order;
+}
+
+export type BracketSlot = { a: number | null; b: number | null; seedA: number | null; seedB: number | null; matchup: Matchup | null; winner: number | null; loser: number | null };
+/**
+ * The playoff bracket like ESPN's: top seeds play the bottom seeds (byes to the top when the field isn't a power of 2),
+ * no reseeding, a tied playoff matchup goes to the higher seed, and the semifinal losers play a 3rd place game.
+ * Before the regular season ends it's a projection from the current standings.
+ */
+export function bracket(l: League) {
+  const info = playoffInfo(l);
+  const locked = !!l.playoff_seeds;
+  const seeds: number[] = locked ? JSON.parse(l.playoff_seeds!) : standings(l.id).slice(0, info.teams).map((t) => t.id);
+  const seedOf = (id: number | null) => (id == null ? null : seeds.indexOf(id) + 1);
+  const ms = all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND kind IS NOT NULL", l.id);
+  const find = (week: number, kind: string, slot: number) => ms.find((m) => m.week === week && m.kind === kind && (m.slot ?? 0) === slot) ?? null;
+  const decide = (s: Omit<BracketSlot, "winner" | "loser">): BracketSlot => {
+    if (s.a == null || s.b == null) return { ...s, winner: s.a ?? s.b, loser: null };
+    const m = s.matchup;
+    if (!m?.final) return { ...s, winner: null, loser: null };
+    const home = m.home_score ?? 0, away = m.away_score ?? 0;
+    const higher = (seedOf(m.home_team_id) ?? 99) < (seedOf(m.away_team_id) ?? 99) ? m.home_team_id : m.away_team_id;
+    const winner = home > away ? m.home_team_id : away > home ? m.away_team_id : higher;
+    return { ...s, winner, loser: winner === m.home_team_id ? m.away_team_id : m.home_team_id };
+  };
+  const size = 2 ** info.rounds;
+  const order = bracketOrder(Math.max(2, size));
+  const rounds: BracketSlot[][] = [];
+  for (let r = 1; r <= info.rounds; r++) {
+    const week = l.season_weeks + r;
+    const prev = rounds[r - 2];
+    const count = size / 2 ** r;
+    const slots: BracketSlot[] = [];
+    for (let j = 0; j < count; j++) {
+      const a = r === 1 ? (seeds[order[2 * j] - 1] ?? null) : prev[2 * j].winner;
+      const b = r === 1 ? (seeds[order[2 * j + 1] - 1] ?? null) : prev[2 * j + 1].winner;
+      slots.push(decide({ a, b, seedA: seedOf(a), seedB: seedOf(b), matchup: locked ? find(week, "playoff", j) : null }));
+    }
+    rounds.push(slots);
+  }
+  let third: BracketSlot | null = null;
+  if (info.rounds >= 2) {
+    const semis = rounds[info.rounds - 2];
+    const a = semis[0]?.loser ?? null, b = semis[1]?.loser ?? null;
+    third = decide({ a, b, seedA: seedOf(a), seedB: seedOf(b), matchup: locked ? find(info.lastWeek, "consolation", 0) : null });
+  }
+  return { ...info, seeds, projected: !locked, rounds, third, champion: rounds.at(-1)?.[0]?.winner ?? null };
+}
+
+/** Create any playoff matchups for this round whose two teams are known (higher seed at home). */
+function schedulePlayoffRound(l: League, round: number) {
+  const b = bracket(l);
+  const week = l.season_weeks + round;
+  const add = (s: BracketSlot, kind: string, slot: number) => {
+    if (s.a == null || s.b == null || s.matchup) return;
+    const [home, away] = (s.seedA ?? 99) <= (s.seedB ?? 99) ? [s.a, s.b] : [s.b, s.a];
+    run("INSERT INTO matchups (league_id, week, home_team_id, away_team_id, kind, slot) VALUES (?, ?, ?, ?, ?, ?)", l.id, week, home, away, kind, slot);
+  };
+  b.rounds[round - 1]?.forEach((s, j) => add(s, "playoff", j));
+  if (round === b.rounds.length && b.third) add(b.third, "consolation", 0);
 }
 
 export function canView(l: League, userId: number) {
