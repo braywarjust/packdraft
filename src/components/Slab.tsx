@@ -39,6 +39,8 @@ const FRAME: Record<Rarity, string> = {
   legendary: "linear-gradient(145deg, #fecaca, #dc2626 45%, #fca5a5 70%, #7f1d1d)",
   grail: "",
 };
+/** Every slab (front and back): a thin outer border in Fantasy Points blue, plus its drop shadow. */
+const SLAB_EDGE = "0 0 0 max(1.5px, .7cqw) var(--color-fpts), 0 8px 18px rgba(0,0,0,.35)";
 const RANK: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, grail: 4 };
 
 // Fixed spots (percent of the slab) for the tier effects, so server and client render the same thing.
@@ -81,7 +83,7 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
   return (
     <div ref={ref} className={`@container relative shrink-0 ${className}`} style={{ width: size, height: size, ["--glow" as string]: `${tier}99` }}>
       <div className="relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw]"
-        style={{ background: FRAME[s.rarity] || "#bae6fd", boxShadow: "0 8px 18px rgba(0,0,0,.35)" }}>
+        style={{ background: FRAME[s.rarity] || "#bae6fd", boxShadow: SLAB_EDGE }}>
         {/* Immortal's rainbow frame: a conic gradient spun as a layer behind the card */}
         {r === 4 && <div className="slab-frame-spin pointer-events-none absolute" />}
         <div className={`relative h-full w-full overflow-hidden rounded-[7cqw] ${r === 4 ? "slab-vivid" : ""}`}
@@ -170,7 +172,7 @@ export function SlabCover({ rarity, size, className = "", logo = true }: { rarit
   return (
     <div ref={ref} className={`@container relative shrink-0 ${className}`} style={{ width: size, height: size, ["--glow" as string]: `${tier}99` }}>
       <div className="relative h-full w-full overflow-hidden rounded-[9cqw] p-[2.2cqw]"
-        style={{ background: `linear-gradient(145deg, ${shade(tier, 0.5)}, ${tier} 45%, ${shade(tier, 0.3)} 70%, ${shade(tier, -0.45)})`, boxShadow: "0 8px 18px rgba(0,0,0,.35)" }}>
+        style={{ background: `linear-gradient(145deg, ${shade(tier, 0.5)}, ${tier} 45%, ${shade(tier, 0.3)} 70%, ${shade(tier, -0.45)})`, boxShadow: SLAB_EDGE }}>
         {r === 4 && <div className="slab-frame-spin pointer-events-none absolute" />}
         {/* Immortal's back is an icy sky: its pale blue at the centre deepening toward the edges, so the comets show */}
         <div className="relative h-full w-full overflow-hidden rounded-[7cqw]"
