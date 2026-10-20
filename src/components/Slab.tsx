@@ -110,7 +110,7 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
           {r === 4 && <div className="slab-holo pointer-events-none absolute inset-0" />}
           {/* Multiplier stamp: the Fantasy Points logo and the multiplier, in Fantasy Points blue */}
           {s.mult != null && (
-            <span className="absolute right-[5%] top-[26%] z-10 flex items-center gap-[1cqw] rounded-[2.5cqw] px-[2.4cqw] py-[1.4cqw] text-[6.5cqw] font-black leading-none text-fpts"
+            <span className="absolute bottom-[27%] left-1/2 z-10 flex -translate-x-1/2 items-center gap-[1cqw] rounded-[2.5cqw] px-[2.4cqw] py-[1.4cqw] text-[6.5cqw] font-black leading-none text-fpts"
               style={{ background: "rgba(8, 12, 22, .8)", boxShadow: "inset 0 0 0 .5cqw rgba(56, 189, 248, .55), 0 1cqw 2cqw rgba(0,0,0,.35)" }}
               title={`${s.mult.toFixed(2)}x fantasy points when equipped`}>
               <span aria-hidden className="inline-block shrink-0 bg-fpts" style={{ width: "6cqw", height: "6cqw", mask: "url(/fantasy-points.svg) center / contain no-repeat", WebkitMask: "url(/fantasy-points.svg) center / contain no-repeat" }} />
