@@ -1,0 +1,21 @@
+# Every push to main goes live: GitHub logs into the Oracle server over SSH and runs deploy/deploy.sh.
+# Repo secrets needed (Settings > Secrets and variables > Actions): ORACLE_HOST (the server's IP),
+# ORACLE_USER (usually "ubuntu"), ORACLE_SSH_KEY (a private key whose public half is in the server's ~/.ssh/authorized_keys).
+name: Deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency: deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to the Oracle server
+        env:
+          HOST: ${{ secrets.ORACLE_HOST }}
+          USER: ${{ secrets.ORACLE_USER }}
+          KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          install -m 600 /dev/null key && printf '%s\n' "$KEY" > key
+          ssh -i key -o StrictHostKeyChecking=accept-new "$USER@$HOST" 'bash /opt/packdraft/deploy/deploy.sh'

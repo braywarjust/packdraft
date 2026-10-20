@@ -56,3 +56,10 @@ data/
 /blender/mini-crate/*.png
 !/blender/mini-crate/mini-crate-uv-guide*.png
 /exports/
+
+# build check output and the live data folder (database, uploads, session secret) never go in git
+/.next-*.nosync
+/data.nosync
+*.db
+*.db-wal
+*.db-shm

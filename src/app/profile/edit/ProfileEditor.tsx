@@ -93,7 +93,7 @@ export function ProfileEditor({ initial, nba, maxFeatured }: { initial: Initial;
               {avatar && <button type="button" className="btn-ghost" onClick={() => setAvatar(null)}>Remove</button>}
             </div>
           </div>
-          <p className="text-xs text-zinc-500">Any photo works. It's cropped to a circle around the most interesting part.</p>
+          <p className="text-xs text-zinc-500">Any photo works. It&apos;s cropped to a circle around the most interesting part.</p>
           <div>
             <label className="label">Username</label>
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} className="input" />

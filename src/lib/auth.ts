@@ -22,7 +22,8 @@ export const hashPin = (pin: string) => crypto.createHash("sha256").update(`pd:$
 
 export async function setSession(userId: number) {
   (await cookies()).set(COOKIE, `${userId}.${sign(String(userId))}`, {
-    httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365,
+    // HTTPS-only cookie on the live server (Caddy serves it over HTTPS); plain HTTP still works for local dev.
+    httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365, secure: process.env.NODE_ENV === "production",
   });
 }
 export async function clearSession() {

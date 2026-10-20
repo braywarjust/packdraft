@@ -1,0 +1,8 @@
+# Caddy gets and renews the HTTPS certificate by itself.
+__DOMAIN__ {
+	encode gzip
+	reverse_proxy 127.0.0.1:3000 {
+		# Live updates (the Crash game stream) need responses sent as they're written.
+		flush_interval -1
+	}
+}
