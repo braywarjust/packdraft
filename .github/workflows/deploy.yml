@@ -17,5 +17,6 @@ jobs:
           USER: ${{ secrets.ORACLE_USER }}
           KEY: ${{ secrets.ORACLE_SSH_KEY }}
         run: |
+          if [ -z "$HOST" ]; then echo "No ORACLE_HOST secret yet: skipping deploy (see DEPLOY.md step 5)."; exit 0; fi
           install -m 600 /dev/null key && printf '%s\n' "$KEY" > key
           ssh -i key -o StrictHostKeyChecking=accept-new "$USER@$HOST" 'bash /opt/packdraft/deploy/deploy.sh'
