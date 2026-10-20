@@ -13,14 +13,15 @@ import { FptIcon } from "./Fpts";
 import { Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
 
-const lbl = (s: string) => s.replace(/\d$/, "");
-const eligible = (slot: string, pos: string) => slot === "BN" || lbl(slot) === "UTIL" || lbl(slot) === pos;
-// Starting five on the court (basket at the bottom): guards up top, forwards on the wings, centre in the paint.
+import { eligible, posLabel, slotLabel as lbl } from "@/lib/scoring";
+
+// Starting five on the court (basket at the bottom): PG up top, SG and SF on the wings, PF and C down low.
 const COURT: { slot: string; x: number; y: number }[] = [
-  { slot: "G1", x: 29, y: 6 }, { slot: "G2", x: 71, y: 6 },
-  { slot: "F1", x: 17, y: 38 }, { slot: "F2", x: 83, y: 38 },
-  { slot: "C", x: 50, y: 62 },
+  { slot: "PG", x: 50, y: 3 },
+  { slot: "SF", x: 20, y: 26 }, { slot: "SG", x: 80, y: 26 },
+  { slot: "C", x: 32, y: 56 }, { slot: "PF", x: 68, y: 56 },
 ];
+const FLEX = ["G", "F"];
 const UTIL = ["UTIL1", "UTIL2", "UTIL3"];
 const VIEW_KEY = "pd-team-view";
 
@@ -86,7 +87,7 @@ function PlayerTile({ p, slot, big, brand, state }: {
             </div>
             <div className="min-w-0 flex-1">
               <p className={`line-clamp-2 font-black leading-tight text-white ${big ? "text-lg" : "text-base"}`}><PlayerButton id={p.id}>{p.name}</PlayerButton></p>
-              <p className="text-xs text-zinc-400">{p.pos} · {p.team} <InjuryTag injury={p.injury} /></p>
+              <p className="text-xs text-zinc-400">{posLabel(p.pos)} · {p.team} <InjuryTag injury={p.injury} /></p>
               <p className="mt-0.5 font-mono text-[11px] text-zinc-500">{p.played}/{p.total} GP</p>
               <p className="mt-0.5 whitespace-nowrap font-mono text-xs font-bold text-zinc-800"><span className="text-[10px] font-black uppercase tracking-wider text-fpts">Proj </span><Fpts n={p.proj} />/g</p>
             </div>
@@ -199,7 +200,15 @@ export function TeamCourt(props: Props) {
             </div>
           </section>
 
-          {/* Utility + bench */}
+          {/* G / F flex, utility, bench */}
+          <section className="space-y-2">
+            <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest" style={{ color: brand.alt }}>
+              <span className="h-4 w-1 rounded" style={{ background: brand.color }} /> Guard &amp; forward <span className="text-xs font-semibold normal-case tracking-normal text-zinc-500">(G takes a PG or SG, F takes an SF or PF)</span>
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {FLEX.map((slot) => <PlayerTile key={slot} p={bySlot.get(slot)} slot={slot} brand={brand} state={stateFor(slot, bySlot.get(slot))} />)}
+            </div>
+          </section>
           <section className="space-y-2">
             <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest" style={{ color: brand.alt }}>
               <span className="h-4 w-1 rounded" style={{ background: brand.color }} /> Utility

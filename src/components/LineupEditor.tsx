@@ -12,7 +12,7 @@ import { FptIcon, Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
 import { useScrollLock } from "@/components/useScrollLock";
 
-const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
+import { STARTERS, eligible, posLabel, slotLabel as lbl } from "@/lib/scoring";
 
 type BoostSlab = { cardId: number; playerId: number; player: string; label: string; rarity: string; value: number; mult: number; slab: SlabData };
 export type BoostProps = {
@@ -35,8 +35,6 @@ export function BoostChip({ boost }: { boost: LivePlayer["boost"] }) {
     </span>
   );
 }
-const lbl = (s: string) => s.replace(/\d$/, "");
-const eligible = (slot: string, pos: string) => slot === "BN" || lbl(slot) === "UTIL" || lbl(slot) === pos;
 
 export function LineupEditor({
   players, editable, setSlot, autoSet, drop, boost,
@@ -79,7 +77,7 @@ export function LineupEditor({
             <div className="flex items-center gap-2">
               <Headshot src={p.headshot} name={p.name} size={36} />
               <div className="min-w-0">
-                <p className="font-semibold"><PlayerButton id={p.id} className="inline">{p.name}</PlayerButton> <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{p.pos} · {p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /> {p.locked && <LockIcon className="text-xs text-zinc-500" title="Locked: game started" />}</p>
+                <p className="font-semibold"><PlayerButton id={p.id} className="inline">{p.name}</PlayerButton> <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{posLabel(p.pos)} · {p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /> {p.locked && <LockIcon className="text-xs text-zinc-500" title="Locked: game started" />}</p>
                 <p className="truncate text-xs text-zinc-500">
                   {today ? (today.state === "in" ? <span className="text-red-600">● {today.clock} {today.label} </span> : `${today.label} · ${today.clock} `) : "No games this week "}
                   {today?.line && today.state !== "pre" ? `· ${today.line}` : ""}

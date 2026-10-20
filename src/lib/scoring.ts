@@ -42,11 +42,22 @@ export function fromEspn(stats: Record<string, string>): Line {
 }
 
 export const POSITIONS = ["G", "F", "C"] as const;
-export const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"] as const;
+// ESPN-style lineup: the five positions, a G and an F flex, then three UTIL spots.
+export const STARTERS = ["PG", "SG", "SF", "PF", "C", "G", "F", "UTIL1", "UTIL2", "UTIL3"] as const;
 export const ROSTER_MAX = 13;
 export const slotLabel = (slot: string) => slot.replace(/\d$/, "");
+/** A player's fantasy positions, e.g. "PG,SG" → ["PG", "SG"]. Old single-letter G/F cover both of theirs. */
+export function positionsOf(pos: string) {
+  return pos.split(",").flatMap((x) => (x === "G" ? ["PG", "SG"] : x === "F" ? ["SF", "PF"] : [x]));
+}
+/** "PG,SG" → "PG, SG" for display. */
+export const posLabel = (pos: string) => pos.split(",").join(", ");
+const SLOT_TAKES: Record<string, string[]> = { G: ["PG", "SG"], F: ["SF", "PF"] };
+/** Can a player with these positions (a player's `elig`, e.g. "SF,PF", or old "G") play this slot? */
 export function eligible(slot: string, pos: string) {
   if (slot === "BN") return true;
   const s = slotLabel(slot);
-  return s === "UTIL" || s === pos;
+  if (s === "UTIL") return true;
+  const mine = positionsOf(pos);
+  return (SLOT_TAKES[s] ?? [s]).some((x) => mine.includes(x));
 }

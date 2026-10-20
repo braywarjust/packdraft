@@ -15,7 +15,7 @@ type Side = { id: number; name: string; brand: BrandLite; record: string; score:
 type Data = { week: number; final: boolean; live: boolean; mode: string; range: string | null; progress: number | null; league: string; home: Side; away: Side; winProb: number };
 type Event = { key: string; name: string; delta: number; line: string; side: "home" | "away" };
 
-const STARTERS = ["G1", "G2", "F1", "F2", "C", "UTIL1", "UTIL2", "UTIL3"];
+import { STARTERS } from "@/lib/scoring";
 const lbl = (s: string) => s.replace(/\d$/, "");
 
 function Spark({ points }: { points: number[] }) {

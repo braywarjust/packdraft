@@ -69,6 +69,28 @@ export async function syncPlayers() {
   return rows.length;
 }
 
+// ESPN fantasy's eligible slot ids for the five real positions.
+const ELIG_SLOTS: [number, string][] = [[0, "PG"], [1, "SG"], [2, "SF"], [3, "PF"], [4, "C"]];
+/** Each player's fantasy positions (e.g. "PG,SG") from ESPN Fantasy, which is what lineup slots check. */
+export async function syncEligibility() {
+  const season = Number(metaGet("season")) || new Date().getFullYear();
+  const filter = JSON.stringify({ players: { limit: 1500, sortPercOwned: { sortPriority: 1, sortAsc: false } } });
+  const res = await fetch(`https://lm-api-reads.fantasy.espn.com/apis/v3/games/fba/seasons/${season}/players?scoringPeriodId=0&view=players_wl`,
+    { headers: { "X-Fantasy-Filter": filter }, cache: "no-store" });
+  if (!res.ok) throw new Error(`ESPN fantasy players ${res.status}`);
+  const list = (await res.json()) as { id: number; eligibleSlots?: number[] }[];
+  let n = 0;
+  tx(() => {
+    for (const p of list) {
+      const elig = ELIG_SLOTS.filter(([id]) => p.eligibleSlots?.includes(id)).map(([, pos]) => pos).join(",");
+      // Only fills players without positions, so positions set by hand (to match the ESPN league) stay put.
+      if (elig) n += Number(run("UPDATE players SET elig = ? WHERE id = ? AND elig IS NULL", elig, p.id).changes ?? 0);
+    }
+    metaSet("elig_synced_at", String(Date.now()));
+  });
+  return n;
+}
+
 function upsertGame(g: Awaited<ReturnType<typeof fetchScoreboard>>["games"][number]) {
   run(`INSERT INTO games (id, date_et, start_ts, home, away, home_score, away_score, state, detail, period, clock, season_type, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -150,6 +172,7 @@ export async function maybeSyncPlayers() {
   } catch (e) {
     console.warn("[packdraft] player sync failed", (e as Error).message);
   }
+  await syncEligibility().catch((e) => console.warn("[packdraft] position sync failed", (e as Error).message));
 }
 
 export const gamesOn = (date: string) => all<Game>("SELECT * FROM games WHERE date_et = ? ORDER BY start_ts", date);

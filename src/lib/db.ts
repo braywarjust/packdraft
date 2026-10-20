@@ -129,6 +129,8 @@ function open(): DatabaseSync {
   if (!userCols.includes("is_tester")) db.exec("ALTER TABLE users ADD COLUMN is_tester INTEGER NOT NULL DEFAULT 0");
   const leagueCols = (db.prepare("PRAGMA table_info(leagues)").all() as { name: string }[]).map((c) => c.name);
   if (!leagueCols.includes("long_weeks")) db.exec("ALTER TABLE leagues ADD COLUMN long_weeks TEXT");
+  const playerCols = (db.prepare("PRAGMA table_info(players)").all() as { name: string }[]).map((c) => c.name);
+  if (!playerCols.includes("elig")) db.exec("ALTER TABLE players ADD COLUMN elig TEXT");
   if (fresh) carryOverUsers(db);
   db.prepare("UPDATE users SET coins = ? WHERE is_tester = 1 AND coins < ?").run(TESTER_COINS, TESTER_FLOOR);
   db.exec("COMMIT");
@@ -204,6 +206,8 @@ export type User = { id: number; name: string; color: string; coins: number; las
 export type Player = {
   id: number; name: string; pos: string; team: string; jersey: string | null; headshot: string | null; injury: string | null;
   avg: string | null; proj: number; proj_dk: number; adp: number; pos_rank: number; active: number;
+  /** Fantasy positions from ESPN, e.g. "PG,SG". */
+  elig?: string | null;
 };
 export type Game = {
   id: string; date_et: string; start_ts: number; home: string; away: string; home_score: number; away_score: number;

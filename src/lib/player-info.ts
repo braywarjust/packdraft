@@ -59,7 +59,7 @@ export function playerInfo(playerId: number, leagueId: number | null, userId: nu
 
   return {
     market,
-    player: { id: p.id, name: p.name, pos: p.pos, team: p.team, teamName: nba?.name ?? p.team, color: `#${nba?.color ?? "1f2937"}`, jersey: p.jersey, headshot: p.headshot, injury: p.injury, adp: p.adp, posRank: p.pos_rank },
+    player: { id: p.id, name: p.name, pos: (p.elig || p.pos).split(",").join(", "), team: p.team, teamName: nba?.name ?? p.team, color: `#${nba?.color ?? "1f2937"}`, jersey: p.jersey, headshot: p.headshot, injury: p.injury, adp: p.adp, posRank: p.pos_rank },
     league: league ? { id: league.id, name: league.name } : null,
     scoring,
     proj, rank,

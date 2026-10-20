@@ -1,12 +1,14 @@
 import { all, one, run, tx, League, Team, Player, Matchup, Game } from "./db";
 import { leagueSeed, rng, simSchedule, gameProgress, simGame, partial, simClock } from "./sim";
-import { STARTERS, ROSTER_MAX, eligible, fpts, statLine, Line, slotLabel } from "./scoring";
+import { STARTERS, ROSTER_MAX, eligible, fpts, statLine, Line, slotLabel, posLabel } from "./scoring";
 import { addDays, etDate, weekday, dayLabel } from "./nba/espn";
 import { PACK_BY_ID } from "./packs";
 import { creditGame, weekRate } from "./economy";
 import { cardMultiplier, consumeEquip, ensureBoosts, teamBoosts } from "./boost";
 
 export { STARTERS, ROSTER_MAX, eligible };
+/** A player's fantasy positions ("PG,SG"), falling back to his G/F/C. */
+export const fpos = (p: { pos: string; elig?: string | null }) => p.elig || p.pos;
 export const ROUNDS = ROSTER_MAX;
 
 export const getLeague = (id: number) => one<League>("SELECT * FROM leagues WHERE id = ?", id);
@@ -123,7 +125,7 @@ export function autoLineup(l: League, teamId: number) {
   // Fill the most restrictive slots first so UTIL takes whoever's left.
   for (const slot of [...STARTERS].sort((a, b) => (slotLabel(a) === "UTIL" ? 1 : 0) - (slotLabel(b) === "UTIL" ? 1 : 0))) {
     if (taken.has(slot)) continue;
-    const pick = pool.find((p) => !assign.has(p.id) && eligible(slot, p.pos) && !isOut(p));
+    const pick = pool.find((p) => !assign.has(p.id) && eligible(slot, fpos(p)) && !isOut(p));
     if (pick) { assign.set(pick.id, slot); taken.add(slot); }
   }
   for (const p of players) if (!assign.has(p.id)) assign.set(p.id, "BN");
@@ -134,13 +136,13 @@ export function moveToSlot(l: League, teamId: number, playerId: number, slot: st
   const players = roster(teamId);
   const p = players.find((x) => x.id === playerId);
   if (!p) throw new Error("Player not on roster");
-  if (!eligible(slot, p.pos)) throw new Error(`A ${p.pos} can't play ${slotLabel(slot)}`);
+  if (!eligible(slot, fpos(p))) throw new Error(`${p.name} (${posLabel(fpos(p))}) can't play ${slotLabel(slot)}`);
   if (isLocked(l, p)) throw new Error(`${p.name} is locked (his game has started)`);
   if (slot !== "BN") {
     const occupant = players.find((x) => x.slot === slot);
     if (occupant) {
       if (isLocked(l, occupant)) throw new Error(`${occupant.name} is locked (his game has started)`);
-      const back = eligible(p.slot, occupant.pos) ? p.slot : "BN";
+      const back = eligible(p.slot, fpos(occupant)) ? p.slot : "BN";
       run("UPDATE roster SET slot = ? WHERE team_id = ? AND player_id = ?", back, teamId, occupant.id);
     }
   }
@@ -267,7 +269,7 @@ export function teamWeek(l: League, teamId: number, week: number) {
     const bGame = [cur, ...games.filter((g) => g.state === "pre")].find((g) => g && boosts.has(`${p.id}|${g.key}`));
     const b = bGame ? boosts.get(`${p.id}|${bGame.key}`)! : null;
     rows.push({
-      id: p.id, name: p.name, pos: p.pos, team: p.team, slot: p.slot, headshot: p.headshot, injury: p.injury,
+      id: p.id, name: p.name, pos: fpos(p), team: p.team, slot: p.slot, headshot: p.headshot, injury: p.injury,
       pts: Math.round(pts * 100) / 100, proj, played, left, total: games.length, locked: isLocked(l, p),
       now: cur ? { label: cur.label, clock: cur.clock, state: cur.state, line: cur.line ? statLine(cur.line) : "", pts: cur.line ? Math.round(fpts(cur.line, l.scoring) * boostMult(p.id, cur.key) * 100) / 100 : 0 } : null,
       boost: b && bGame ? { mult: b.mult, own: !!b.own, cardId: b.card_id, dayKey: b.day_key, state: bGame.state } : null,
