@@ -38,7 +38,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
 
   return (
     <div className="space-y-5">
-      <PageHeader icon="collection" eyebrow="Card vault" title={mine ? "My collection" : `${viewing.name}'s collection`}
+      <PageHeader icon="collection" eyebrow="Slab vault" title={mine ? "My collection" : `${viewing.name}'s collection`}
         description={<span className="flex flex-wrap items-center gap-x-2 gap-y-1 leading-none"><SlabCount n={cards.length} className="font-semibold text-white" /></span>}>
           {users.map((x) => (
             <Link key={x.id} href={qs({ u: String(x.id) })} className={`tab ${x.id === viewing.id ? "tab-active" : ""}`}>{x.id === me.id ? "Me" : x.name}</Link>
