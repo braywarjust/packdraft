@@ -28,7 +28,7 @@ export default async function PacksPage() {
         <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 14px)" }} />
         <div className="relative flex flex-wrap items-center gap-6 p-6 sm:p-8">
           <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white/15 text-white ring-1 ring-white/25 backdrop-blur"><NavIcon d={NAV_ICONS.packs} size={36} /></span>
-          <div className="min-w-0 flex-1 sm:pr-[200px] lg:pr-[240px]">
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Mystery packs · NBA Slabs</p>
             <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Pack Shop</h1>
             <p className="mt-2 max-w-xl text-sm text-white/80">
