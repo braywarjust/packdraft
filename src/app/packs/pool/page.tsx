@@ -59,7 +59,7 @@ export default async function SlabPool({ searchParams }: { searchParams: Promise
           return (
             <div key={p.id} className="flex flex-col items-center">
               <Slab size={176} s={{ name: p.name, team: p.team, team_name: x?.team_name, pos: p.pos, rarity: tier, jersey: x?.jersey, color: x?.color, alt: x?.alt, photo: slabPlayerPhoto(p.name) ?? x?.headshot, mult: MULT_RANGE[tier][1] }} />
-              <PlayerButton id={p.id} className="mt-2 text-xs font-semibold text-fpts">Price &amp; stats</PlayerButton>
+              <PlayerButton id={p.id} className="mt-2 text-xs font-semibold text-fpts">Player stats</PlayerButton>
               <p className="text-xs text-zinc-500">{owned.get(p.id) ? <b className="text-emerald-600">You own {owned.get(p.id)}</b> : rostered.has(p.id) ? "On your fantasy team" : "Not collected"}</p>
             </div>
           );

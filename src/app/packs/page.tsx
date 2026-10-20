@@ -6,7 +6,6 @@ import { buyPack, ripPack } from "../actions";
 import { packFeatures } from "@/lib/slabs";
 import Link from "next/link";
 import { MULT_RANGE, slabPool } from "@/lib/slab-cards";
-import { slabPrice } from "@/lib/slab-market";
 import { SlabCover } from "@/components/Slab";
 import { Coins } from "@/components/Coins";
 import { Logo } from "@/components/Logo";
@@ -74,7 +73,6 @@ export default async function PacksPage() {
                 <SlabCover size={150} rarity={r} />
                 <p className="text-center text-zinc-500">{RARITY_BLURB[r]}</p>
                 <p className="flex w-full justify-between text-xs"><span className="text-zinc-500">Multiplier stamp</span><b className="text-fpts">{MULT_RANGE[r][0].toFixed(2)}x–{MULT_RANGE[r][1].toFixed(2)}x</b></p>
-                <p className="flex w-full justify-between text-xs"><span className="text-zinc-500">20 pts/game player</span><b><Coins n={slabPrice(r, 1)} /></b></p>
               </div>
             </Link>
           ))}

@@ -135,7 +135,7 @@ export default async function Home() {
         <div className="relative grid grid-cols-2 gap-px bg-black/20 sm:grid-cols-4">
           {([
             ["Pack Points", <Coins key="c" n={user.coins} live />, "/packs"],
-            ["Vault value", <Coins key="v" n={vault.v} live />, "/collection"],
+            ["Slabs", <span key="v">{vault.n}</span>, "/collection"],
             ["Unopened packs", String(packs.length), "/packs"],
             ["Open bets", bets.n ? <span key="b">{bets.n} · to win <Coins n={bets.toWin} /></span> : "None", "/bets"],
           ] as [string, React.ReactNode, string][]).map(([k, v, href]) => (
@@ -280,11 +280,11 @@ export default async function Home() {
               {leaders.map((u, i) => (
                 <li key={u.name} className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2"><span className="w-4 text-zinc-400">{i + 1}</span><span className="h-3 w-3 rounded-full" style={{ background: u.color }} />{u.name}</span>
-                  <span className="font-mono"><Coins n={u.coins + u.vault} live /></span>
+                  <span className="font-mono"><Coins n={u.coins} live /></span>
                 </li>
               ))}
             </ol>
-            <p className="mt-2 flex items-center gap-1 text-xs text-zinc-400"><CoinIcon /> Pack Points + slab vault value</p>
+            <p className="mt-2 flex items-center gap-1 text-xs text-zinc-400"><CoinIcon /> Pack Points</p>
           </div>
         </aside>
       </div>

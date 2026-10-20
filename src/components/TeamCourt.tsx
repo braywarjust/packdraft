@@ -8,7 +8,8 @@ import type { LivePlayer } from "@/lib/league";
 import { Headshot, InjuryTag } from "./Headshot";
 import { TeamLogo } from "./TeamLogo";
 import { TeamBadge, type BrandLite } from "./TeamBadge";
-import { BoostChip, BoostModal, LineupEditor, type BoostProps } from "./LineupEditor";
+import { BoostChip, BoostModal, EquipPanel, LineupEditor, type BoostProps } from "./LineupEditor";
+import { FptIcon } from "./Fpts";
 import { Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
 
@@ -109,7 +110,7 @@ function PlayerTile({ p, slot, big, brand, state }: {
           ) : (
             <>
               <button onClick={state.onMove} className="btn-ghost flex-1 px-2 py-1 text-xs">{state.selected ? "Cancel" : "Move"}</button>
-              {state.boostable && <button onClick={state.onBoost} className="btn-ghost flex-1 px-2 py-1 text-xs"><BoltIcon /> {p?.boost?.state === "pre" ? "Change" : "Boost"}</button>}
+              {state.boostable && <button onClick={state.onBoost} className={`flex-1 px-2 py-1 text-xs ${p?.boost?.state === "pre" ? "btn-ghost" : "btn-primary"}`}><FptIcon tone="white" /> {p?.boost?.state === "pre" ? "Swap slab" : "Equip slab"}</button>}
             </>
           )}
         </div>
@@ -153,6 +154,7 @@ export function TeamCourt(props: Props) {
 
   return (
     <div className="space-y-4">
+      {editable && boost && <EquipPanel boost={boost} players={players} onEquip={setBoosting} />}
       <div className="flex flex-wrap items-center gap-2">
         {editable && view === "court" && <button className="btn-primary" disabled={pending} onClick={() => act(() => autoSet!())}><BoltIcon /> Start my active players</button>}
         {editable && view === "court" && sel && (

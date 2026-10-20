@@ -4,12 +4,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { PlayerInfo } from "@/lib/player-info";
-import { RARITIES } from "@/lib/packs";
 import { InjuryTag } from "./Headshot";
 import { TeamLogo } from "./TeamLogo";
 import { TeamBadge } from "./TeamBadge";
 import { Fpts } from "./Fpts";
-import { Coins } from "./Coins";
 import { SlabIcon } from "./SlabIcon";
 import { XIcon } from "./Icons";
 import { useScrollLock } from "@/components/useScrollLock";
@@ -45,53 +43,14 @@ function Tile({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-const fmtPct = (x: number) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(1)}%`;
-
-/** His slab price: what each tier is worth now, how it has moved, and a chart of the Common price over the season. */
+/** His slabs: how many you own, and a link to see them in the Slab Pool. */
 function SlabMarket({ d }: { d: PlayerInfo }) {
-  const m = d.market;
-  const pts = m.history;
-  const W = 300, H = 90;
-  const lo = Math.min(...pts.map((p) => p.price)), hi = Math.max(...pts.map((p) => p.price));
-  const span = Math.max(1, hi - lo);
-  const xy = pts.map((p, i) => [pts.length > 1 ? (i / (pts.length - 1)) * W : W, H - 8 - ((p.price - lo) / span) * (H - 16)] as const);
-  const up = (m.changeSeason ?? m.change7 ?? 0) >= 0;
-  const stroke = up ? "#22c55e" : "#ef4444";
-  const Change = ({ label, v }: { label: string; v: number | null }) => (
-    <span className="text-xs text-zinc-500">{label} <b className={v == null ? "text-zinc-400" : v >= 0 ? "text-emerald-500" : "text-red-500"}>{v == null ? "-" : fmtPct(v)}</b></span>
-  );
   return (
     <section>
-      <p className="label">His slab price</p>
-      <div className="space-y-3 rounded-xl bg-ink p-4 text-sm ring-1 ring-white/5">
-        <div className="flex flex-wrap gap-x-4 gap-y-1">
-          <Change label="7 days" v={m.change7} /><Change label="Season" v={m.changeSeason} />
-        </div>
-        {pts.length >= 2 ? (
-          <svg viewBox={`0 0 ${W} ${H}`} className="h-24 w-full" preserveAspectRatio="none" aria-label="Common slab price over the season">
-            <defs><linearGradient id="slab-px" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={stroke} stopOpacity=".35" /><stop offset="1" stopColor={stroke} stopOpacity="0" /></linearGradient></defs>
-            <path d={`M0 ${H} ${xy.map(([x, y]) => `L${x.toFixed(1)} ${y.toFixed(1)}`).join(" ")} L${W} ${H}Z`} fill="url(#slab-px)" />
-            <path d={xy.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ")} fill="none" stroke={stroke} strokeWidth="2" vectorEffect="non-scaling-stroke" />
-          </svg>
-        ) : (
-          <p className="text-xs text-zinc-500">{m.seasonStarted ? "The chart fills in as he plays this season." : "The price chart starts on opening night, once his new stats come in."}</p>
-        )}
-        <div className="grid grid-cols-5 gap-1 text-center">
-          {m.prices.map((x) => (
-            <div key={x.rarity} className="rounded-lg bg-panel2 px-1 py-1.5">
-              <p className={`text-[9px] font-black uppercase ${RARITIES[x.rarity].text}`}>{RARITIES[x.rarity].label}</p>
-              <p className="font-mono text-[11px] font-bold text-emerald-500"><Coins n={x.price} /></p>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-zinc-500">
-          Priced from his ESPN stats: <Fpts n={m.score} /> a game{m.gp ? ` (this season's ${m.gp} game${m.gp > 1 ? "s" : ""} blended in)` : " last season"}
-          {m.popLabel ? `, plus ${m.popLabel.toLowerCase()} popularity (${m.popularity}×)` : ""}. Games he misses don&apos;t move it.
-        </p>
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2 text-zinc-400"><SlabIcon className="text-fpts" />You own <b className="text-white">{m.mine}</b></span>
-          <Link href={`/packs/pool?team=${d.player.team}`} className="btn-ghost px-3 py-1 text-xs">See his slabs</Link>
-        </div>
+      <p className="label">His slabs</p>
+      <div className="flex items-center justify-between rounded-xl bg-ink p-4 text-sm ring-1 ring-white/5">
+        <span className="flex items-center gap-2 text-zinc-400"><SlabIcon className="text-fpts" />You own <b className="text-white">{d.market.mine}</b></span>
+        <Link href={`/packs/pool?team=${d.player.team}`} className="btn-ghost px-3 py-1 text-xs">See his slabs</Link>
       </div>
     </section>
   );

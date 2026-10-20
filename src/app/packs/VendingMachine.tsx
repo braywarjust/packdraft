@@ -199,7 +199,6 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
   };
 
   const close = () => { setStage("idle"); setCards([]); setPackId(null); router.refresh(); };
-  const total = cards.reduce((s, c) => s + c.value, 0);
   const allFlipped = cards.length > 0 && flipped.size === cards.length;
   const rp = PACK_BY_ID[packType];
 
@@ -315,9 +314,7 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
                 <button className="btn-ghost" onClick={() => cards.forEach((c, i) => setTimeout(() => flip(c), i * 350))}>Reveal all</button>
               ) : (
                 <div className="card w-full max-w-xl space-y-3 p-4 text-center">
-                  <p className="text-sm text-zinc-500">Pack value</p>
-                  <p className={`text-3xl font-black ${total >= rp.price ? "text-emerald-600" : "text-zinc-800"}`}><Coins n={total} live from={0} /> <span className="text-base font-normal text-zinc-500">on a <Coins n={rp.price} /> pack {total >= rp.price ? "· W" : "· L"}</span></p>
-                  <p className="text-xs text-zinc-400">Best pull: <span className={RARITIES[cards[cards.length - 1].rarity].text}>{cards[cards.length - 1].name}</span></p>
+                  <p className="text-sm text-zinc-400">Best pull: <span className={RARITIES[cards[cards.length - 1].rarity].text}>{cards[cards.length - 1].name}</span></p>
                   <div className="flex flex-wrap justify-center gap-2">
                     <button className="btn-primary" onClick={close}>Add to collection</button>
                   </div>

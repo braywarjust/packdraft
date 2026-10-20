@@ -100,8 +100,8 @@ export function LineupEditor({
                 <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setSelected(selected === p.id ? null : p.id)}>{selected === p.id ? "Cancel" : "Move"}</button>
               ) : null}
               {p && !canTarget && canBoost.has(p.id) && (
-                <button className={`px-2 py-1 text-xs ${p.boost?.state === "pre" ? "btn-ghost" : "btn-lime"}`} title="Slab boost his next game" onClick={() => setBoosting(p)}>
-                  <BoltIcon /> {p.boost?.state === "pre" ? "Change" : "Boost"}
+                <button className={`px-2 py-1 text-xs ${p.boost?.state === "pre" ? "btn-ghost" : "btn-primary"}`} title="Equip one of his slabs on his next game" onClick={() => setBoosting(p)}>
+                  <FptIcon tone="white" /> {p.boost?.state === "pre" ? "Swap slab" : "Equip slab"}
                 </button>
               )}
             </div>
@@ -147,6 +147,49 @@ export function LineupEditor({
           run={(fn) => { setBoosting(null); act(fn); }} />
       )}
     </div>
+  );
+}
+
+/**
+ * "Equip slabs" panel at the top of your team page: every player on this roster you own slabs of, his next game, his
+ * best multiplier, and an Equip button (or what's equipped). Makes it obvious slabs can go on your players.
+ */
+export function EquipPanel({ boost, players, onEquip }: { boost: BoostProps; players: LivePlayer[]; onEquip: (p: LivePlayer) => void }) {
+  const byId = new Map(players.map((p) => [p.id, p]));
+  const rows = boost.boostable.flatMap((b) => {
+    const p = byId.get(b.playerId);
+    if (!p) return [];
+    const mine = boost.slabs.filter((s) => s.playerId === b.playerId);
+    return [{ b, p, mine, best: mine.reduce((m, s) => Math.max(m, s.mult), 0) }];
+  });
+  return (
+    <section className="card relative overflow-hidden p-4" style={{ boxShadow: "inset 0 0 0 1px rgba(56,189,248,.35)" }}>
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="flex items-center gap-2 font-black text-white"><FptIcon tone="blue" /> Equip slabs</h3>
+        <p className="text-xs text-zinc-500">Slabs of your players multiply their fantasy points for one game. Equip before tip-off; used up when the game ends.</p>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-sm text-zinc-500">You don&apos;t have slabs of anyone on this roster yet (or they have no games left this week). Rip packs to find slabs of your players.</p>
+      ) : (
+        <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin">
+          {rows.map(({ b, p, mine, best }) => (
+            <div key={p.id} className="flex w-56 shrink-0 items-center gap-3 rounded-xl bg-ink p-2.5 ring-1 ring-white/5">
+              {b.equipped ? <Slab s={b.equipped.slab} size={64} /> : mine[0] && <Slab s={mine[0].slab} size={64} />}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-white">{p.name}</p>
+                <p className="truncate text-[11px] text-zinc-500">{b.day}</p>
+                {b.equipped ? (
+                  <p className="text-[11px] font-bold text-fpts">Equipped · {b.equipped.mult.toFixed(2)}x</p>
+                ) : (
+                  <p className="text-[11px] text-zinc-400">{mine.length} slab{mine.length > 1 ? "s" : ""} · best <b className="text-fpts">{best.toFixed(2)}x</b></p>
+                )}
+                <button className={`mt-1 px-2 py-0.5 text-xs ${b.equipped ? "btn-ghost" : "btn-primary"}`} onClick={() => onEquip(p)}>{b.equipped ? "Swap" : "Equip"}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

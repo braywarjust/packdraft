@@ -11,7 +11,6 @@ import { clearTestCards, tradeUpSlabs } from "../actions";
 import { TradeUp } from "./TradeUp";
 import { PageHeader } from "@/components/PageHeader";
 import { CollectionGrid } from "./CollectionGrid";
-import { Coins } from "@/components/Coins";
 
 export default async function Collection({ searchParams }: { searchParams: Promise<{ r?: string; sort?: string; u?: string }> }) {
   const sp = await searchParams;
@@ -27,7 +26,6 @@ export default async function Collection({ searchParams }: { searchParams: Promi
     return e ? { ...c, equipped: `Equipped · ${when(e.day_key)} · ${e.league}` } : c;
   });
   const allSlabs = cards.filter((c) => c.kind === "slab" && !("equipped" in c && c.equipped)); // trade-ups pick from all of them, whatever the filter
-  const total = cards.reduce((s, c) => s + c.value, 0);
   const counts = Object.fromEntries(Object.keys(RARITIES).map((r) => [r, cards.filter((c) => c.rarity === r).length]));
   if (sp.r) cards = cards.filter((c) => c.rarity === sp.r);
   if (sp.sort === "new") cards = [...cards].sort((a, b) => b.created_at - a.created_at);
@@ -41,7 +39,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
   return (
     <div className="space-y-5">
       <PageHeader icon="collection" eyebrow="Card vault" title={mine ? "My collection" : `${viewing.name}'s collection`}
-        description={<span className="flex flex-wrap items-center gap-x-2 gap-y-1 leading-none"><SlabCount n={cards.length} className="font-semibold text-white" /><span aria-hidden>·</span><span className="flex items-center gap-1.5">vault value <Coins n={total} className="font-bold text-emerald-600" /></span></span>}>
+        description={<span className="flex flex-wrap items-center gap-x-2 gap-y-1 leading-none"><SlabCount n={cards.length} className="font-semibold text-white" /></span>}>
           {users.map((x) => (
             <Link key={x.id} href={qs({ u: String(x.id) })} className={`tab ${x.id === viewing.id ? "tab-active" : ""}`}>{x.id === me.id ? "Me" : x.name}</Link>
           ))}

@@ -4,9 +4,6 @@ import { all, one, type Player } from "./db";
 import { fpts, type Line } from "./scoring";
 import { projFor } from "./league";
 import { teamBrand } from "./branding";
-import { RARITY_ORDER } from "./packs";
-import { computeIndexes, popularity, popularityLabel, priceHistory, slabPrice } from "./slab-market";
-import { seasonOpener } from "./league";
 
 type Avg = Partial<Line> & { gp?: number };
 
@@ -57,23 +54,8 @@ export function playerInfo(playerId: number, leagueId: number | null, userId: nu
     `SELECT COUNT(*) total, SUM(s.card_id IS NULL) vault, SUM(c.user_id = ? AND c.sold = 0) mine, MAX(COALESCE(s.mkt_value, s.est_value)) top
      FROM slabs s LEFT JOIN cards c ON c.id = s.card_id WHERE s.player_id = ? AND s.missing = 0`, userId, playerId);
 
-  // Slab price: today's index (latest snapshot, else computed now), its history, and what moves it.
-  const history = priceHistory(p.id);
-  const live = history.length ? null : computeIndexes().get(p.id) ?? null;
-  const nowIdx = history.at(-1)?.idx ?? live?.idx ?? 0.2;
-  const opener = seasonOpener();
-  const at = (pred: (d: string) => boolean) => history.find((h) => pred(h.date_et))?.idx ?? null;
-  const weekAgo = new Date(Date.now() - 7 * 86400_000).toLocaleDateString("en-CA", { timeZone: "America/New_York" });
-  const ref7 = [...history].reverse().find((h) => h.date_et <= weekAgo)?.idx ?? null;
-  const refSeason = at((d) => d >= opener) ?? null;
   const myCount = one<{ n: number }>("SELECT COUNT(*) n FROM cards WHERE user_id = ? AND sold = 0 AND kind = 'slab' AND player_id = ?", userId, p.id)?.n ?? 0;
-  const market = {
-    idx: nowIdx, score: history.at(-1)?.score ?? live?.score ?? p.proj, gp: history.at(-1)?.gp ?? live?.gp ?? 0,
-    popularity: popularity(p.name), popLabel: popularityLabel(p.name),
-    prices: RARITY_ORDER.map((r) => ({ rarity: r, price: slabPrice(r, nowIdx) })),
-    history: history.filter((h) => h.date_et >= opener || history.length < 3).map((h) => ({ date: h.date_et, price: slabPrice("common", h.idx) })),
-    change7: ref7 ? nowIdx / ref7 - 1 : null, changeSeason: refSeason ? nowIdx / refSeason - 1 : null, seasonStarted: today >= opener, mine: myCount,
-  };
+  const market = { mine: myCount };
 
   return {
     market,
