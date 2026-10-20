@@ -1,4 +1,5 @@
-# Every push to main goes live: GitHub logs into the Oracle server over SSH and runs deploy/deploy.sh.
+# Every push to main goes live. GitHub builds the app here (so even the tiny free server can run it), copies the build
+# to the Oracle server over SSH, and restarts it there with deploy/deploy.sh (which backs up the database first).
 # Repo secrets needed (Settings > Secrets and variables > Actions): ORACLE_HOST (the server's IP),
 # ORACLE_USER (usually "ubuntu"), ORACLE_SSH_KEY (a private key whose public half is in the server's ~/.ssh/authorized_keys).
 name: Deploy
@@ -10,13 +11,32 @@ concurrency: deploy
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      HOST: ${{ secrets.ORACLE_HOST }}
+      USER: ${{ secrets.ORACLE_USER }}
+      KEY: ${{ secrets.ORACLE_SSH_KEY }}
     steps:
-      - name: Deploy to the Oracle server
-        env:
-          HOST: ${{ secrets.ORACLE_HOST }}
-          USER: ${{ secrets.ORACLE_USER }}
-          KEY: ${{ secrets.ORACLE_SSH_KEY }}
+      - name: Check the server is set up
+        id: check
         run: |
-          if [ -z "$HOST" ]; then echo "No ORACLE_HOST secret yet: skipping deploy (see DEPLOY.md step 5)."; exit 0; fi
+          if [ -z "$HOST" ]; then echo "No ORACLE_HOST secret yet: skipping deploy (see DEPLOY.md step 5)."; echo "skip=1" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.skip != '1'
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.skip != '1'
+        with:
+          node-version: 24
+          cache: npm
+      - name: Build
+        if: steps.check.outputs.skip != '1'
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          tar -czf /tmp/build.tgz .next.nosync node_modules
+      - name: Ship and restart
+        if: steps.check.outputs.skip != '1'
+        run: |
           install -m 600 /dev/null key && printf '%s\n' "$KEY" > key
-          ssh -i key -o StrictHostKeyChecking=accept-new "$USER@$HOST" 'bash /opt/packdraft/deploy/deploy.sh'
+          SSH="ssh -i key -o StrictHostKeyChecking=accept-new $USER@$HOST"
+          scp -i key -o StrictHostKeyChecking=accept-new /tmp/build.tgz "$USER@$HOST:/tmp/packdraft-build.tgz"
+          $SSH "SHA=${{ github.sha }} bash /opt/packdraft/deploy/deploy.sh /tmp/packdraft-build.tgz"

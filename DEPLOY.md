@@ -15,9 +15,9 @@ leagues, teams, logos, Pack Points, slabs, chat) lives only on the server, never
    Pick a home region close to you (it can't be changed later).
 2. Console > **Compute > Instances > Create instance**:
    - Image: **Canonical Ubuntu 24.04**.
-   - Shape: **Ampere VM.Standard.A1.Flex**, 2 OCPUs and 12 GB memory (inside the free allowance). If Ampere is out of
-     capacity in your region, try again later or pick another availability domain; the tiny AMD shape (1 GB) is too
-     small to build the app.
+   - Shape: **Ampere VM.Standard.A1.Flex**, 2 OCPUs and 12 GB memory, if your region has room. If it says "Out of
+     capacity", use the **AMD VM.Standard.E2.1.Micro** (Always Free) instead: it's small, but GitHub builds the app for
+     it and the setup script adds swap, so it runs PackDraft fine for a group of friends.
    - SSH keys: "Generate a key pair for me", and **download the private key** (or paste your own public key).
    - Create. Copy the instance's **public IP address**.
 3. Open the web ports: on the instance page, click its **subnet > Default security list > Add ingress rules**:
@@ -42,7 +42,8 @@ bash setup.sh git@github.com:<you>/<repo>.git <IP-with-dashes>.sslip.io
 ```
 
 It pauses once to show a **deploy key**: add it in GitHub (repo Settings > Deploy keys > Add deploy key), press Enter.
-When it finishes, `https://<IP-with-dashes>.sslip.io` shows PackDraft (empty until step 4).
+When it finishes, HTTPS is set up. On the AMD micro server the app itself appears after the first GitHub deploy
+(step 5); on a bigger server it's already running.
 
 ## 4. Move your data over (2 minutes)
 
@@ -65,8 +66,8 @@ sign in again. From then on the server is the real copy: use the live site, not 
    - `ORACLE_USER`: `ubuntu`
    - `ORACLE_SSH_KEY`: the whole contents of `~/.ssh/packdraft_deploy` (the private key)
 
-Now every push to `main` runs `.github/workflows/deploy.yml`: it backs up the database, pulls the code, builds and
-restarts. Watch it under the repo's **Actions** tab. To deploy by hand: `ssh ubuntu@<IP> bash /opt/packdraft/deploy/deploy.sh`.
+Now every push to `main` runs `.github/workflows/deploy.yml`: GitHub builds the app, copies it to the server, and the
+server backs up the database and restarts. To deploy right now without a push: repo **Actions > Deploy > Run workflow**. Watch it under the repo's **Actions** tab. To deploy by hand: `ssh ubuntu@<IP> bash /opt/packdraft/deploy/deploy.sh`.
 
 ## Day to day
 

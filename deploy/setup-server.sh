@@ -13,6 +13,12 @@ REPO="${1:?usage: setup-server.sh <git repo url> <domain>}"
 DOMAIN="${2:?usage: setup-server.sh <git repo url> <domain>}"
 APP=/opt/packdraft
 
+echo "==> Swap (the free AMD micro server has 1 GB of memory; 4 GB of swap keeps it from running out)"
+if ! swapon --show | grep -q /swapfile; then
+  sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
+fi
+
 echo "==> Packages"
 sudo apt-get update -y
 sudo apt-get install -y git curl sqlite3 debian-keyring debian-archive-keyring apt-transport-https netfilter-persistent
@@ -43,8 +49,9 @@ sudo mkdir -p "$APP" && sudo chown "$USER" "$APP"
 [ -d "$APP/.git" ] || git clone "$REPO" "$APP"
 mkdir -p "$APP/data.nosync"   # the repo's data -> data.nosync link points here; the database lives in it
 cd "$APP"
-npm ci
-npm run build
+# Small servers (under 4 GB of memory) don't build here: GitHub builds the app and ships it (see deploy.yml).
+MEM_MB=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
+if [ "$MEM_MB" -ge 4000 ]; then npm ci && npm run build; else echo "Small server: the first GitHub deploy will build and ship the app."; fi
 
 echo "==> Service"
 sudo cp deploy/packdraft.service /etc/systemd/system/packdraft.service
@@ -59,5 +66,5 @@ sed "s/__DOMAIN__/$DOMAIN/" deploy/Caddyfile | sudo tee /etc/caddy/Caddyfile >/d
 sudo systemctl reload caddy
 
 echo
-echo "Done. PackDraft is starting at https://$DOMAIN"
+echo "Done. HTTPS is set up for https://$DOMAIN"
 echo "Next: copy your data over from your Mac with deploy/push-data.sh (see DEPLOY.md)."
