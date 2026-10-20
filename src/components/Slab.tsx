@@ -117,12 +117,7 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
               {s.mult.toFixed(2)}x
             </span>
           )}
-          {/* Team logo badge and tier pill */}
-          {logo && (
-            <span className="absolute left-[5%] top-[5%] grid h-[17cqw] w-[17cqw] place-items-center rounded-full shadow-[0_1cqw_2cqw_rgba(0,0,0,.35)]" style={{ background: "#ffffff" }}>
-              <img src={logo} alt={s.team} draggable={false} className="h-[78%] w-[78%] select-none object-contain" />
-            </span>
-          )}
+          {/* Tier pill */}
           <span className="absolute right-[5%] top-[5%] rounded-full px-[3cqw] py-[1cqw] text-[5cqw] font-black uppercase leading-none tracking-wide shadow-[0_1cqw_2cqw_rgba(0,0,0,.35)]"
             style={{ background: r === 4 ? "linear-gradient(90deg,#e0f2fe,#7dd3fc,#e0f2fe)" : tier, color: r === 4 ? "#0c4a6e" : "#fff" }}>
             {RARITIES[s.rarity].label}

@@ -3,11 +3,9 @@ import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { RARITIES, RARITY_ORDER, type Rarity } from "@/lib/packs";
 import { MULT_RANGE, ensureSlabCards, slabPool } from "@/lib/slab-cards";
-import { slabPrice } from "@/lib/slab-market";
 import { slabPlayerPhoto } from "@/lib/nba/photos";
 import { PageHeader } from "@/components/PageHeader";
 import { Slab, SlabCover } from "@/components/Slab";
-import { Coins } from "@/components/Coins";
 import { PlayerButton } from "@/components/PlayerInspector";
 
 export const metadata = { title: "Slab Pool" };
@@ -63,7 +61,6 @@ export default async function SlabPool({ searchParams }: { searchParams: Promise
               <Slab size={176} s={{ name: p.name, team: p.team, team_name: x?.team_name, pos: p.pos, rarity: tier, jersey: x?.jersey, color: x?.color, alt: x?.alt, photo: slabPlayerPhoto(p.name) ?? x?.headshot, mult: MULT_RANGE[tier][1] }} />
               <PlayerButton id={p.id} className="mt-2 text-xs font-semibold text-fpts">Price &amp; stats</PlayerButton>
               <p className="text-xs text-zinc-500">{owned.get(p.id) ? <b className="text-emerald-600">You own {owned.get(p.id)}</b> : rostered.has(p.id) ? "On your fantasy team" : "Not collected"}</p>
-              <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={slabPrice(tier, p.idx)} /></p>
             </div>
           );
         })}

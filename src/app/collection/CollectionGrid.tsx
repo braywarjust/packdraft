@@ -95,8 +95,8 @@ export function CollectionGrid({ cards }: { cards: GridCard[]; mine?: boolean })
                   <p className="mt-1 text-xs text-zinc-500">One use. If {open.name} is on your fantasy team, equip it on one of his games from your team page and his fantasy points for that game are multiplied by {open.mult.toFixed(2)}. The slab leaves your collection when the game ends.</p>
                 </div>
               )}
-              <div className="rounded-xl border border-zinc-200 p-4">
-                <p className="text-xs text-zinc-500">{open.kind === "slab" ? "Value" : "Market value"}</p>
+              {open.kind !== "slab" && <div className="rounded-xl border border-zinc-200 p-4">
+                <p className="text-xs text-zinc-500">Market value</p>
                 <p className="text-3xl font-bold text-emerald-600"><Coins n={open.value} /></p>
                 <p className="mt-1 text-xs text-zinc-500">
                   {open.s_source === "auction"
@@ -107,10 +107,9 @@ export function CollectionGrid({ cards }: { cards: GridCard[]; mine?: boolean })
                     ? detail.match === "cert"
                       ? `This exact slab is listed on eBay (${detail.n} listing${detail.n > 1 ? "s" : ""}).`
                       : <>Median of {detail.n} eBay listings for this card in this grade{detail.low != null && <> (<Coins n={detail.low} />–<Coins n={detail.high!} />)</>}.</>
-                    : open.kind === "slab" ? "Set by the slab's tier and how good the player is."
                     : open.slab_id ? "Estimated from the rarity score. Add eBay keys to price from live listings." : "Generated card value."}
                 </p>
-              </div>
+              </div>}
               {open.slab_id && (
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                   <dt className="text-zinc-500">Cert</dt>

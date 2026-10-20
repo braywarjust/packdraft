@@ -41,8 +41,8 @@ export default async function Home() {
     } catch { return { n: 0, stake: 0, toWin: 0 }; }
   })();
   const games = all<Game>("SELECT * FROM games WHERE date_et = ? ORDER BY state = 'in' DESC, start_ts", today);
-  const pulls = all<{ user: string; name: string; rarity: Rarity; value: number; slab_id: number | null }>(
-    `SELECT u.name user, COALESCE(s.player, p.name) name, c.rarity, c.value, c.slab_id FROM cards c JOIN users u ON u.id = c.user_id LEFT JOIN slabs s ON s.id = c.slab_id LEFT JOIN players p ON p.id = c.player_id
+  const pulls = all<{ user: string; name: string; rarity: Rarity; value: number; slab_id: number | null; kind: string | null }>(
+    `SELECT u.name user, COALESCE(s.player, p.name) name, c.rarity, c.value, c.slab_id, c.kind FROM cards c JOIN users u ON u.id = c.user_id LEFT JOIN slabs s ON s.id = c.slab_id LEFT JOIN players p ON p.id = c.player_id
      WHERE u.is_tester = 0 AND c.sold = 0 ORDER BY c.value DESC LIMIT 5`);
   const leaders = all<{ name: string; color: string; coins: number; vault: number }>(
     `SELECT u.name, u.color, u.coins, COALESCE((SELECT SUM(value) FROM cards c WHERE c.user_id = u.id AND c.sold = 0), 0) vault
@@ -247,7 +247,7 @@ export default async function Home() {
                   <Link key={c.id} href="/collection" className="flex flex-col items-center gap-1 text-center" title={c.kind === "slab" ? `${c.name} · ${RARITIES[c.rarity].label}` : `${c.name} · ${c.s_company} ${c.s_grade}`}>
                     {c.kind === "slab" ? <Slab s={slabOf(c)} size={64} /> : <img src={`/api/slabs/${c.slab_id}`} alt="" className="h-24 w-full object-contain drop-shadow-lg" />}
                     <RarityBadge rarity={c.rarity} className="px-1.5 text-[8px]" />
-                    <span className="text-[11px] font-semibold text-emerald-600"><Coins n={c.value} /></span>
+                    {c.kind !== "slab" && <span className="text-[11px] font-semibold text-emerald-600"><Coins n={c.value} /></span>}
                   </Link>
                 ))}
               </div>
@@ -268,7 +268,7 @@ export default async function Home() {
               {pulls.map((c, i) => (
                 <li key={i} className="flex items-center justify-between gap-2 text-sm">
                   <span className="min-w-0 truncate"><span className={`font-semibold ${RARITIES[c.rarity].text}`}>{c.name}</span> <span className="text-zinc-400">· {c.user}</span></span>
-                  <span className="shrink-0 font-mono text-emerald-600"><Coins n={c.value} /></span>
+                  {c.kind ? <span className={`shrink-0 text-xs font-bold ${RARITIES[c.rarity].text}`}>{RARITIES[c.rarity].label}</span> : <span className="shrink-0 font-mono text-emerald-600"><Coins n={c.value} /></span>}
                 </li>
               ))}
             </ul>

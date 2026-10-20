@@ -36,7 +36,6 @@ function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; co
   const step = TRADE_UP[tier]!;
   const list = byTier[tier];
   const chosen = list.filter((c) => picked.includes(c.id));
-  const worth = chosen.reduce((s, c) => s + c.value, 0);
   const ready = chosen.length === TRADE_UP_COUNT && coins >= step.fee;
 
   const toggle = (id: number) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : p.length < TRADE_UP_COUNT ? [...p, id] : p));
@@ -69,7 +68,6 @@ function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; co
             <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">You traded up to</p>
             <div className="anim-deal"><Slab s={slabOf(result)} size={260} /></div>
             <p className="text-xl font-black text-white">{RARITIES[result.rarity].label} {result.name}</p>
-            <p className="font-mono font-bold text-emerald-500"><Coins n={result.value} /></p>
             <div className="flex gap-2">
               <button className="btn-ghost" onClick={() => setResult(null)}>Trade up again</button>
               <button className="btn-primary" onClick={onClose}>Done</button>
@@ -97,7 +95,6 @@ function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; co
                         style={on ? { ["--tw-ring-color" as string]: RARITY_HEX[step.to] } : undefined}>
                         <Slab s={slabOf(c)} size={112} />
                         <span className="w-full truncate text-[11px] font-semibold text-zinc-300">{c.name}</span>
-                        <span className="font-mono text-[11px] font-bold text-emerald-500"><Coins n={c.value} /></span>
                         {on && <span className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-emerald-500 text-black"><CheckIcon /></span>}
                       </button>
                     );
@@ -107,10 +104,10 @@ function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; co
             </div>
             <div className="flex flex-wrap items-center gap-3 border-t border-line/60 px-5 py-3">
               <p className="text-sm text-zinc-400">
-                <b className="text-white">{chosen.length}/{TRADE_UP_COUNT}</b> picked{chosen.length > 0 && <> · worth <Coins n={worth} /></>} · fee <b className="text-white"><Coins n={step.fee} /></b>
+                <b className="text-white">{chosen.length}/{TRADE_UP_COUNT}</b> picked · fee <b className="text-white"><Coins n={step.fee} /></b>
               </p>
               {list.length >= TRADE_UP_COUNT && (
-                <button className="btn-ghost px-3 py-1 text-xs" onClick={() => setPicked(list.slice(0, TRADE_UP_COUNT).map((c) => c.id))}>Pick 5 lowest value</button>
+                <button className="btn-ghost px-3 py-1 text-xs" onClick={() => setPicked(list.slice(0, TRADE_UP_COUNT).map((c) => c.id))}>Quick pick 5</button>
               )}
               {err && <p className="text-sm font-semibold text-red-500">{err}</p>}
               {coins < step.fee && <p className="text-sm text-red-500">Not enough Pack Points for the fee</p>}

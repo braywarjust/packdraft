@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { RARITIES, Rarity } from "@/lib/packs";
 import { Slab, type SlabData } from "@/components/Slab";
+import { TeamLogo } from "@/components/TeamLogo";
 import { Coins } from "@/components/Coins";
 
 export type CardData = {
@@ -27,9 +28,14 @@ export function SlabTile({ c, small }: { c: CardData; small?: boolean }) {
         <Slab s={slabOf(c)} size={size} className={c.equipped ? "rounded-[9cqw] ring-2 ring-fpts ring-offset-2 ring-offset-[#171c27]" : ""} />
         {c.equipped && <span className="absolute -top-2 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-fpts px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-black shadow">Equipped</span>}
       </div>
+      {/* Team logo (the light version, no badge behind it), player name and number */}
       <div className="mt-2 w-full text-center">
-        <p className="truncate text-xs font-semibold text-zinc-900">{RARITIES[c.rarity].label}{c.serial ? <span className="font-normal text-zinc-500"> · #{c.serial}</span> : null}</p>
-        {c.equipped ? <p className="truncate text-[11px] font-semibold text-fpts">{c.equipped}</p> : <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={c.value} /></p>}
+        <p className="flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-900">
+          {c.team && <TeamLogo team={c.team} size={18} />}
+          <span className="truncate">{c.name}</span>
+          {c.jersey && <span className="shrink-0 font-normal text-zinc-500">#{c.jersey}</span>}
+        </p>
+        {c.equipped && <p className="truncate text-[11px] font-semibold text-fpts">{c.equipped}</p>}
       </div>
     </div>
   );
