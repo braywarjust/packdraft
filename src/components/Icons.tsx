@@ -20,3 +20,20 @@ export const ForwardIcon = svg("M4 5v14l8-7zM12 5v14l8-7z", true);
 export const MicIcon = svg("M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3");
 export const CameraIcon = svg("M4 8h3l2-3h6l2 3h3v11H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z");
 export const ClockIcon = svg("M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2");
+
+/** Up arrow over a bar: trade up. */
+export function TradeUpIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" />
+    </svg>
+  );
+}
+/** Circular arrows: re-roll. */
+export function RerollIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M20 11a8 8 0 0 0-14.5-4.6M4 4v4h4M4 13a8 8 0 0 0 14.5 4.6M20 20v-4h-4" />
+    </svg>
+  );
+}

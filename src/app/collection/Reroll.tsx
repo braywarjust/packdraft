@@ -7,6 +7,7 @@ import { slabOf, type CardData } from "@/components/PlayerCard";
 import { Slab } from "@/components/Slab";
 import { Coins } from "@/components/Coins";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
+import { RerollIcon } from "@/components/Icons";
 
 export type RerollAct = (cardId: number) => Promise<{ ok: boolean; card: CardData } | { error: string }>;
 
@@ -28,7 +29,7 @@ export function RerollPanel({ card, coins, onStart }: { card: CardData; coins: n
       <p className="text-xs text-zinc-500">Re-roll</p>
       <p className="mt-0.5 text-sm text-zinc-600">Turn this slab into a different player at {RARITIES[card.rarity].label}, with a fresh multiplier stamp.</p>
       <div className="mt-3 flex items-center gap-3">
-        <button className="btn-primary" disabled={short} onClick={onStart}>Re-roll · <Coins n={fee} /></button>
+        <button className="fx-btn fx-green" disabled={short} onClick={onStart}><RerollIcon className="fx-icon fx-spin" />Re-roll · <Coins n={fee} /></button>
         {short && <span className="text-xs text-red-500">Not enough Pack Points</span>}
       </div>
     </div>
@@ -90,8 +91,8 @@ export function RerollStage({ card, coins, action, onDone }: { card: CardData; c
             <div className="reroll-in"><Slab s={slabOf(result)} size={260} /></div>
             <p className="text-xl font-black text-white">{RARITIES[result.rarity].label} {result.name}</p>
             <div className="flex flex-wrap justify-center gap-2">
-              <button className="btn-ghost" disabled={pending || balance < REROLL_FEE[result.rarity]} onClick={() => go(result)}>
-                Re-roll again · <Coins n={REROLL_FEE[result.rarity]} />
+              <button className="fx-btn fx-green" disabled={pending || balance < REROLL_FEE[result.rarity]} onClick={() => go(result)}>
+                <RerollIcon className="fx-icon fx-spin" />Re-roll again · <Coins n={REROLL_FEE[result.rarity]} />
               </button>
               <button className="btn-primary" onClick={() => onDone(result)}>Done</button>
             </div>

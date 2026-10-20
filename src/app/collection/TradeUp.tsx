@@ -6,7 +6,7 @@ import { RARITIES, RARITY_HEX, TRADE_UP, TRADE_UP_COUNT, type Rarity } from "@/l
 import { slabOf, type CardData } from "@/components/PlayerCard";
 import { Slab } from "@/components/Slab";
 import { Coins } from "@/components/Coins";
-import { CheckIcon, XIcon } from "@/components/Icons";
+import { CheckIcon, TradeUpIcon, XIcon } from "@/components/Icons";
 import { useScrollLock } from "@/components/useScrollLock";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
 
@@ -27,7 +27,7 @@ export function TradeUp({ cards, coins, action }: { cards: (CardData & { created
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button className="btn-primary" onClick={() => setOpen(true)}>Trade up</button>
+      <button className="fx-btn fx-blue" onClick={() => setOpen(true)}><TradeUpIcon className="fx-icon fx-hop" />Trade up</button>
       {open && <TradeUpModal cards={cards} coins={coins} action={action} onClose={() => setOpen(false)} />}
     </>
   );
