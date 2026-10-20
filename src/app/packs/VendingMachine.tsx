@@ -235,7 +235,8 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
       <section id="packs" className="scroll-mt-36 space-y-3">
         <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One Slab each, five in the Mega Pack. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
         {/* All seven packs in one row; scrolls sideways when the screen is too narrow. */}
-        <div className="-mx-2 flex snap-x gap-6 overflow-x-auto px-2 pb-4 pt-3 scrollbar-thin">
+        {/* Generous padding (pulled back with negative margins) so a hovered pack’s lift, tilt and shadow never get clipped by the scroller. */}
+        <div className="-mx-6 -mb-6 -mt-8 flex snap-x scroll-px-6 gap-6 overflow-x-auto px-6 pb-10 pt-11 scrollbar-thin">
           {PACKS.map((p) => {
             const busy = stage !== "idle";
             const short = coins < p.price;
