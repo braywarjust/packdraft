@@ -11,7 +11,7 @@ import {
   startNewSeason, canStartNewSeason,
 } from "@/lib/league";
 import { PACK_BY_ID } from "@/lib/packs";
-import { openPack, tradeUp } from "@/lib/packs-server";
+import { openPack, rerollSlab, tradeUp } from "@/lib/packs-server";
 import { etDate } from "@/lib/nba/espn";
 import { placeBet } from "@/lib/bets";
 import { applyPreset, deletePreset, getPreset, saveLeagueBrand, savePreset, setFavoritePreset } from "@/lib/branding";
@@ -474,6 +474,16 @@ export async function tradeUpSlabs(cardIds: number[]) {
   return wrap(async () => {
     const u = await requireUser();
     const card = tradeUp(u.id, cardIds);
+    revalidatePath("/", "layout");
+    return { ok: true, card };
+  });
+}
+
+/** Pay Pack Points to turn one slab into a different player at the same rarity. */
+export async function rerollSlabAction(cardId: number) {
+  return wrap(async () => {
+    const u = await requireUser();
+    const card = rerollSlab(u.id, cardId);
     revalidatePath("/", "layout");
     return { ok: true, card };
   });

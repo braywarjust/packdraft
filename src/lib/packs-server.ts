@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { all, one, run, tx, User } from "./db";
-import { PACK_BY_ID, RARITIES, Rarity, TRADE_UP, TRADE_UP_COUNT, fmtCoins } from "./packs";
+import { PACK_BY_ID, RARITIES, REROLL_FEE, Rarity, TRADE_UP, TRADE_UP_COUNT, fmtCoins } from "./packs";
 import { postSystem } from "./league";
 import { ensureSlabCards, multValue, nextSerial, rollMult, rollSlab, slabPool } from "./slab-cards";
 import { ensureBoosts } from "./boost";
@@ -115,6 +115,46 @@ export function tradeUp(userId: number, cardIds: number[]) {
   const card = cardsWhere("c.id = ?", newId)[0];
   if ((card.rarity === "legendary" || card.rarity === "grail") && !user.is_tester) {
     const msg = `${user.name} traded up five slabs into ${card.rarity === "grail" ? "an" : "a"} ${RARITIES[card.rarity].label.toUpperCase()} ${card.name} worth ${fmtCoins(card.value)}!`;
+    for (const l of all<{ league_id: number }>("SELECT DISTINCT league_id FROM teams WHERE user_id = ?", userId)) postSystem(l.league_id, msg);
+  }
+  return card;
+}
+
+/**
+ * Re-roll a slab: pay the tier's fee and the slab becomes a different player at the same rarity, picked the same way
+ * packs pick (leaning a little toward better, popular players), with a fresh multiplier stamp. The old slab is gone
+ * (cards.sold = 4).
+ */
+export function rerollSlab(userId: number, cardId: number) {
+  ensureSlabCards();
+  const user = one<User>("SELECT * FROM users WHERE id = ?", userId)!;
+  const newId = tx(() => {
+    const c = one<{ id: number; player_id: number; rarity: Rarity }>(
+      "SELECT id, player_id, rarity FROM cards WHERE id = ? AND user_id = ? AND sold = 0 AND kind = 'slab'", cardId, userId);
+    if (!c) throw new Error("That slab isn't in your collection");
+    ensureBoosts();
+    if (one("SELECT 1 FROM slab_equips WHERE consumed_at IS NULL AND card_id = ?", cardId)) throw new Error("That slab is equipped for a game. Unequip it first");
+    const fee = REROLL_FEE[c.rarity];
+    const coins = one<{ coins: number }>("SELECT coins FROM users WHERE id = ?", userId)!.coins;
+    if (coins < fee) throw new Error(`Re-rolling a ${RARITIES[c.rarity].label} slab costs ${fmtCoins(fee)}`);
+    const pool = slabPool().filter((p) => p.id !== c.player_id);
+    const w = pool.map((p) => Math.max(3, p.proj) ** 0.7 * Math.sqrt(popularity(p.name)));
+    let x = rand() * w.reduce((s, v) => s + v, 0);
+    let pick = pool[pool.length - 1];
+    for (let i = 0; i < pool.length; i++) if ((x -= w[i]) <= 0) { pick = pool[i]; break; }
+    const mult = rollMult(c.rarity, pick.proj, rand);
+    run("UPDATE cards SET sold = 4 WHERE id = ?", cardId);
+    run("DELETE FROM profile_featured WHERE card_id = ?", cardId);
+    run("UPDATE users SET coins = coins - ? WHERE id = ?", fee, userId);
+    const r = run(
+      `INSERT INTO cards (user_id, pack_id, player_id, slab_id, rarity, grade, serial, print_run, value, kind, mult, created_at)
+       VALUES (?, 0, ?, NULL, ?, 0, ?, 0, ?, 'slab', ?, ?)`,
+      userId, pick.id, c.rarity, nextSerial(pick.id, c.rarity), Math.max(1, Math.round(slabPrice(c.rarity, pick.idx) * multValue(c.rarity, mult))), mult, Date.now());
+    return Number(r.lastInsertRowid);
+  });
+  const card = cardsWhere("c.id = ?", newId)[0];
+  if ((card.rarity === "legendary" || card.rarity === "grail") && !user.is_tester) {
+    const msg = `${user.name} re-rolled ${card.rarity === "grail" ? "an" : "a"} ${RARITIES[card.rarity].label.toUpperCase()} slab into ${card.name}!`;
     for (const l of all<{ league_id: number }>("SELECT DISTINCT league_id FROM teams WHERE user_id = ?", userId)) postSystem(l.league_id, msg);
   }
   return card;
