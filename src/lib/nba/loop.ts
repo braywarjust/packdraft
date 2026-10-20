@@ -1,7 +1,7 @@
 import { all } from "../db";
 import { addDays, etDate } from "./espn";
 import { backfillFinals, ensureSchedule, maybeSyncPlayers, refreshLive } from "./sync";
-import { dailyWaivers, getLeague, tickLeague, weekRange } from "../league";
+import { dailyWaivers, getLeague, rolloverLeagues, tickLeague, weekRange } from "../league";
 import { ensureCatalog } from "../slabs";
 import { settleBets } from "../bets";
 import { snapshotPrices } from "../slab-market";
@@ -13,6 +13,8 @@ export async function tick() {
   try {
     ensureCatalog();
     await maybeSyncPlayers();
+    // New NBA season: finished leagues reset for their next draft.
+    rolloverLeagues();
     const today = etDate();
     await ensureSchedule(today, addDays(today, 10));
     await refreshLive();

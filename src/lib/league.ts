@@ -2,6 +2,7 @@ import { all, one, run, tx, League, Team, Player, Matchup, Game } from "./db";
 import { leagueSeed, rng, simSchedule, gameProgress, simGame, partial, simClock } from "./sim";
 import { STARTERS, ROSTER_MAX, eligible, fpts, statLine, Line, slotLabel, posLabel } from "./scoring";
 import { addDays, etDate, weekday, dayLabel } from "./nba/espn";
+import { season as nbaSeason, seasonLabel } from "./nba/season";
 import { PACK_BY_ID } from "./packs";
 import { creditGame, weekRate } from "./economy";
 import { cardMultiplier, consumeEquip, ensureBoosts, teamBoosts } from "./boost";
@@ -438,7 +439,9 @@ function schedule(teamIds: number[], weeks: number) {
 export const NBA_OPENER_FALLBACK = "2026-10-20";
 export function seasonOpener() {
   const today = etDate();
-  // The season this league plays in: the first regular-season game from ~8 months back onward.
+  // From ESPN's season calendar (see nba/season.ts); else the first regular-season game we know of from ~8 months back.
+  const s = nbaSeason();
+  if (s.dates.length) return s.regStart;
   return one<{ d: string | null }>("SELECT MIN(date_et) d FROM games WHERE season_type = 2 AND date_et >= ?", addDays(today, -240))?.d ?? NBA_OPENER_FALLBACK;
 }
 
@@ -451,7 +454,8 @@ export function finishDraft(leagueId: number) {
   const tomorrow = addDays(etDate(), 1);
   const opener = seasonOpener();
   const start = opener > tomorrow ? opener : tomorrow;
-  run("UPDATE leagues SET draft_status = 'done', pick_deadline = NULL, start_date = COALESCE(start_date, ?) WHERE id = ?", start, leagueId);
+  run("UPDATE leagues SET draft_status = 'done', pick_deadline = NULL, start_date = COALESCE(start_date, ?), season = COALESCE(season, ?) WHERE id = ?", start, nbaSeason().year, leagueId);
+  planSeason(getLeague(leagueId)!);
   const l = getLeague(leagueId)!;
   const teams = leagueTeams(leagueId);
   for (const t of teams) autoLineup(l, t.id);
@@ -605,6 +609,131 @@ export function executeTrade(tradeId: number) {
     const pn = (ids: number[]) => ids.map((id) => one<Player>("SELECT name FROM players WHERE id = ?", id)!.name).join(", ") || "nothing";
     postSystem(t.league_id, `TRADE: ${name(t.from_team_id)} sends ${pn(give)} to ${name(t.to_team_id)} for ${pn(get)}.`);
   });
+}
+
+// ---------- Seasons: planning, offseason, rollover ----------
+
+/**
+ * Real leagues plan their weeks from the NBA calendar when the draft finishes, the way ESPN does: week 1 runs from
+ * opening night to the first Sunday, then Monday–Sunday; the week of the All-Star break is merged with the week after
+ * it into one two-week matchup; playoff rounds are two weeks each; and the fantasy playoffs end at least a week before
+ * the NBA regular season does. The regular season is as many weeks as fit (capped by the league's own setting).
+ */
+export function planSeason(l: League) {
+  const s = nbaSeason();
+  if (l.mode === "sim" || !l.start_date || !s.dates.length) return;
+  const gameDays = new Set(s.dates);
+  // Calendar weeks: [start, end] for week 1, then Monday–Sunday through the end of the NBA regular season.
+  const cal: [string, string][] = [];
+  let e = addDays(l.start_date, 4);
+  while (weekday(e) !== 0) e = addDays(e, 1);
+  cal.push([l.start_date, e]);
+  while (addDays(e, 7) <= s.regEnd) { cal.push([addDays(e, 1), addDays(e, 7)]); e = addDays(e, 7); }
+  const days = ([a, b]: [string, string]) => { let n = 0; for (let d = a; d <= b; d = addDays(d, 1)) if (gameDays.has(d)) n++; return n; };
+  // The All-Star week: the lightest week from mid-January to mid-March (only if it's clearly a break).
+  let star = -1;
+  cal.forEach((w, i) => {
+    const md = w[0].slice(5);
+    if (i > 0 && md >= "01-15" && md <= "03-15" && days(w) <= 4 && (star < 0 || days(w) < days(cal[star]))) star = i;
+  });
+  // Matchup periods (calendar-week counts), with the All-Star week folded into the next one.
+  const periods: number[] = [];
+  cal.forEach((_, i) => { if (i === star + 1 && star >= 0) periods[periods.length - 1] = 2; else periods.push(1); });
+  const { rounds } = playoffInfo(l);
+  const playoffWeeks = rounds * 2;
+  // Most regular-season matchups that still leave room for the playoffs plus a spare week before the NBA's last week.
+  let fit = 0, used = 0;
+  for (let k = 0; k < periods.length; k++) {
+    used += periods[k];
+    if (cal.length - used >= playoffWeeks + 1) fit = k + 1;
+  }
+  const weeks = Math.max(1, Math.min(l.season_weeks, fit || l.season_weeks));
+  const long: number[] = [];
+  periods.forEach((n, i) => { if (n === 2 && i + 1 <= weeks) long.push(i + 1); });
+  for (let r = 1; r <= rounds; r++) long.push(weeks + r);
+  run("UPDATE leagues SET season_weeks = ?, long_weeks = ? WHERE id = ?", weeks, JSON.stringify(long), l.id);
+}
+
+export type SeasonRecord = {
+  id: number; season: number | null; champion_team_id: number | null; champion: string | null; created_at: number;
+  standings: { team_id: number; name: string; owner: string | null; wins: number; losses: number; ties: number; points_for: number }[];
+};
+/** Past seasons of a league, newest first. */
+export function leagueHistory(leagueId: number): SeasonRecord[] {
+  return all<{ id: number; season: number | null; champion_team_id: number | null; champion: string | null; standings: string; created_at: number }>(
+    "SELECT id, season, champion_team_id, champion, standings, created_at FROM league_seasons WHERE league_id = ? ORDER BY id DESC", leagueId)
+    .map((r) => ({ ...r, standings: JSON.parse(r.standings) }));
+}
+
+/** Season over (champion crowned) and waiting on the next one. */
+export const inOffseason = (l: League) => !!l.champion_team_id;
+
+/**
+ * Close out a league's season and set it up for the next one. Everything about the old season is kept in
+ * league_seasons (final standings, every result, the champion, end-of-season rosters). Then the league goes back to
+ * pre-draft: rosters, matchups, the draft, keepers and pending waivers/trades are cleared, records and FAAB reset,
+ * and slabs equipped for games that never happened go back to their owners. Members, team names and logos,
+ * settings and chat all carry over. The commish schedules the new draft.
+ */
+export function startNewSeason(l: League, year: number | null) {
+  tx(() => {
+    const fresh = getLeague(l.id)!;
+    if (fresh.draft_status === "live") throw new Error("Finish the draft first");
+    const teams = leagueTeams(l.id);
+    const owners = new Map(all<{ id: number; name: string }>("SELECT id, name FROM users").map((u) => [u.id, u.name]));
+    const table = fresh.draft_status === "done" ? standings(l.id) : teams;
+    const champ = fresh.champion_team_id ? teams.find((t) => t.id === fresh.champion_team_id) ?? null : null;
+    const rosters = Object.fromEntries(teams.map((t) => [t.id, roster(t.id).map((p) => p.id)]));
+    const results = all<Matchup>("SELECT * FROM matchups WHERE league_id = ? ORDER BY week, id", l.id)
+      .map((m) => ({ week: m.week, home: m.home_team_id, away: m.away_team_id, hs: m.home_score, as: m.away_score, final: m.final, kind: m.kind ?? null }));
+    const histId = Number(run(
+      `INSERT INTO league_seasons (league_id, season, champion_team_id, champion, standings, results, rosters, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      l.id, fresh.season ?? null, champ?.id ?? null, champ?.name ?? null,
+      JSON.stringify(table.map((t) => ({ team_id: t.id, name: t.name, owner: t.user_id ? owners.get(t.user_id) ?? null : null, wins: t.wins, losses: t.losses, ties: t.ties, points_for: Math.round(t.points_for * 100) / 100 }))),
+      JSON.stringify(results), JSON.stringify(rosters), Date.now()).lastInsertRowid);
+    const ids = teams.map((t) => t.id);
+    const inTeams = `(${ids.map(() => "?").join(",") || "NULL"})`;
+    const tag = `old${histId}:`;
+    ensureBoosts();
+    // Slabs equipped for games that will never be played go back to the collection; used ones stay in the record
+    // under the old season's name so they never count again (sim leagues reuse game keys every season).
+    run("DELETE FROM slab_equips WHERE league_id = ? AND consumed_at IS NULL", l.id);
+    run("UPDATE slab_equips SET day_key = ? || day_key WHERE league_id = ? AND day_key NOT LIKE 'old%'", tag, l.id);
+    run("UPDATE league_boosts SET day_key = ? || day_key WHERE league_id = ? AND day_key NOT LIKE 'old%'", tag, l.id);
+    run("UPDATE pp_earnings SET archived = ?, game_key = ? || game_key WHERE league_id = ? AND archived = 0", histId, tag, l.id);
+    run(`DELETE FROM daily_slots WHERE team_id IN ${inTeams}`, ...ids);
+    run(`DELETE FROM draft_queue WHERE team_id IN ${inTeams}`, ...ids);
+    for (const t of ["roster", "matchups", "draft_picks", "keepers"]) run(`DELETE FROM ${t} WHERE league_id = ?`, l.id);
+    run("UPDATE waiver_claims SET status = 'cancelled' WHERE league_id = ? AND status = 'pending'", l.id);
+    run("UPDATE trades SET status = 'cancelled' WHERE league_id = ? AND status = 'pending'", l.id);
+    run("UPDATE teams SET wins = 0, losses = 0, ties = 0, points_for = 0, points_against = 0, faab = ? WHERE league_id = ?", fresh.faab_budget, l.id);
+    run(`UPDATE leagues SET season = ?, draft_status = 'pre', draft_order = NULL, pick_deadline = NULL, last_pick_at = NULL, current_week = 1,
+         week_started_at = NULL, champion_team_id = NULL, start_date = NULL, long_weeks = NULL, playoff_seeds = NULL WHERE id = ?`, year, l.id);
+    const label = year ? seasonLabel(year) : "the new season";
+    postSystem(l.id, `${champ ? `${champ.name} are the ${fresh.season ? seasonLabel(fresh.season) : "last"} champs. ` : ""}Welcome to ${label}! Rosters are cleared and records reset. The commish sets up the draft; your teams, logos and chat carry over.`);
+  });
+}
+
+/** Can the commish start the next season now? Sim leagues: once a champion is crowned. Real leagues: once ESPN has next season's dates (they also roll over on their own when its preseason starts). */
+export function canStartNewSeason(l: League): { ok: true; year: number | null } | { ok: false; why: string } {
+  if (l.draft_status === "live") return { ok: false, why: "Finish the draft first" };
+  if (l.mode === "sim") return l.champion_team_id ? { ok: true, year: l.season ?? nbaSeason().year } : { ok: false, why: "Crown a champion first" };
+  const s = nbaSeason();
+  if (l.season != null && s.year > l.season) return { ok: true, year: s.year };
+  return { ok: false, why: `The ${seasonLabel((l.season ?? s.year) + 1)} NBA schedule isn't out yet. The league resets by itself when it is` };
+}
+
+/**
+ * Real leagues roll over by themselves: once ESPN's calendar says a new NBA season has begun (preseason), any league
+ * still on an older season starts the new one. A league that's mid-draft waits until the draft is done.
+ */
+export function rolloverLeagues() {
+  const s = nbaSeason();
+  if (etDate() < s.start) return;
+  for (const l of all<League>("SELECT * FROM leagues WHERE mode != 'sim' AND draft_status != 'live' AND season IS NOT NULL AND season < ?", s.year))
+    startNewSeason(l, s.year);
+  // A league that never got a season stamped just joins the current one.
+  run("UPDATE leagues SET season = ? WHERE season IS NULL AND draft_status = 'pre'", s.year);
 }
 
 // ---------- Standings & playoffs (ESPN style) ----------

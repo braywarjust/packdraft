@@ -14,6 +14,8 @@ import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
 import { BalancePill } from "@/components/BalancePill";
 import { avatarOf } from "@/lib/profile";
+import { PackFacesProvider } from "@/components/PackFaces";
+import { livePackFaces } from "@/lib/pack-faces-server";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -44,6 +46,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem("pd-sidebar")==="collapsed")document.documentElement.dataset.sidebar="collapsed"}catch(e){}` }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+        <PackFacesProvider faces={livePackFaces()}>
         <ConfirmHost />
         <NoTooltips />
         <PlayerInspectorHost />
@@ -74,6 +77,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </div>
           </footer>
         </div>
+        </PackFacesProvider>
       </body>
     </html>
   );

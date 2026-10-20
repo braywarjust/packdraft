@@ -131,6 +131,16 @@ function open(): DatabaseSync {
   if (!leagueCols.includes("long_weeks")) db.exec("ALTER TABLE leagues ADD COLUMN long_weeks TEXT");
   if (!leagueCols.includes("playoff_teams")) db.exec("ALTER TABLE leagues ADD COLUMN playoff_teams INTEGER NOT NULL DEFAULT 4");
   if (!leagueCols.includes("playoff_seeds")) db.exec("ALTER TABLE leagues ADD COLUMN playoff_seeds TEXT");
+  if (!leagueCols.includes("season")) {
+    db.exec("ALTER TABLE leagues ADD COLUMN season INTEGER");
+    const cur = (db.prepare("SELECT value FROM meta WHERE key = 'season'").get() as { value: string } | undefined)?.value;
+    if (cur) db.prepare("UPDATE leagues SET season = ? WHERE season IS NULL").run(Number(cur));
+  }
+  db.exec(`CREATE TABLE IF NOT EXISTS league_seasons (
+    id INTEGER PRIMARY KEY, league_id INTEGER NOT NULL, season INTEGER, champion_team_id INTEGER, champion TEXT,
+    standings TEXT NOT NULL, results TEXT NOT NULL, rosters TEXT NOT NULL, created_at INTEGER NOT NULL)`);
+  const ppCols = (db.prepare("PRAGMA table_info(pp_earnings)").all() as { name: string }[]).map((c) => c.name);
+  if (ppCols.length && !ppCols.includes("archived")) db.exec("ALTER TABLE pp_earnings ADD COLUMN archived INTEGER NOT NULL DEFAULT 0");
   const matchupCols = (db.prepare("PRAGMA table_info(matchups)").all() as { name: string }[]).map((c) => c.name);
   if (!matchupCols.includes("kind")) db.exec("ALTER TABLE matchups ADD COLUMN kind TEXT");
   if (!matchupCols.includes("slot")) db.exec("ALTER TABLE matchups ADD COLUMN slot INTEGER");
@@ -230,6 +240,8 @@ export type League = {
   playoff_teams?: number;
   /** JSON array of team ids in seed order, set when the regular season ends. */
   playoff_seeds?: string | null;
+  /** The NBA season this league is playing (ESPN's year: 2026-27 is 2027). */
+  season?: number | null;
   // Branding (added by branding.ts ensureBranding)
   color?: string | null; alt_color?: string | null; abbr?: string | null; logo_url?: string | null;
 };

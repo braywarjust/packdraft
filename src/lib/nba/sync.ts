@@ -1,5 +1,7 @@
 import { all, one, run, tx, Game } from "../db";
 import { fpts, fromEspn, Line } from "../scoring";
+import { season as nbaSeason, syncSeason } from "./season";
+import { refreshPhotoIds } from "./photos";
 import { addDays, etDate, fetchBoxScore, fetchRoster, fetchScoreboard, fetchSeasonAverages, fetchTeams, Averages } from "./espn";
 
 const metaGet = (k: string) => one<{ value: string }>("SELECT value FROM meta WHERE key = ?", k)?.value;
@@ -30,8 +32,8 @@ export async function syncPlayers() {
     const res = await Promise.all(chunk.map(async (t) => ({ teamAbbr: t.abbreviation, athletes: await fetchRoster(t.id).catch(() => []) })));
     rosters.push(...res);
   }
-  const sb = await fetchScoreboard(etDate());
-  const season = sb.season || new Date().getFullYear();
+  // The season we're in (or heading into): last season's averages carry projections until this season's games pile up.
+  const season = nbaSeason().year;
   const [last, cur] = await Promise.all([fetchSeasonAverages(season - 1), fetchSeasonAverages(season).catch(() => new Map<string, Averages>())]);
 
   const rows = rosters.flatMap(({ teamAbbr, athletes }) =>
@@ -73,8 +75,8 @@ export async function syncPlayers() {
 const ELIG_SLOTS: [number, string][] = [[0, "PG"], [1, "SG"], [2, "SF"], [3, "PF"], [4, "C"]];
 /** Each player's fantasy positions (e.g. "PG,SG") from ESPN Fantasy, which is what lineup slots check. */
 export async function syncEligibility() {
-  const season = Number(metaGet("season")) || new Date().getFullYear();
-  const filter = JSON.stringify({ players: { limit: 1500, sortPercOwned: { sortPriority: 1, sortAsc: false } } });
+  const season = nbaSeason().year;
+  const filter = JSON.stringify({ players: { limit: 4000 } });
   const res = await fetch(`https://lm-api-reads.fantasy.espn.com/apis/v3/games/fba/seasons/${season}/players?scoringPeriodId=0&view=players_wl`,
     { headers: { "X-Fantasy-Filter": filter }, cache: "no-store" });
   if (!res.ok) throw new Error(`ESPN fantasy players ${res.status}`);
@@ -83,8 +85,7 @@ export async function syncEligibility() {
   tx(() => {
     for (const p of list) {
       const elig = ELIG_SLOTS.filter(([id]) => p.eligibleSlots?.includes(id)).map(([, pos]) => pos).join(",");
-      // Only fills players without positions, so positions set by hand (to match the ESPN league) stay put.
-      if (elig) n += Number(run("UPDATE players SET elig = ? WHERE id = ? AND elig IS NULL", elig, p.id).changes ?? 0);
+      if (elig) n += Number(run("UPDATE players SET elig = ? WHERE id = ?", elig, p.id).changes ?? 0);
     }
     metaSet("elig_synced_at", String(Date.now()));
   });
@@ -165,14 +166,13 @@ export async function backfillFinals(from: string, to: string) {
 }
 
 export async function maybeSyncPlayers() {
-  const last = Number(metaGet("players_synced_at") ?? 0);
-  if (Date.now() - last < 12 * 3600_000) return;
-  try {
-    await syncPlayers();
-  } catch (e) {
-    console.warn("[packdraft] player sync failed", (e as Error).message);
-  }
-  await syncEligibility().catch((e) => console.warn("[packdraft] position sync failed", (e as Error).message));
+  // A new NBA season (per ESPN's calendar) refreshes everything right away: rosters, stats, positions, photo ids.
+  const newSeason = await syncSeason().catch((e) => { console.warn("[packdraft] season sync failed", (e as Error).message); return false; });
+  if (newSeason) await refreshPhotoIds(true).catch((e) => console.warn("[packdraft] photo id refresh failed", (e as Error).message));
+  else await refreshPhotoIds().catch(() => {});
+  const stale = (k: string) => Date.now() - Number(metaGet(k) ?? 0) >= 12 * 3600_000;
+  if (newSeason || stale("players_synced_at")) await syncPlayers().catch((e) => console.warn("[packdraft] player sync failed", (e as Error).message));
+  if (newSeason || stale("elig_synced_at")) await syncEligibility().catch((e) => console.warn("[packdraft] position sync failed", (e as Error).message));
 }
 
 export const gamesOn = (date: string) => all<Game>("SELECT * FROM games WHERE date_et = ? ORDER BY start_ts", date);

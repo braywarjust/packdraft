@@ -6,7 +6,8 @@ import { ensureBranding, teamBrand } from "@/lib/branding";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all, Matchup } from "@/lib/db";
-import { getLeague, leagueTeams, standings, teamWeek, userTeam, weekProgress, weekRange } from "@/lib/league";
+import { canStartNewSeason, getLeague, leagueHistory, leagueTeams, standings, teamWeek, userTeam, weekProgress, weekRange } from "@/lib/league";
+import { season as nbaSeason, seasonLabel } from "@/lib/nba/season";
 import { dayLabel } from "@/lib/nba/espn";
 import { winProb } from "@/lib/sim";
 import { PACK_BY_ID } from "@/lib/packs";
@@ -14,7 +15,7 @@ import { earnings, weekRate } from "@/lib/economy";
 import { CoinIcon, Coins } from "@/components/Coins";
 import { ActionButton } from "@/components/ActionButton";
 import { AutoRefresh } from "@/components/AutoRefresh";
-import { fillCpu, finishWeekNow, startDraftAction, startWeekAction } from "../../actions";
+import { fillCpu, finishWeekNow, newSeasonAction, startDraftAction, startWeekAction } from "../../actions";
 import { Fpts, FptIcon, PointsKey } from "@/components/Fpts";
 
 export default async function LeagueHome({ params }: { params: Promise<{ id: string }> }) {
@@ -36,6 +37,30 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
     <div className="grid gap-6 lg:grid-cols-3">
       {l.draft_status === "done" && <AutoRefresh ms={l.week_started_at ? 4000 : 30000} />}
       <div className="space-y-6 lg:col-span-2">
+        {l.champion_team_id && (() => {
+          const champ = teams.find((t) => t.id === l.champion_team_id);
+          const s = nbaSeason();
+          const next = canStartNewSeason(l);
+          const label = l.season ? seasonLabel(l.season) : "This season";
+          return (
+            <section className="card relative overflow-hidden p-5" style={{ background: "radial-gradient(120% 140% at 0% 0%, rgba(245,193,92,.25), transparent 60%), #1d2433" }}>
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-400">Offseason</p>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                {champ && <TeamBadge brand={brand.get(champ.id)!} size={56} />}
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-2xl font-black text-white">{champ ? `${champ.name} won the ${label} title` : `${label} is over`}</h2>
+                  <p className="text-sm text-zinc-400">
+                    {l.mode === "sim" ? "Start a new season whenever you're ready; everyone keeps their team, rosters reset for a new draft."
+                      : l.season && s.year > l.season
+                        ? `The ${s.label} season ${s.start > new Date().toISOString().slice(0, 10) ? `opens its preseason ${dayLabel(s.start)}, and the league resets for a new draft then` : "is under way"}. Opening night is ${dayLabel(s.regStart)}.`
+                        : `The league resets for a new draft by itself when the ${seasonLabel((l.season ?? s.year) + 1)} NBA preseason starts. Teams, logos and chat carry over.`}
+                  </p>
+                </div>
+                {isCommish && next.ok && <ActionButton action={newSeasonAction.bind(null, l.id)} className="btn-lime" confirm="Close out this season and reset the league for a new draft? Standings and results are saved to league history.">Start next season</ActionButton>}
+              </div>
+            </section>
+          );
+        })()}
         {l.draft_status === "pre" && (
           <section className="card space-y-4 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -96,6 +121,24 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
               {m && h && a && (
                 <MatchupCard href={`/league/${l.id}/matchup/${m.id}`} home={h.side} away={a.side} status={m.final ? "final" : live ? "live" : "pre"} winProb={winProb(h.w, a.w)} mine big />
               )}
+            </section>
+          );
+        })()}
+
+        {(() => {
+          const past = leagueHistory(l.id);
+          if (!past.length) return null;
+          return (
+            <section className="card space-y-3 p-5">
+              <h2 className="text-lg font-bold">League history</h2>
+              <ul className="space-y-2">
+                {past.map((h) => (
+                  <li key={h.id} className="rounded-xl bg-ink/60 px-3 py-2 text-sm">
+                    <p className="font-black text-white">{h.season ? seasonLabel(h.season) : "Season"}{h.champion ? <> · <span className="text-amber-300">Champion: {h.champion}</span></> : ""}</p>
+                    <p className="text-xs text-zinc-500">{h.standings.map((t, i) => `${i + 1}. ${t.name} ${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`).join(" · ")}</p>
+                  </li>
+                ))}
+              </ul>
             </section>
           );
         })()}

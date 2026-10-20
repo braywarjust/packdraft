@@ -11,6 +11,7 @@
 import { all, one, run } from "./db";
 import { fpts, type Line } from "./scoring";
 import { etDate } from "./nba/espn";
+import { season } from "./nba/season";
 import type { Rarity } from "./packs";
 import { multValue } from "./slab-cards";
 
@@ -41,10 +42,10 @@ type Inputs = { id: number; name: string; proj: number; avg: string | null };
 /** Price index for every active player from his stats, keyed by player id. */
 export function computeIndexes() {
   const players = all<Inputs>("SELECT p.id, p.name, p.proj, p.avg FROM players p JOIN nba_teams t ON t.abbr = p.team WHERE p.active = 1");
-  // This regular season's games he played in, oldest first.
+  // This regular season's games he played in, oldest first (earlier seasons are in his ESPN average instead).
   const games = new Map<number, number[]>();
   for (const g of all<{ player_id: number; stats: string }>(
-    `SELECT pg.player_id, pg.stats FROM player_games pg JOIN games g ON g.id = pg.game_id WHERE g.season_type = 2 ORDER BY g.start_ts`)) {
+    `SELECT pg.player_id, pg.stats FROM player_games pg JOIN games g ON g.id = pg.game_id WHERE g.season_type = 2 AND g.date_et >= ? ORDER BY g.start_ts`, season().regStart)) {
     const s = JSON.parse(g.stats) as Line;
     if (!s.min) continue;
     (games.get(g.player_id) ?? games.set(g.player_id, []).get(g.player_id)!).push(fpts(s, "espn"));

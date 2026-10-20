@@ -3,6 +3,7 @@ import { TeamBadge } from "@/components/TeamBadge";
 import { ensureBranding, leagueBrand } from "@/lib/branding";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
+import { seasonLabel } from "@/lib/nba/season";
 import { beforeOpener, canView, getLeague, maybeFinalize, userTeam, weekName } from "@/lib/league";
 import { LeagueTabs } from "@/components/LeagueTabs";
 import { SCORING } from "@/lib/scoring";
@@ -27,7 +28,7 @@ export default async function LeagueLayout({ children, params }: { children: Rea
               <TeamBadge brand={b} size={64} className="drop-shadow-xl" />
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-white/70">
-                  {b.abbr} · {l.is_public ? "Public" : "Private"} league · {l.mode === "sim" ? "Simulated" : "Real NBA"} · {SCORING[l.scoring]?.label ?? l.scoring} · {l.champion_team_id ? "Season over" : l.draft_status === "done" ? (l.current_week > l.season_weeks ? weekName(l, l.current_week) : `Week ${l.current_week} of ${l.season_weeks}`) : l.draft_status === "live" ? "Draft in progress" : "Pre-draft"}
+                  {b.abbr} · {l.season ? `${seasonLabel(l.season)} · ` : ""}{l.is_public ? "Public" : "Private"} league · {l.mode === "sim" ? "Simulated" : "Real NBA"} · {SCORING[l.scoring]?.label ?? l.scoring} · {l.champion_team_id ? "Offseason" : l.draft_status === "done" ? (l.current_week > l.season_weeks ? weekName(l, l.current_week) : `Week ${l.current_week} of ${l.season_weeks}`) : l.draft_status === "live" ? "Draft in progress" : "Pre-draft"}
                 </p>
                 <h1 className="truncate text-3xl font-black text-white">{l.name}</h1>
               </div>

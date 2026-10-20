@@ -3,7 +3,7 @@
 import type { PackType } from "@/lib/packs";
 import { useRef } from "react";
 import { Rays, Slab } from "./Slab";
-import { PACK_FACES } from "@/lib/pack-faces";
+import { usePackFaces } from "./PackFaces";
 import { useOffscreenPause } from "./useOffscreenPause";
 import { AnimatedLogo } from "./AnimatedLogo";
 
@@ -19,7 +19,8 @@ const SPARKS: [number, number, number, number][] = [[14, 22, 7, 0], [84, 30, 5.5
  */
 export function PackArt({ p, width, height, animate = true, className = "" }: { p: PackType; width: number; height: number; animate?: boolean; className?: string }) {
   const isCase = p.kind === "case";
-  const faces = PACK_FACES[p.id] ?? PACK_FACES.rookie;
+  const all = usePackFaces();
+  const faces = all[p.id] ?? all.rookie;
   // The fan box is 36% (Mega) or 33% of the pack height; the cover slabs fill it.
   const coverSize = Math.max(8, Math.round(height * (isCase ? 0.36 : 0.33)));
   // One slab on single packs, the full five-slab fan on the Mega Pack.
@@ -55,7 +56,7 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
           <div className={`absolute inset-x-0 ${isCase ? "top-[30%] h-[36%]" : "top-[37%] h-[33%]"}`}>
             {fan.map((deg, i) => (
               // Offsets use left/translate/rotate (not transform) so the bobbing animation's transform doesn't wipe them.
-              <div key={i} className={`absolute top-0 aspect-square h-full ${animate ? "pack-fan" : ""}`}
+              <div key={`fan${i}`} className={`absolute top-0 aspect-square h-full ${animate ? "pack-fan" : ""}`}
                 style={{ left: `calc(50% + ${deg * (isCase ? 1.15 : 1.6)}cqw)`, translate: "-50% 0", rotate: `${deg * 0.8}deg`, transformOrigin: "50% 100%", animationDelay: `${i * 0.35}s`, zIndex: 40 - Math.abs(deg) }}>
                 <Slab s={{ ...faces[i % faces.length].player, rarity: faces[i % faces.length].rarity }} size={coverSize} className="drop-shadow-[0_2cqw_3cqw_rgba(0,0,0,.4)]" />
               </div>
@@ -63,7 +64,7 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
           </div>
           {/* Sparkles */}
           {animate && SPARKS.map(([x, y, s, d], i) => (
-            <svg key={i} viewBox="-10 -10 20 20" className="slab-twinkle pointer-events-none absolute" style={{ left: `${x}%`, top: `${y}%`, width: `${s}cqw`, height: `${s}cqw`, animationDelay: `${d}s` }}>
+            <svg key={`spark${i}`} viewBox="-10 -10 20 20" className="slab-twinkle pointer-events-none absolute" style={{ left: `${x}%`, top: `${y}%`, width: `${s}cqw`, height: `${s}cqw`, animationDelay: `${d}s` }}>
               <path d="M0-10C1-3 3-1 10 0C3 1 1 3 0 10C-1 3-3 1-10 0C-3-1-1-3 0-10Z" fill="#fff" />
             </svg>
           ))}

@@ -39,6 +39,6 @@ export function creditGame(o: { leagueId: number; week: number; teamId: number; 
 export function earnings(leagueId: number, userId: number, week: number) {
   ensure();
   const rows = all<{ week: number; pp: number }>(
-    "SELECT week, SUM(pp) pp FROM pp_earnings WHERE league_id = ? AND user_id = ? GROUP BY week", leagueId, userId);
+    "SELECT week, SUM(pp) pp FROM pp_earnings WHERE league_id = ? AND user_id = ? AND archived = 0 GROUP BY week", leagueId, userId);
   return { week: rows.find((r) => r.week === week)?.pp ?? 0, season: rows.reduce((s, r) => s + r.pp, 0) };
 }

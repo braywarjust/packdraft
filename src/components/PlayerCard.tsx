@@ -106,6 +106,12 @@ export const GLOW: Record<Rarity, string> = {
 };
 const GRADE_WORD: Record<number, string> = { 10: "GEM MT", 9.5: "MINT+", 9: "MINT", 8.5: "NM-MT+", 8: "NM-MT" };
 
+/** The NBA season a card was pulled in (named by the year it ends, like ESPN: 2026-27 is 2027). */
+function cardSeason(c: CardData & { created_at?: number }) {
+  const d = new Date(c.created_at ?? Date.now());
+  return d.getMonth() >= 6 ? d.getFullYear() + 1 : d.getFullYear();
+}
+
 export function PlayerCard({ c, small }: { c: CardData; small?: boolean }) {
   if (c.kind === "slab") return <SlabTile c={c} small={small} />;
   if (c.slab_id) return <SlabCard c={c} small={small} />;
@@ -119,7 +125,7 @@ export function PlayerCard({ c, small }: { c: CardData; small?: boolean }) {
         {/* Grading label */}
         <div className="mb-1.5 rounded-md bg-gradient-to-r from-white to-slate-200 px-1.5 py-1 text-zinc-900">
           <div className="flex items-center justify-between text-[8px] font-bold uppercase leading-tight tracking-wide">
-            <span className="truncate">{small ? "PackDraft '27" : "PackDraft 2026-27"}</span>
+            <span className="truncate">{small ? `PackDraft '${String(cardSeason(c)).slice(2)}` : `PackDraft ${cardSeason(c) - 1}-${String(cardSeason(c)).slice(2)}`}</span>
             <span className={`rounded px-1 text-white ${c.rarity === "grail" ? "bg-emerald-600" : c.rarity === "legendary" ? "bg-amber-600" : c.rarity === "epic" ? "bg-fuchsia-600" : c.rarity === "rare" ? "bg-sky-600" : "bg-slate-500"}`}>{r.label}</span>
           </div>
           <div className="flex items-end justify-between gap-1">

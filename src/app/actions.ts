@@ -8,6 +8,7 @@ import { clearSession, currentUser, hashPin, requireUser, setSession } from "@/l
 import {
   getLeague, userTeam, leagueTeams, startDraft, advanceDraft, makePick, autoLineup, moveToSlot, roster, ROSTER_MAX,
   isLocked, executeTrade, startWeek, finalizeWeek, postSystem, processWaivers, ROUNDS, setBoost, clearBoost,
+  startNewSeason, canStartNewSeason,
 } from "@/lib/league";
 import { PACK_BY_ID } from "@/lib/packs";
 import { openPack, tradeUp } from "@/lib/packs-server";
@@ -395,6 +396,18 @@ export async function startWeekAction(leagueId: number) {
   return wrap(async () => {
     const { l } = await commish(leagueId);
     startWeek(l);
+    revalidatePath(`/league/${leagueId}`, "layout");
+    return { ok: true };
+  });
+}
+
+/** Commish: close out the finished season and reset the league for the next draft. */
+export async function newSeasonAction(leagueId: number) {
+  return wrap(async () => {
+    const { l } = await commish(leagueId);
+    const next = canStartNewSeason(l);
+    if (!next.ok) throw new Error(next.why);
+    startNewSeason(l, next.year);
     revalidatePath(`/league/${leagueId}`, "layout");
     return { ok: true };
   });
