@@ -7,7 +7,6 @@ import { slabOf, type CardData } from "@/components/PlayerCard";
 import { Slab } from "@/components/Slab";
 import { Coins } from "@/components/Coins";
 import { CheckIcon, XIcon } from "@/components/Icons";
-import { askConfirm } from "@/components/Confirm";
 import { useScrollLock } from "@/components/useScrollLock";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
 
@@ -54,7 +53,6 @@ function RerollModal({ cards, coins, action, onClose }: { cards: CardData[]; coi
 
   const choose = (t: Rarity) => { setTier(t); setPicked(null); setErr(""); };
   const go = async (c: CardData) => {
-    if (!(await askConfirm(`Re-roll your ${RARITIES[c.rarity].label} ${c.name} slab for ${fmtCoins(REROLL_FEE[c.rarity])}? It becomes a different player at the same rarity.`, { confirmLabel: "Re-roll" }))) return;
     setErr("");
     setResult(null);
     setRolling(c);

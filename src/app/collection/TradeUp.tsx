@@ -2,12 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { RARITIES, RARITY_HEX, TRADE_UP, TRADE_UP_COUNT, fmtCoins, type Rarity } from "@/lib/packs";
+import { RARITIES, RARITY_HEX, TRADE_UP, TRADE_UP_COUNT, type Rarity } from "@/lib/packs";
 import { slabOf, type CardData } from "@/components/PlayerCard";
 import { Slab } from "@/components/Slab";
 import { Coins } from "@/components/Coins";
 import { CheckIcon, XIcon } from "@/components/Icons";
-import { askConfirm } from "@/components/Confirm";
 import { useScrollLock } from "@/components/useScrollLock";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
 
@@ -53,8 +52,6 @@ function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; co
   const toggle = (id: number) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : p.length < TRADE_UP_COUNT ? [...p, id] : p));
   const choose = (t: Rarity) => { setTier(t); setPicked([]); setErr(""); };
   const go = async () => {
-    const samePlayer = chosen.every((c) => c.player_id === chosen[0].player_id);
-    if (!(await askConfirm(`Trade these ${TRADE_UP_COUNT} ${RARITIES[tier].label} slabs and ${fmtCoins(step.fee)} for one ${RARITIES[step.to].label} slab${samePlayer ? ` of ${chosen[0].name}` : ""}?`, { confirmLabel: "Trade up" }))) return;
     setErr("");
     setFusing(chosen);
     start(async () => {
