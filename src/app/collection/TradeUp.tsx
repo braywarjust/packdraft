@@ -9,6 +9,16 @@ import { Coins } from "@/components/Coins";
 import { CheckIcon, XIcon } from "@/components/Icons";
 import { askConfirm } from "@/components/Confirm";
 import { useScrollLock } from "@/components/useScrollLock";
+import { AnimatedLogo } from "@/components/AnimatedLogo";
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Load the new slab's photo before showing it, so it never pops in blank (gives up after a few seconds). */
+function preload(src: string | null | undefined) {
+  if (!src) return Promise.resolve();
+  const img = new Image();
+  img.src = src;
+  return Promise.race([img.decode().catch(() => {}), wait(4000)]);
+}
 
 type Act = (ids: number[]) => Promise<{ ok: boolean; card: CardData } | { error: string }>;
 const TIERS = (Object.keys(TRADE_UP) as Rarity[]);
@@ -33,6 +43,8 @@ function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; co
   const [picked, setPicked] = useState<number[]>([]);
   const [err, setErr] = useState("");
   const [result, setResult] = useState<CardData | null>(null);
+  // The trade-up animation: the five slabs fuse into one, the PackDraft logo plays until the new slab (and its photo) is ready.
+  const [fusing, setFusing] = useState<CardData[] | null>(null);
   const step = TRADE_UP[tier]!;
   const list = byTier[tier];
   const chosen = list.filter((c) => picked.includes(c.id));
@@ -43,9 +55,13 @@ function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; co
   const go = async () => {
     const samePlayer = chosen.every((c) => c.player_id === chosen[0].player_id);
     if (!(await askConfirm(`Trade these ${TRADE_UP_COUNT} ${RARITIES[tier].label} slabs and ${fmtCoins(step.fee)} for one ${RARITIES[step.to].label} slab${samePlayer ? ` of ${chosen[0].name}` : ""}?`, { confirmLabel: "Trade up" }))) return;
+    setErr("");
+    setFusing(chosen);
     start(async () => {
-      const r = await action(picked);
-      if ("error" in r) { setErr(r.error); return; }
+      const [r] = await Promise.all([action(picked), wait(2200)]);
+      if ("error" in r) { setFusing(null); setErr(r.error); return; }
+      await preload(r.card.photo);
+      setFusing(null);
       setResult(r.card);
       setPicked([]);
       router.refresh();
@@ -63,10 +79,30 @@ function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; co
           <button onClick={onClose} aria-label="Close" className="rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
         </div>
 
-        {result ? (
+        {fusing ? (
+          <div className="flex flex-col items-center gap-5 p-8 text-center" aria-live="polite">
+            <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">Trading up {TRADE_UP_COUNT} {RARITIES[tier].label} slabs to {RARITIES[step.to].label}</p>
+            <div className="relative grid h-[300px] w-full max-w-[520px] place-items-center">
+              <span className="trade-flash absolute h-40 w-40 rounded-full blur-xl" style={{ background: RARITY_HEX[step.to] }} />
+              <span className="reroll-ring absolute h-56 w-56 rounded-full border-2" style={{ borderColor: RARITY_HEX[step.to], animationDelay: "1.1s" }} />
+              <span className="reroll-ring absolute h-56 w-56 rounded-full border-2" style={{ borderColor: RARITY_HEX[step.to], animationDelay: "1.9s" }} />
+              {fusing.map((c, i) => {
+                const a = (-90 + i * (360 / fusing.length)) * (Math.PI / 180);
+                return (
+                  <div key={c.id} className="trade-fuse absolute"
+                    style={{ ["--x" as string]: `${Math.round(Math.cos(a) * 170)}px`, ["--y" as string]: `${Math.round(Math.sin(a) * 105)}px`, ["--r" as string]: `${(i - 2) * 8}deg`, animationDelay: `${i * 0.06}s` }}>
+                    <Slab s={slabOf(c)} size={96} />
+                  </div>
+                );
+              })}
+              <div className="logo-play trade-logo relative w-[200px]"><AnimatedLogo className="w-full drop-shadow-[0_10px_30px_rgba(0,0,0,.6)]" /></div>
+            </div>
+            <p className="animate-pulse text-sm font-semibold text-zinc-400">Forging your {RARITIES[step.to].label} slab…</p>
+          </div>
+        ) : result ? (
           <div className="flex flex-col items-center gap-4 p-8 text-center">
             <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">You traded up to</p>
-            <div className="anim-deal"><Slab s={slabOf(result)} size={260} /></div>
+            <div className="reroll-in"><Slab s={slabOf(result)} size={260} /></div>
             <p className="text-xl font-black text-white">{RARITIES[result.rarity].label} {result.name}</p>
             <div className="flex gap-2">
               <button className="btn-ghost" onClick={() => setResult(null)}>Trade up again</button>
