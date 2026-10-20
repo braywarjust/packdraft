@@ -5,7 +5,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/<you>/<repo>/main/deploy/setup-server.sh -o setup.sh   (or paste it)
 #   bash setup.sh git@github.com:<you>/<repo>.git <your-domain>
 #
-# <your-domain> can be a free sslip.io name made from the server's public IP, e.g. 129-146-12-34.sslip.io.
+# <your-domain> can be a free sslip.io name made from the server's public IP, e.g. 129.146.12.34.sslip.io.
 # It installs Node 24, Caddy (automatic HTTPS) and sqlite3, opens ports 80/443, clones the repo, builds the app and
 # runs it as a systemd service that restarts on crash and on reboot.
 set -euo pipefail
@@ -30,7 +30,8 @@ sudo apt-get update -y && sudo apt-get install -y caddy
 
 echo "==> Firewall (Oracle's Ubuntu images block everything but SSH by default)"
 for p in 80 443; do
-  sudo iptables -C INPUT -p tcp --dport $p -m state --state NEW -j ACCEPT 2>/dev/null || sudo iptables -I INPUT 6 -p tcp --dport $p -m state --state NEW -j ACCEPT
+  # Insert above Oracle's catch-all REJECT rule, or the port stays blocked.
+  sudo iptables -C INPUT -p tcp --dport $p -m state --state NEW -j ACCEPT 2>/dev/null || sudo iptables -I INPUT 4 -p tcp --dport $p -m state --state NEW -j ACCEPT
 done
 sudo netfilter-persistent save
 

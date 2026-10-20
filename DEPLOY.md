@@ -33,16 +33,16 @@ ssh -i ~/Downloads/ssh-key-*.key ubuntu@<IP>
 ```
 
 On the server, run the setup script with your repo URL and a domain. A free domain that works with HTTPS right away is
-your IP with dashes plus `.sslip.io`, for example `129-146-12-34.sslip.io`:
+your IP plus `.sslip.io`, for example `129.146.12.34.sslip.io`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/<you>/<repo>/main/deploy/setup-server.sh -o setup.sh   # public repos
 # for a private repo, paste deploy/setup-server.sh into setup.sh with nano instead
-bash setup.sh git@github.com:<you>/<repo>.git <IP-with-dashes>.sslip.io
+bash setup.sh https://github.com/<you>/<repo>.git <IP>.sslip.io
 ```
 
 It pauses once to show a **deploy key**: add it in GitHub (repo Settings > Deploy keys > Add deploy key), press Enter.
-When it finishes, HTTPS is set up. On the AMD micro server the app itself appears after the first GitHub deploy
+When it finishes, HTTPS is set up (open ports 80 and 443 in step 2.3 first, or the certificate can't be issued). On the AMD micro server the app itself appears after the first GitHub deploy
 (step 5); on a bigger server it's already running.
 
 ## 4. Move your data over (2 minutes)
@@ -58,6 +58,8 @@ and PIN, league and team settings, logos, Pack Points, slabs, chat and uploads, 
 sign in again. From then on the server is the real copy: use the live site, not `localhost`.
 
 ## 5. Auto-deploy on push (5 minutes)
+
+PackDraft's live server is **https://129.153.53.112.sslip.io** (server 129.153.53.112, Toronto).
 
 1. Make a key just for GitHub, on your Mac: `ssh-keygen -t ed25519 -N "" -f ~/.ssh/packdraft_deploy`
 2. Put its public half on the server: `ssh-copy-id -i ~/.ssh/packdraft_deploy.pub ubuntu@<IP>`
