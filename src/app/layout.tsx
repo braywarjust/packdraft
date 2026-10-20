@@ -2,7 +2,7 @@ import { ConfirmHost } from "@/components/Confirm";
 import { NoTooltips } from "@/components/NoTooltips";
 import { PlayerInspectorHost } from "@/components/PlayerInspector";
 import { ensureBranding, leagueBrand } from "@/lib/branding";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
@@ -23,6 +23,18 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: { default: "PackDraft", template: "%s · PackDraft" },
   description: "Fantasy NBA with your friends, plus mystery packs to rip.",
+  // "Add to Home Screen" on iPhone opens PackDraft full screen like an app, with the icon from app/apple-icon.tsx.
+  appleWebApp: { capable: true, title: "PackDraft", statusBarStyle: "black-translucent" },
+  formatDetection: { telephone: false },
+  // Older iPhones only go full screen with Apple's original tag.
+  other: { "apple-mobile-web-app-capable": "yes" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#1b2130",
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -56,15 +68,15 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           leagues={leagues.map((l) => ({ id: l.id, name: l.name, live: !!l.live, brand: leagueBrand(l) }))}
           logout={logout}
         />
-        <div className="flex min-h-screen flex-col transition-[padding] duration-200 lg:pl-[var(--sb)]">
+        <div className="tabbar-pad flex min-h-screen flex-col transition-[padding] duration-200 lg:pl-[var(--sb)]">
           {/* Pack Points balance on every page (desktop; the mobile top bar shows it too). */}
           <div className="pointer-events-none sticky top-0 z-30 hidden lg:block">
             <div className="mx-auto flex max-w-6xl justify-end px-8 pt-4 pr-20 2xl:pr-8">
               <BalancePill coins={user.coins} />
             </div>
           </div>
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-8 lg:pt-2">{children}</main>
-          <footer className="border-t border-line bg-zinc-50">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-8 sm:py-8 lg:pt-2">{children}</main>
+          <footer className="hidden border-t border-line bg-zinc-50 lg:block">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-6 text-sm text-zinc-500 sm:px-8">
               <Logo height={30} />
               <nav className="flex flex-wrap gap-4">

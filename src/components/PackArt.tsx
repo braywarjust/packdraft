@@ -28,7 +28,7 @@ export function PackArt({ p, width, height, animate = true, className = "" }: { 
   const ref = useRef<HTMLDivElement>(null);
   useOffscreenPause(ref);
   return (
-    <div ref={ref} className={`logo-host @container relative shrink-0 ${className}`} style={{ width, height }}>
+    <div ref={ref} className={`logo-host @container relative isolate shrink-0 ${className}`} style={{ width, height }}>
       {/* Ground shadow: stays put while the pack floats, which is what makes it read as a real object */}
       <div className={`pointer-events-none absolute bottom-[-5%] left-[12%] right-[12%] h-[7%] rounded-[50%] ${animate ? "pack-ground" : ""}`}
         style={{ background: "radial-gradient(closest-side, rgba(0,0,0,.55), transparent)" }} />

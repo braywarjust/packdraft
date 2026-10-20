@@ -25,12 +25,12 @@ export default async function LeagueLayout({ children, params }: { children: Rea
             <div className="pointer-events-none absolute -right-8 top-1/2 -translate-y-1/2 opacity-20"><TeamBadge brand={b} size={220} ghost /></div>
             <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 14px)" }} />
             <div className="relative flex flex-wrap items-center gap-4 px-5 py-4">
-              <TeamBadge brand={b} size={64} className="drop-shadow-xl" />
+              <TeamBadge brand={b} size={64} className="drop-shadow-xl max-sm:!h-12 max-sm:!w-12" />
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-white/70">
+                <p className="line-clamp-2 text-[10px] font-bold uppercase tracking-widest text-white/70 sm:text-[11px]">
                   {b.abbr} · {l.season ? `${seasonLabel(l.season)} · ` : ""}{l.is_public ? "Public" : "Private"} league · {l.mode === "sim" ? "Simulated" : "Real NBA"} · {SCORING[l.scoring]?.label ?? l.scoring} · {l.champion_team_id ? "Offseason" : l.draft_status === "done" ? (l.current_week > l.season_weeks ? weekName(l, l.current_week) : `Week ${l.current_week} of ${l.season_weeks}`) : l.draft_status === "live" ? "Draft in progress" : "Pre-draft"}
                 </p>
-                <h1 className="truncate text-3xl font-black text-white">{l.name}</h1>
+                <h1 className="line-clamp-2 text-2xl font-black leading-tight text-white sm:truncate sm:text-3xl">{l.name}</h1>
               </div>
               {l.week_started_at && <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white">● GAMES LIVE</span>}
             </div>

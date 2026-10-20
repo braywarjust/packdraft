@@ -67,6 +67,22 @@ body {
   min-height: 100vh;
 }
 
+/* ---------- Phones (iPhone first) ----------
+   Grid and flex children may shrink below their content (so a wide card can't push the page sideways), the page
+   never scrolls sideways, form fields are 16px so iOS doesn't zoom in when you tap them, no grey tap flash, and the
+   home-screen app respects the notch and the home bar (safe areas). */
+.grid > * { min-width: 0; }
+html, body { overflow-x: clip; }
+html { -webkit-text-size-adjust: 100%; }
+body { -webkit-tap-highlight-color: transparent; }
+@media (max-width: 1023px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 16px; }
+  .safe-top { padding-top: max(env(safe-area-inset-top), .625rem); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  /* Room for the bottom tab bar. */
+  .tabbar-pad { padding-bottom: calc(4.25rem + env(safe-area-inset-bottom)); }
+}
+
 @utility card { @apply rounded-xl border border-line bg-panel; }
 @utility btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50; }
 @utility btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark; }

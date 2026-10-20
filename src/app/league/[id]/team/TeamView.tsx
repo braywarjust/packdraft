@@ -61,20 +61,20 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
       <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl" style={{ background: `linear-gradient(115deg, ${b.color} 0%, ${b.color} 45%, ${b.alt} 130%)` }}>
         <div className="pointer-events-none absolute -right-16 -top-20 opacity-25"><TeamBadge brand={b} size={420} ghost /></div>
         <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 2px, transparent 2px 14px)" }} />
-        <div className="relative flex flex-wrap items-center gap-6 p-6 sm:p-8">
-          <TeamBadge brand={b} size={148} className="drop-shadow-2xl" />
+        <div className="relative flex flex-wrap items-center gap-4 p-5 sm:gap-6 sm:p-8">
+          <TeamBadge brand={b} size={148} className="drop-shadow-2xl max-sm:!h-24 max-sm:!w-24" />
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-black uppercase tracking-[0.35em] text-white/70">{b.abbr} · {l.name}</p>
-            <h2 className="mt-1 text-4xl font-black leading-none tracking-tight text-white sm:text-5xl">{t.name}</h2>
+            <p className="truncate text-[10px] font-black uppercase tracking-[0.25em] text-white/70 sm:text-xs sm:tracking-[0.35em]">{b.abbr} · {l.name}</p>
+            <h2 className="mt-1 text-[1.7rem] font-black leading-none tracking-tight text-white [overflow-wrap:anywhere] sm:text-5xl">{t.name}</h2>
             <p className="mt-2 text-sm text-white/80">{owner ? `Managed by ${owner}` : "CPU team"}{l.draft_status === "done" ? ` · Week ${l.current_week}` : ""}</p>
           </div>
           {!editable && <Link href={`/league/${leagueId}/trades?to=${t.id}`} className="btn bg-[#fff] text-black hover:bg-[#e5e7eb]">Propose trade</Link>}
         </div>
         <div className="relative grid grid-cols-3 gap-px bg-black/20 sm:grid-cols-6">
           {stats.map(([k, v]) => (
-            <div key={k} className="bg-black/45 px-4 py-3 backdrop-blur">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>
-              <p className="font-mono text-xl font-black text-white">{v}</p>
+            <div key={k} className="min-w-0 bg-black/45 px-3 py-2.5 backdrop-blur sm:px-4 sm:py-3">
+              <p className="truncate text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>
+              <p className="truncate font-mono text-base font-black text-white sm:text-xl">{v}</p>
             </div>
           ))}
         </div>

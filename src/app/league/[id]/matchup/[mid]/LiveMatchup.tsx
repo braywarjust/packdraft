@@ -77,25 +77,25 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
 
   // Each starter: his photo on the outer edge on the dark theme colour, then a theme panel with his line.
   const cell = (p: LivePlayer | undefined, right: boolean, brand: BrandLite) => (
-    <div className={`flex min-h-[72px] min-w-0 flex-1 overflow-hidden rounded-xl bg-ink ring-1 ring-white/5 ${right ? "flex-row-reverse" : ""} ${p && flash.has(p.id) ? "anim-flash" : ""}`}>
-      <div className={`relative w-[76px] shrink-0 overflow-hidden bg-panel2 ${p ? "cursor-pointer" : ""}`} onClick={() => p && openPlayer(p.id)}>
+    <div className={`flex min-h-[60px] min-w-0 flex-1 overflow-hidden rounded-xl sm:min-h-[72px] bg-ink ring-1 ring-white/5 ${right ? "flex-row-reverse" : ""} ${p && flash.has(p.id) ? "anim-flash" : ""}`}>
+      <div className={`relative w-10 shrink-0 overflow-hidden bg-panel2 sm:w-[76px] ${p ? "cursor-pointer" : ""}`} onClick={() => p && openPlayer(p.id)}>
         {p?.headshot && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={p.headshot} alt="" aria-hidden loading="lazy" className="pointer-events-none absolute left-1/2 top-1.5 h-[118%] w-auto max-w-none -translate-x-1/2 select-none" />
         )}
       </div>
       {p ? (
-        <div className={`flex min-w-0 flex-1 items-center gap-3 px-3 py-2 ${right ? "flex-row-reverse text-right" : ""}`}>
-          <div className="min-w-0 flex-1">
-            <p className={`flex items-center gap-1.5 text-sm font-bold leading-tight text-white ${right ? "flex-row-reverse" : ""}`}><PlayerButton id={p.id} className="truncate">{p.name}</PlayerButton><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
+        <div className={`flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-2 py-1.5 sm:flex-row sm:items-center sm:gap-3 sm:px-3 sm:py-2 ${right ? "items-end text-right sm:flex-row-reverse" : "items-start"}`}>
+          <div className="w-full min-w-0 sm:flex-1">
+            <p className={`flex items-center gap-1.5 text-xs font-bold sm:text-sm leading-tight text-white ${right ? "flex-row-reverse" : ""}`}><PlayerButton id={p.id} className="truncate">{p.name}</PlayerButton><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
             <p className="mt-0.5 truncate text-[11px] text-zinc-500">
               <TeamLogo team={p.team} size={13} className="-mt-0.5 mr-1 align-middle" />{p.team} ·{" "}
               {p.now ? (p.now.state === "in" ? <span className="font-semibold text-red-500">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
               {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
             </p>
-            <p className="text-[10px] text-zinc-400">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
+            <p className="hidden text-[10px] text-zinc-400 sm:block">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
           </div>
-          <p className="font-mono text-lg font-black text-white"><Fpts n={p.pts} iconClass="text-[0.8em]" live /></p>
+          <p className="font-mono text-base font-black text-white sm:text-lg"><Fpts n={p.pts} iconClass="text-[0.8em]" live /></p>
         </div>
       ) : <span className="flex flex-1 items-center px-4 text-sm text-zinc-500">Empty</span>}
     </div>
@@ -118,9 +118,9 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
       <div className="grid gap-4 2xl:grid-cols-3">
         <div className="card p-2 2xl:col-span-2">
           {STARTERS.map((slot) => (
-            <div key={slot} className="flex items-stretch gap-1.5 py-1">
+            <div key={slot} className="flex items-stretch gap-1 py-1 sm:gap-1.5">
               {cell(home.players.find((p) => p.slot === slot), false, home.brand)}
-              <span className={`pos pos-${lbl(slot)} shrink-0 self-center`}>{lbl(slot)}</span>
+              <span className={`pos pos-${lbl(slot)} shrink-0 self-center max-sm:px-1 max-sm:text-[10px]`}>{lbl(slot)}</span>
               {cell(away.players.find((p) => p.slot === slot), true, away.brand)}
             </div>
           ))}

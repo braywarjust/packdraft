@@ -47,6 +47,13 @@ export function Sidebar({
     { href: "/casino", label: "Casino", icon: I.casino },
     { href: "/mock-draft", label: "Mock Draft", icon: I.mock },
   ];
+  // Bottom tab bar on phones: your league (or the leagues list), packs, collection, casino; the rest is under "More".
+  const tabs = [
+    { href: "/", label: "Home", icon: I.home, exact: true, badge: 0 },
+    { href: leagues.length === 1 ? `/league/${leagues[0].id}` : "/leagues", label: "League", icon: I.leagues, exact: false, badge: 0 },
+    { href: "/packs", label: "Packs", icon: I.packs, exact: false, badge: packs },
+    { href: "/collection", label: "Slabs", icon: I.collection, exact: false, badge: 0 },
+  ];
   const isActive = (href: string, exact?: boolean) => (exact ? path === href : path === href || path.startsWith(`${href}/`) || (href === "/leagues" && path.startsWith("/league/")));
 
   // `mini` = icon-only rail (desktop collapsed). The mobile drawer always shows the full menu.
@@ -127,7 +134,7 @@ export function Sidebar({
         {nav(collapsed)}
       </aside>
       {/* Mobile top bar + drawer */}
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-2.5 lg:hidden">
+      <div className="safe-top sticky top-0 z-40 flex items-center justify-between border-b border-zinc-200 bg-white/95 px-4 pb-2.5 backdrop-blur lg:hidden">
         <Link href="/" aria-label="PackDraft home"><Logo height={34} /></Link>
         <div className="flex items-center gap-3">
           <Link href="/packs" className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700"><span className="text-emerald-600"><Coins n={coins} live /></span></Link>
@@ -139,9 +146,28 @@ export function Sidebar({
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/30" onClick={() => setOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-72 bg-zinc-100 shadow-2xl">{nav(false)}</aside>
+          <aside className="safe-top safe-bottom absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto bg-zinc-100 shadow-2xl">{nav(false)}</aside>
         </div>
       )}
+      {/* Phones: app-style tab bar along the bottom (above the iPhone home bar). "More" opens the full menu. */}
+      <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur lg:hidden" aria-label="Main">
+        <div className="mx-auto grid max-w-lg grid-cols-5">
+          {tabs.map((t) => {
+            const on = isActive(t.href, t.exact);
+            return (
+              <Link key={t.label} href={t.href} className={`relative flex flex-col items-center gap-0.5 pb-1.5 pt-2 text-[10px] font-bold ${on ? "text-brand" : "text-zinc-500"}`}>
+                <Icon d={t.icon} size={22} />
+                {t.label}
+                {!!t.badge && <span className="absolute right-[22%] top-1 rounded-full bg-accent px-1 text-[9px] leading-4 text-white">{t.badge}</span>}
+              </Link>
+            );
+          })}
+          <button onClick={() => setOpen(true)} className="flex flex-col items-center gap-0.5 pb-1.5 pt-2 text-[10px] font-bold text-zinc-500" aria-label="More">
+            <Icon d="M4 6h16M4 12h16M4 18h16" size={22} />
+            More
+          </button>
+        </div>
+      </nav>
     </>
   );
 }

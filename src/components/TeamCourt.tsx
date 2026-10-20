@@ -196,7 +196,7 @@ export function TeamCourt(props: Props) {
             </div>
             {/* phones: stack the five */}
             <div className="relative grid gap-3 p-3 md:hidden">
-              {COURT.map(({ slot }) => <PlayerTile key={slot} p={bySlot.get(slot)} slot={slot} brand={brand} state={stateFor(slot, bySlot.get(slot))} />)}
+              {["PG", "SG", "SF", "PF", "C"].map((slot) => <PlayerTile key={slot} p={bySlot.get(slot)} slot={slot} brand={brand} state={stateFor(slot, bySlot.get(slot))} />)}
             </div>
           </section>
 

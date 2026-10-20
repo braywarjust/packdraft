@@ -20,17 +20,18 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
     const lost = winner && winner !== which;
     return (
       <div className={`flex min-w-0 flex-1 flex-col gap-2 ${which === "away" ? "items-end text-right" : ""} ${lost ? "opacity-55" : ""}`}>
-        <div className={`flex min-w-0 items-center gap-3 ${which === "away" ? "flex-row-reverse" : ""}`}>
-          <TeamBadge brand={s.brand} size={big ? 76 : 56} />
-          <div className="min-w-0">
-            <p className={`truncate font-black leading-tight text-white ${big ? "text-xl" : "text-base"}`}>{s.brand.name}</p>
+        {/* Phones: the badge sits above the name so both team names get the full half. */}
+        <div className={`flex min-w-0 max-w-full flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3 ${which === "away" ? "items-end sm:flex-row-reverse" : "items-start"}`}>
+          <TeamBadge brand={s.brand} size={big ? 76 : 56} className="max-sm:!h-11 max-sm:!w-11" />
+          <div className="min-w-0 max-w-full">
+            <p className={`line-clamp-2 font-black leading-tight text-white sm:truncate ${big ? "text-sm sm:text-xl" : "text-sm sm:text-base"}`}>{s.brand.name}</p>
             <p className="text-[11px] font-bold uppercase tracking-widest text-white/60">{s.brand.abbr} · {s.record}</p>
           </div>
         </div>
         <div className={`flex items-center gap-2 ${which === "away" ? "flex-row-reverse" : ""}`}>
-          <div className={`rounded-xl bg-black/50 px-3 py-1.5 shadow-lg ring-1 ring-white/10 backdrop-blur ${which === "away" ? "text-right" : ""}`}>
-            {status === "pre" && <p className="text-[10px] font-black uppercase tracking-[0.25em] text-fpts">Projected</p>}
-            <p className={`font-mono font-black leading-none text-white ${big ? "text-4xl" : "text-3xl"}`}>
+          <div className={`rounded-xl bg-black/50 px-2 py-1 shadow-lg sm:px-3 sm:py-1.5 ring-1 ring-white/10 backdrop-blur ${which === "away" ? "text-right" : ""}`}>
+            {status === "pre" && <p className="text-[9px] font-black uppercase tracking-[0.2em] text-fpts sm:text-[10px] sm:tracking-[0.25em]">Projected</p>}
+            <p className={`font-mono font-black leading-none text-white ${big ? "text-2xl sm:text-4xl" : "text-xl sm:text-3xl"}`}>
               <Fpts n={status === "pre" ? s.proj : s.score} iconClass="text-[0.75em]" live={status === "live"} />
             </p>
             {status === "live" && <p className="mt-1 font-mono text-xs font-bold text-white/85">proj <Fpts n={s.proj} /></p>}
@@ -53,7 +54,7 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
       <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
         <line x1="54.4" y1="0" x2="45.6" y2="100" stroke="#fff" strokeOpacity=".55" strokeWidth="2" vectorEffect="non-scaling-stroke" />
       </svg>
-      <div className="relative flex items-center gap-3 p-4 sm:p-5">
+      <div className="relative flex items-center gap-2 p-3 sm:gap-3 sm:p-5">
         {side(home, "home")}
         <div className="flex shrink-0 flex-col items-center gap-1 px-1">
           {status === "live" ? <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white">● LIVE</span>

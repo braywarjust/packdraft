@@ -1,3 +1,4 @@
+import { posLabel } from "@/lib/scoring";
 import { LockIcon } from "@/components/Icons";
 import { TeamLogo } from "@/components/TeamLogo";
 import Link from "next/link";
@@ -23,7 +24,7 @@ export default async function Players({ params, searchParams }: { params: Promis
   const view = sp.view ?? "fa";
   const owners = new Map(all<{ player_id: number; team: string }>("SELECT r.player_id, t.name team FROM roster r JOIN teams t ON t.id = r.team_id WHERE r.league_id = ?", l.id).map((r) => [r.player_id, r.team]));
   const players = all<Player>(
-    `SELECT * FROM players WHERE active = 1 AND (? = 'ALL' OR pos = ?) AND name LIKE ? ORDER BY ${l.scoring === "dk" ? "proj_dk" : "proj"} DESC LIMIT 400`, pos, pos, `%${q}%`)
+    `SELECT * FROM players WHERE active = 1 AND (? = 'ALL' OR (',' || COALESCE(elig, pos) || ',') LIKE ?) AND name LIKE ? ORDER BY ${l.scoring === "dk" ? "proj_dk" : "proj"} DESC LIMIT 400`, pos, `%,${pos},%`, `%${q}%`)
     .filter((p) => (view === "fa" ? !owners.has(p.id) : true))
     .slice(0, 80);
   const myRoster = me ? roster(me.id).map((p) => ({ id: p.id, name: p.name, pos: p.pos })) : [];
@@ -43,13 +44,13 @@ export default async function Players({ params, searchParams }: { params: Promis
             ))}
           </div>
           <div className="flex gap-1">
-            {["ALL", "G", "F", "C"].map((p) => (
+            {["ALL", "PG", "SG", "SF", "PF", "C"].map((p) => (
               <Link key={p} href={qs({ pos: p })} className={`tab ${pos === p ? "tab-active" : ""}`}>{p}</Link>
             ))}
           </div>
-          <form className="ml-auto">
+          <form className="w-full sm:ml-auto sm:w-auto">
             <input type="hidden" name="pos" value={pos} /><input type="hidden" name="view" value={view} />
-            <input name="q" defaultValue={q} placeholder="Search players" className="input w-56" />
+            <input name="q" defaultValue={q} placeholder="Search players" className="input w-full sm:w-56" />
           </form>
         </div>
         <p className="text-xs text-zinc-500">
@@ -58,7 +59,7 @@ export default async function Players({ params, searchParams }: { params: Promis
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-panel2 text-xs uppercase text-zinc-500">
-              <tr><th className="py-2 pl-3 text-left">Player</th><th>Last season</th><th>Proj/g</th><th>Games wk</th><th className="text-left">Status</th><th /></tr>
+              <tr><th className="py-2 pl-3 text-left">Player</th><th className="hidden sm:table-cell">Last season</th><th>Proj/g</th><th className="hidden sm:table-cell">Games wk</th><th className="hidden text-left sm:table-cell">Status</th><th /></tr>
             </thead>
             <tbody>
               {players.map((p) => {
@@ -73,14 +74,14 @@ export default async function Players({ params, searchParams }: { params: Promis
                         <Headshot src={p.headshot} name={p.name} size={32} />
                         <div>
                           <p><PlayerButton id={p.id} league={l.id} className="inline font-semibold">{p.name}</PlayerButton> <InjuryTag injury={p.injury} />{l.draft_status === "done" && isLocked(l, p) && <LockIcon className="ml-1 text-zinc-500" title="Locked: game started" />}</p>
-                          <p className="text-xs text-zinc-400"><span className={`pos pos-${p.pos} mr-1`}>{p.pos}</span><TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" />{p.team}</p>
+                          <p className="text-xs text-zinc-400"><span className="mr-1 font-semibold text-zinc-300">{posLabel(p.elig || p.pos)}</span><TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" />{p.team}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="text-center text-xs text-zinc-500">{avg ? `${avg.pts.toFixed(1)}/${avg.reb.toFixed(1)}/${avg.ast.toFixed(1)}` : "Rookie"}</td>
+                    <td className="hidden text-center text-xs text-zinc-500 sm:table-cell">{avg ? `${avg.pts.toFixed(1)}/${avg.reb.toFixed(1)}/${avg.ast.toFixed(1)}` : "Rookie"}</td>
                     <td className="text-center font-mono"><Fpts n={projFor(p, l.scoring)} /></td>
-                    <td className="text-center text-xs">{games.length ? `${left} of ${games.length} left` : "—"}</td>
-                    <td className="text-zinc-500">{owner ?? (faab ? "Waivers" : "FA")}</td>
+                    <td className="hidden text-center text-xs sm:table-cell">{games.length ? `${left} of ${games.length} left` : "—"}</td>
+                    <td className="hidden text-zinc-500 sm:table-cell">{owner ?? (faab ? "Waivers" : "FA")}</td>
                     <td className="py-1 pr-3 text-right">
                       {!owner && me && l.draft_status === "done" && (
                         <AddPlayer player={{ id: p.id, name: p.name }} roster={myRoster} faab={faab ? me.faab : null} action={addPlayer.bind(null, l.id, p.id)} />

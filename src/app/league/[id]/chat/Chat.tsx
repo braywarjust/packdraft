@@ -87,7 +87,7 @@ export function Chat({ leagueId, rivals, send, canPost }: {
   };
 
   return (
-    <div className="card flex h-[calc(100vh-240px)] min-h-[480px] flex-col">
+    <div className="card flex h-[calc(100dvh-390px)] min-h-[340px] flex-col lg:h-[calc(100vh-240px)] lg:min-h-[480px]">
       <div className="flex-1 space-y-3 overflow-y-auto p-4 scrollbar-thin">
         {msgs.map((m) =>
           m.kind === "system" ? (
