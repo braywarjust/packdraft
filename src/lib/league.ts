@@ -152,9 +152,13 @@ export function moveToSlot(l: League, teamId: number, playerId: number, slot: st
 // ---------- Slab boosts ----------
 
 /** The game a slab equipped right now would apply to: his next game this week that hasn't tipped off. */
+/** Nothing can be equipped while he's in a game that's under way. */
 export function boostableGame(l: League, p: Player) {
-  return playerGames(l, p, l.current_week).find((g) => g.state === "pre") ?? null;
+  const games = playerGames(l, p, l.current_week);
+  if (games.some((g) => g.state === "in")) return null;
+  return games.find((g) => g.state === "pre") ?? null;
 }
+export const playingNow = (l: League, p: Player) => playerGames(l, p, l.current_week).some((g) => g.state === "in");
 
 /** Equip one of the manager's slabs of this player on his next game. One slab per player per game; one game per slab. */
 export function setBoost(l: League, teamId: number, userId: number, playerId: number, cardId: number) {
@@ -162,6 +166,7 @@ export function setBoost(l: League, teamId: number, userId: number, playerId: nu
   if (l.draft_status !== "done" || l.champion_team_id) throw new Error("Slabs can be equipped once the season is under way");
   const p = roster(teamId).find((x) => x.id === playerId);
   if (!p) throw new Error("He's not on your roster");
+  if (playingNow(l, p)) throw new Error(`${p.name} is playing right now. Slabs can't be equipped during a game`);
   const g = boostableGame(l, p);
   if (!g) throw new Error(`${p.name} has no games left this week`);
   const { mult } = cardMultiplier(cardId, userId, playerId);
