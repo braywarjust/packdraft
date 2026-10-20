@@ -341,6 +341,15 @@ body {
 /* Casino game thumbnails: the sunburst turns on the selected and hovered tiles, the rocket's flame flickers,
    and the chicken hops when you hover it. */
 @keyframes raysSpin { to { transform: rotate(360deg); } }
+/* Pack Shop banner (packs/ShopHeroArt.tsx): sunburst always turning, glow breathing, a sheen sweeping, the logo floating. */
+.casino-rays-spin { animation: raysSpin 40s linear infinite; will-change: transform; }
+@keyframes shopGlow { 0%, 100% { opacity: .55; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.08); } }
+@keyframes shopSheen { 0%, 60% { transform: translateX(-120%) skewX(-18deg); } 100% { transform: translateX(420%) skewX(-18deg); } }
+@keyframes shopFloat { 0%, 100% { transform: translateY(-50%) rotate(-2deg); } 50% { transform: translateY(calc(-50% - 10px)) rotate(2deg); } }
+.shop-glow { animation: shopGlow 4s ease-in-out infinite; }
+.shop-sheen { left: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.13), transparent); animation: shopSheen 6s ease-in-out infinite; }
+.shop-logo { animation: shopFloat 5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .casino-rays-spin, .shop-glow, .shop-sheen, .shop-logo { animation: none; } }
 .casino-rays { transform-origin: 50px 36px; }
 .casino-thumb.is-active .casino-rays, .casino-thumb:hover .casino-rays { animation: raysSpin 30s linear infinite; }
 @keyframes flameFlicker { from { transform: scaleY(.7); } to { transform: scaleY(1.15); } }

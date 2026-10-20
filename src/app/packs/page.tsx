@@ -2,13 +2,13 @@ import { requireUser } from "@/lib/auth";
 import { unopenedPacks } from "@/lib/packs-server";
 import { PACKS, RARITIES, RARITY_BLURB, RARITY_HEX, RARITY_ORDER, fmtOdds } from "@/lib/packs";
 import { VendingMachine } from "./VendingMachine";
+import { ShopHeroArt } from "./ShopHeroArt";
 import { buyPack, ripPack } from "../actions";
 import { packFeatures } from "@/lib/slabs";
 import Link from "next/link";
 import { MULT_RANGE, slabPool } from "@/lib/slab-cards";
 import { SlabCover } from "@/components/Slab";
 import { Coins } from "@/components/Coins";
-import { Logo } from "@/components/Logo";
 import { OddsBar } from "@/components/OddsBar";
 import { PackThumb } from "@/components/PackThumb";
 import { NAV_ICONS, NavIcon } from "@/components/NavIcons";
@@ -24,19 +24,16 @@ export default async function PacksPage() {
     <div className="space-y-8">
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl" style={{ background: "linear-gradient(115deg, #0253a4 0%, #0253a4 50%, #cc2b31 140%)" }}>
-        <div className="pointer-events-none absolute -right-10 top-1/2 -translate-y-1/2 opacity-15"><Logo height={260} color="white" /></div>
+        <ShopHeroArt />
         <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 14px)" }} />
         <div className="relative flex flex-wrap items-center gap-6 p-6 sm:p-8">
           <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white/15 text-white ring-1 ring-white/25 backdrop-blur"><NavIcon d={NAV_ICONS.packs} size={36} /></span>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 sm:pr-[200px] lg:pr-[240px]">
             <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Mystery packs · NBA Slabs</p>
             <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Pack Shop</h1>
             <p className="mt-2 max-w-xl text-sm text-white/80">
               Every pack holds Slabs: animated cards of active NBA players, from Common to Immortal. Rip it, collect your favourites, and trade five up for a rarer one.
             </p>
-          </div>
-          <div className="flex gap-2">
-            {PACKS.filter((p) => p.kind !== "case").slice(-3).map((p) => <PackThumb key={p.id} id={p.id} height={96} showName={false} />)}
           </div>
         </div>
         <div className="relative grid grid-cols-3 gap-px bg-black/20">
