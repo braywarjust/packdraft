@@ -58,7 +58,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
         )}
       </div>
       {cards.length === 0 && (
-        <div className="card p-8 text-center text-zinc-500">No slabs yet. <Link className="text-brand underline" href="/packs">Hit the vending machine</Link>.</div>
+        <div className="card p-8 text-center text-zinc-500">No slabs yet. <Link className="text-brand underline" href="/packs">Open packs in the Pack Shop</Link>.</div>
       )}
       <CollectionGrid cards={cards} mine={mine} />
     </div>
