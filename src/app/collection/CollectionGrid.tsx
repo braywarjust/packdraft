@@ -9,6 +9,7 @@ import { Logo, LogoWatermark } from "@/components/Logo";
 import { Coins } from "@/components/Coins";
 import { FptIcon } from "@/components/Fpts";
 import { useScrollLock } from "@/components/useScrollLock";
+import { RerollPanel, RerollStage, type RerollAct } from "./Reroll";
 
 export type GridCard = CardData & {
   s_factors?: string | null; s_detail?: string | null; s_est?: number | null; s_pop?: number | null; s_pop_higher?: number | null; created_at: number;
@@ -21,11 +22,12 @@ function certUrl(c: GridCard) {
   return `https://www.ebay.com/sch/i.html?_nkw=${c.s_cert}`;
 }
 
-export function CollectionGrid({ cards }: { cards: GridCard[]; mine?: boolean }) {
+export function CollectionGrid({ cards, mine, coins = 0, reroll }: { cards: GridCard[]; mine?: boolean; coins?: number; reroll?: RerollAct }) {
   const [open, setOpen] = useState<GridCard | null>(null);
+  const [rerolling, setRerolling] = useState<GridCard | null>(null);
   useScrollLock(!!open);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(null);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector("[data-rerolling]") && setOpen(null);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
@@ -42,6 +44,13 @@ export function CollectionGrid({ cards }: { cards: GridCard[]; mine?: boolean })
           </button>
         ))}
       </div>
+
+      {rerolling && reroll && (
+        <div data-rerolling>
+          <RerollStage card={rerolling} coins={coins} action={reroll}
+            onDone={(next) => { setRerolling(null); setOpen(next ? ({ created_at: Date.now(), ...next } as GridCard) : null); }} />
+        </div>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={() => setOpen(null)}>
@@ -95,6 +104,7 @@ export function CollectionGrid({ cards }: { cards: GridCard[]; mine?: boolean })
                   <p className="mt-1 text-xs text-zinc-500">One use. If {open.name} is on your fantasy team, equip it on one of his games from your team page and his fantasy points for that game are multiplied by {open.mult.toFixed(2)}. The slab leaves your collection when the game ends.</p>
                 </div>
               )}
+              {mine && reroll && open.kind === "slab" && !open.equipped && <RerollPanel card={open} coins={coins} onStart={() => setRerolling(open)} />}
               {open.kind !== "slab" && <div className="rounded-xl border border-zinc-200 p-4">
                 <p className="text-xs text-zinc-500">Market value</p>
                 <p className="text-3xl font-bold text-emerald-600"><Coins n={open.value} /></p>
