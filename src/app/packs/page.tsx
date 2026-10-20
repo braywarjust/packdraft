@@ -1,10 +1,8 @@
 import { requireUser } from "@/lib/auth";
-import { unopenedPacks, userCards } from "@/lib/packs-server";
-import { equippedSlabs } from "@/lib/boost";
-import { Reroll } from "./Reroll";
+import { unopenedPacks } from "@/lib/packs-server";
 import { PACKS, RARITIES, RARITY_BLURB, RARITY_HEX, RARITY_ORDER, fmtOdds } from "@/lib/packs";
 import { VendingMachine } from "./VendingMachine";
-import { buyPack, rerollSlabAction, ripPack } from "../actions";
+import { buyPack, ripPack } from "../actions";
 import { packFeatures } from "@/lib/slabs";
 import Link from "next/link";
 import { MULT_RANGE, slabPool } from "@/lib/slab-cards";
@@ -21,9 +19,6 @@ export default async function PacksPage() {
   const u = await requireUser();
   const inventory = unopenedPacks(u.id);
   const poolSize = slabPool().length;
-  // Slabs that can be re-rolled: yours, not equipped for a game.
-  const equipped = equippedSlabs(u.id);
-  const rerollable = userCards(u.id).filter((c) => c.kind === "slab" && !equipped.has(c.id));
 
   return (
     <div className="space-y-8">
@@ -60,8 +55,6 @@ export default async function PacksPage() {
 
 
       <VendingMachine features={packFeatures(PACKS)} coins={u.coins} inventory={inventory} buy={buyPack} rip={ripPack} />
-
-      <Reroll cards={rerollable} coins={u.coins} action={rerollSlabAction} />
 
       {/* Rarity tiers */}
       <section id="rarity" className="scroll-mt-36 space-y-3">

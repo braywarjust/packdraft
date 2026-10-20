@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { RARITIES, RARITY_HEX, RARITY_ORDER, REROLL_FEE, fmtCoins, type Rarity } from "@/lib/packs";
 import { slabOf, type CardData } from "@/components/PlayerCard";
-import { Slab, SlabCover } from "@/components/Slab";
+import { Slab } from "@/components/Slab";
 import { Coins } from "@/components/Coins";
 import { CheckIcon, XIcon } from "@/components/Icons";
 import { askConfirm } from "@/components/Confirm";
@@ -12,25 +12,17 @@ import { useScrollLock } from "@/components/useScrollLock";
 
 type Act = (cardId: number) => Promise<{ ok: boolean; card: CardData } | { error: string }>;
 
-/** Pack Shop section: pay Pack Points to re-roll one of your slabs into a different player at the same rarity. */
+/** Re-roll button + picker (collection page): pay Pack Points to turn one of your slabs into a different player at the same rarity. */
 export function Reroll({ cards, coins, action }: { cards: CardData[]; coins: number; action: Act }) {
   const [open, setOpen] = useState(false);
   return (
-    <section className="card flex flex-wrap items-center gap-5 p-5">
-      <div className="flex -space-x-6">
-        {(["rare", "epic", "legendary"] as Rarity[]).map((r) => <SlabCover key={r} size={64} rarity={r} />)}
-      </div>
-      <div className="min-w-0 flex-1">
-        <h2 className="text-lg font-bold">Re-roll a slab</h2>
-        <p className="text-sm text-zinc-500">
-          Don&apos;t love who you pulled? Pay Pack Points to turn a slab into a different player at the same rarity, with a fresh multiplier stamp.
-          Rarer slabs cost more:{" "}
-          {RARITY_ORDER.map((r, i) => <span key={r}>{i ? " · " : ""}<b className={RARITIES[r].text}>{RARITIES[r].label}</b> {fmtCoins(REROLL_FEE[r])}</span>)}
-        </p>
-      </div>
-      <button className="btn-primary" onClick={() => setOpen(true)} disabled={!cards.length}>{cards.length ? "Re-roll a slab" : "No slabs to re-roll yet"}</button>
+    <>
+      <button className="btn-ghost" onClick={() => setOpen(true)} disabled={!cards.length}
+        title={`Re-roll a slab into a different player at the same rarity: ${RARITY_ORDER.map((r) => `${RARITIES[r].label} ${fmtCoins(REROLL_FEE[r])}`).join(", ")}`}>
+        Re-roll
+      </button>
       {open && <RerollModal cards={cards} coins={coins} action={action} onClose={() => setOpen(false)} />}
-    </section>
+    </>
   );
 }
 
@@ -67,7 +59,7 @@ function RerollModal({ cards, coins, action, onClose }: { cards: CardData[]; coi
         <div className="flex items-center justify-between border-b border-line/60 px-5 py-3">
           <div>
             <p className="text-lg font-black text-white">Re-roll a slab</p>
-            <p className="text-xs text-zinc-500">Pick a slab. It becomes a different player at the same rarity, with a new multiplier stamp.</p>
+            <p className="text-xs text-zinc-500">Pick a slab. It becomes a different player at the same rarity, with a new multiplier stamp. Rarer slabs cost more to re-roll.</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
         </div>

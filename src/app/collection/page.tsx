@@ -7,7 +7,8 @@ import { equippedSlabs } from "@/lib/boost";
 import { dayLabel } from "@/lib/nba/espn";
 import { RARITIES, Rarity } from "@/lib/packs";
 import { ActionButton } from "@/components/ActionButton";
-import { clearTestCards, tradeUpSlabs } from "../actions";
+import { clearTestCards, rerollSlabAction, tradeUpSlabs } from "../actions";
+import { Reroll } from "./Reroll";
 import { TradeUp } from "./TradeUp";
 import { PageHeader } from "@/components/PageHeader";
 import { CollectionGrid } from "./CollectionGrid";
@@ -52,6 +53,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
         <span className="mx-2 h-5 w-px bg-line" />
         <Link href={qs({ sort: undefined })} className={`tab ${!sp.sort ? "tab-active" : ""}`}>Top value</Link>
         <Link href={qs({ sort: "new" })} className={`tab ${sp.sort === "new" ? "tab-active" : ""}`}>Newest</Link>
+        {mine && <Reroll cards={allSlabs} coins={me.coins} action={rerollSlabAction} />}
         {mine && <TradeUp cards={allSlabs} coins={me.coins} action={tradeUpSlabs} />}
         {mine && !!me.is_tester && (
           <ActionButton action={clearTestCards} className="btn-ghost" confirm="Delete all test pulls?">Clear test pulls</ActionButton>
