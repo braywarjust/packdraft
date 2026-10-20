@@ -9,6 +9,16 @@ import { Coins } from "@/components/Coins";
 import { CheckIcon, XIcon } from "@/components/Icons";
 import { askConfirm } from "@/components/Confirm";
 import { useScrollLock } from "@/components/useScrollLock";
+import { AnimatedLogo } from "@/components/AnimatedLogo";
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Load the new slab's photo before showing it, so it never pops in blank (gives up after a few seconds). */
+function preload(src: string | null | undefined) {
+  if (!src) return Promise.resolve();
+  const img = new Image();
+  img.src = src;
+  return Promise.race([img.decode().catch(() => {}), wait(4000)]);
+}
 
 type Act = (cardId: number) => Promise<{ ok: boolean; card: CardData } | { error: string }>;
 
@@ -35,6 +45,8 @@ function RerollModal({ cards, coins, action, onClose }: { cards: CardData[]; coi
   const [picked, setPicked] = useState<number | null>(null);
   const [err, setErr] = useState("");
   const [result, setResult] = useState<{ from: CardData; to: CardData } | null>(null);
+  // The re-roll animation: the old slab spins away and the PackDraft logo plays until the new slab (and its photo) is ready.
+  const [rolling, setRolling] = useState<CardData | null>(null);
   const [balance, setBalance] = useState(coins);
   const list = byTier[tier];
   const chosen = list.find((c) => c.id === picked) ?? null;
@@ -43,9 +55,14 @@ function RerollModal({ cards, coins, action, onClose }: { cards: CardData[]; coi
   const choose = (t: Rarity) => { setTier(t); setPicked(null); setErr(""); };
   const go = async (c: CardData) => {
     if (!(await askConfirm(`Re-roll your ${RARITIES[c.rarity].label} ${c.name} slab for ${fmtCoins(REROLL_FEE[c.rarity])}? It becomes a different player at the same rarity.`, { confirmLabel: "Re-roll" }))) return;
+    setErr("");
+    setResult(null);
+    setRolling(c);
     start(async () => {
-      const r = await action(c.id);
-      if ("error" in r) { setErr(r.error); return; }
+      const [r] = await Promise.all([action(c.id), wait(1800)]);
+      if ("error" in r) { setRolling(null); setErr(r.error); return; }
+      await preload(r.card.photo);
+      setRolling(null);
       setResult({ from: c, to: r.card });
       setBalance((b) => b - REROLL_FEE[c.rarity]);
       setPicked(null);
@@ -64,10 +81,21 @@ function RerollModal({ cards, coins, action, onClose }: { cards: CardData[]; coi
           <button onClick={onClose} aria-label="Close" className="rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
         </div>
 
-        {result ? (
+        {rolling ? (
+          <div className="flex flex-col items-center gap-5 p-8 text-center" aria-live="polite">
+            <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">Re-rolling your {RARITIES[rolling.rarity].label} {rolling.name}</p>
+            <div className="relative grid h-[260px] w-[260px] place-items-center [perspective:900px]">
+              <span className="reroll-ring absolute inset-6 rounded-full border-2" style={{ borderColor: RARITY_HEX[rolling.rarity] }} />
+              <span className="reroll-ring absolute inset-6 rounded-full border-2" style={{ borderColor: RARITY_HEX[rolling.rarity], animationDelay: ".8s" }} />
+              <div className="reroll-out absolute"><Slab s={slabOf(rolling)} size={200} /></div>
+              <div className="logo-play reroll-float relative w-[200px]"><AnimatedLogo className="w-full drop-shadow-[0_10px_30px_rgba(0,0,0,.6)]" /></div>
+            </div>
+            <p className="animate-pulse text-sm font-semibold text-zinc-400">Finding your new player…</p>
+          </div>
+        ) : result ? (
           <div className="flex flex-col items-center gap-4 p-8 text-center">
             <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">{result.from.name} re-rolled into</p>
-            <div className="anim-deal"><Slab s={slabOf(result.to)} size={260} /></div>
+            <div className="reroll-in"><Slab s={slabOf(result.to)} size={260} /></div>
             <p className="text-xl font-black text-white">{RARITIES[result.to.rarity].label} {result.to.name}</p>
             <div className="flex gap-2">
               <button className="btn-ghost" onClick={() => setResult(null)}>Re-roll another</button>
