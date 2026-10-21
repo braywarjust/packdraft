@@ -15,7 +15,8 @@ import { incomingTradeCount } from "@/lib/slab-trades";
 export default async function Collection({ searchParams }: { searchParams: Promise<{ r?: string; sort?: string; u?: string }> }) {
   const sp = await searchParams;
   const me = await requireUser();
-  const users = all<{ id: number; name: string; is_tester: number }>("SELECT id, name, is_tester FROM users ORDER BY name");
+  // Test accounts are hidden from everyone's tabs (a tester still sees their own collection).
+  const users = all<{ id: number; name: string; is_tester: number }>("SELECT id, name, is_tester FROM users WHERE is_tester = 0 OR id = ? ORDER BY name", me.id);
   const viewing = sp.u ? users.find((x) => x.id === Number(sp.u)) ?? me : me;
   const mine = viewing.id === me.id;
   const offers = incomingTradeCount(me.id);

@@ -36,9 +36,6 @@ export function TradeDesk({
   const theirs = to ? cards[to] ?? [] : [];
   const partner = managers.find((m) => m.id === to);
   const pp = (s: string) => Math.max(0, Math.floor(Number(s.replace(/[^\d]/g, "")) || 0));
-  const total = (list: CardData[], sel: number[]) => list.filter((c) => sel.includes(c.id)).reduce((s, c) => s + c.value, 0);
-  const sendVal = total(mine, give) + pp(givePp);
-  const getVal = total(theirs, get) + pp(getPp);
   const kind = useMemo(() => (!give.length && !pp(givePp) ? "ask" : !get.length && !pp(getPp) ? "gift" : "trade"), [give, get, givePp, getPp]);
 
   if (!managers.length) return <div className="card p-5 text-sm text-zinc-500">Nobody else to trade with yet.</div>;
@@ -61,7 +58,6 @@ export function TradeDesk({
                 <span className="block truncate text-sm font-semibold">{c.name}</span>
                 <span className="block truncate text-xs text-zinc-500">{cardLabel(c)}{buff && <span className="font-semibold text-fpts"> · {buff}</span>}</span>
               </span>
-              <span className="shrink-0 text-right text-xs font-bold text-emerald-600"><Coins n={c.value} /></span>
               <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[11px] font-black ${on ? "border-brand bg-brand text-white" : "border-zinc-300 text-transparent"}`}>✓</span>
             </button>
           </li>
@@ -97,7 +93,7 @@ export function TradeDesk({
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <p className="label flex items-center justify-between"><span>You send ({give.length})</span><span className="text-emerald-600"><Coins n={sendVal} /></span></p>
+          <p className="label">You send ({give.length})</p>
           {list(mine, give, setGive, "No tradable slabs. Equipped slabs can't be traded until they're unequipped.")}
           <label className="flex items-center gap-2 text-sm text-zinc-500">
             + Pack Points
@@ -106,7 +102,7 @@ export function TradeDesk({
           </label>
         </div>
         <div className="space-y-2">
-          <p className="label flex items-center justify-between"><span>You get from {partner?.name} ({get.length})</span><span className="text-emerald-600"><Coins n={getVal} /></span></p>
+          <p className="label">You get from {partner?.name} ({get.length})</p>
           {list(theirs, get, setGet, `${partner?.name ?? "They"} has no tradable slabs.`)}
           <label className="flex items-center gap-2 text-sm text-zinc-500">
             + Pack Points
