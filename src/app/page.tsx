@@ -19,6 +19,10 @@ import { MatchupCard } from "@/components/MatchupCard";
 import { PackThumb } from "@/components/PackThumb";
 import { RarityBadge, slabOf } from "@/components/PlayerCard";
 import { BoltIcon } from "@/components/Icons";
+import { Headshot } from "@/components/Headshot";
+import { PlayerButton } from "@/components/PlayerInspector";
+import { SlabOn } from "@/components/SlabIcon";
+import { Fpts } from "@/components/Fpts";
 import { claimBonus } from "./actions";
 
 const DEFAULT_BRAND: BrandLite = { name: "PackDraft", abbr: "PD", color: "#0253a4", alt: "#cc2b31", logo: null };
@@ -59,7 +63,7 @@ export default async function Home() {
     const rank = table.findIndex((x) => x.id === t.id) + 1;
     const base = { t: fresh, l, brand, rank, size: table.length };
     if (l.draft_status === "live") alerts.push({ href: `/league/${l.id}/draft`, tone: "red", text: `${l.name}: the draft is live`, brand });
-    if (l.draft_status !== "done" || l.champion_team_id) return { ...base, card: null, earned: null };
+    if (l.draft_status !== "done" || l.champion_team_id) return { ...base, card: null, earned: null, top: [] };
     const tw = teamWeek(l, t.id, l.current_week);
     const filled = new Set(tw.players.filter((p) => p.slot !== "BN").map((p) => p.slot));
     const empty = STARTERS.filter((s) => !filled.has(s)).length;
@@ -88,7 +92,14 @@ export default async function Home() {
       const playing = l.mode === "sim" || [...h.w.players, ...a.w.players].some((p) => p.now?.state === "in");
       card = { href: `/league/${l.id}/matchup/${m.id}`, home: h.s, away: a.s, status: (m.final ? "final" : live ? "live" : "pre") as "final" | "live" | "pre", playing, wp: winProb(h.w, a.w) };
     }
-    return { ...base, card, earned: earnings(l.id, user.id, l.current_week) };
+    // Top performers this week: fantasy points each rostered player has earned for his team (games he started, slabs
+    // included), best first.
+    const top = all<Team>("SELECT * FROM teams WHERE league_id = ?", l.id)
+      .flatMap((x) => (x.id === t.id ? tw : teamWeek(l, x.id, l.current_week)).players.map((p) => ({ p, team: teamBrand(x), mine: x.id === t.id })))
+      .filter((r) => r.p.pts > 0)
+      .sort((a, b) => b.p.pts - a.p.pts)
+      .slice(0, 5);
+    return { ...base, card, earned: earnings(l.id, user.id, l.current_week), top };
   });
   if (packs.length) alerts.push({ href: "/packs", tone: "blue", text: `${packs.length} unopened pack${packs.length > 1 ? "s" : ""} waiting to be ripped` });
   if (user.last_bonus !== todayIso) alerts.push({ href: "#bonus", tone: "amber", text: "Your daily Pack Points bonus is ready" });
@@ -187,7 +198,7 @@ export default async function Home() {
               No leagues yet. <Link href="/leagues/new" className="text-brand underline">Create one</Link> for the crew or <Link href="/leagues" className="text-brand underline">join with a code</Link>.
             </div>
           )}
-          {leagues.map(({ t, l, brand, rank, size, card, earned }) => (
+          {leagues.map(({ t, l, brand, rank, size, card, earned, top }) => (
             <div key={t.id} className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <Link href={`/league/${l.id}`} className="flex min-w-0 items-center gap-2 font-bold hover:underline">
@@ -214,6 +225,36 @@ export default async function Home() {
                   </div>
                   <span className="btn relative bg-[#fff] text-black">{l.draft_status === "live" ? "Draft room" : "Open league"}</span>
                 </Link>
+              )}
+              {top.length > 0 && (
+                <div className="card p-3 sm:p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-zinc-400">Top performers · Week {l.current_week}</h3>
+                    <Link href={`/league/${l.id}/matchups`} className="text-xs text-brand hover:underline">Matchups</Link>
+                  </div>
+                  <ol className="space-y-1">
+                    {top.map(({ p, team, mine }, i) => (
+                      <li key={p.id} className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 ${i === 0 ? "bg-amber-400/10 ring-1 ring-amber-400/30" : "bg-ink/40"}`}>
+                        <span className={`w-4 text-center font-mono text-sm font-black ${i === 0 ? "text-amber-400" : "text-zinc-500"}`}>{i + 1}</span>
+                        <Headshot src={p.headshot} name={p.name} size={34} />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-1.5 text-sm font-bold text-white">
+                            <PlayerButton id={p.id} league={l.id} className="truncate">{p.name}</PlayerButton>
+                            <TeamLogo team={p.team} size={14} />
+                            <SlabOn boost={p.boost} />
+                          </span>
+                          <span className="flex items-center gap-1 truncate text-[11px] text-zinc-500">
+                            <TeamBadge brand={team} size={14} /><span className="truncate">{team.name}{mine ? " · You" : ""}</span> · {p.played} GP
+                          </span>
+                        </span>
+                        <span className="text-right">
+                          <span className="block font-mono text-base font-black text-white"><Fpts n={p.pts} /></span>
+                          <span className="block text-[10px] text-zinc-500">{(p.pts / Math.max(1, p.played)).toFixed(1)}/g</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               )}
             </div>
           ))}
