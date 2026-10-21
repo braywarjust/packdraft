@@ -106,7 +106,10 @@ export async function ensureSchedule(from: string, to: string) {
   for (let d = from; d <= to; d = addDays(d, 1)) {
     const key = `sched:${d}`;
     const last = Number(metaGet(key) ?? 0);
-    const maxAge = d === today ? 60_000 : d < today ? 24 * 3600_000 * 365 : 6 * 3600_000;
+    // A past day is cached for good once every game on it is final. Until then keep re-checking it: late games run
+    // past midnight ET, and without this they'd stay "live" forever (and their slabs and Pack Points never settle).
+    const unfinished = d < today && !!one("SELECT 1 FROM games WHERE date_et = ? AND state != 'post' AND start_ts <= ?", d, Date.now());
+    const maxAge = d === today || unfinished ? 60_000 : d < today ? 24 * 3600_000 * 365 : 6 * 3600_000;
     if (Date.now() - last < maxAge) continue;
     try {
       const { games } = await fetchScoreboard(d);
@@ -151,6 +154,10 @@ export async function refreshLive(force = false) {
       if (d === today || force) run("DELETE FROM meta WHERE key = ?", `sched:${d}`);
       await ensureSchedule(d, d);
     }
+    // Any older day still showing an unfinished game (the app was off when it ended) gets re-checked too.
+    for (const { date_et } of all<{ date_et: string }>(
+      "SELECT DISTINCT date_et FROM games WHERE date_et < ? AND date_et >= ? AND state != 'post' AND start_ts <= ?", addDays(today, -1), addDays(today, -14), Date.now()))
+      await ensureSchedule(date_et, date_et);
     // Live games every refresh; finished games until we've captured their final box score (box_at set).
     const needBox = all<Game>("SELECT * FROM games WHERE date_et >= ? AND (state = 'in' OR (state = 'post' AND box_at IS NULL))", addDays(today, -1));
     for (const g of needBox) await refreshBox(g.id, g.state === "post").catch((e) => console.warn("[packdraft] box score failed", g.id, (e as Error).message));

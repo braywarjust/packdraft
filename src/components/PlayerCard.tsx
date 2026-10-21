@@ -10,6 +10,7 @@ export type CardData = {
   slab_id?: number | null; s_year?: number | null; s_set?: string | null; s_no?: string | null; s_variant?: string | null;
   s_company?: string | null; s_grade?: string | null; s_cert?: string | null; s_flags?: string | null; s_source?: string | null;
   kind?: string | null; team_name?: string | null; photo?: string | null; player_id?: number; mult?: number | null;
+  boost_pts?: number | null; boost_reb?: number | null; boost_ast?: number | null;
   /** "Equipped · Wed, Oct 22 · NBA" while a slab waits for its game. */
   equipped?: string | null;
 };
@@ -17,6 +18,7 @@ export type CardData = {
 /** Slab props for a new-style square Slab card. */
 export const slabOf = (c: CardData): SlabData => ({
   name: c.name, team: c.team, team_name: c.team_name, pos: c.pos, rarity: c.rarity, serial: c.serial, jersey: c.jersey, color: c.color, alt: c.alt, photo: c.photo, mult: c.mult,
+  boost: c.boost_pts == null ? null : { pts: c.boost_pts ?? 0, reb: c.boost_reb ?? 0, ast: c.boost_ast ?? 0 },
 });
 
 /** A square Slab with a short caption underneath. */

@@ -40,7 +40,7 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
       const t = teams.get(tid)!;
       return { id: tid, brand: teamBrand(t), record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`, score: m.final && stored != null ? stored : w.score, proj: w.score + w.remain };
     };
-    const live = !m.final && (l.mode === "sim" ? !!l.week_started_at && current : h.players.concat(a.players).some((p) => p.now?.state !== "pre" && p.now != null) && h.score + a.score > 0);
+    const live = !m.final && (l.mode === "sim" ? !!l.week_started_at && current : h.players.concat(a.players).some((p) => p.now?.state === "in"));
     const status: "pre" | "live" | "final" = m.final ? "final" : live ? "live" : "pre";
     return { m, home: side(m.home_team_id, h, m.home_score), away: side(m.away_team_id, a, m.away_score), status, wp: m.final ? 0.5 : winProb(h, a), mine: !!me && (m.home_team_id === me.id || m.away_team_id === me.id) };
   });

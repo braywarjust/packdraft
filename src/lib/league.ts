@@ -5,7 +5,7 @@ import { addDays, etDate, weekday, dayLabel } from "./nba/espn";
 import { season as nbaSeason, seasonLabel } from "./nba/season";
 import { PACK_BY_ID } from "./packs";
 import { creditGame, weekRate } from "./economy";
-import { cardMultiplier, consumeEquip, ensureBoosts, teamBoosts } from "./boost";
+import { cardBuff, consumeEquip, ensureBoosts, slabbedFpts, teamBoosts } from "./boost";
 
 export { STARTERS, ROSTER_MAX, eligible };
 /** A player's fantasy positions ("PG,SG"), falling back to his G/F/C. */
@@ -25,8 +25,9 @@ export function roster(teamId: number) {
 export function postSystem(leagueId: number, body: string) {
   run("INSERT INTO messages (league_id, user_id, kind, body, created_at) VALUES (?, NULL, 'system', ?, ?)", leagueId, body, Date.now());
 }
-export function awardPack(userId: number, packType: string, source: string) {
-  run("INSERT INTO user_packs (user_id, pack_type, source, created_at) VALUES (?, ?, ?, ?)", userId, packType, source, Date.now());
+/** Give a manager a League Pack: it opens in this league, from this league's pool. */
+export function awardPack(userId: number, packType: string, source: string, leagueId: number | null) {
+  run("INSERT INTO user_packs (user_id, pack_type, source, league_id, created_at) VALUES (?, ?, ?, ?, ?)", userId, packType, source, leagueId, Date.now());
 }
 
 export const projFor = (p: { proj: number; proj_dk: number }, scoring: string) => (scoring === "dk" ? p.proj_dk : p.proj);
@@ -59,7 +60,11 @@ export function weekProgress(l: League) {
 
 // ---------- Per-player games ----------
 
-export type PGame = { key: string; state: "pre" | "in" | "post"; label: string; clock: string; line: Line | null; order: number; date?: string };
+/** `final`: the game really is over (ESPN says so, or the sim finished it), so it can pay out and use up slabs. */
+export type PGame = { key: string; state: "pre" | "in" | "post"; final: boolean; label: string; clock: string; line: Line | null; order: number; date?: string };
+
+/** A real game still not final this long after tip-off is treated as over. */
+const STALE_GAME_MS = 6 * 3600_000;
 
 function realGames(p: { id: number; team: string }, from: string, to: string): PGame[] {
   const games = all<Game & { stats: string | null }>(
@@ -69,9 +74,12 @@ function realGames(p: { id: number; team: string }, from: string, to: string): P
   return games.map((g) => {
     const home = g.home === p.team;
     const started = g.state !== "pre" || g.start_ts <= Date.now();
+    // ESPN never moved it on (postponed, or the feed missed the final): long after tip-off it isn't live any more.
+    const stale = g.state !== "post" && Date.now() - g.start_ts > STALE_GAME_MS;
     return {
       key: g.date_et, date: g.date_et, order: g.start_ts,
-      state: g.state === "pre" && started ? "in" : (g.state as PGame["state"]),
+      state: stale ? "post" : g.state === "pre" && started ? "in" : (g.state as PGame["state"]),
+      final: g.state === "post",
       label: `${home ? "vs" : "@"} ${home ? g.away : g.home} · ${dayLabel(g.date_et)}`,
       clock: g.state === "pre" ? new Date(g.start_ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) + " ET" : g.detail ?? "",
       line: g.stats ? (JSON.parse(g.stats) as Line) : null,
@@ -86,7 +94,7 @@ function simGames(p: Player, l: League, week: number): PGame[] {
     const g = gameProgress(gm.start, progress);
     return {
       key: `sim:W${week}:G${gm.i}`, order: gm.start,
-      state: g <= 0 ? "pre" : g >= 1 ? "post" : "in",
+      state: g <= 0 ? "pre" : g >= 1 ? "post" : "in", final: g >= 1,
       label: `Game ${gm.i + 1}`, clock: simClock(g),
       line: g > 0 ? partial(simGame(p, `${seed}:${gm.i}`), g, `${p.id}:${seed}:${gm.i}`) : null,
     };
@@ -170,15 +178,16 @@ export function setBoost(l: League, teamId: number, userId: number, playerId: nu
   if (playingNow(l, p)) throw new Error(`${p.name} is playing right now. Slabs can't be equipped during a game`);
   const g = boostableGame(l, p);
   if (!g) throw new Error(`${p.name} has no games left this week`);
-  const { mult } = cardMultiplier(cardId, userId, playerId);
+  const { mult, boost } = cardBuff(cardId, userId, playerId);
   const elsewhere = one<{ team_id: number; day_key: string; player_id: number }>(
     "SELECT team_id, day_key, player_id FROM slab_equips WHERE card_id = ? AND consumed_at IS NULL", cardId);
   if (elsewhere && !(elsewhere.team_id === teamId && elsewhere.day_key === g.key && elsewhere.player_id === playerId))
     throw new Error("That slab is already equipped for another game. Unequip it there first");
-  run(`INSERT INTO slab_equips (league_id, team_id, user_id, day_key, player_id, card_id, mult, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (team_id, day_key, player_id) DO UPDATE SET card_id = excluded.card_id, mult = excluded.mult, created_at = excluded.created_at`,
-    l.id, teamId, userId, g.key, playerId, cardId, mult, Date.now());
-  return { player: p.name, mult, own: true };
+  run(`INSERT INTO slab_equips (league_id, team_id, user_id, day_key, player_id, card_id, mult, boost_pts, boost_reb, boost_ast, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (team_id, day_key, player_id) DO UPDATE SET card_id = excluded.card_id, mult = excluded.mult, boost_pts = excluded.boost_pts,
+       boost_reb = excluded.boost_reb, boost_ast = excluded.boost_ast, created_at = excluded.created_at`,
+    l.id, teamId, userId, g.key, playerId, cardId, mult, boost.pts, boost.reb, boost.ast, Date.now());
+  return { player: p.name, mult, boost, own: true };
 }
 
 /** Unequip a player's slab from any of his games that haven't started; the slab goes back to the collection. */
@@ -220,15 +229,16 @@ export type LivePlayer = {
   id: number; name: string; pos: string; team: string; slot: string; headshot: string | null; injury: string | null;
   pts: number; proj: number; played: number; left: number; total: number; locked: boolean;
   now: { label: string; clock: string; state: string; line: string; pts: number } | null;
-  /** Slab boost on his current/next game this week (live), if any. */
-  boost: { mult: number; own: boolean; cardId: number; dayKey: string; state: string } | null;
+  /** Slab equipped on his current/next game this week (live), if any: its multiplier (1 = none) and stat boost. */
+  boost: { mult: number; pts: number; reb: number; ast: number; own: boolean; cardId: number; dayKey: string; state: string } | null;
 };
 
 /**
  * Score a team's week. Each player-game uses the slot he was in when that game started
  * (frozen into daily_slots), so mid-week lineup changes and drops are handled correctly.
  *
- * Matchup scores are plain fantasy points. When a started player's game goes final, the manager is paid
+ * Matchup scores are fantasy points, with any equipped slab applied: its stat boost lands on his box score when the game
+ * goes final, then its multiplier applies (boost.ts slabbedFpts). When a started player's game goes final, the manager is paid
  * fantasy points × PP_PER_POINT Pack Points (once; see economy.ts).
  */
 export function teamWeek(l: League, teamId: number, week: number) {
@@ -237,7 +247,7 @@ export function teamWeek(l: League, teamId: number, week: number) {
   const rate = weekRate(l.id, week);
   const owner = one<{ user_id: number | null }>("SELECT user_id FROM teams WHERE id = ?", teamId)?.user_id ?? null;
   const boosts = teamBoosts(teamId);
-  const boostMult = (playerId: number, key: string) => boosts.get(`${playerId}|${key}`)?.mult ?? 1;
+  const gamePts = (playerId: number, g: PGame) => slabbedFpts(g.line!, l.scoring, boosts.get(`${playerId}|${g.key}`), g.final);
   const pay = (playerId: number, key: string, raw: number) => {
     if (active && owner) creditGame({ leagueId: l.id, week, teamId, userId: owner, playerId, gameKey: key, fpts: raw, rate });
   };
@@ -258,9 +268,9 @@ export function teamWeek(l: League, teamId: number, week: number) {
       if (g.state === "pre") left++;
       else played++;
       if (g.line && frozen.get(k) && frozen.get(k) !== "BN") {
-        const raw = fpts(g.line, l.scoring) * boostMult(p.id, g.key);
+        const raw = gamePts(p.id, g);
         pts += raw;
-        if (g.state === "post") pay(p.id, g.key, raw);
+        if (g.final) pay(p.id, g.key, raw);
       }
     }
     const proj = projFor(p, l.scoring);
@@ -277,8 +287,8 @@ export function teamWeek(l: League, teamId: number, week: number) {
     rows.push({
       id: p.id, name: p.name, pos: fpos(p), team: p.team, slot: p.slot, headshot: p.headshot, injury: p.injury,
       pts: Math.round(pts * 100) / 100, proj, played, left, total: games.length, locked: isLocked(l, p),
-      now: cur ? { label: cur.label, clock: cur.clock, state: cur.state, line: cur.line ? statLine(cur.line) : "", pts: cur.line ? Math.round(fpts(cur.line, l.scoring) * boostMult(p.id, cur.key) * 100) / 100 : 0 } : null,
-      boost: b && bGame ? { mult: b.mult, own: !!b.own, cardId: b.card_id, dayKey: b.day_key, state: bGame.state } : null,
+      now: cur ? { label: cur.label, clock: cur.clock, state: cur.state, line: cur.line ? statLine(cur.line) : "", pts: cur.line ? gamePts(p.id, cur) : 0 } : null,
+      boost: b && bGame ? { mult: b.mult, pts: b.boost_pts, reb: b.boost_reb, ast: b.boost_ast, own: !!b.own, cardId: b.card_id, dayKey: b.day_key, state: bGame.state } : null,
     });
   }
   // Points from players no longer on the roster (dropped/traded mid-week) still count.
@@ -292,9 +302,9 @@ export function teamWeek(l: League, teamId: number, week: number) {
     const p = one<Player>("SELECT * FROM players WHERE id = ?", pid);
     const g = p && playerGames(l, p, week).find((x) => x.key === key);
     if (g?.line) {
-      const raw = fpts(g.line, l.scoring) * boostMult(pid, key);
+      const raw = gamePts(pid, g);
       ghost += raw;
-      if (g.state === "post") pay(pid, key, raw);
+      if (g.final) pay(pid, key, raw);
     }
   }
   const order = (s: string) => (s === "BN" ? 99 : STARTERS.indexOf(s as (typeof STARTERS)[number]));
@@ -503,7 +513,7 @@ export function finalizeWeek(l: League) {
         const col = me > opp ? "wins" : me < opp ? "losses" : "ties";
         if (!playoffs) run(`UPDATE teams SET ${col} = ${col} + 1, points_for = points_for + ?, points_against = points_against + ? WHERE id = ?`, me, opp, tid);
         const t = teamMap.get(tid)!;
-        if (t.user_id) awardPack(t.user_id, me >= opp ? fresh.reward_win : fresh.reward_loss, `${fresh.name} · ${weekName(fresh, week)} ${me > opp ? "win" : me < opp ? "loss" : "tie"}`);
+        if (t.user_id) awardPack(t.user_id, me >= opp ? fresh.reward_win : fresh.reward_loss, `${fresh.name} · ${weekName(fresh, week)} ${me > opp ? "win" : me < opp ? "loss" : "tie"}`, fresh.id);
       };
       res(m.home_team_id, hs, as);
       res(m.away_team_id, as, hs);
@@ -518,7 +528,7 @@ export function finalizeWeek(l: League) {
     if (scores.length) {
       scores.sort((a, b) => b.pts - a.pts);
       const top = teamMap.get(scores[0].teamId)!;
-      if (top.user_id) awardPack(top.user_id, fresh.reward_top, `${fresh.name} · ${name} top score`);
+      if (top.user_id) awardPack(top.user_id, fresh.reward_top, `${fresh.name} · ${name} top score`, fresh.id);
       const bottom = teamMap.get(scores[scores.length - 1].teamId)!;
       postSystem(l.id, `${name} final!\n${lines.join("\n")}\n\nTop score: ${top.name} (${scores[0].pts.toFixed(1)}) earns a ${PACK_BY_ID[fresh.reward_top]?.name}.\nWinners got a ${PACK_BY_ID[fresh.reward_win]?.name ?? "pack"}.${playoffs ? "" : `\nBasement: ${bottom.name} (${scores[scores.length - 1].pts.toFixed(1)}). Roast accordingly.`}`);
     }
@@ -526,7 +536,7 @@ export function finalizeWeek(l: League) {
     const crown = (champId: number) => {
       const champ = teamMap.get(champId)!;
       run("UPDATE leagues SET week_started_at = NULL, champion_team_id = ? WHERE id = ?", champ.id, l.id);
-      if (champ.user_id) awardPack(champ.user_id, "goat", `${fresh.name} · Champion`);
+      if (champ.user_id) awardPack(champ.user_id, "goat", `${fresh.name} · Champion`, fresh.id);
       postSystem(l.id, `${champ.name} wins the ${fresh.name} championship and a GOAT Pack!`);
     };
     const advance = () => run("UPDATE leagues SET week_started_at = NULL, current_week = current_week + 1 WHERE id = ?", l.id);

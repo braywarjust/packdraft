@@ -43,14 +43,28 @@ function Tile({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-/** His slabs: how many you own, and a link to see them in the Slab Pool. */
+const RARITY_LABEL: Record<string, string> = { common: "Common", rare: "Rare", epic: "Epic", legendary: "Mythic", grail: "Immortal" };
+const statBits = (b: { pts: number; reb: number; ast: number }) => ([["PTS", b.pts], ["REB", b.reb], ["AST", b.ast]] as const).filter(([, v]) => v > 0);
+
+/** His slabs: the ones you own and what each rolled (stat boost and/or multiplier), and a link to the league pack pool. */
 function SlabMarket({ d }: { d: PlayerInfo }) {
   return (
     <section>
       <p className="label">His slabs</p>
-      <div className="flex items-center justify-between rounded-xl bg-ink p-4 text-sm ring-1 ring-white/5">
-        <span className="flex items-center gap-2 text-zinc-400"><SlabIcon className="text-fpts" />You own <b className="text-white">{d.market.mine}</b></span>
-        <Link href={`/packs/pool?team=${d.player.team}`} className="btn-ghost px-3 py-1 text-xs">See his slabs</Link>
+      <div className="space-y-2 rounded-xl bg-ink p-4 text-sm ring-1 ring-white/5">
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-2 text-zinc-400"><SlabIcon className="text-fpts" />You own <b className="text-white">{d.market.mine}</b></span>
+          <Link href={d.league ? `/league/${d.league.id}/packs/pool` : "/packs"} className="btn-ghost px-3 py-1 text-xs">Pack pool</Link>
+        </div>
+        {d.mySlabs.map((s) => (
+          <div key={s.id} className="flex flex-wrap items-center gap-1.5 border-t border-line/60 pt-2 text-xs">
+            <span className="font-bold text-white">{RARITY_LABEL[s.rarity] ?? s.rarity} #{s.serial}</span>
+            {s.mult != null && <span className="rounded-full bg-fpts/15 px-1.5 py-0.5 font-black text-fpts">{s.mult.toFixed(2)}x fantasy points</span>}
+            {s.boost && statBits(s.boost).map(([k, v]) => <span key={k} className="rounded-full bg-orange-500/15 px-1.5 py-0.5 font-black text-orange-500">+{v} {k}</span>)}
+            {s.equipped && <span className="ml-auto text-[11px] font-semibold text-fpts">Equipped · {s.equipped.startsWith("sim:") ? "sim game" : day(s.equipped)}</span>}
+          </div>
+        ))}
+        {d.mySlabs.some((s) => s.boost) && <p className="text-[11px] text-zinc-500">Stat boosts are added to his points, rebounds and assists when the game they&apos;re equipped for ends, before any multiplier.</p>}
       </div>
     </section>
   );

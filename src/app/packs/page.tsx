@@ -1,140 +1,66 @@
-import { requireUser } from "@/lib/auth";
-import { unopenedPacks } from "@/lib/packs-server";
-import { PACKS, RARITIES, RARITY_BLURB, RARITY_HEX, RARITY_ORDER, fmtOdds } from "@/lib/packs";
-import { VendingMachine } from "./VendingMachine";
-import { ShopHeroArt } from "./ShopHeroArt";
-import { buyPack, ripPack } from "../actions";
-import { packFeatures } from "@/lib/slabs";
 import Link from "next/link";
-import { MULT_RANGE, slabPool } from "@/lib/slab-cards";
-import { SlabCover } from "@/components/Slab";
+import { redirect } from "next/navigation";
+import { requireUser } from "@/lib/auth";
+import { all } from "@/lib/db";
+import { unopenedPacks } from "@/lib/packs-server";
+import { leaguePool } from "@/lib/slab-cards";
+import { ensureBranding, leagueBrand } from "@/lib/branding";
+import type { League } from "@/lib/db";
+import { PageHeader } from "@/components/PageHeader";
+import { TeamBadge } from "@/components/TeamBadge";
 import { Coins } from "@/components/Coins";
-import { OddsBar } from "@/components/OddsBar";
-import { PackThumb } from "@/components/PackThumb";
-import { NAV_ICONS, NavIcon } from "@/components/NavIcons";
 
-export const metadata = { title: "Pack Shop" };
+export const metadata = { title: "League Packs" };
 
-export default async function PacksPage() {
+/**
+ * Packs live inside leagues now (League Packs). This page sends you to your league's pack shop, or lets you pick one
+ * when you're in more than one.
+ */
+export default async function PacksHub() {
   const u = await requireUser();
-  const inventory = unopenedPacks(u.id);
-  const poolSize = slabPool().length;
+  ensureBranding();
+  const leagues = all<League>(
+    "SELECT l.* FROM leagues l JOIN teams t ON t.league_id = l.id WHERE t.user_id = ? ORDER BY l.champion_team_id IS NOT NULL, l.id DESC", u.id);
+  const active = leagues.filter((l) => !l.champion_team_id);
+  if (active.length === 1) redirect(`/league/${active[0].id}/packs`);
+  const packs = unopenedPacks(u.id);
+  const anywhere = packs.filter((p) => p.league_id == null).length;
 
   return (
-    <div className="space-y-8">
-      {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl" style={{ background: "linear-gradient(115deg, #0253a4 0%, #0253a4 50%, #cc2b31 140%)" }}>
-        <ShopHeroArt />
-        <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 14px)" }} />
-        <div className="relative flex flex-wrap items-center gap-6 p-6 sm:p-8">
-          <span className="hidden h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white/15 text-white ring-1 ring-white/25 backdrop-blur sm:grid"><NavIcon d={NAV_ICONS.packs} size={36} /></span>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Mystery packs · NBA Slabs</p>
-            <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Pack Shop</h1>
-            <p className="mt-2 max-w-xl text-sm text-white/80">
-              Every pack holds Slabs: animated cards of active NBA players, from Common to Immortal. Rip it, collect your favourites, and trade five up for a rarer one.
-            </p>
-          </div>
+    <div className="space-y-5">
+      <PageHeader icon="packs" eyebrow="League Packs" title="Pick a league"
+        description="Packs live inside your leagues now. Each league's packs only drop players on that league's rosters, so pick where you want to rip.">
+        <span className="rounded-full bg-panel2 px-3 py-1.5 text-sm font-bold text-emerald-600"><Coins n={u.coins} live /></span>
+      </PageHeader>
+      {anywhere > 0 && (
+        <p className="card border-l-4 border-l-amber-400 p-4 text-sm">You have <b>{anywhere}</b> pack{anywhere > 1 ? "s" : ""} from before League Packs. {anywhere > 1 ? "They open" : "It opens"} in whichever league you rip {anywhere > 1 ? "them" : "it"} in.</p>
+      )}
+      {leagues.length === 0 ? (
+        <div className="card p-8 text-center text-sm text-zinc-500">Join or create a league to get League Packs. <Link href="/leagues" className="text-brand underline">Find a league</Link></div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {leagues.map((l) => {
+            const b = leagueBrand(l);
+            const here = packs.filter((p) => p.league_id === l.id).length;
+            const pool = leaguePool(l.id).length;
+            return (
+              <Link key={l.id} href={`/league/${l.id}/packs`} className="card overflow-hidden transition hover:-translate-y-0.5 hover:brightness-110">
+                <div className="flex items-center gap-3 p-4" style={{ background: `linear-gradient(115deg, ${b.color} 0%, ${b.color} 55%, ${b.alt} 140%)` }}>
+                  <TeamBadge brand={b} size={44} />
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-black text-white">{l.name}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-white/70">{l.champion_team_id ? "Offseason" : "League Pack Shop"}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-px bg-line/60 text-center">
+                  <div className="bg-panel px-3 py-2"><p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Unopened</p><p className="font-mono font-black">{here}</p></div>
+                  <div className="bg-panel px-3 py-2"><p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Pool</p><p className="font-mono font-black">{pool ? `${pool} players` : "After draft"}</p></div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
-        <div className="relative grid grid-cols-3 gap-px bg-black/20">
-          {([
-            ["Your Pack Points", <Coins key="c" n={u.coins} live />],
-            ["Unopened packs", String(inventory.length)],
-            ["Players in the pool", String(poolSize)],
-          ] as [string, React.ReactNode][]).map(([k, v]) => (
-            <div key={k} className="bg-black/25 px-5 py-3 backdrop-blur">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>
-              <p className="font-mono text-xl font-black text-white">{v}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-
-      <VendingMachine features={packFeatures(PACKS)} coins={u.coins} inventory={inventory} buy={buyPack} rip={ripPack} />
-
-      {/* Rarity tiers */}
-      <section id="rarity" className="scroll-mt-36 space-y-3">
-        <div>
-          <h2 className="text-lg font-bold">Rarity tiers</h2>
-          <p className="text-sm text-zinc-500">Every Slab is one active NBA player at one of five tiers. The rarer the tier, the more it moves. <Link href="/packs/pool" className="text-brand underline">Browse every player in the pool</Link>.</p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-          {RARITY_ORDER.map((r, i) => (
-            <Link key={r} href={`/packs/pool?tier=${r}`} className="card relative h-full overflow-hidden transition hover:-translate-y-0.5 hover:brightness-110">
-              <div className="flex items-center justify-between px-4 py-2.5" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>
-                <span className="text-sm font-black uppercase tracking-wider">{RARITIES[r].label}</span>
-                <span className="text-[10px] font-bold opacity-80">Tier {i + 1}</span>
-              </div>
-              <div className="flex flex-col items-center gap-3 p-4 text-sm">
-                <SlabCover size={150} rarity={r} />
-                <p className="text-center text-zinc-500">{RARITY_BLURB[r]}</p>
-                <p className="flex w-full justify-between text-xs"><span className="text-zinc-500">Multiplier stamp</span><b className="text-fpts">{MULT_RANGE[r][0].toFixed(2)}x–{MULT_RANGE[r][1].toFixed(2)}x</b></p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Odds */}
-      <section id="odds" className="scroll-mt-36 space-y-3">
-        <div>
-          <h2 className="text-lg font-bold">Odds per slab</h2>
-          <p className="text-sm text-zinc-500">The chance each slab you pull lands in each tier. Every pack is built to return roughly 90% of its price in slab value on average, so the fun is in the swings.</p>
-        </div>
-        <div className="card overflow-x-auto">
-          <table className="w-full min-w-[680px] text-sm">
-            <thead>
-              <tr className="text-xs text-zinc-500">
-                <th className="px-4 py-3 text-left">Pack</th>
-                {RARITY_ORDER.map((r) => (
-                  <th key={r} className="px-2 py-3"><span className="inline-block rounded-full px-1.5 py-px text-[8.5px] font-black uppercase leading-tight" style={{ background: RARITY_HEX[r], color: r === "grail" ? "#000" : "#fff" }}>{RARITIES[r].label}</span></th>
-                ))}
-                <th className="px-4 py-3 text-right">Mix</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PACKS.map((p) => (
-                <tr key={p.id} className="border-t border-line/60">
-                  <td className="px-4 py-2">
-                    <span className="flex items-center gap-3">
-                      <PackThumb id={p.id} height={44} showName={false} />
-                      <span>
-                        <span className="block font-bold">{p.name}</span>
-                        <span className="flex items-center gap-2 text-xs text-zinc-500"><Coins n={p.price} /> · {p.cards} slab{p.cards > 1 ? "s" : ""}</span>
-                      </span>
-                    </span>
-                  </td>
-                  {RARITY_ORDER.map((r) => (
-                    <td key={r} className="px-2 py-2 text-center font-mono">
-                      {p.odds[r] ? <span className="font-bold" style={{ color: p.odds[r] >= 20 ? RARITY_HEX[r] : undefined }}>{fmtOdds(p.odds[r])}</span> : <span className="text-zinc-400">-</span>}
-                    </td>
-                  ))}
-                  <td className="w-40 px-4 py-2"><OddsBar odds={p.odds} height={10} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="scoring" className="scroll-mt-36 card space-y-4 p-5 text-sm">
-        <h2 className="text-lg font-bold">How Slabs work</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {([
-            ["The pool", `Every active NBA player (${poolSize} of them), with his photo, team logo and team colours. Better players come up a little more often.`],
-            ["Tiers", "Common, Rare, Epic, Mythic and Immortal. Each step up adds motion: a turning sunburst and shimmer, twinkling stars, a fuller star field, and an icy-blue frame and frost sheen for Immortal."],
-            ["Value", "Tier price × the player's price index: his ESPN fantasy points per game (last season, then this season as he plays) plus popularity. Prices move with his stats; injured players hold steady."],
-            ["Equip and collect", "Every slab has a multiplier stamp from 1.10x to 2.00x (a 2.00x Immortal is the rarest, rarest of all on a star). If the player is on your fantasy team, equip his slab on one of his games for that many times his fantasy points; it's used up when the game ends. Slabs can't be sold back, but five of a rarity trade up for a rarer one."],
-          ] as const).map(([k, v]) => (
-            <div key={k} className="rounded-xl bg-ink/40 p-3">
-              <p className="mb-1 text-xs font-black uppercase tracking-wider text-brand">{k}</p>
-              <p className="text-zinc-600">{v}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      )}
     </div>
   );
 }

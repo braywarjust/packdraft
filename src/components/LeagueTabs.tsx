@@ -10,6 +10,7 @@ export function LeagueTabs({ id, isCommish, hasTeam, drafting }: { id: number; i
     { href: base, label: "League" },
     ...(hasTeam ? [{ href: `${base}/team`, label: "My Team" }] : []),
     { href: `${base}/matchups`, label: "Matchups" },
+    { href: `${base}/packs`, label: "Packs" },
     { href: `${base}/players`, label: "Players" },
     { href: `${base}/trades`, label: "Trades" },
     { href: `${base}/draft`, label: drafting ? "Draft Room (live)" : "Draft" },

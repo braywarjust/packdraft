@@ -41,7 +41,7 @@ export function Sidebar({
     { href: "/", label: "Home", icon: I.home, exact: true },
     { href: "/leagues", label: "Leagues", icon: I.leagues },
     { href: "/teams", label: "Team Studio", icon: I.studio },
-    { href: "/packs", label: "Packs", icon: I.packs, badge: packs },
+    { href: "/packs", label: "League Packs", icon: I.packs, badge: packs },
     { href: "/collection", label: "Collection", icon: I.collection },
     { href: "/bets", label: "Sportsbook", icon: I.bets },
     { href: "/casino", label: "Casino", icon: I.casino },

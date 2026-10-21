@@ -83,7 +83,8 @@ export default async function Home() {
         return { w, s: { id: tid, brand: teamBrand(team), record: `${team.wins}-${team.losses}${team.ties ? `-${team.ties}` : ""}`, score: m.final && stored != null ? stored : w.score, proj: w.score + w.remain } };
       };
       const h = side(m.home_team_id, m.home_score), a = side(m.away_team_id, m.away_score);
-      const live = l.mode === "sim" ? !!l.week_started_at : h.w.score + a.w.score > 0;
+      // Real matchups read LIVE only while one of their players' games is under way, not all week.
+      const live = l.mode === "sim" ? !!l.week_started_at : [...h.w.players, ...a.w.players].some((p) => p.now?.state === "in");
       card = { href: `/league/${l.id}/matchup/${m.id}`, home: h.s, away: a.s, status: (m.final ? "final" : live ? "live" : "pre") as "final" | "live" | "pre", wp: winProb(h.w, a.w) };
     }
     return { ...base, card, earned: earnings(l.id, user.id, l.current_week) };

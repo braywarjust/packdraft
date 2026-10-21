@@ -10,7 +10,13 @@ export type SlabData = {
   jersey?: string | null; color?: string | null; alt?: string | null; photo?: string | null;
   /** Fantasy points multiplier this slab gives when equipped (shown as the blue stamp). */
   mult?: number | null;
+  /** Stat boost this slab adds to his box score when equipped (shown as the orange stamp, under the multiplier). */
+  boost?: { pts: number; reb: number; ast: number } | null;
 };
+
+/** The boosted stats, biggest first in the order PTS, REB, AST: [["PTS", 3], ["AST", 1]]. */
+const boostParts = (b: { pts: number; reb: number; ast: number }) =>
+  ([["PTS", b.pts], ["REB", b.reb], ["AST", b.ast]] as const).filter(([, v]) => v > 0);
 
 /**
  * Big sunburst for the turning rays: drawn around the centre of a box twice the card's size, so the box can spin in
@@ -108,13 +114,23 @@ export function Slab({ s, size, className = "" }: { s: SlabData; size: number; c
           {/* Shimmer from Rare up; holo for Immortal */}
           {r >= 1 && <div className="slab-shimmer pointer-events-none absolute inset-0" />}
           {r === 4 && <div className="slab-holo pointer-events-none absolute inset-0" />}
-          {/* Multiplier stamp: the Fantasy Points logo and the multiplier, in Fantasy Points blue */}
+          {/* Multiplier stamp: the Fantasy Points logo and the multiplier, in Fantasy Points blue (moves up when a stat boost sits under it) */}
           {s.mult != null && (
-            <span className="absolute bottom-[27%] left-1/2 z-10 flex -translate-x-1/2 items-center gap-[1cqw] rounded-[2.5cqw] px-[2.4cqw] py-[1.4cqw] text-[6.5cqw] font-black leading-none text-fpts"
+            <span className={`absolute ${s.boost ? "bottom-[37.5%]" : "bottom-[27%]"} left-1/2 z-10 flex -translate-x-1/2 items-center gap-[1cqw] rounded-[2.5cqw] px-[2.4cqw] py-[1.4cqw] text-[6.5cqw] font-black leading-none text-fpts`}
               style={{ background: "rgba(8, 12, 22, .8)", boxShadow: "inset 0 0 0 .5cqw rgba(56, 189, 248, .55), 0 1cqw 2cqw rgba(0,0,0,.35)" }}
               title={`${s.mult.toFixed(2)}x fantasy points when equipped`}>
               <span aria-hidden className="inline-block shrink-0 bg-fpts" style={{ width: "6cqw", height: "6cqw", mask: "url(/fantasy-points.svg) center / contain no-repeat", WebkitMask: "url(/fantasy-points.svg) center / contain no-repeat" }} />
               {s.mult.toFixed(2)}x
+            </span>
+          )}
+          {/* Stat boost stamp: orange, just under the multiplier (or in its place when there isn't one) */}
+          {s.boost && boostParts(s.boost).length > 0 && (
+            <span className="absolute bottom-[27%] left-1/2 z-10 flex -translate-x-1/2 items-center gap-[1.6cqw] whitespace-nowrap rounded-[2.5cqw] px-[2.2cqw] py-[1.5cqw] text-[5.2cqw] font-black leading-none text-[#fb923c]"
+              style={{ background: "rgba(8, 12, 22, .8)", boxShadow: "inset 0 0 0 .5cqw rgba(249, 115, 22, .7), 0 1cqw 2cqw rgba(0,0,0,.35)" }}
+              title={`Stat boost when equipped: ${boostParts(s.boost).map(([k, v]) => `+${v} ${k}`).join(", ")}, added when his game ends`}>
+              {boostParts(s.boost).map(([k, v]) => (
+                <span key={k} className="flex items-baseline gap-[0.5cqw]">+{v}<span className="text-[3.8cqw] text-[#fdba74]">{k}</span></span>
+              ))}
             </span>
           )}
           {/* Tier pill */}

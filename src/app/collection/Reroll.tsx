@@ -27,7 +27,7 @@ export function RerollPanel({ card, coins, onStart }: { card: CardData; coins: n
   return (
     <div className="rounded-xl border border-zinc-200 p-4">
       <p className="text-xs text-zinc-500">Re-roll</p>
-      <p className="mt-0.5 text-sm text-zinc-600">Turn this slab into a different player at {RARITIES[card.rarity].label}, with a fresh multiplier stamp.</p>
+      <p className="mt-0.5 text-sm text-zinc-600">Turn this slab into a different player at {RARITIES[card.rarity].label}, with a fresh roll (stat boost, multiplier or both).</p>
       <div className="mt-3 flex items-center gap-3">
         <button className="fx-btn fx-green" disabled={short} onClick={onStart}><RerollIcon className="fx-icon fx-spin" />Re-roll · <Coins n={fee} /></button>
         {short && <span className="text-xs text-red-500">Not enough Pack Points</span>}

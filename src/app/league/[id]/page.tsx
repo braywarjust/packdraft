@@ -103,7 +103,8 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
           };
           const h = m && sideOf(m.home_team_id, m.home_score, m.final);
           const a = m && sideOf(m.away_team_id, m.away_score, m.final);
-          const live = !!(h && a) && (l.mode === "sim" ? !!l.week_started_at : h.w.score + a.w.score > 0);
+          // Real matchups read LIVE only while one of their players' games is under way, not all week.
+          const live = !!(h && a) && (l.mode === "sim" ? !!l.week_started_at : [...h.w.players, ...a.w.players].some((p) => p.now?.state === "in"));
           return (
             <section className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -158,7 +159,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                   <p className="mt-1 text-sm text-zinc-500">Every manager earns a pack each week. Top scorer and the champ get extra.</p>
                   <div className="mt-4 grid grid-cols-4 gap-2">
                     {rewards.map(([label, id, bonus]) => (
-                      <Link key={label} href="/packs" className="group flex flex-col items-center rounded-xl bg-black/20 px-1 pb-2 pt-3 text-center ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-amber-400/40">
+                      <Link key={label} href={`/league/${l.id}/packs`} className="group flex flex-col items-center rounded-xl bg-black/20 px-1 pb-2 pt-3 text-center ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-amber-400/40">
                         <PackThumb id={id} height={84} showName={false} />
                         <span className="mt-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500">{label}</span>
                         <span className="text-xs font-bold leading-tight text-white">{PACK_BY_ID[id]?.name}</span>
@@ -185,7 +186,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                       <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">Season</p><p className="font-black text-white"><Coins n={mine.season} live /></p></div>
                     </div>
                   )}
-                  <Link href="/packs" className="btn-primary w-full">Spend them in the Pack Shop</Link>
+                  <Link href={`/league/${l.id}/packs`} className="btn-primary w-full">Spend them on League Packs</Link>
                 </div>
               </div>
             </section>

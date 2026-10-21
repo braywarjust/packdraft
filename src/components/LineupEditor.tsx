@@ -14,7 +14,22 @@ import { useScrollLock } from "@/components/useScrollLock";
 
 import { STARTERS, eligible, posLabel, slotLabel as lbl } from "@/lib/scoring";
 
-type BoostSlab = { cardId: number; playerId: number; player: string; label: string; rarity: string; value: number; mult: number; slab: SlabData };
+type StatBoost = { pts: number; reb: number; ast: number };
+type BoostSlab = { cardId: number; playerId: number; player: string; label: string; rarity: string; value: number; mult: number | null; boost: StatBoost | null; slab: SlabData };
+
+/** "+3 PTS +1 AST" (zeros left out). */
+const boostText = (b: StatBoost) => ([["PTS", b.pts], ["REB", b.reb], ["AST", b.ast]] as const).filter(([, v]) => v > 0).map(([k, v]) => `+${v} ${k}`).join(" ");
+/** What a slab gives, short: a blue "1.43x", an orange "+2 PTS +1 REB", or both. */
+function Buff({ mult, boost }: { mult: number | null | undefined; boost: StatBoost | null | undefined }) {
+  const stats = boost ? boostText(boost) : "";
+  return (
+    <>
+      {mult != null && mult !== 1 && <b className="text-fpts">{mult.toFixed(2)}x</b>}
+      {mult != null && mult !== 1 && stats && " · "}
+      {stats && <b className="text-orange-500">{stats}</b>}
+    </>
+  );
+}
 export type BoostProps = {
   /** The manager's equippable slabs (not already equipped somewhere). */
   slabs: BoostSlab[];
@@ -24,15 +39,27 @@ export type BoostProps = {
   clear: (playerId: number) => Promise<unknown>;
 };
 
-/** Fantasy Points logo + "1.43x" chip for a player with a slab equipped. */
+/** Chips for a player with a slab equipped: Fantasy Points logo + "1.43x", and/or an orange "+2 PTS +1 AST". */
 export function BoostChip({ boost }: { boost: LivePlayer["boost"] }) {
   if (!boost) return null;
   const live = boost.state === "in";
+  const stats = boost.pts || boost.reb || boost.ast ? boostText(boost) : "";
+  const when = boost.state === "pre" ? " on his next game" : "";
   return (
-    <span title={`Slab equipped: ${boost.mult.toFixed(2)}x fantasy points${boost.state === "pre" ? " on his next game" : ""}`}
-      className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-black ${live ? "animate-pulse bg-fpts text-black" : "bg-fpts/15 text-fpts"}`}>
-      <FptIcon tone={live ? "black" : "blue"} />{boost.mult.toFixed(2)}x
-    </span>
+    <>
+      {boost.mult !== 1 && (
+        <span title={`Slab equipped: ${boost.mult.toFixed(2)}x fantasy points${when}`}
+          className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-black ${live ? "animate-pulse bg-fpts text-black" : "bg-fpts/15 text-fpts"}`}>
+          <FptIcon tone={live ? "black" : "blue"} />{boost.mult.toFixed(2)}x
+        </span>
+      )}
+      {stats && (
+        <span title={`Slab equipped: ${stats} added to his stats when the game ends${when}`}
+          className={`inline-flex items-center whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-black ${live ? "animate-pulse bg-orange-500 text-black" : "bg-orange-500/15 text-orange-500"}`}>
+          {stats}
+        </span>
+      )}
+    </>
   );
 }
 
@@ -158,13 +185,13 @@ export function EquipPanel({ boost, players, onEquip }: { boost: BoostProps; pla
     const p = byId.get(b.playerId);
     if (!p) return [];
     const mine = boost.slabs.filter((s) => s.playerId === b.playerId);
-    return [{ b, p, mine, best: mine.reduce((m, s) => Math.max(m, s.mult), 0) }];
+    return [{ b, p, mine, best: mine[0] }];
   });
   return (
     <section className="card relative overflow-hidden p-4" style={{ boxShadow: "inset 0 0 0 1px rgba(56,189,248,.35)" }}>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="flex items-center gap-2 font-black text-white"><FptIcon tone="blue" /> Equip slabs</h3>
-        <p className="text-xs text-zinc-500">Slabs of your players multiply their fantasy points for one game. Equip before tip-off; used up when the game ends.</p>
+        <p className="text-xs text-zinc-500">Slabs of your players boost one game: stat boosts are added to his box score when it ends, then multipliers multiply it. Equip before tip-off; used up when the game ends.</p>
       </div>
       {rows.length === 0 ? (
         <p className="text-sm text-zinc-500">You don&apos;t have slabs of anyone on this roster yet (or they have no games left this week). Rip packs to find slabs of your players.</p>
@@ -177,9 +204,9 @@ export function EquipPanel({ boost, players, onEquip }: { boost: BoostProps; pla
                 <p className="truncate text-sm font-bold text-white">{p.name}</p>
                 <p className="truncate text-[11px] text-zinc-500">{b.day}</p>
                 {b.equipped ? (
-                  <p className="text-[11px] font-bold text-fpts">Equipped · {b.equipped.mult.toFixed(2)}x</p>
+                  <p className="truncate text-[11px] font-bold text-fpts">Equipped · <Buff mult={b.equipped.mult} boost={b.equipped.boost} /></p>
                 ) : (
-                  <p className="text-[11px] text-zinc-400">{mine.length} slab{mine.length > 1 ? "s" : ""} · best <b className="text-fpts">{best.toFixed(2)}x</b></p>
+                  <p className="truncate text-[11px] text-zinc-400">{mine.length} slab{mine.length > 1 ? "s" : ""}{best ? <> · best <Buff mult={best.mult} boost={best.boost} /></> : null}</p>
                 )}
                 <button className={`mt-1 px-2 py-0.5 text-xs ${b.equipped ? "btn-ghost" : "btn-primary"}`} onClick={() => onEquip(p)}>{b.equipped ? "Swap" : "Equip"}</button>
               </div>
@@ -205,7 +232,7 @@ export function BoostModal({ boost, player, info, pending, onClose, run }: {
         <div className="flex items-center justify-between border-b border-line/60 p-4">
           <div>
             <p className="flex items-center gap-1.5 font-bold"><FptIcon tone="blue" /> Equip a slab on {player.name}</p>
-            <p className="text-xs text-zinc-500">{info?.day} · projected <Fpts n={player.proj} /> fantasy points. His slab multiplies his fantasy points for that game, then it&apos;s used up.</p>
+            <p className="text-xs text-zinc-500">{info?.day} · projected <Fpts n={player.proj} /> fantasy points. His slab&apos;s stat boost is added when that game ends, then its multiplier applies. Then it&apos;s used up.</p>
           </div>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900" aria-label="Close"><XIcon /></button>
         </div>

@@ -445,26 +445,29 @@ export async function sendMessage(leagueId: number, body: string, imageUrl: stri
 
 // ---------- Packs ----------
 
-export async function buyPack(packType: string) {
+/** Buy a League Pack in one of your leagues: it opens there, with that league's pool. */
+export async function buyPack(leagueId: number, packType: string) {
   return wrap(async () => {
     const u = await requireUser();
     const pack = PACK_BY_ID[packType];
     if (!pack) throw new Error("Unknown pack");
+    if (!one("SELECT 1 FROM teams WHERE league_id = ? AND user_id = ?", leagueId, u.id)) throw new Error("Join this league to buy its packs");
     const id = tx(() => {
       topUpTester(u.id); // test accounts pay like everyone else, from a large balance that refills
       const fresh = one<User>("SELECT * FROM users WHERE id = ?", u.id)!;
       if (fresh.coins < pack.price) throw new Error("Not enough Pack Points");
       run("UPDATE users SET coins = coins - ? WHERE id = ?", pack.price, u.id);
-      return Number(run("INSERT INTO user_packs (user_id, pack_type, source, created_at) VALUES (?, ?, ?, ?)", u.id, packType, fresh.is_tester ? "Test pack" : "Vending machine", Date.now()).lastInsertRowid);
+      return Number(run("INSERT INTO user_packs (user_id, pack_type, source, league_id, created_at) VALUES (?, ?, ?, ?, ?)",
+        u.id, packType, fresh.is_tester ? "Test pack" : "League Pack Shop", leagueId, Date.now()).lastInsertRowid);
     });
     return { ok: true, packId: id };
   });
 }
 
-export async function ripPack(packId: number) {
+export async function ripPack(leagueId: number, packId: number) {
   return wrap(async () => {
     const u = await requireUser();
-    const cards = await openPack(u.id, packId);
+    const cards = await openPack(u.id, packId, leagueId);
     return { ok: true, cards };
   });
 }

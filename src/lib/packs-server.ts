@@ -2,9 +2,8 @@ import crypto from "node:crypto";
 import { all, one, run, tx, User } from "./db";
 import { PACK_BY_ID, RARITIES, REROLL_FEE, Rarity, TRADE_UP, TRADE_UP_COUNT, fmtCoins } from "./packs";
 import { postSystem } from "./league";
-import { ensureSlabCards, multValue, nextSerial, rollMult, rollSlab, slabPool } from "./slab-cards";
+import { ensureSlabCards, insertSlab, leaguePool, pickPlayer, rollLoot, rollSlab, slabPool, slabValue } from "./slab-cards";
 import { ensureBoosts } from "./boost";
-import { popularity, slabPrice } from "./slab-market";
 import { slabPlayerPhoto } from "./nba/photos";
 
 /**
@@ -14,8 +13,10 @@ import { slabPlayerPhoto } from "./nba/photos";
 export type Card = {
   id: number; player_id: number; slab_id: number | null; kind: string | null; name: string; pos: string; team: string; rarity: Rarity; grade: number;
   serial: number; print_run: number; value: number; sold: number; created_at: number; team_name: string | null; photo: string | null;
-  /** Fantasy points multiplier stamped on a Slab (1.10–2.00). */
+  /** Fantasy points multiplier stamped on a Slab (1.10–2.00), if it rolled one. */
   mult: number | null;
+  /** Stat boost a Slab rolled (null when it has none): added to his box score when his game ends. */
+  boost_pts: number | null; boost_reb: number | null; boost_ast: number | null;
   headshot: string | null; jersey: string | null; color: string | null; alt: string | null; logo: string | null;
   // Graded slab details (null otherwise)
   s_year: number | null; s_set: string | null; s_no: string | null; s_variant: string | null; s_company: string | null; s_grade: string | null;
@@ -35,37 +36,38 @@ export function cardsWhere(where: string, ...params: (string | number)[]) {
 
 const rand = () => crypto.randomInt(0, 1_000_000) / 1_000_000;
 
-export async function openPack(userId: number, packId: number): Promise<Card[]> {
+/**
+ * Rip a League Pack. Its slabs come from that league's pool (the players rostered in it right now). Packs bought or won
+ * in a league open there; packs from before League Packs (no league) open in whichever league you rip them in.
+ */
+export async function openPack(userId: number, packId: number, leagueId: number): Promise<Card[]> {
   ensureSlabCards();
   const user = one<User>("SELECT * FROM users WHERE id = ?", userId)!;
-  const pool = slabPool();
-  if (!pool.length) throw new Error("No NBA rosters loaded yet");
+  if (!one("SELECT 1 FROM teams WHERE league_id = ? AND user_id = ?", leagueId, userId)) throw new Error("Join this league to open its packs");
+  const pool = leaguePool(leagueId);
+  if (!pool.length) throw new Error("This league's pack pool is empty until the draft fills its rosters");
   const ids = tx(() => {
-    const up = one<{ id: number; pack_type: string; opened_at: number | null; user_id: number }>(
+    const up = one<{ id: number; pack_type: string; opened_at: number | null; user_id: number; league_id: number | null }>(
       "SELECT * FROM user_packs WHERE id = ? AND user_id = ?", packId, userId);
     if (!up) throw new Error("Pack not found");
     if (up.opened_at) throw new Error("Already opened");
+    if (up.league_id != null && up.league_id !== leagueId) throw new Error("That pack belongs to another league. Open it there");
     const pack = PACK_BY_ID[up.pack_type];
     const out: number[] = [];
     for (let i = 0; i < pack.cards; i++) {
       const s = rollSlab(pack, pool, rand);
-      const r = run(
-        `INSERT INTO cards (user_id, pack_id, player_id, slab_id, rarity, grade, serial, print_run, value, kind, mult, created_at)
-         VALUES (?, ?, ?, NULL, ?, 0, ?, 0, ?, 'slab', ?, ?)`,
-        userId, packId, s.playerId, s.rarity, nextSerial(s.playerId, s.rarity), s.value, s.mult, Date.now());
-      out.push(Number(r.lastInsertRowid));
+      out.push(insertSlab(userId, packId, s.playerId, s.rarity, s.value, s));
     }
-    run("UPDATE user_packs SET opened_at = ? WHERE id = ?", Date.now(), packId);
+    run("UPDATE user_packs SET opened_at = ?, league_id = ? WHERE id = ?", Date.now(), leagueId, packId);
     return out;
   });
 
   const cards = cardsWhere(`c.id IN (${ids.map(() => "?").join(",")}) ORDER BY c.id`, ...ids);
-  const big = cards.filter((c) => c.rarity === "legendary" || c.rarity === "grail");
+  const big = cards.filter((c) => c.rarity === "legendary" || c.rarity === "grail" || (c.mult != null && c.boost_pts != null));
   if (big.length && !user.is_tester) {
-    const leagues = all<{ league_id: number }>("SELECT DISTINCT league_id FROM teams WHERE user_id = ?", userId);
     for (const c of big) {
-      const msg = `${user.name} pulled ${c.rarity === "grail" ? "an" : "a"} ${RARITIES[c.rarity].label.toUpperCase()} ${c.name} slab worth ${fmtCoins(c.value)}!`;
-      for (const l of leagues) postSystem(l.league_id, msg);
+      const both = c.mult != null && c.boost_pts != null ? " with a multiplier AND a stat boost" : "";
+      postSystem(leagueId, `${user.name} pulled ${c.rarity === "grail" ? "an" : "a"} ${RARITIES[c.rarity].label.toUpperCase()} ${c.name} slab${both} worth ${fmtCoins(c.value)}!`);
     }
   }
   return cards;
@@ -96,21 +98,11 @@ export function tradeUp(userId: number, cardIds: number[]) {
     if (coins < step.fee) throw new Error(`Trading up to ${RARITIES[step.to].label} costs ${fmtCoins(step.fee)}`);
     const pool = slabPool();
     const same = cards.every((c) => c.player_id === cards[0].player_id);
-    let pick = same ? pool.find((p) => p.id === cards[0].player_id) : undefined;
-    if (!pick) {
-      const w = pool.map((p) => Math.max(3, p.proj) ** 0.7 * Math.sqrt(popularity(p.name)));
-      let x = rand() * w.reduce((s, v) => s + v, 0);
-      pick = pool[pool.length - 1];
-      for (let i = 0; i < pool.length; i++) if ((x -= w[i]) <= 0) { pick = pool[i]; break; }
-    }
-    const mult = rollMult(step.to, pick.proj, rand);
+    const pick = (same ? pool.find((p) => p.id === cards[0].player_id) : undefined) ?? pickPlayer(pool, rand);
+    const loot = rollLoot(step.to, pick.proj, rand);
     run(`UPDATE cards SET sold = 2 WHERE id IN (${ids.map(() => "?").join(",")})`, ...ids);
     run("UPDATE users SET coins = coins - ? WHERE id = ?", step.fee, userId);
-    const r = run(
-      `INSERT INTO cards (user_id, pack_id, player_id, slab_id, rarity, grade, serial, print_run, value, kind, mult, created_at)
-       VALUES (?, 0, ?, NULL, ?, 0, ?, 0, ?, 'slab', ?, ?)`,
-      userId, pick.id, step.to, nextSerial(pick.id, step.to), Math.max(1, Math.round(slabPrice(step.to, pick.idx) * multValue(step.to, mult))), mult, Date.now());
-    return Number(r.lastInsertRowid);
+    return insertSlab(userId, 0, pick.id, step.to, slabValue(step.to, pick.idx, loot), loot);
   });
   const card = cardsWhere("c.id = ?", newId)[0];
   if ((card.rarity === "legendary" || card.rarity === "grail") && !user.is_tester) {
@@ -122,7 +114,7 @@ export function tradeUp(userId: number, cardIds: number[]) {
 
 /**
  * Re-roll a slab: pay the tier's fee and the slab becomes a different player at the same rarity, picked the same way
- * packs pick (leaning a little toward better, popular players), with a fresh multiplier stamp. The old slab is gone
+ * packs pick (leaning a little toward better, popular players), with a fresh roll (multiplier and/or stat boost). The old slab is gone
  * (cards.sold = 4).
  */
 export function rerollSlab(userId: number, cardId: number) {
@@ -137,20 +129,12 @@ export function rerollSlab(userId: number, cardId: number) {
     const fee = REROLL_FEE[c.rarity];
     const coins = one<{ coins: number }>("SELECT coins FROM users WHERE id = ?", userId)!.coins;
     if (coins < fee) throw new Error(`Re-rolling a ${RARITIES[c.rarity].label} slab costs ${fmtCoins(fee)}`);
-    const pool = slabPool().filter((p) => p.id !== c.player_id);
-    const w = pool.map((p) => Math.max(3, p.proj) ** 0.7 * Math.sqrt(popularity(p.name)));
-    let x = rand() * w.reduce((s, v) => s + v, 0);
-    let pick = pool[pool.length - 1];
-    for (let i = 0; i < pool.length; i++) if ((x -= w[i]) <= 0) { pick = pool[i]; break; }
-    const mult = rollMult(c.rarity, pick.proj, rand);
+    const pick = pickPlayer(slabPool().filter((p) => p.id !== c.player_id), rand);
+    const loot = rollLoot(c.rarity, pick.proj, rand);
     run("UPDATE cards SET sold = 4 WHERE id = ?", cardId);
     run("DELETE FROM profile_featured WHERE card_id = ?", cardId);
     run("UPDATE users SET coins = coins - ? WHERE id = ?", fee, userId);
-    const r = run(
-      `INSERT INTO cards (user_id, pack_id, player_id, slab_id, rarity, grade, serial, print_run, value, kind, mult, created_at)
-       VALUES (?, 0, ?, NULL, ?, 0, ?, 0, ?, 'slab', ?, ?)`,
-      userId, pick.id, c.rarity, nextSerial(pick.id, c.rarity), Math.max(1, Math.round(slabPrice(c.rarity, pick.idx) * multValue(c.rarity, mult))), mult, Date.now());
-    return Number(r.lastInsertRowid);
+    return insertSlab(userId, 0, pick.id, c.rarity, slabValue(c.rarity, pick.idx, loot), loot);
   });
   const card = cardsWhere("c.id = ?", newId)[0];
   if ((card.rarity === "legendary" || card.rarity === "grail") && !user.is_tester) {
@@ -164,9 +148,12 @@ export function userCards(userId: number) {
   return cardsWhere("c.user_id = ? AND c.sold = 0 ORDER BY c.value DESC", userId);
 }
 
-export function unopenedPacks(userId: number) {
-  return all<{ id: number; pack_type: string; source: string; created_at: number }>(
-    "SELECT * FROM user_packs WHERE user_id = ? AND opened_at IS NULL ORDER BY created_at DESC", userId);
+export type UnopenedPack = { id: number; pack_type: string; source: string; created_at: number; league_id: number | null };
+/** Unopened packs: all of them, or the ones that can be opened in one league (its own plus packs with no league). */
+export function unopenedPacks(userId: number, leagueId?: number) {
+  if (leagueId != null)
+    return all<UnopenedPack>("SELECT * FROM user_packs WHERE user_id = ? AND opened_at IS NULL AND (league_id = ? OR league_id IS NULL) ORDER BY created_at DESC", userId, leagueId);
+  return all<UnopenedPack>("SELECT * FROM user_packs WHERE user_id = ? AND opened_at IS NULL ORDER BY created_at DESC", userId);
 }
 
 /** Sold cards go back into the vault so someone else can pull that slab. */

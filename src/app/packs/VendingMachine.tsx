@@ -13,7 +13,7 @@ import { SlabCover } from "@/components/Slab";
 import { CheckIcon, LockIcon } from "@/components/Icons";
 import { useScrollLock } from "@/components/useScrollLock";
 
-type Inv = { id: number; pack_type: string; source: string; created_at: number };
+type Inv = { id: number; pack_type: string; source: string; created_at: number; league_id?: number | null };
 type Act<T> = Promise<T | { error: string }>;
 /** Heavy Hitters and the top two rarity tiers count as case hits: their face-down card shakes before the flip. */
 const isBigHit = (c: CardData) => c.s_source === "courtyard" || c.s_source === "auction" || c.rarity === "legendary" || c.rarity === "grail";
@@ -223,6 +223,7 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
                   <div className="min-w-0">
                     <p className="text-sm font-bold">{p.name}</p>
                     <p className="truncate text-xs text-zinc-500">{inv.source}</p>
+                    {inv.league_id == null && <p className="truncate text-[10px] font-semibold text-amber-500">Opens in any of your leagues</p>}
                     <span className="mt-2 inline-block rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-white">Open</span>
                   </div>
                 </button>
@@ -233,7 +234,7 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
       )}
 
       <section id="packs" className="scroll-mt-36 space-y-3">
-        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One Slab each, five in the Mega Pack. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
+        <div><h2 className="text-lg font-bold">League Packs</h2><p className="text-sm text-zinc-500">One Slab each, five in the Mega Pack, all from this league&apos;s pool. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
         {/* All seven packs in one row; scrolls sideways when the screen is too narrow. */}
         {/* Generous padding (pulled back with negative margins) so a hovered pack’s lift, tilt and shadow never get clipped by the scroller. */}
         <div className="-mx-6 -mb-6 -mt-8 flex snap-x scroll-px-6 gap-6 overflow-x-auto px-6 pb-10 pt-11 scrollbar-thin">
