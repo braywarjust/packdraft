@@ -191,7 +191,7 @@ body { -webkit-tap-highlight-color: transparent; }
 .logo-host:hover .pdl-ring, .logo-play .pdl-ring { animation: pdlRing 2s ease-out infinite; }
 .logo-host:hover .pdl-shine, .logo-play .pdl-shine { animation: pdlShine 2s ease-in-out infinite; }
 
-/* Casino-style action buttons (Trade up, Re-roll): bright and bold like the casino's Bet button, a shine that sweeps
+/* Casino-style action buttons (Re-roll): bright and bold like the casino's Bet button, a shine that sweeps
    across every few seconds (faster on hover), the icon moves on hover, and it presses in. Transform and opacity only. */
 .fx-btn { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
   border-radius: .55rem; padding: .5rem 1rem; font-size: .875rem; font-weight: 800; letter-spacing: .01em; white-space: nowrap;
@@ -224,17 +224,7 @@ body { -webkit-tap-highlight-color: transparent; }
 .reroll-out { animation: rerollOut 1.1s cubic-bezier(.5, 0, .75, 0) both; }
 .reroll-in { animation: rerollIn 1s cubic-bezier(.2, .8, .3, 1) both; }
 .reroll-ring { animation: rerollRing 1.6s ease-out infinite; }
-/* Trade-up: the five slabs fly in from a ring and fuse in the middle, then the logo plays and the new slab flips in. */
-@keyframes tradeFuse {
-  0% { transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(1); opacity: 1; }
-  45% { transform: translate(calc(var(--x) * 1.08), calc(var(--y) * 1.08)) rotate(calc(var(--r) * -1)) scale(1.04); opacity: 1; }
-  100% { transform: translate(0, 0) rotate(0) scale(.25); opacity: 0; }
-}
-@keyframes tradeFlash { 0%, 55% { transform: scale(.2); opacity: 0; } 70% { transform: scale(1.2); opacity: .9; } 100% { transform: scale(1.6); opacity: 0; } }
-.trade-fuse { animation: tradeFuse 1.15s cubic-bezier(.6, 0, .8, .4) both; }
-.trade-flash { animation: tradeFlash 1.3s ease-out both; }
 @keyframes rerollFade { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
-.trade-logo { animation: rerollFade .5s 1.05s cubic-bezier(.34, 1.4, .64, 1) both, rerollFloat 2s 1.55s ease-in-out infinite; }
 .reroll-float { animation: rerollFade .5s .75s cubic-bezier(.34, 1.4, .64, 1) both, rerollFloat 2s 1.25s ease-in-out infinite; }
 
 /* Pack covers (PackArt): the slab icon (the Collection nav mark) next to "1 slab" hops and tilts on hover. */
@@ -250,7 +240,7 @@ body { -webkit-tap-highlight-color: transparent; }
   .slab-comet,
   .slab-rays, .slab-twinkle, .slab-ball, .slab-shimmer::before, .slab-holo::before, .slab-vivid, .slab-frame-spin, .pack-bob, .pack-fan, .pack-ground,
   .logo-host:hover .pdl-pop, .logo-host:hover .pdl-blue, .logo-host:hover .pdl-red, .logo-host:hover .pdl-letter, .logo-host:hover .pdl-ring, .logo-host:hover .pdl-shine, .logo-host:hover .pack-icon-glyph,
-  .logo-play .pdl-pop, .logo-play .pdl-blue, .logo-play .pdl-red, .logo-play .pdl-letter, .logo-play .pdl-ring, .logo-play .pdl-shine, .reroll-out, .reroll-in, .reroll-ring, .reroll-float, .trade-logo, .trade-fuse, .trade-flash { animation: none; }
+  .logo-play .pdl-pop, .logo-play .pdl-blue, .logo-play .pdl-red, .logo-play .pdl-letter, .logo-play .pdl-ring, .logo-play .pdl-shine, .reroll-out, .reroll-in, .reroll-ring, .reroll-float { animation: none; }
 }
 
 .flip { perspective: 1000px; }

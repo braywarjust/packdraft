@@ -11,7 +11,7 @@ import {
   startNewSeason, canStartNewSeason,
 } from "@/lib/league";
 import { PACK_BY_ID } from "@/lib/packs";
-import { openPack, rerollSlab, tradeUp } from "@/lib/packs-server";
+import { openPack, rerollSlab } from "@/lib/packs-server";
 import { etDate } from "@/lib/nba/espn";
 import { placeBet } from "@/lib/bets";
 import { applyPreset, deletePreset, getPreset, saveLeagueBrand, savePreset, setFavoritePreset } from "@/lib/branding";
@@ -480,16 +480,6 @@ export async function ripPack(leagueId: number, packId: number) {
     const u = await requireUser();
     const cards = await openPack(u.id, packId, leagueId);
     return { ok: true, cards };
-  });
-}
-
-/** Trade five slabs of one rarity (plus the fee) for one slab of the next rarity up. */
-export async function tradeUpSlabs(cardIds: number[]) {
-  return wrap(async () => {
-    const u = await requireUser();
-    const card = tradeUp(u.id, cardIds);
-    revalidatePath("/", "layout");
-    return { ok: true, card };
   });
 }
 
