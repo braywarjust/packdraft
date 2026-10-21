@@ -227,6 +227,17 @@ body { -webkit-tap-highlight-color: transparent; }
 @keyframes rerollFade { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
 .reroll-float { animation: rerollFade .5s .75s cubic-bezier(.34, 1.4, .64, 1) both, rerollFloat 2s 1.25s ease-in-out infinite; }
 
+/* Pack pool banner (PoolBanner): rostered faces drift by, each bobbing a little, a shine sweeps across, the arrow nudges. */
+@keyframes poolMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes poolFace { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-6%) scale(1.04); } }
+@keyframes poolShine { 0%, 60% { transform: translateX(-120%); } 90%, 100% { transform: translateX(120%); } }
+@keyframes poolArrow { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(4px); } }
+.pool-marquee { animation: poolMarquee linear infinite; }
+.pool-face { animation: poolFace 3.2s ease-in-out infinite; }
+.pool-shine { background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.18) 50%, transparent 65%); transform: translateX(-120%); animation: poolShine 5s ease-in-out infinite; }
+.pool-arrow { animation: poolArrow 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .pool-marquee, .pool-face, .pool-shine, .pool-arrow { animation: none; } }
+
 /* Pack covers (PackArt): the slab icon (the Collection nav mark) next to "1 slab" hops and tilts on hover. */
 .pack-icon-glyph { background: currentColor; -webkit-mask: url(/collection-icon.svg) center / contain no-repeat; mask: url(/collection-icon.svg) center / contain no-repeat; transform-origin: 50% 90%; }
 @keyframes packIconHop { 0%, 100% { transform: translateY(0) rotate(0) scale(1); } 22% { transform: translateY(-14%) rotate(-7deg) scale(1.1); } 44% { transform: translateY(0) rotate(4deg) scale(.97, 1.03); } 62% { transform: translateY(-5%) rotate(-2deg) scale(1.03); } 80% { transform: translateY(0) rotate(0) scale(1); } }

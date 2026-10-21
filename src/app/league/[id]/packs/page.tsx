@@ -11,7 +11,8 @@ import { leagueBrand } from "@/lib/branding";
 import { VendingMachine } from "@/app/packs/VendingMachine";
 import { ShopHeroArt } from "@/app/packs/ShopHeroArt";
 import { buyPack, ripPack } from "../../../actions";
-import { Slab, SlabCover } from "@/components/Slab";
+import { SlabCover } from "@/components/Slab";
+import { PoolBanner } from "@/components/PoolBanner";
 import { Coins } from "@/components/Coins";
 import { OddsBar } from "@/components/OddsBar";
 import { PackThumb } from "@/components/PackThumb";
@@ -34,7 +35,7 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
   const info = new Map(all<{ id: number; jersey: string | null; headshot: string | null; color: string | null; alt: string | null; team_name: string }>(
     `SELECT p.id, p.jersey, p.headshot, t.color, t.alt, t.name team_name FROM roster r JOIN players p ON p.id = r.player_id JOIN nba_teams t ON t.abbr = p.team
      WHERE r.league_id = ?`, l.id).map((r) => [r.id, r]));
-  const top = pool.slice(0, 6);
+  const top = pool.slice(0, 14);
 
   return (
     <div className="space-y-8">
@@ -79,23 +80,10 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
           buy={buyPack.bind(null, l.id)} rip={ripPack.bind(null, l.id)} />
       )}
 
-      {/* Pool preview */}
+      {/* Pool banner: opens the whole pool */}
       {pool.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-end justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-bold">In the pack pool</h2>
-              <p className="text-sm text-zinc-500">Every rostered player ({pool.length}). Updates with every roster move.</p>
-            </div>
-            <Link href={`/league/${l.id}/packs/pool`} className="btn-ghost">Browse the whole pool</Link>
-          </div>
-          <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 scrollbar-thin">
-            {top.map((p) => {
-              const x = info.get(p.id);
-              return <Slab key={p.id} size={150} s={{ name: p.name, team: p.team, team_name: x?.team_name, pos: p.pos, rarity: "epic", jersey: x?.jersey, color: x?.color, alt: x?.alt, photo: slabPlayerPhoto(p.name) ?? x?.headshot }} />;
-            })}
-          </div>
-        </section>
+        <PoolBanner href={`/league/${l.id}/packs/pool`} count={pool.length} color={b.color} alt={b.alt}
+          faces={top.map((p) => ({ id: p.id, name: p.name, team: p.team, photo: slabPlayerPhoto(p.name) ?? info.get(p.id)?.headshot ?? null }))} />
       )}
 
       {/* What each tier rolls */}
