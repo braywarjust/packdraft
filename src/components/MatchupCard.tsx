@@ -77,3 +77,48 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
     </Wrap>
   );
 }
+
+/**
+ * Slim matchup strip for the home page: both teams' badges, names and scores on one split-colour bar, with a thin
+ * win probability line along the bottom.
+ */
+export function MatchupStrip({ href, home, away, status, winProb, playing = true }: {
+  href?: string; home: MatchSide; away: MatchSide; status: "pre" | "live" | "final"; winProb: number; playing?: boolean;
+}) {
+  const hp = Math.round(winProb * 100);
+  const val = (s: MatchSide) => (status === "pre" ? s.proj : s.score);
+  const winner = status === "final" ? (home.score > away.score ? "home" : away.score > home.score ? "away" : null) : null;
+  // Name on top, score under it, so each team name gets its whole half even on a phone.
+  const side = (s: MatchSide, which: "home" | "away") => (
+    <div className={`flex min-w-0 flex-1 items-center gap-2 ${which === "away" ? "flex-row-reverse text-right" : ""} ${winner && winner !== which ? "opacity-55" : ""}`}>
+      <TeamBadge brand={s.brand} size={36} />
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-[12px] font-black leading-[1.15] text-white sm:text-[13px]">{s.brand.name}</p>
+        <p className={`mt-0.5 flex items-baseline gap-1.5 ${which === "away" ? "flex-row-reverse" : ""}`}>
+          <span className="font-mono text-lg font-black leading-none text-white">{Math.round(val(s) * 10) / 10}</span>
+          <span className="text-[9px] font-bold uppercase tracking-wider text-white/60">{status === "pre" ? "proj" : s.record}</span>
+        </p>
+      </div>
+    </div>
+  );
+  return (
+    <Wrap href={href} className="relative block overflow-hidden rounded-xl shadow-lg ring-1 ring-white/10 transition hover:-translate-y-0.5"
+      style={{ background: `linear-gradient(100deg, ${home.brand.color} 0%, ${home.brand.color} 46%, ${away.brand.color} 54%, ${away.brand.color} 100%)` }}>
+      <div className="relative flex items-center gap-2 px-2.5 py-2">
+        {side(home, "home")}
+        <span className="shrink-0 text-center">
+          {status === "live" && playing ? <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[9px] font-black text-white">LIVE</span>
+            : status === "final" ? <span className="rounded-full bg-black/40 px-1.5 py-0.5 text-[9px] font-black text-white">FINAL</span>
+            : <span className="text-sm font-black italic text-white/80">VS</span>}
+        </span>
+        {side(away, "away")}
+      </div>
+      {status !== "final" && (
+        <div className="flex h-1" title={`Win probability ${hp}% – ${100 - hp}%`}>
+          <div style={{ width: `${hp}%`, background: home.brand.alt }} className="border-r border-white" />
+          <div className="flex-1" style={{ background: away.brand.alt }} />
+        </div>
+      )}
+    </Wrap>
+  );
+}

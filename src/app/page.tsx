@@ -2,23 +2,21 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all, one, Game, Matchup, Team } from "@/lib/db";
-import { beforeOpener, boostableGame, getLeague, maybeFinalize, roster, standings, teamWeek, STARTERS } from "@/lib/league";
+import { beforeOpener, getLeague, maybeFinalize, standings, teamWeek } from "@/lib/league";
 import { cardsWhere, unopenedPacks } from "@/lib/packs-server";
 import { Slab } from "@/components/Slab";
 import { RARITIES, Rarity } from "@/lib/packs";
 import { ensureBranding, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
-import { boostSlabs, teamBoosts } from "@/lib/boost";
 import { earnings } from "@/lib/economy";
 import { winProb } from "@/lib/sim";
 import { dayLabel, etDate } from "@/lib/nba/espn";
 import { ActionButton } from "@/components/ActionButton";
 import { Coins, CoinIcon } from "@/components/Coins";
-import { TeamBadge, type BrandLite } from "@/components/TeamBadge";
+import { TeamBadge } from "@/components/TeamBadge";
 import { TeamLogo } from "@/components/TeamLogo";
-import { MatchupCard } from "@/components/MatchupCard";
+import { MatchupStrip } from "@/components/MatchupCard";
 import { PackThumb } from "@/components/PackThumb";
 import { RarityBadge, slabOf } from "@/components/PlayerCard";
-import { BoltIcon } from "@/components/Icons";
 import { Headshot } from "@/components/Headshot";
 import { PlayerButton } from "@/components/PlayerInspector";
 import { SlabOn } from "@/components/SlabIcon";
@@ -27,7 +25,6 @@ import { claimBonus } from "./actions";
 import { getProfile } from "@/lib/profile";
 import { Avatar, profileColors } from "@/components/ProfileView";
 
-type Alert = { href: string; tone: "red" | "amber" | "blue"; text: string; brand?: BrandLite };
 
 export default async function Home() {
   const user = await requireUser();
@@ -54,7 +51,6 @@ export default async function Home() {
      FROM users u WHERE u.is_tester = 0 ORDER BY (u.coins + vault) DESC LIMIT 6`);
 
   // Per-league snapshot + things that need attention.
-  const alerts: Alert[] = [];
   const leagues = myTeams.map((t) => {
     maybeFinalize(t.league_id);
     const l = getLeague(t.league_id)!;
@@ -63,22 +59,8 @@ export default async function Home() {
     const table = standings(l.id);
     const rank = table.findIndex((x) => x.id === t.id) + 1;
     const base = { t: fresh, l, brand, rank, size: table.length };
-    if (l.draft_status === "live") alerts.push({ href: `/league/${l.id}/draft`, tone: "red", text: `${l.name}: the draft is live`, brand });
     if (l.draft_status !== "done" || l.champion_team_id) return { ...base, card: null, earned: null, top: [] };
     const tw = teamWeek(l, t.id, l.current_week);
-    const filled = new Set(tw.players.filter((p) => p.slot !== "BN").map((p) => p.slot));
-    const empty = STARTERS.filter((s) => !filled.has(s)).length;
-    const hurt = tw.players.filter((p) => p.slot !== "BN" && p.injury && /^out/i.test(p.injury)).length;
-    if (empty) alerts.push({ href: `/league/${l.id}/team`, tone: "red", text: `${l.name}: ${empty} empty starting slot${empty > 1 ? "s" : ""}`, brand });
-    if (hurt) alerts.push({ href: `/league/${l.id}/team`, tone: "amber", text: `${l.name}: ${hurt} starter${hurt > 1 ? "s are" : " is"} listed OUT`, brand });
-    // A slab of one of his players who plays today, not equipped yet.
-    if (vault.n > 0 && l.mode !== "sim") {
-      const boosts = teamBoosts(t.id);
-      const mine = new Set(boostSlabs(user.id).map((x) => x.playerId));
-      const ready = roster(t.id).filter((p) => mine.has(p.id) && boostableGame(l, p)?.key === today && !boosts.has(`${p.id}|${today}`));
-      if (ready.length)
-        alerts.push({ href: `/league/${l.id}/team`, tone: "blue", text: `${l.name}: equip your ${ready[0].name} slab${ready.length > 1 ? ` (+${ready.length - 1} more)` : ""} before tonight's game`, brand });
-    }
     const m = one<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ? AND (home_team_id = ? OR away_team_id = ?)", l.id, l.current_week, t.id, t.id);
     let card = null;
     if (m) {
@@ -102,10 +84,7 @@ export default async function Home() {
       .slice(0, 5);
     return { ...base, card, earned: earnings(l.id, user.id, l.current_week), top };
   });
-  if (packs.length) alerts.push({ href: "/packs", tone: "blue", text: `${packs.length} unopened pack${packs.length > 1 ? "s" : ""} waiting to be ripped` });
-  if (user.last_bonus !== todayIso) alerts.push({ href: "#bonus", tone: "amber", text: "Your daily Pack Points bonus is ready" });
 
-  const tones = { red: "border-l-red-500", amber: "border-l-amber-400", blue: "border-l-brand" };
 
   const profile = getProfile(user.id);
   const [pc1, pc2] = profile ? profileColors(profile) : [user.color, "#cc2b31"];
@@ -154,20 +133,6 @@ export default async function Home() {
         </Link>
       )}
 
-      {alerts.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-black uppercase tracking-widest text-zinc-500">Needs your attention</h2>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {alerts.map((a, i) => (
-              <Link key={i} href={a.href} className={`card flex items-center gap-3 border-l-4 px-4 py-3 text-sm font-semibold transition hover:border-zinc-300 ${tones[a.tone]}`}>
-                {a.brand ? <TeamBadge brand={a.brand} size={24} /> : <BoltIcon className="text-amber-600" />}
-                <span className="min-w-0 flex-1">{a.text}</span>
-                <span className="text-xs text-brand">Go →</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="space-y-4 lg:col-span-2">
@@ -194,7 +159,7 @@ export default async function Home() {
                 {earned && <span className="flex items-center gap-1 text-xs text-zinc-500">Earned this week <span className="font-bold text-emerald-600"><Coins n={earned.week} live /></span></span>}
               </div>
               {card ? (
-                <MatchupCard href={card.href} home={card.home} away={card.away} status={card.status} playing={card.playing} winProb={card.wp} mine />
+                <MatchupStrip href={card.href} home={card.home} away={card.away} status={card.status} playing={card.playing} winProb={card.wp} />
               ) : (
                 <Link href={l.draft_status === "live" ? `/league/${l.id}/draft` : `/league/${l.id}`}
                   className="relative flex items-center gap-4 overflow-hidden rounded-2xl p-5 shadow-xl ring-1 ring-white/10 transition hover:-translate-y-0.5"
