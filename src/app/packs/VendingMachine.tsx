@@ -121,6 +121,69 @@ function PackArt({ p, big, md }: { p: PackType; big?: boolean; md?: boolean; sla
   return <PackVisual p={p} width={w} height={h} />;
 }
 
+/**
+ * The pack shop on a phone, as the front of a vending machine: every pack in a glass case at once. The six 1-slab packs
+ * sit in two rows of three slots (A1–B3, cheapest first), each with its price on a keypad-style button, and the Mega
+ * Pack fills the wide jackpot slot along the bottom. Tap a slot to check out.
+ */
+function PhoneMachine({ coins, busy, busyId, onPick }: {
+  coins: number; busy: boolean; busyId: string | null; onPick: (p: PackType) => void;
+}) {
+  const singles = PACKS.filter((p) => p.kind !== "case");
+  const mega = PACKS.find((p) => p.kind === "case");
+  const odds = (p: PackType) => {
+    const v = p.odds.legendary + p.odds.grail;
+    return `${+v.toFixed(v < 1 ? 2 : 1)}%`;
+  };
+  const price = (p: PackType, short: boolean) => (
+    <span className={`flex items-center justify-center rounded-md px-1.5 py-1 text-[13px] font-black leading-none ring-1 ${short ? "bg-black/30 text-zinc-500 ring-white/5" : "bg-emerald-500/15 text-emerald-500 ring-emerald-500/30"}`}>
+      <Coins n={p.price} />
+    </span>
+  );
+  return (
+    <div className="rounded-3xl bg-[linear-gradient(180deg,#3b4252,#161b26)] p-2 shadow-2xl ring-1 ring-white/10 sm:hidden">
+      <div className="mb-2 flex items-center justify-between px-2 pt-1">
+        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/60">League Pack Machine</span>
+        <span className="flex items-center gap-1.5 rounded-full bg-black/40 px-2 py-0.5 text-[11px] font-black text-emerald-500"><Coins n={coins} live /></span>
+      </div>
+      {/* The glass case */}
+      <div className="relative overflow-hidden rounded-2xl bg-[#0b1220] p-2 ring-1 ring-inset ring-white/10">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,.08)_0%,transparent_30%,transparent_70%,rgba(255,255,255,.05)_100%)]" />
+        <div className="grid grid-cols-3 gap-x-1.5 gap-y-2">
+          {singles.map((p, i) => {
+            const short = coins < p.price;
+            return (
+              <button key={p.id} onClick={() => onPick(p)} disabled={busy || short}
+                className={`relative flex flex-col items-center gap-1 rounded-xl pb-1.5 pt-1 transition active:scale-95 disabled:cursor-not-allowed ${short ? "opacity-50" : ""}`}>
+                <span className="absolute left-0.5 top-0.5 z-10 rounded bg-black/70 px-1 py-px font-mono text-[9px] font-black text-white/80">{"AB"[Math.floor(i / 3)]}{(i % 3) + 1}</span>
+                <span className={busyId === p.id ? "animate-pulse" : ""}><PackVisual p={p} width={84} height={107} /></span>
+                <span className="whitespace-nowrap text-[9px] font-bold uppercase tracking-wider text-white/50">Mythic+ <b className="text-red-500">{odds(p)}</b></span>
+                {price(p, short)}
+              </button>
+            );
+          })}
+        </div>
+        {mega && (() => {
+          const short = coins < mega.price;
+          return (
+            <button onClick={() => onPick(mega)} disabled={busy || short}
+              className={`mt-2 flex w-full items-center gap-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-amber-400/5 to-amber-500/15 p-2 text-left ring-1 ring-amber-400/30 transition active:scale-[.98] disabled:cursor-not-allowed ${short ? "opacity-50" : ""}`}>
+              <span className={busyId === mega.id ? "animate-pulse" : ""}><PackVisual p={mega} width={88} height={88} /></span>
+              <span className="min-w-0 flex-1 space-y-1">
+                <span className="block text-[9px] font-black uppercase tracking-widest text-amber-400">C1 · Jackpot slot</span>
+                <span className="block text-sm font-black text-white">{mega.name}</span>
+                <span className="block text-[11px] text-zinc-400">{slabsLabel(mega.cards)}, all Epic or better</span>
+              </span>
+              {price(mega, short)}
+            </button>
+          );
+        })()}
+      </div>
+      <p className="px-2 pb-0.5 pt-1.5 text-center text-[10px] text-white/40">Tap a slot to check out and rip it</p>
+    </div>
+  );
+}
+
 function Confetti() {
   const bits = useMemo(() => Array.from({ length: 90 }, (_, i) => ({
     left: Math.random() * 100, delay: Math.random() * 0.8, dur: 2.2 + Math.random() * 1.8, dx: `${(Math.random() - 0.5) * 300}px`,
@@ -234,10 +297,12 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
       )}
 
       <section id="packs" className="scroll-mt-36 space-y-3">
-        <div><h2 className="text-lg font-bold">League Packs</h2><p className="text-sm text-zinc-500">One Slab each, five in the Mega Pack, all from this league&apos;s pool. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
-        {/* All seven packs in one row; scrolls sideways when the screen is too narrow. */}
+        <div className="max-sm:hidden"><h2 className="text-lg font-bold">League Packs</h2><p className="text-sm text-zinc-500">One Slab each, five in the Mega Pack, all from this league&apos;s pool. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
+        {/* Phones: the whole shop on one screen, as a vending machine front. */}
+        <PhoneMachine coins={coins} busy={stage !== "idle"} busyId={busyId} onPick={setCheckout} />
+        {/* Bigger screens: all seven packs in one row; scrolls sideways when the screen is too narrow. */}
         {/* Generous padding (pulled back with negative margins) so a hovered pack’s lift, tilt and shadow never get clipped by the scroller. */}
-        <div className="-mx-6 -mb-6 -mt-8 flex snap-x scroll-px-6 gap-6 overflow-x-auto px-6 pb-10 pt-11 scrollbar-thin">
+        <div className="-mx-6 -mb-6 -mt-8 hidden snap-x sm:flex scroll-px-6 gap-6 overflow-x-auto px-6 pb-10 pt-11 scrollbar-thin">
           {PACKS.map((p) => {
             const busy = stage !== "idle";
             const short = coins < p.price;

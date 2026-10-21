@@ -42,16 +42,16 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
       <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl" style={{ background: `linear-gradient(115deg, ${b.color} 0%, ${b.color} 50%, ${b.alt} 140%)` }}>
         <ShopHeroArt />
         <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 14px)" }} />
-        <div className="relative flex flex-wrap items-center gap-5 p-5 sm:p-7">
+        <div className="relative flex flex-wrap items-center gap-3 p-4 sm:gap-5 sm:p-7">
           <div className="hidden shrink-0 sm:block"><TeamBadge brand={b} size={64} className="drop-shadow-xl" /></div>
           <div className="min-w-0 flex-1 basis-64">
             <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">{b.abbr} · League Pack Shop</p>
             <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">League Packs</h2>
-            <p className="mt-2 max-w-xl text-sm text-white/80">
+            <p className="mt-2 hidden max-w-xl text-sm text-white/80 sm:block">
               Every slab in these packs is a player on a team in {l.name}. Pull your own guys to power up your lineup, or your rivals&apos; best players to brag about.
             </p>
           </div>
-          <Link href={`/league/${l.id}/packs/pool`} className="btn-primary shrink-0">See the pack pool</Link>
+          <Link href={`/league/${l.id}/packs/pool`} className="btn-primary shrink-0 max-sm:px-3 max-sm:py-1.5 max-sm:text-sm">See the pack pool</Link>
         </div>
         <div className="relative grid grid-cols-3 gap-px bg-black/20">
           {([
