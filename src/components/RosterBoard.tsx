@@ -5,7 +5,6 @@ import { useState, useTransition } from "react";
 import type { DayInfo, DayRow, LivePlayer } from "@/lib/league";
 import { STARTERS, eligible } from "@/lib/scoring";
 import { askConfirm } from "./Confirm";
-import { BoltIcon } from "./Icons";
 import type { BrandLite } from "./TeamBadge";
 import { BoxHead, BoxRow, BoxTotals, DayStrip, slotPill } from "./BoxScore";
 import { BoostModal, EquipPanel, type BoostProps } from "./LineupEditor";
@@ -16,11 +15,10 @@ import { Fpts } from "./Fpts";
  * and his fantasy points. On days that haven't finished, tap a slot pill to move that player (eligible slots light up).
  * Phones keep the slot and player columns pinned while the stats scroll sideways.
  */
-export function RosterBoard({ days, rows, totals, initialDay, players, editable, brand, setSlot, autoSet, drop, boost }: {
+export function RosterBoard({ days, rows, totals, initialDay, players, editable, brand, setSlot, drop, boost }: {
   days: DayInfo[]; rows: Record<string, DayRow[]>; totals: Record<string, number>; initialDay: string;
   players: LivePlayer[]; editable: boolean; brand: BrandLite;
   setSlot?: (playerId: number, slot: string) => Promise<unknown>;
-  autoSet?: () => Promise<unknown>;
   drop?: (playerId: number) => Promise<unknown>;
   boost?: BoostProps;
 }) {
@@ -68,7 +66,6 @@ export function RosterBoard({ days, rows, totals, initialDay, players, editable,
         <div className="space-y-3 border-b border-line/60 p-3 sm:p-4">
           <DayStrip days={days} day={day} onDay={(k) => { setDay(k); setSelected(null); }} totals={totals} />
           <div className="flex flex-wrap items-center gap-2">
-            {canEdit && <button className="btn-primary px-3 py-1.5 text-sm" disabled={pending} onClick={() => act(() => autoSet!())}><BoltIcon /> Quick lineup</button>}
             {sel ? (
               <>
                 <span className="text-sm text-zinc-400">Moving <b className="text-white">{sel.name}</b>: tap a green slot</span>

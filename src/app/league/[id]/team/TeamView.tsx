@@ -2,14 +2,12 @@ import { BoltIcon } from "@/components/Icons";
 import { TeamBadge } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand, userPresets } from "@/lib/branding";
 import Link from "next/link";
-import { one, Matchup, Team } from "@/lib/db";
+import { one, Team } from "@/lib/db";
 import { defaultDay, getLeague, standings, teamDays, teamWeek } from "@/lib/league";
 import { currentUser } from "@/lib/auth";
-import { TeamCourt } from "@/components/TeamCourt";
 import { RosterBoard } from "@/components/RosterBoard";
-import { LineupViews } from "@/components/LineupViews";
 import { AutoRefresh } from "@/components/AutoRefresh";
-import { applyPresetAction, autoSet, dropPlayer, renameTeam, setAutoManage, setSlot } from "../../../actions";
+import { applyPresetAction, dropPlayer, renameTeam, setAutoManage, setSlot } from "../../../actions";
 import { AutoManageToggle } from "@/components/AutoManageToggle";
 import { Fpts, PointsKey } from "@/components/Fpts";
 
@@ -26,18 +24,6 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
   const presets = me ? userPresets(me.id) : [];
   const b = teamBrand(t);
   const td = l.draft_status === "done" ? teamDays(l, t.id, l.current_week) : null;
-  // Current and next matchup boxes (ESPN's team header).
-  const box = (week: number) => {
-    const m = one<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ? AND (home_team_id = ? OR away_team_id = ?)", l.id, week, t.id, t.id);
-    if (!m) return null;
-    const side = (tid: number, stored: number | null) => {
-      const x = one<Team>("SELECT * FROM teams WHERE id = ?", tid)!;
-      const score = m.final && stored != null ? stored : week === l.current_week ? (tid === t.id ? tw.score : teamWeek(l, tid, week).score) : 0;
-      return { id: tid, brand: teamBrand(x), score };
-    };
-    return { m, sides: [side(m.home_team_id, m.home_score), side(m.away_team_id, m.away_score)] };
-  };
-  const boxes = l.draft_status === "done" ? ([["Current matchup", box(l.current_week)], ["Next matchup", box(l.current_week + 1)]] as const).filter(([, x]) => x) : [];
   const table = standings(l.id);
   const rank = table.findIndex((x) => x.id === t.id) + 1;
   const ord = (n: number) => `${n}${["th", "st", "nd", "rd"][(n % 100 >> 3) ^ 1 && n % 10] || "th"}`;
@@ -58,64 +44,38 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
       <div className="pointer-events-none absolute -right-24 top-40 -z-0 opacity-[0.06]"><TeamBadge brand={b} size={620} ghost /></div>
 
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl" style={{ background: `linear-gradient(115deg, ${b.color} 0%, ${b.color} 45%, ${b.alt} 130%)` }}>
-        <div className="pointer-events-none absolute -right-16 -top-20 opacity-25"><TeamBadge brand={b} size={420} ghost /></div>
+      <section className="relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl" style={{ background: `linear-gradient(115deg, ${b.color} 0%, ${b.color} 45%, ${b.alt} 130%)` }}>
+        <div className="pointer-events-none absolute -right-10 -top-12 opacity-25"><TeamBadge brand={b} size={240} ghost /></div>
         <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 2px, transparent 2px 14px)" }} />
-        <div className="relative flex flex-wrap items-center gap-4 p-5 sm:gap-6 sm:p-8">
-          <TeamBadge brand={b} size={148} className="drop-shadow-2xl max-sm:!h-24 max-sm:!w-24" />
+        <div className="relative flex flex-wrap items-center gap-3 p-3 sm:gap-4 sm:p-4">
+          <TeamBadge brand={b} size={72} className="drop-shadow-2xl max-sm:!h-14 max-sm:!w-14" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-[10px] font-black uppercase tracking-[0.25em] text-white/70 sm:text-xs sm:tracking-[0.35em]">{b.abbr} · {l.name}</p>
-            <h2 className="mt-1 text-[1.7rem] font-black leading-none tracking-tight text-white [overflow-wrap:anywhere] sm:text-5xl">{t.name}</h2>
-            <p className="mt-2 text-sm text-white/80">{owner ? `Managed by ${owner}` : "CPU team"}{l.draft_status === "done" ? ` · Week ${l.current_week}` : ""}</p>
+            <h2 className="mt-0.5 text-xl font-black leading-none tracking-tight text-white [overflow-wrap:anywhere] sm:text-3xl">{t.name}</h2>
+            <p className="mt-1 text-xs text-white/80 sm:text-sm">{owner ? `Managed by ${owner}` : "CPU team"}{l.draft_status === "done" ? ` · Week ${l.current_week}` : ""}</p>
           </div>
           {!editable && <Link href={`/league/${leagueId}/trades?to=${t.id}`} className="btn bg-[#fff] text-black hover:bg-[#e5e7eb]">Propose trade</Link>}
         </div>
         <div className="relative grid grid-cols-3 gap-px bg-black/20 sm:grid-cols-6">
           {stats.map(([k, v]) => (
-            <div key={k} className="min-w-0 bg-black/45 px-3 py-2.5 backdrop-blur sm:px-4 sm:py-3">
+            <div key={k} className="min-w-0 bg-black/45 px-3 py-1.5 backdrop-blur sm:px-4 sm:py-2">
               <p className="truncate text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>
-              <p className="truncate font-mono text-base font-black text-white sm:text-xl">{v}</p>
+              <p className="truncate font-mono text-sm font-black text-white sm:text-base">{v}</p>
             </div>
           ))}
         </div>
-        <div className="h-2" style={{ background: `linear-gradient(90deg, ${b.alt}, ${b.color}, ${b.alt})` }} />
+        <div className="h-1" style={{ background: `linear-gradient(90deg, ${b.alt}, ${b.color}, ${b.alt})` }} />
       </section>
-
-      {boxes.length > 0 && (
-        <div className="relative grid gap-3 sm:grid-cols-2">
-          {boxes.map(([label, x]) => (
-            <Link key={label} href={`/league/${leagueId}/matchup/${x!.m.id}`} className="card block p-3 transition hover:border-brand/50">
-              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-500">{label}{x!.m.final ? " · Final" : ""}</p>
-              {x!.sides.map((sd) => (
-                <div key={sd.id} className="flex items-center gap-2.5 py-1">
-                  <TeamBadge brand={sd.brand} size={28} />
-                  <span className={`min-w-0 flex-1 truncate text-sm ${sd.id === t.id ? "font-black text-white" : "font-semibold text-white/70"}`}>{sd.brand.name}</span>
-                  <span className="font-mono text-lg font-black text-white">{Math.round(sd.score * 10) / 10}</span>
-                </div>
-              ))}
-            </Link>
-          ))}
-        </div>
-      )}
 
       {editable && td && <div className="relative"><AutoManageToggle on={!!t.auto_manage} set={setAutoManage.bind(null, leagueId)} /></div>}
 
       <div className="relative">
         {l.draft_status !== "done" || !td ? (
           <p className="card p-6 text-zinc-500">Rosters fill up during the draft.</p>
-        ) : (() => {
-          const actions = {
-            setSlot: editable ? setSlot.bind(null, leagueId) : undefined,
-            autoSet: editable ? autoSet.bind(null, leagueId) : undefined,
-            drop: editable ? dropPlayer.bind(null, leagueId) : undefined,
-          };
-          return (
-            <LineupViews
-              board={<RosterBoard key="box" days={td.days} rows={td.rows} totals={td.totals} initialDay={defaultDay(td.days)} players={players} editable={editable} brand={b} {...actions} />}
-              court={<TeamCourt key="court" players={players} editable={editable} brand={b} courtOnly {...actions} />}
-            />
-          );
-        })()}
+        ) : (
+          <RosterBoard days={td.days} rows={td.rows} totals={td.totals} initialDay={defaultDay(td.days)} players={players} editable={editable} brand={b}
+            setSlot={editable ? setSlot.bind(null, leagueId) : undefined} drop={editable ? dropPlayer.bind(null, leagueId) : undefined} />
+        )}
       </div>
 
       {editable && (
