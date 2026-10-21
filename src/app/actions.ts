@@ -12,6 +12,7 @@ import {
 } from "@/lib/league";
 import { PACK_BY_ID } from "@/lib/packs";
 import { openPack, rerollSlab } from "@/lib/packs-server";
+import { proposeSlabTrade, respondSlabTrade } from "@/lib/slab-trades";
 import { etDate } from "@/lib/nba/espn";
 import { placeBet } from "@/lib/bets";
 import { applyPreset, deletePreset, getPreset, saveLeagueBrand, savePreset, setFavoritePreset } from "@/lib/branding";
@@ -490,6 +491,26 @@ export async function rerollSlabAction(cardId: number) {
     const card = rerollSlab(u.id, cardId);
     revalidatePath("/", "layout");
     return { ok: true, card };
+  });
+}
+
+// ---------- Slab trades (Update 3.0) ----------
+
+export async function proposeSlabTradeAction(t: { to: number; give: number[]; get: number[]; givePp: number; getPp: number; note: string }) {
+  return wrap(async () => {
+    const u = await requireUser();
+    proposeSlabTrade(u, t.to, t.give, t.get, t.givePp, t.getPp, t.note);
+    revalidatePath("/", "layout");
+    return { ok: true, message: "Offer sent" };
+  });
+}
+
+export async function respondSlabTradeAction(tradeId: number, accept: boolean) {
+  return wrap(async () => {
+    const u = await requireUser();
+    respondSlabTrade(u, tradeId, accept);
+    revalidatePath("/", "layout");
+    return { ok: true };
   });
 }
 

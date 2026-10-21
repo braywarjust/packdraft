@@ -3,7 +3,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { RARITIES, RARITY_HEX, type Rarity } from "@/lib/packs";
-import { Coins } from "./Coins";
 import { XIcon } from "./Icons";
 import { useScrollLock } from "./useScrollLock";
 
@@ -92,7 +91,6 @@ function RarityLibrary({ rarity, onClose }: { rarity: Rarity; onClose: () => voi
                 </div>
                 <p className="mt-1.5 w-full truncate text-[11px] font-semibold text-zinc-400">{s.player}</p>
                 <p className="w-full truncate text-[10px] text-zinc-500">{s.year} {s.set_name}</p>
-                <p className="font-mono text-[11px] font-bold text-zinc-400"><Coins n={s.value} /></p>
               </div>
             ))}
           </div>

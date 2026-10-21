@@ -10,13 +10,17 @@ import { ActionButton } from "@/components/ActionButton";
 import { clearTestCards, rerollSlabAction } from "../actions";
 import { PageHeader } from "@/components/PageHeader";
 import { CollectionGrid } from "./CollectionGrid";
+import { incomingTradeCount } from "@/lib/slab-trades";
 
 export default async function Collection({ searchParams }: { searchParams: Promise<{ r?: string; sort?: string; u?: string }> }) {
   const sp = await searchParams;
   const me = await requireUser();
-  const users = all<{ id: number; name: string }>("SELECT id, name FROM users ORDER BY name");
+  // Test accounts are hidden from everyone's tabs (a tester still sees their own collection).
+  const users = all<{ id: number; name: string; is_tester: number }>("SELECT id, name, is_tester FROM users WHERE is_tester = 0 OR id = ? ORDER BY name", me.id);
   const viewing = sp.u ? users.find((x) => x.id === Number(sp.u)) ?? me : me;
   const mine = viewing.id === me.id;
+  const offers = incomingTradeCount(me.id);
+  const canTrade = mine || !!me.is_tester === !!(viewing as { is_tester?: number }).is_tester;
   // Slabs equipped for a game that hasn't finished yet are marked.
   const equips = equippedSlabs(viewing.id);
   const when = (k: string) => (k.startsWith("sim:") ? k.replace(/^sim:W(\d+):G(\d+)$/, (_, w, g) => `Week ${w} game ${Number(g) + 1}`) : dayLabel(k));
@@ -48,8 +52,11 @@ export default async function Collection({ searchParams }: { searchParams: Promi
           <Link key={r} href={qs({ r })} className={`tab ${sp.r === r ? "tab-active" : ""} ${RARITIES[r].text}`}>{RARITIES[r].label} ({counts[r]})</Link>
         ))}
         <span className="mx-2 h-5 w-px bg-line" />
-        <Link href={qs({ sort: undefined })} className={`tab ${!sp.sort ? "tab-active" : ""}`}>Top value</Link>
+        <Link href={qs({ sort: undefined })} className={`tab ${!sp.sort ? "tab-active" : ""}`}>Best</Link>
         <Link href={qs({ sort: "new" })} className={`tab ${sp.sort === "new" ? "tab-active" : ""}`}>Newest</Link>
+        <Link href="/collection/trades" className="btn-ghost ml-auto gap-2">
+          Trades{!!offers && <span className="rounded-full bg-accent px-2 text-xs font-bold text-white">{offers}</span>}
+        </Link>
         {mine && !!me.is_tester && (
           <ActionButton action={clearTestCards} className="btn-ghost" confirm="Delete all test pulls?">Clear test pulls</ActionButton>
         )}
@@ -57,7 +64,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
       {cards.length === 0 && (
         <div className="card p-8 text-center text-zinc-500">No slabs yet. <Link className="text-brand underline" href="/packs">Open packs in the Pack Shop</Link>.</div>
       )}
-      <CollectionGrid cards={cards} mine={mine} coins={me.coins} reroll={rerollSlabAction} />
+      <CollectionGrid cards={cards} mine={mine} coins={me.coins} reroll={rerollSlabAction} tradeWith={canTrade ? viewing.id : undefined} />
     </div>
   );
 }

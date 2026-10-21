@@ -34,7 +34,7 @@ export default async function Home() {
   const packs = unopenedPacks(user.id);
   const todayIso = new Date().toISOString().slice(0, 10);
   const today = etDate();
-  const vault = one<{ v: number; n: number }>("SELECT COALESCE(SUM(value), 0) v, COUNT(*) n FROM cards WHERE user_id = ? AND sold = 0", user.id)!;
+  const vault = one<{ n: number }>("SELECT COUNT(*) n FROM cards WHERE user_id = ? AND sold = 0", user.id)!;
   const bestSlabs = cardsWhere("c.user_id = ? AND c.sold = 0 AND (c.slab_id IS NOT NULL OR c.kind = 'slab') ORDER BY c.value DESC LIMIT 4", user.id);
   const bets = (() => {
     try {
@@ -46,9 +46,9 @@ export default async function Home() {
   const pulls = all<{ user: string; name: string; rarity: Rarity; value: number; slab_id: number | null; kind: string | null }>(
     `SELECT u.name user, COALESCE(s.player, p.name) name, c.rarity, c.value, c.slab_id, c.kind FROM cards c JOIN users u ON u.id = c.user_id LEFT JOIN slabs s ON s.id = c.slab_id LEFT JOIN players p ON p.id = c.player_id
      WHERE u.is_tester = 0 AND c.sold = 0 ORDER BY c.value DESC LIMIT 5`);
-  const leaders = all<{ name: string; color: string; coins: number; vault: number }>(
-    `SELECT u.name, u.color, u.coins, COALESCE((SELECT SUM(value) FROM cards c WHERE c.user_id = u.id AND c.sold = 0), 0) vault
-     FROM users u WHERE u.is_tester = 0 ORDER BY (u.coins + vault) DESC LIMIT 6`);
+  // Slabs carry no Pack Points value (Update 3.0), so managers rank by Pack Points alone.
+  const leaders = all<{ name: string; color: string; coins: number }>(
+    "SELECT u.name, u.color, u.coins FROM users u WHERE u.is_tester = 0 ORDER BY u.coins DESC LIMIT 6");
 
   // Per-league snapshot + things that need attention.
   const leagues = myTeams.map((t) => {
@@ -237,7 +237,6 @@ export default async function Home() {
                   <Link key={c.id} href="/collection" className="flex flex-col items-center gap-1 text-center" title={c.kind === "slab" ? `${c.name} · ${RARITIES[c.rarity].label}` : `${c.name} · ${c.s_company} ${c.s_grade}`}>
                     {c.kind === "slab" ? <Slab s={slabOf(c)} size={64} /> : <img src={`/api/slabs/${c.slab_id}`} alt="" className="h-24 w-full object-contain drop-shadow-lg" />}
                     <RarityBadge rarity={c.rarity} className="px-1.5 text-[8px]" />
-                    {c.kind !== "slab" && <span className="text-[11px] font-semibold text-emerald-600"><Coins n={c.value} /></span>}
                   </Link>
                 ))}
               </div>
@@ -258,7 +257,7 @@ export default async function Home() {
               {pulls.map((c, i) => (
                 <li key={i} className="flex items-center justify-between gap-2 text-sm">
                   <span className="min-w-0 truncate"><span className={`font-semibold ${RARITIES[c.rarity].text}`}>{c.name}</span> <span className="text-zinc-400">· {c.user}</span></span>
-                  {c.kind ? <span className={`shrink-0 text-xs font-bold ${RARITIES[c.rarity].text}`}>{RARITIES[c.rarity].label}</span> : <span className="shrink-0 font-mono text-emerald-600"><Coins n={c.value} /></span>}
+                  <span className={`shrink-0 text-xs font-bold ${RARITIES[c.rarity].text}`}>{RARITIES[c.rarity].label}</span>
                 </li>
               ))}
             </ul>

@@ -79,7 +79,6 @@ function Showcase({ cards, look, c1, c2 }: { cards: CardData[]; look: ProfileLoo
     <div className="mt-2 text-center">
       <RarityBadge rarity={c.rarity} />
       <p className="mt-1 max-w-[180px] truncate text-xs font-semibold text-zinc-900">{c.name}</p>
-      <p className="font-mono text-xs font-bold text-emerald-600"><Coins n={c.value} /></p>
     </div>
   );
   if (look.showcase === "spotlight") {
@@ -143,10 +142,9 @@ export function ProfileView({ d, editHref, preview = false }: { d: ProfileViewDa
     ),
     stats: (
       <Section key="stats" title="Stats">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {([
             ["Slabs", <span key="s" className="inline-flex items-center gap-1.5"><SlabIcon />{d.stats.slabs}</span>],
-            ["Vault value", <Coins key="v" n={d.stats.vault} className="text-emerald-600" />],
             ["Packs ripped", String(d.stats.ripped)],
             ["League record", record],
             ["Earned in leagues", <Coins key="p" n={d.stats.ppEarned} className="text-emerald-600" />],
@@ -160,7 +158,7 @@ export function ProfileView({ d, editHref, preview = false }: { d: ProfileViewDa
           ))}
         </div>
         {d.stats.best && (
-          <p className="flex flex-wrap items-center gap-2 text-sm text-zinc-500"><CrownIcon className="text-amber-400" /> Best pull: <b className="text-white">{d.stats.best.name}</b> <RarityBadge rarity={d.stats.best.rarity} /> <Coins n={d.stats.best.value} className="font-bold text-emerald-600" /></p>
+          <p className="flex flex-wrap items-center gap-2 text-sm text-zinc-500"><CrownIcon className="text-amber-400" /> Best pull: <b className="text-white">{d.stats.best.name}</b> <RarityBadge rarity={d.stats.best.rarity} /></p>
         )}
       </Section>
     ),
