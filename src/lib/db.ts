@@ -149,6 +149,9 @@ function open(): DatabaseSync {
   // League Packs (Update 2.1): the league a pack was bought or won in, and opens in. Older packs have none.
   const packCols = (db.prepare("PRAGMA table_info(user_packs)").all() as { name: string }[]).map((c) => c.name);
   if (!packCols.includes("league_id")) db.exec("ALTER TABLE user_packs ADD COLUMN league_id INTEGER");
+  // Auto Manager (Update 2.2): the team's lineup is re-set to today's best on every league tick.
+  const teamCols = (db.prepare("PRAGMA table_info(teams)").all() as { name: string }[]).map((c) => c.name);
+  if (!teamCols.includes("auto_manage")) db.exec("ALTER TABLE teams ADD COLUMN auto_manage INTEGER NOT NULL DEFAULT 0");
   if (fresh) carryOverUsers(db);
   db.prepare("UPDATE users SET coins = ? WHERE is_tester = 1 AND coins < ?").run(TESTER_COINS, TESTER_FLOOR);
   db.exec("COMMIT");
@@ -250,6 +253,8 @@ export type League = {
 };
 export type Team = {
   id: number; league_id: number; user_id: number | null; name: string; is_cpu: number; autodraft: number; faab: number;
+  /** Auto Manager on (Update 2.2). */
+  auto_manage?: number;
   wins: number; losses: number; ties: number; points_for: number; points_against: number;
   // Branding (added by branding.ts ensureBranding)
   color?: string | null; alt_color?: string | null; abbr?: string | null; logo_url?: string | null; preset_id?: number | null;

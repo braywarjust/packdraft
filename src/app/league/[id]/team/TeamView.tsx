@@ -9,7 +9,8 @@ import { TeamCourt } from "@/components/TeamCourt";
 import { RosterBoard } from "@/components/RosterBoard";
 import { LineupViews } from "@/components/LineupViews";
 import { AutoRefresh } from "@/components/AutoRefresh";
-import { applyPresetAction, autoSet, dropPlayer, renameTeam, setSlot } from "../../../actions";
+import { applyPresetAction, autoSet, dropPlayer, renameTeam, setAutoManage, setSlot } from "../../../actions";
+import { AutoManageToggle } from "@/components/AutoManageToggle";
 import { Fpts, PointsKey } from "@/components/Fpts";
 
 export async function TeamView({ leagueId, teamId, editable }: { leagueId: number; teamId: number; editable: boolean }) {
@@ -96,6 +97,8 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
           ))}
         </div>
       )}
+
+      {editable && td && <div className="relative"><AutoManageToggle on={!!t.auto_manage} set={setAutoManage.bind(null, leagueId)} /></div>}
 
       <div className="relative">
         {l.draft_status !== "done" || !td ? (

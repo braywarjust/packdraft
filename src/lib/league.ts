@@ -124,29 +124,65 @@ export function isLocked(l: League, p: Player) {
 
 // ---------- Lineups ----------
 
+/**
+ * Set the lineup that scores the most today: players whose game hasn't started yet are moved between starters and
+ * bench, locked players stay put. Healthy players with a game today come first (their projection plus any slab equipped
+ * for today), then the best of the rest (the lineup carries forward). Out players never start.
+ * Returns how many players moved.
+ */
 export function autoLineup(l: League, teamId: number) {
   const players = roster(teamId);
   const today = etDate();
   const locked = new Set(players.filter((p) => isLocked(l, p)).map((p) => p.id));
-  // Healthy players with a game today first, then the best of the rest (the lineup carries forward).
+  const boosts = teamBoosts(teamId);
   const value = (p: RosterPlayer) => {
-    let v = projFor(p, l.scoring);
-    if (isOut(p)) return v - 2000;
-    if (l.mode !== "sim" && realGames(p, today, today).length) v += 1000;
+    if (isOut(p)) return 0;
+    const b = boosts.get(`${p.id}|${today}`);
+    const proj = projFor(p, l.scoring) * (b?.mult || 1) + (b ? b.boost_pts + b.boost_reb + b.boost_ast : 0);
+    if (l.mode === "sim" || realGames(p, today, today).length) return 1000 + proj;
+    return proj / 1000;
+  };
+  const taken = new Set(players.filter((p) => locked.has(p.id) && p.slot !== "BN").map((p) => p.slot));
+  const open = STARTERS.filter((s) => !taken.has(s));
+  const pool = players.filter((p) => !locked.has(p.id));
+  const vals = pool.map(value);
+  // Best total over the open slots: each slot takes one eligible pool player or stays empty (memoised on who's used).
+  const memo = new Map<number, number>();
+  const best = (i: number, used: number): number => {
+    if (i === open.length) return 0;
+    const k = i * 8192 + used;
+    const hit = memo.get(k);
+    if (hit !== undefined) return hit;
+    let v = best(i + 1, used);
+    pool.forEach((p, j) => {
+      if (!(used & (1 << j)) && vals[j] > 0 && eligible(open[i], fpos(p))) v = Math.max(v, vals[j] + best(i + 1, used | (1 << j)));
+    });
+    memo.set(k, v);
     return v;
   };
-  const assign = new Map<number, string>();
-  const taken = new Set<string>();
-  for (const p of players) if (locked.has(p.id)) { assign.set(p.id, p.slot); if (p.slot !== "BN") taken.add(p.slot); }
-  const pool = players.filter((p) => !locked.has(p.id)).sort((a, b) => value(b) - value(a));
-  // Fill the most restrictive slots first so UTIL takes whoever's left.
-  for (const slot of [...STARTERS].sort((a, b) => (slotLabel(a) === "UTIL" ? 1 : 0) - (slotLabel(b) === "UTIL" ? 1 : 0))) {
-    if (taken.has(slot)) continue;
-    const pick = pool.find((p) => !assign.has(p.id) && eligible(slot, fpos(p)) && !isOut(p));
-    if (pick) { assign.set(pick.id, slot); taken.add(slot); }
+  const assign = new Map<number, string>(pool.map((p) => [p.id, "BN"]));
+  let used = 0;
+  for (let i = 0; i < open.length; i++) {
+    const target = best(i, used);
+    if (Math.abs(best(i + 1, used) - target) < 1e-9) continue;
+    const j = pool.findIndex((p, j) => !(used & (1 << j)) && vals[j] > 0 && eligible(open[i], fpos(p)) && Math.abs(vals[j] + best(i + 1, used | (1 << j)) - target) < 1e-9);
+    if (j < 0) continue;
+    assign.set(pool[j].id, open[i]);
+    used |= 1 << j;
   }
-  for (const p of players) if (!assign.has(p.id)) assign.set(p.id, "BN");
-  for (const [pid, slot] of assign) run("UPDATE roster SET slot = ? WHERE team_id = ? AND player_id = ?", slot, teamId, pid);
+  let moved = 0;
+  for (const p of pool) {
+    const slot = assign.get(p.id)!;
+    if (slot === p.slot) continue;
+    run("UPDATE roster SET slot = ? WHERE team_id = ? AND player_id = ?", slot, teamId, p.id);
+    moved++;
+  }
+  return moved;
+}
+
+/** Auto Manager: teams whose manager turned it on get today's best lineup on every league tick. */
+export function autoManage(l: League) {
+  for (const t of all<Team>("SELECT * FROM teams WHERE league_id = ? AND auto_manage = 1 AND is_cpu = 0", l.id)) autoLineup(l, t.id);
 }
 
 export function moveToSlot(l: League, teamId: number, playerId: number, slot: string) {
@@ -411,6 +447,7 @@ export function tickLeague(leagueId: number) {
   const l = getLeague(leagueId);
   if (!l || l.draft_status !== "done" || l.champion_team_id) return;
   consumeEquips(l);
+  autoManage(l);
   if (l.mode === "sim") {
     if (l.week_started_at && weekProgress(l) >= 1) finalizeWeek(l);
     return;

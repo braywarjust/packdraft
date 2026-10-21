@@ -288,6 +288,17 @@ export async function autoSet(leagueId: number) {
   });
 }
 
+/** Auto Manager on or off for my team; turning it on sets today's best lineup straight away. */
+export async function setAutoManage(leagueId: number, on: boolean) {
+  return wrap(async () => {
+    const { l, t } = await myLeagueTeam(leagueId);
+    run("UPDATE teams SET auto_manage = ? WHERE id = ?", on ? 1 : 0, t.id);
+    if (on) tx(() => autoLineup(l, t.id));
+    revalidatePath(`/league/${leagueId}/team`);
+    return { ok: true };
+  });
+}
+
 export async function dropPlayer(leagueId: number, playerId: number) {
   return wrap(async () => {
     const { l, t } = await myLeagueTeam(leagueId);
