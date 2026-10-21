@@ -31,6 +31,8 @@ type Props = {
   autoSet?: () => Promise<unknown>;
   drop?: (playerId: number) => Promise<unknown>;
   boost?: BoostProps;
+  /** Court only, without its own Court/List switch (the page has a Box score/Court switch). */
+  courtOnly?: boolean;
 };
 
 /** Half-court floor in the team's colours with the logo at centre. */
@@ -121,14 +123,14 @@ function PlayerTile({ p, slot, big, brand, state }: {
 }
 
 export function TeamCourt(props: Props) {
-  const { players, editable, brand, setSlot, autoSet, drop, boost } = props;
+  const { players, editable, brand, setSlot, autoSet, drop, boost, courtOnly } = props;
   const router = useRouter();
   const [view, setView] = useState<"court" | "list">("court");
   const [pending, start] = useTransition();
   const [err, setErr] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
   const [boosting, setBoosting] = useState<LivePlayer | null>(null);
-  useEffect(() => { try { if (localStorage.getItem(VIEW_KEY) === "list") setView("list"); } catch {} }, []);
+  useEffect(() => { try { if (!courtOnly && localStorage.getItem(VIEW_KEY) === "list") setView("list"); } catch {} }, [courtOnly]);
   const pick = (v: "court" | "list") => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch {} };
 
   const act = (fn: () => Promise<unknown>) => start(async () => {
@@ -166,7 +168,7 @@ export function TeamCourt(props: Props) {
           </>
         )}
         {err && <span className="text-sm text-red-600">{err}</span>}
-        <div className="ml-auto flex rounded-lg bg-panel2 p-1 text-xs font-semibold">
+        <div className={`ml-auto flex rounded-lg bg-panel2 p-1 text-xs font-semibold ${courtOnly ? "hidden" : ""}`}>
           <button onClick={() => pick("court")} className={`rounded-md px-3 py-1.5 ${view === "court" ? "bg-brand text-white" : "text-zinc-500"}`}>Court</button>
           <button onClick={() => pick("list")} className={`rounded-md px-3 py-1.5 ${view === "list" ? "bg-brand text-white" : "text-zinc-500"}`}>List</button>
         </div>

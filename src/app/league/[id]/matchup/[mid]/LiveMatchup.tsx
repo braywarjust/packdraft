@@ -5,14 +5,22 @@ import { TeamLogo } from "@/components/TeamLogo";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { LivePlayer } from "@/lib/league";
-import { InjuryTag } from "@/components/Headshot";
 import { MatchupCard } from "@/components/MatchupCard";
 import { BoostChip } from "@/components/LineupEditor";
 import { Fpts } from "@/components/Fpts";
-import { PlayerButton, openPlayer } from "@/components/PlayerInspector";
+import { PlayerButton } from "@/components/PlayerInspector";
+import type { DayInfo, DayRow } from "@/lib/league";
+import { BoxHead, BoxRow, BoxTotals, DayStrip, shortName } from "@/components/BoxScore";
 
-type Side = { id: number; name: string; brand: BrandLite; record: string; score: number; projected: number; remain: number; players: LivePlayer[] };
-type Data = { week: number; final: boolean; live: boolean; mode: string; range: string | null; progress: number | null; league: string; home: Side; away: Side; winProb: number };
+type Side = {
+  id: number; name: string; brand: BrandLite; record: string; owner: string | null; score: number; projected: number; remain: number; players: LivePlayer[];
+  days: Record<string, DayRow[]>; totals: Record<string, number>;
+};
+type Other = { id: number; home: { brand: BrandLite; score: number }; away: { brand: BrandLite; score: number } };
+type Data = {
+  week: number; final: boolean; live: boolean; mode: string; range: string | null; progress: number | null; league: string; leagueId: number;
+  home: Side; away: Side; winProb: number; others: Other[]; days: DayInfo[]; day: string; mine: number | null;
+};
 type Event = { key: string; name: string; delta: number; line: string; side: "home" | "away" };
 
 import { STARTERS } from "@/lib/scoring";
@@ -36,6 +44,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   const [events, setEvents] = useState<Event[]>([]);
   const [flash, setFlash] = useState<Set<number>>(new Set());
   const prev = useRef<Map<number, number>>(new Map());
+  const [day, setDay] = useState<string | null>(null);
 
   useEffect(() => {
     let stop = false;
@@ -72,34 +81,43 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   }, [matchupId]);
 
   if (!d) return <p className="text-zinc-500">Loading matchup…</p>;
-  const { home, away } = d;
-  const hp = Math.round(d.winProb * 100);
+  // Your team always on the left, like ESPN.
+  const flip = d.away.id === d.mine;
+  const [home, away] = flip ? [d.away, d.home] : [d.home, d.away];
+  const wp = flip ? 1 - d.winProb : d.winProb;
 
-  // Each starter: his photo on the outer edge on the dark theme colour, then a theme panel with his line.
-  const cell = (p: LivePlayer | undefined, right: boolean, brand: BrandLite) => (
-    <div className={`flex min-h-[60px] min-w-0 flex-1 overflow-hidden rounded-xl sm:min-h-[72px] bg-ink ring-1 ring-white/5 ${right ? "flex-row-reverse" : ""} ${p && flash.has(p.id) ? "anim-flash" : ""}`}>
-      <div className={`relative w-10 shrink-0 overflow-hidden bg-panel2 sm:w-[76px] ${p ? "cursor-pointer" : ""}`} onClick={() => p && openPlayer(p.id)}>
-        {p?.headshot && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.headshot} alt="" aria-hidden loading="lazy" className="pointer-events-none absolute left-1/2 top-1.5 h-[118%] w-auto max-w-none -translate-x-1/2 select-none" />
-        )}
-      </div>
-      {p ? (
-        <div className={`flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-2 py-1.5 sm:flex-row sm:items-center sm:gap-3 sm:px-3 sm:py-2 ${right ? "items-end text-right sm:flex-row-reverse" : "items-start"}`}>
-          <div className="w-full min-w-0 sm:flex-1">
-            <p className={`flex items-center gap-1.5 text-xs font-bold sm:text-sm leading-tight text-white ${right ? "flex-row-reverse" : ""}`}><PlayerButton id={p.id} className="truncate">{p.name}</PlayerButton><InjuryTag injury={p.injury} /><BoostChip boost={p.boost} /></p>
-            <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-              <TeamLogo team={p.team} size={13} className="-mt-0.5 mr-1 align-middle" />{p.team} ·{" "}
-              {p.now ? (p.now.state === "in" ? <span className="font-semibold text-red-500">● {p.now.clock} </span> : p.now.state === "post" ? `${p.now.clock} ` : `${p.now.label} ${p.now.clock} `) : "No games "}
-              {p.now?.line && p.now.state !== "pre" ? `· ${p.now.line}` : ""}
-            </p>
-            <p className="hidden text-[10px] text-zinc-400 sm:block">{p.played}/{p.total} games · {p.left} left · <Fpts n={p.proj} />/g</p>
-          </div>
-          <p className="font-mono text-base font-black text-white sm:text-lg"><Fpts n={p.pts} iconClass="text-[0.8em]" live /></p>
+  const curDay = day && d.days.some((x) => x.key === day) ? day : d.day;
+  const curInfo = d.days.find((x) => x.key === curDay);
+  const hRows = home.days[curDay] ?? [], aRows = away.days[curDay] ?? [];
+  const hBench = hRows.filter((r) => r.slot === "BN"), aBench = aRows.filter((r) => r.slot === "BN");
+  const pairs = [
+    ...STARTERS.map((slot) => ({ slot: slot as string, a: hRows.find((r) => r.slot === slot) ?? null, b: aRows.find((r) => r.slot === slot) ?? null })),
+    ...Array.from({ length: Math.max(hBench.length, aBench.length) }, (_, i) => ({ slot: "BN", a: hBench[i] ?? null, b: aBench[i] ?? null })),
+  ];
+  // One side of a head-to-head row: name and game on the outside, fantasy points next to the slot.
+  const h2hCell = (r: DayRow | null, right: boolean) => {
+    const g = r?.game;
+    return (
+      <div className={`flex min-w-0 flex-1 items-center gap-1.5 px-2 py-2 ${right ? "flex-row-reverse text-right" : ""} ${r && flash.has(r.id) ? "anim-flash" : ""}`}>
+        <div className="min-w-0 flex-1">
+          {r ? (
+            <>
+              <p className={`flex items-center gap-1 text-[12px] font-semibold leading-tight text-white ${right ? "justify-end" : ""}`}>
+                {right && <TeamLogo team={r.team} size={14} />}
+                <PlayerButton id={r.id} className="truncate">{shortName(r.name)}</PlayerButton>
+                {!right && <TeamLogo team={r.team} size={14} />}
+              </p>
+              <p className={`truncate text-[11px] ${g?.state === "in" ? "font-semibold text-red-500" : "text-zinc-500"}`}>
+                {g ? <>{g.state === "in" && "● "}{g.opp} {g.status.replace(/ ET$/, "")}</> : ""}
+              </p>
+              {r.boost && <p className={`mt-0.5 flex gap-1 ${right ? "justify-end" : ""}`}><BoostChip boost={r.boost} /></p>}
+            </>
+          ) : <p className="text-xs text-zinc-500">Empty</p>}
         </div>
-      ) : <span className="flex flex-1 items-center px-4 text-sm text-zinc-500">Empty</span>}
-    </div>
-  );
+        <span className="w-9 shrink-0 text-center font-mono text-[13px] font-black text-white">{r?.fpts != null ? r.fpts.toFixed(1) : "-"}</span>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -112,28 +130,92 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
       </div>
       <MatchupCard big home={{ id: home.id, brand: home.brand, record: home.record, score: home.score, proj: home.score + home.remain }}
         away={{ id: away.id, brand: away.brand, record: away.record, score: away.score, proj: away.score + away.remain }}
-        status={d.final ? "final" : d.live || home.score + away.score > 0 ? "live" : "pre"} winProb={d.winProb} />
-      {history.length > 1 && <div className="card px-4 pb-3 pt-2"><p className="label">Win probability over the week</p><Spark points={history} /></div>}
+        status={d.final ? "final" : d.live || home.score + away.score > 0 ? "live" : "pre"} winProb={wp} />
+      {history.length > 1 && <div className="card px-4 pb-3 pt-2"><p className="label">Win probability over the week</p><Spark points={flip ? history.map((x) => 1 - x) : history} /></div>}
+
+      {/* The week's other matchups */}
+      {d.others.length > 1 && (
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin">
+          {d.others.map((o) => (
+            <Link key={o.id} href={`/league/${d.leagueId}/matchup/${o.id}`} replace
+              className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs ring-1 transition ${o.id === matchupId ? "bg-white/10 ring-white/60" : "bg-panel ring-line hover:ring-white/30"}`}>
+              <TeamBadge brand={o.home.brand} size={22} />
+              <b className="font-mono text-white">{Math.round(o.home.score)}</b><span className="text-zinc-500">vs</span><b className="font-mono text-white">{Math.round(o.away.score)}</b>
+              <TeamBadge brand={o.away.brand} size={22} />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Score by day */}
+      <div className="card overflow-x-auto scrollbar-thin">
+        <table className="w-full min-w-[520px] text-xs">
+          <thead className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+            <tr>
+              <th className="sticky left-0 bg-panel px-3 py-2 text-left">Team</th>
+              {d.days.map((x) => <th key={x.key} className={`whitespace-nowrap px-2 py-2 text-center ${x.key === curDay ? "text-brand" : ""}`}>{x.top === "SIM" ? x.short : x.top}</th>)}
+              <th className="px-3 py-2 text-right">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[home, away].map((sd) => (
+              <tr key={sd.id} className="border-t border-line/60">
+                <td className="sticky left-0 bg-panel px-3 py-2"><span className="flex items-center gap-2"><TeamBadge brand={sd.brand} size={20} /><span className="max-w-[110px] truncate font-semibold text-white">{sd.name}</span></span></td>
+                {d.days.map((x) => (
+                  <td key={x.key} className={`px-2 py-2 text-center font-mono ${x.key === curDay ? "bg-brand/10 font-bold text-white" : "text-zinc-400"}`}>
+                    <button type="button" onClick={() => setDay(x.key)} className="w-full">{sd.totals[x.key] ? sd.totals[x.key].toFixed(1) : "0"}</button>
+                  </td>
+                ))}
+                <td className="px-3 py-2 text-right font-mono text-sm font-black text-white">{sd.score.toFixed(1)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <div className="grid gap-4 2xl:grid-cols-3">
-        <div className="card p-2 2xl:col-span-2">
-          {STARTERS.map((slot) => (
-            <div key={slot} className="flex items-stretch gap-1 py-1 sm:gap-1.5">
-              {cell(home.players.find((p) => p.slot === slot), false, home.brand)}
-              <span className={`pos pos-${lbl(slot)} shrink-0 self-center max-sm:px-1 max-sm:text-[10px]`}>{lbl(slot)}</span>
-              {cell(away.players.find((p) => p.slot === slot), true, away.brand)}
+        <div className="space-y-4 2xl:col-span-2">
+          <div className="card p-3"><DayStrip days={d.days} day={curDay} onDay={setDay} /></div>
+
+          {/* Phones: head to head by slot, ESPN app style */}
+          <div className="card divide-y divide-line/60 overflow-hidden sm:hidden">
+            {pairs.map(({ slot, a, b }, i) => (
+              <div key={`${slot}${i}`} className={`flex items-stretch ${slot === "BN" ? "opacity-70" : ""}`}>
+                {h2hCell(a, false)}
+                <span className="flex w-9 shrink-0 items-center justify-center bg-panel2 text-[10px] font-black text-zinc-400">{slot === "BN" ? "BN" : lbl(slot)}</span>
+                {h2hCell(b, true)}
+              </div>
+            ))}
+            <div className="flex items-center justify-between bg-panel2 px-3 py-2 font-mono text-sm font-black text-white">
+              <span><Fpts n={home.totals[curDay] ?? 0} /></span>
+              <span className="font-sans text-[10px] uppercase tracking-widest text-zinc-400">{curInfo?.label}</span>
+              <span><Fpts n={away.totals[curDay] ?? 0} /></span>
             </div>
-          ))}
-          <details className="mt-2 px-2 pb-2">
-            <summary className="cursor-pointer text-xs font-semibold uppercase text-zinc-500">Benches</summary>
-            <div className="mt-2 grid grid-cols-2 gap-4 text-xs text-zinc-500">
-              {[home, away].map((s) => (
-                <ul key={s.id} className="space-y-1">
-                  {s.players.filter((p) => p.slot === "BN").map((p) => <li key={p.id} className="flex justify-between gap-2"><PlayerButton id={p.id} className="truncate">{p.name}</PlayerButton><span className="font-mono">{p.left} left</span></li>)}
-                </ul>
-              ))}
-            </div>
-          </details>
+          </div>
+
+          {/* Bigger screens: both box scores */}
+          {[home, away].map((sd) => {
+            const rows = sd.days[curDay] ?? [];
+            const by = new Map(rows.filter((r) => r.slot !== "BN").map((r) => [r.slot, r]));
+            return (
+              <section key={sd.id} className="card hidden overflow-hidden sm:block">
+                <h3 className="flex items-center gap-2 border-b border-line/60 px-4 py-3 font-black text-white">
+                  <TeamBadge brand={sd.brand} size={26} />{sd.name} box score
+                  <span className="ml-auto font-mono text-base"><Fpts n={sd.totals[curDay] ?? 0} /></span>
+                </h3>
+                <div className="overflow-x-auto scrollbar-thin">
+                  <table className="w-full min-w-[900px] text-sm">
+                    <BoxHead dayLabel={curInfo?.top ?? ""} />
+                    <tbody>
+                      {STARTERS.map((slot) => <BoxRow key={slot} r={by.get(slot) ?? null} slotCell={<span className={`pos pos-${lbl(slot)}`}>{lbl(slot)}</span>} />)}
+                      <BoxTotals rows={STARTERS.map((x) => by.get(x)).filter(Boolean) as DayRow[]} total={sd.totals[curDay] ?? 0} />
+                      {rows.filter((r) => r.slot === "BN").map((r) => <BoxRow key={r.id} r={r} slotCell={<span className="pos">BN</span>} highlight="opacity-75" />)}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            );
+          })}
         </div>
         <div className="card p-4">
           <p className="label">Live scoring feed</p>

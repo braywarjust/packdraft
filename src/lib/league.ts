@@ -61,7 +61,11 @@ export function weekProgress(l: League) {
 // ---------- Per-player games ----------
 
 /** `final`: the game really is over (ESPN says so, or the sim finished it), so it can pay out and use up slabs. */
-export type PGame = { key: string; state: "pre" | "in" | "post"; final: boolean; label: string; clock: string; line: Line | null; order: number; date?: string };
+export type PGame = {
+  key: string; state: "pre" | "in" | "post"; final: boolean; label: string; clock: string; line: Line | null; order: number; date?: string;
+  /** Real games: the opponent ("@NO" away, "GS" at home) and, once it's over, the result from his team's side ("W 112-104"). */
+  opp?: string; result?: string;
+};
 
 /** A real game still not final this long after tip-off is treated as over. */
 const STALE_GAME_MS = 6 * 3600_000;
@@ -80,6 +84,10 @@ function realGames(p: { id: number; team: string }, from: string, to: string): P
       key: g.date_et, date: g.date_et, order: g.start_ts,
       state: stale ? "post" : g.state === "pre" && started ? "in" : (g.state as PGame["state"]),
       final: g.state === "post",
+      opp: home ? g.away : `@${g.home}`,
+      result: g.state === "post" && g.home_score + g.away_score > 0
+        ? (() => { const us = home ? g.home_score : g.away_score, them = home ? g.away_score : g.home_score; return `${us > them ? "W" : us < them ? "L" : "T"} ${us}-${them}`; })()
+        : undefined,
       label: `${home ? "vs" : "@"} ${home ? g.away : g.home} · ${dayLabel(g.date_et)}`,
       clock: g.state === "pre" ? new Date(g.start_ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) + " ET" : g.detail ?? "",
       line: g.stats ? (JSON.parse(g.stats) as Line) : null,
@@ -311,6 +319,91 @@ export function teamWeek(l: League, teamId: number, week: number) {
   rows.sort((a, b) => order(a.slot) - order(b.slot) || b.proj - a.proj);
   const score = Math.round((rows.reduce((s, p) => s + p.pts, 0) + ghost) * 100) / 100;
   return { players: rows, score, remain, variance, projected, rate };
+}
+
+// ---------- Day by day (roster and matchup pages) ----------
+
+export type DayInfo = { key: string; label: string; short: string; top: string; today: boolean; past: boolean };
+export type DayRow = {
+  id: number; name: string; pos: string; team: string; headshot: string | null; injury: string | null; proj: number; locked: boolean;
+  /** The slot he's in for this day: frozen when his game started, else his current slot (lineups carry forward). */
+  slot: string;
+  game: { opp: string; status: string; state: "pre" | "in" | "post"; line: Line | null } | null;
+  /** Fantasy points for this day's game, with his equipped slab applied (counted only if he started). */
+  fpts: number | null;
+  boost: LivePlayer["boost"];
+};
+
+/** The days (real leagues) or game numbers (sim) that make up a week, oldest first. */
+export function weekDays(l: League, week: number): DayInfo[] {
+  if (l.mode === "sim") {
+    const progress = week < l.current_week ? 1 : week === l.current_week ? weekProgress(l) : 0;
+    return [0, 1, 2, 3].map((i) => ({ key: `sim:W${week}:G${i}`, label: `Game ${i + 1}`, short: `G${i + 1}`, top: "SIM", today: false, past: progress >= 1 }));
+  }
+  const [from, to] = weekRange(l, week);
+  const today = etDate();
+  const out: DayInfo[] = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    const dt = new Date(`${d}T12:00:00Z`);
+    out.push({
+      key: d, today: d === today, past: d < today,
+      label: d === today ? `Today (${dayLabel(d)})` : dayLabel(d),
+      short: d === today ? "TODAY" : dt.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }).toUpperCase(),
+      top: dt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).toUpperCase(),
+    });
+  }
+  return out;
+}
+/** The day a week opens on: today if it's in the week, else its last day (past weeks) or first (future). */
+export function defaultDay(days: DayInfo[]) {
+  return (days.find((d) => d.today) ?? (days.every((d) => d.past) ? days[days.length - 1] : days.find((d) => !d.past) ?? days[0])).key;
+}
+
+/**
+ * A team's week, one day at a time: each player's slot, game and fantasy points per day, plus each day's starter
+ * total. Read-only (no lineup freezing or payouts; teamWeek does those).
+ */
+export function teamDays(l: League, teamId: number, week: number) {
+  const days = weekDays(l, week);
+  const players = roster(teamId);
+  const boosts = teamBoosts(teamId);
+  const frozen = new Map(
+    all<{ date_et: string; player_id: number; slot: string }>("SELECT * FROM daily_slots WHERE team_id = ?", teamId).map((r) => [`${r.player_id}|${r.date_et}`, r.slot]),
+  );
+  const rows: Record<string, DayRow[]> = {};
+  const totals: Record<string, number> = {};
+  for (const d of days) { rows[d.key] = []; totals[d.key] = 0; }
+  for (const p of players) {
+    const games = new Map(playerGames(l, p, week).map((g) => [g.key, g]));
+    const locked = isLocked(l, p);
+    for (const d of days) {
+      const g = games.get(d.key);
+      const b = boosts.get(`${p.id}|${d.key}`);
+      const slot = frozen.get(`${p.id}|${d.key}`) ?? p.slot;
+      const fp = g?.line ? slabbedFpts(g.line, l.scoring, b, g.final) : null;
+      if (fp != null && slot !== "BN") totals[d.key] += fp;
+      rows[d.key].push({
+        id: p.id, name: p.name, pos: fpos(p), team: p.team, headshot: p.headshot, injury: p.injury, proj: projFor(p, l.scoring), locked, slot,
+        game: g ? { opp: g.opp ?? g.label, state: g.state, line: g.line, status: g.state === "pre" ? g.clock : g.state === "in" ? g.clock || "Live" : g.result ?? "Final" } : null,
+        fpts: fp,
+        boost: b && g ? { mult: b.mult, pts: b.boost_pts, reb: b.boost_reb, ast: b.boost_ast, own: !!b.own, cardId: b.card_id, dayKey: b.day_key, state: g.state } : null,
+      });
+    }
+  }
+  // Players since dropped or traded still count on the days they started.
+  const onRoster = new Set(players.map((p) => p.id));
+  for (const [k, slot] of frozen) {
+    const i = k.indexOf("|");
+    const pid = Number(k.slice(0, i)), key = k.slice(i + 1);
+    if (onRoster.has(pid) || slot === "BN" || !(key in totals)) continue;
+    const p = one<Player>("SELECT * FROM players WHERE id = ?", pid);
+    const g = p && playerGames(l, p, week).find((x) => x.key === key);
+    if (g?.line) totals[key] += slabbedFpts(g.line, l.scoring, boosts.get(k), g.final);
+  }
+  for (const k of Object.keys(totals)) totals[k] = Math.round(totals[k] * 100) / 100;
+  const order = (s: string) => (s === "BN" ? 99 : STARTERS.indexOf(s as (typeof STARTERS)[number]));
+  for (const k of Object.keys(rows)) rows[k].sort((a, b) => order(a.slot) - order(b.slot) || b.proj - a.proj);
+  return { days, rows, totals };
 }
 
 /** Freeze lineups for started games, finish weeks, and keep CPU lineups fresh. Safe to call often. */
