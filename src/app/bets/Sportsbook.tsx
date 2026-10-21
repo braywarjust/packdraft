@@ -200,18 +200,20 @@ export function Sportsbook({ initial }: { initial: Data }) {
                     <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                       <line x1="54" y1="0" x2="46" y2="100" stroke="#fff" strokeOpacity=".7" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                     </svg>
-                    <div className="relative grid h-full grid-cols-[1fr_auto_1fr] items-center gap-3 px-4">
+                    <div className="relative grid h-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 px-2.5 sm:gap-3 sm:px-4">
                       {(["away", "home"] as const).map((side, i) => {
                         const t = g.teams[side];
                         const score = side === "away" ? g.awayScore : g.homeScore;
                         const team = (
-                          <div key={side} className={`flex min-w-0 items-center gap-3 ${i ? "flex-row-reverse text-right" : ""}`}>
-                            <TeamLogo team={t.abbr} size={48} className="drop-shadow-[0_4px_8px_rgba(0,0,0,.5)]" />
+                          <div key={side} className={`flex min-w-0 items-center gap-1.5 sm:gap-3 ${i ? "flex-row-reverse text-right" : ""}`}>
+                            <TeamLogo team={t.abbr} size={48} className="drop-shadow-[0_4px_8px_rgba(0,0,0,.5)] max-sm:!h-8 max-sm:!w-8" />
                             <div className="min-w-0">
                               <p className="hidden truncate text-[11px] font-bold uppercase tracking-widest text-white/75 xl:block">{t.name.replace(` ${t.short}`, "")}</p>
-                              <p className="text-lg font-black leading-tight text-white xl:text-xl">{t.short}</p>
+                              <p className={`truncate font-black leading-tight text-white sm:text-lg xl:text-xl ${t.short.length > 9 ? "max-sm:text-[12px]" : "max-sm:text-sm"}`}>{t.short}</p>
+                              {/* Phones: the score sits under the name so both fit */}
+                              {g.state !== "pre" && <p className="font-mono text-2xl font-black leading-none text-white sm:hidden">{score}</p>}
                             </div>
-                            {g.state !== "pre" && <p className={`font-mono text-3xl font-black text-white ${i ? "mr-auto" : "ml-auto"}`}>{score}</p>}
+                            {g.state !== "pre" && <p className={`font-mono text-3xl font-black text-white max-sm:hidden ${i ? "mr-auto" : "ml-auto"}`}>{score}</p>}
                           </div>
                         );
                         return i === 0 ? [team, (
@@ -219,7 +221,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
                             {g.live ? <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white">● LIVE</span>
                               : g.state === "post" ? <span className="rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-black text-white">FINAL</span>
                               : <span className="text-lg font-black italic text-white">@</span>}
-                            <span className="whitespace-nowrap rounded bg-black/35 px-1.5 py-0.5 text-[10px] font-semibold text-white">{g.live ? g.detail : time(g.start)}</span>
+                            <span className="whitespace-nowrap rounded bg-black/35 px-1.5 py-0.5 text-[9px] font-semibold text-white sm:text-[10px]">{g.live ? g.detail : <><span className="max-sm:hidden">{time(g.start)}</span><span className="sm:hidden">{time(g.start).replace(/^\w+ /, "").replace(/ ET$/, "")}</span></>}</span>
                           </div>
                         )] : team;
                       })}
@@ -231,16 +233,17 @@ export function Sportsbook({ initial }: { initial: Data }) {
                       <div className="flex-1" style={{ background: g.teams.home.color }} />
                     </div>
                   )}
-                  <div className="grid grid-cols-[1fr_repeat(3,minmax(0,5.5rem))] items-center gap-2 px-4 py-3 text-sm">
-                    <span className="text-[11px] font-semibold uppercase text-zinc-400">{!g.open ? "Betting closed" : g.live ? `Win prob ${g.away} ${100 - hp}% · ${g.home} ${hp}%` : ""}</span>
+                  <div className="grid grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,4.4rem))] items-center gap-1.5 px-2.5 py-3 text-sm sm:grid-cols-[1fr_repeat(3,minmax(0,5.5rem))] sm:gap-2 sm:px-4">
+                    <span className="min-w-0 text-[10px] font-semibold uppercase leading-tight text-zinc-400 sm:text-[11px]">{!g.open ? "Betting closed" : g.live ? `Win prob ${g.away} ${100 - hp}% · ${g.home} ${hp}%` : ""}</span>
                     <span className="text-center text-[11px] font-semibold uppercase text-zinc-400">Spread</span>
                     <span className="text-center text-[11px] font-semibold uppercase text-zinc-400">Total</span>
-                    <span className="text-center text-[11px] font-semibold uppercase text-zinc-400">Moneyline</span>
+                    <span className="text-center text-[11px] font-semibold uppercase text-zinc-400"><span className="max-sm:hidden">Moneyline</span><span className="sm:hidden">ML</span></span>
                     {([["away", 0], ["home", 1]] as const).map(([side, i]) => (
                       <div key={side} className="contents">
-                        <span className="flex items-center gap-2 border-l-4 pl-2 font-bold" style={{ borderColor: g.teams[side].color === "#000000" ? g.teams[side].alt : g.teams[side].color }}>
+                        <span className="flex min-w-0 items-center gap-1.5 border-l-4 pl-1.5 font-bold sm:gap-2 sm:pl-2" style={{ borderColor: g.teams[side].color === "#000000" ? g.teams[side].alt : g.teams[side].color }}>
                           <TeamLogo team={g.teams[side].abbr} size={24} />
-                          <span className="truncate">{g.teams[side].short}</span>
+                          <span className="truncate max-sm:hidden">{g.teams[side].short}</span>
+                          <span className="sm:hidden">{g.teams[side].abbr}</span>
                         </span>
                         <OddsButton o={g.spread[i]} top={fmtLine(g.spread[i].line)} picked={picked.has(g.spread[i].key)} disabled={!g.open} onClick={() => toggle(g.spread[i], label)} />
                         <OddsButton o={g.total[i]} top={`${i ? "U" : "O"} ${g.total[i].line}`} picked={picked.has(g.total[i].key)} disabled={!g.open} onClick={() => toggle(g.total[i], label)} />
