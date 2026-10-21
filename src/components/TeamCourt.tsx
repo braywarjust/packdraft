@@ -12,6 +12,7 @@ import { BoostChip, BoostModal, EquipPanel, LineupEditor, type BoostProps } from
 import { FptIcon } from "./Fpts";
 import { Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
+import { SlabOn } from "@/components/SlabIcon";
 
 import { eligible, posLabel, slotLabel as lbl } from "@/lib/scoring";
 
@@ -88,7 +89,7 @@ function PlayerTile({ p, slot, big, brand, state }: {
               <TeamLogo team={p.team} size={big ? 24 : 20} className="absolute -bottom-1 -right-1" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className={`line-clamp-2 font-black leading-tight text-white ${big ? "text-lg" : "text-base"}`}><PlayerButton id={p.id}>{p.name}</PlayerButton></p>
+              <p className={`line-clamp-2 font-black leading-tight text-white ${big ? "text-lg" : "text-base"}`}><PlayerButton id={p.id}>{p.name}</PlayerButton> <SlabOn boost={p.boost} /></p>
               <p className="text-xs text-zinc-400">{posLabel(p.pos)} · {p.team} <InjuryTag injury={p.injury} /></p>
               <p className="mt-0.5 font-mono text-[11px] text-zinc-500">{p.played}/{p.total} GP</p>
               <p className="mt-0.5 whitespace-nowrap font-mono text-xs font-bold text-zinc-800"><span className="text-[10px] font-black uppercase tracking-wider text-fpts">Proj </span><Fpts n={p.proj} />/g</p>

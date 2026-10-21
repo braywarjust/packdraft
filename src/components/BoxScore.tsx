@@ -8,6 +8,7 @@ import { Headshot, InjuryTag } from "./Headshot";
 import { TeamLogo } from "./TeamLogo";
 import { BoostChip } from "./LineupEditor";
 import { PlayerButton } from "./PlayerInspector";
+import { SlabOn } from "./SlabIcon";
 
 /** Box score columns, ESPN order. */
 export const STAT_COLS: [string, (l: Line) => number][] = [
@@ -68,6 +69,7 @@ export function BoxRow({ r, slotCell, highlight, compactName }: { r: DayRow | nu
             <div className="min-w-0">
               <p className="flex items-center gap-1 text-sm font-semibold leading-tight text-white">
                 <PlayerButton id={r.id} className="truncate">{compactName ? shortName(r.name) : <><span className="sm:hidden">{shortName(r.name)}</span><span className="hidden sm:inline">{r.name}</span></>}</PlayerButton>
+                <SlabOn boost={r.boost} />
                 <InjuryTag injury={r.injury} />
               </p>
               <p className="flex items-center gap-1 text-[11px] text-zinc-500">

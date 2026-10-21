@@ -3,14 +3,13 @@ import { TeamBadge } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand, userPresets } from "@/lib/branding";
 import Link from "next/link";
 import { one, Matchup, Team } from "@/lib/db";
-import { boostableGame, defaultDay, getLeague, roster, standings, teamDays, teamWeek } from "@/lib/league";
-import { boostSlabs, equippedSlabCards, teamBoosts } from "@/lib/boost";
+import { defaultDay, getLeague, standings, teamDays, teamWeek } from "@/lib/league";
 import { currentUser } from "@/lib/auth";
 import { TeamCourt } from "@/components/TeamCourt";
 import { RosterBoard } from "@/components/RosterBoard";
 import { LineupViews } from "@/components/LineupViews";
 import { AutoRefresh } from "@/components/AutoRefresh";
-import { applyPresetAction, autoSet, boostPlayer, dropPlayer, renameTeam, setSlot, unboostPlayer } from "../../../actions";
+import { applyPresetAction, autoSet, dropPlayer, renameTeam, setSlot } from "../../../actions";
 import { Fpts, PointsKey } from "@/components/Fpts";
 
 export async function TeamView({ leagueId, teamId, editable }: { leagueId: number; teamId: number; editable: boolean }) {
@@ -24,21 +23,6 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
   // Slab boosts: who can still be boosted for his next game, and what each of those days is already boosted with.
   const me = editable ? await currentUser() : null;
   const presets = me ? userPresets(me.id) : [];
-  // Slab equips: players with a game left this week who have a slab of theirs to equip (or one already on).
-  const boosts = teamBoosts(t.id);
-  const mySlabs = me ? boostSlabs(me.id) : [];
-  const onCards = me ? new Map(equippedSlabCards(me.id).map((s) => [s.cardId, s])) : new Map();
-  const boostable = me && l.draft_status === "done" && !l.champion_team_id
-    ? roster(t.id).flatMap((p) => {
-        const g = boostableGame(l, p);
-        if (!g) return [];
-        const eq = boosts.get(`${p.id}|${g.key}`);
-        const equipped = eq ? onCards.get(eq.card_id) ?? null : null;
-        if (!equipped && !mySlabs.some((s) => s.playerId === p.id)) return [];
-        return [{ playerId: p.id, dayKey: g.key, day: g.label, equipped }];
-      })
-    : [];
-
   const b = teamBrand(t);
   const td = l.draft_status === "done" ? teamDays(l, t.id, l.current_week) : null;
   // Current and next matchup boxes (ESPN's team header).
@@ -121,10 +105,6 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
             setSlot: editable ? setSlot.bind(null, leagueId) : undefined,
             autoSet: editable ? autoSet.bind(null, leagueId) : undefined,
             drop: editable ? dropPlayer.bind(null, leagueId) : undefined,
-            boost: editable && me ? {
-              slabs: mySlabs, boostable,
-              set: boostPlayer.bind(null, leagueId), clear: unboostPlayer.bind(null, leagueId),
-            } : undefined,
           };
           return (
             <LineupViews
@@ -154,7 +134,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         </details>
       )}
       <PointsKey className="relative" />
-      <p className="relative text-xs text-zinc-400"><BoltIcon className="text-fpts" /> Slab equips: if you have a slab of one of your players, equip it on his next game. When that game ends, its orange stat boost is added to his points, rebounds and assists, then its blue multiplier stamp (1.10x to 2.00x) multiplies his fantasy points. It locks at tip-off, only counts if he starts, and the slab is used up when the game ends.</p>
+      <p className="relative text-xs text-zinc-400"><BoltIcon className="text-fpts" /> Slab equips: tap one of your players to open his card and equip one of his slabs on his next game. Players with a slab on show the slab icon. When that game ends, its orange stat boost is added to his points, rebounds and assists, then its blue multiplier stamp (1.10x to 2.00x) multiplies his fantasy points. It locks at tip-off, only counts if he starts, and the slab is used up when the game ends.</p>
       <p className="relative text-xs text-zinc-400">Lineups are daily. Each player locks at his own tip-off, so you can still swap guys who play later tonight. Points count for whatever slot a player was in when his game started.</p>
     </div>
   );

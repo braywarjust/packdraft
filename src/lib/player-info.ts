@@ -2,7 +2,7 @@
 // upcoming schedule, who has him in your league, and how many of his slabs are in the vault.
 import { all, one, type Player } from "./db";
 import { fpts, type Line } from "./scoring";
-import { projFor } from "./league";
+import { boostableGame, getLeague, playingNow, projFor } from "./league";
 import { teamBrand } from "./branding";
 import { ensureBoosts } from "./boost";
 
@@ -65,9 +65,23 @@ export function playerInfo(playerId: number, leagueId: number | null, userId: nu
      WHERE c.user_id = ? AND c.sold = 0 AND c.kind = 'slab' AND c.player_id = ? ORDER BY c.value DESC LIMIT 12`, userId, p.id)
     .map((c) => ({ id: c.id, rarity: c.rarity, serial: c.serial, mult: c.mult, boost: c.boost_pts == null ? null : { pts: c.boost_pts, reb: c.boost_reb ?? 0, ast: c.boost_ast ?? 0 }, equipped: c.day_key }));
 
+  // Equipping from the popup: only for a player on your own team in this league, on his next game this week.
+  let equip: { leagueId: number; day: string | null; why: string | null; cardId: number | null } | null = null;
+  if (league && owner?.mine) {
+    const l = getLeague(league.id)!;
+    if (l.draft_status !== "done" || l.champion_team_id) equip = { leagueId: l.id, day: null, why: "Slabs can be equipped once the season is under way", cardId: null };
+    else if (playingNow(l, p)) equip = { leagueId: l.id, day: null, why: "He's playing right now. Slabs lock at tip-off", cardId: null };
+    else {
+      const g = boostableGame(l, p);
+      const on = g ? one<{ card_id: number }>("SELECT card_id FROM slab_equips WHERE team_id = ? AND player_id = ? AND day_key = ? AND consumed_at IS NULL", owner.teamId, p.id, g.key) : null;
+      equip = { leagueId: l.id, day: g ? g.label : null, why: g ? null : "No games left this week", cardId: on?.card_id ?? null };
+    }
+  }
+
   return {
     market,
     mySlabs,
+    equip,
     player: { id: p.id, name: p.name, pos: (p.elig || p.pos).split(",").join(", "), team: p.team, teamName: nba?.name ?? p.team, color: `#${nba?.color ?? "1f2937"}`, jersey: p.jersey, headshot: p.headshot, injury: p.injury, adp: p.adp, posRank: p.pos_rank },
     league: league ? { id: league.id, name: league.name } : null,
     scoring,

@@ -10,6 +10,7 @@ import { Slab, type SlabData } from "./Slab";
 import { Headshot, InjuryTag } from "./Headshot";
 import { FptIcon, Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
+import { SlabOn } from "./SlabIcon";
 import { useScrollLock } from "@/components/useScrollLock";
 
 import { STARTERS, eligible, posLabel, slotLabel as lbl } from "@/lib/scoring";
@@ -104,7 +105,7 @@ export function LineupEditor({
             <div className="flex items-center gap-2">
               <Headshot src={p.headshot} name={p.name} size={36} />
               <div className="min-w-0">
-                <p className="font-semibold"><PlayerButton id={p.id} className="inline">{p.name}</PlayerButton> <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{posLabel(p.pos)} · {p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /> {p.locked && <LockIcon className="text-xs text-zinc-500" title="Locked: game started" />}</p>
+                <p className="font-semibold"><PlayerButton id={p.id} className="inline">{p.name}</PlayerButton> <SlabOn boost={p.boost} /> <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs font-normal text-zinc-400">{posLabel(p.pos)} · {p.team}</span> <InjuryTag injury={p.injury} /> <BoostChip boost={p.boost} /> {p.locked && <LockIcon className="text-xs text-zinc-500" title="Locked: game started" />}</p>
                 <p className="truncate text-xs text-zinc-500">
                   {today ? (today.state === "in" ? <span className="text-red-600">● {today.clock} {today.label} </span> : `${today.label} · ${today.clock} `) : "No games this week "}
                   {today?.line && today.state !== "pre" ? `· ${today.line}` : ""}
