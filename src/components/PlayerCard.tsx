@@ -10,6 +10,7 @@ export type CardData = {
   slab_id?: number | null; s_year?: number | null; s_set?: string | null; s_no?: string | null; s_variant?: string | null;
   s_company?: string | null; s_grade?: string | null; s_cert?: string | null; s_flags?: string | null; s_source?: string | null;
   kind?: string | null; team_name?: string | null; photo?: string | null; player_id?: number; mult?: number | null;
+  boost_pts?: number | null; boost_reb?: number | null; boost_ast?: number | null;
   /** "Equipped · Wed, Oct 22 · NBA" while a slab waits for its game. */
   equipped?: string | null;
 };
@@ -17,11 +18,12 @@ export type CardData = {
 /** Slab props for a new-style square Slab card. */
 export const slabOf = (c: CardData): SlabData => ({
   name: c.name, team: c.team, team_name: c.team_name, pos: c.pos, rarity: c.rarity, serial: c.serial, jersey: c.jersey, color: c.color, alt: c.alt, photo: c.photo, mult: c.mult,
+  boost: c.boost_pts == null ? null : { pts: c.boost_pts ?? 0, reb: c.boost_reb ?? 0, ast: c.boost_ast ?? 0 },
 });
 
 /** A square Slab with a short caption underneath. */
-export function SlabTile({ c, small }: { c: CardData; small?: boolean }) {
-  const size = small ? 176 : 208;
+export function SlabTile({ c, small, size: sz }: { c: CardData; small?: boolean; size?: number }) {
+  const size = sz ?? (small ? 176 : 208);
   return (
     <div className="flex flex-col items-center" style={{ width: size + 8 }}>
       <div className="relative">
@@ -112,8 +114,8 @@ function cardSeason(c: CardData & { created_at?: number }) {
   return d.getMonth() >= 6 ? d.getFullYear() + 1 : d.getFullYear();
 }
 
-export function PlayerCard({ c, small }: { c: CardData; small?: boolean }) {
-  if (c.kind === "slab") return <SlabTile c={c} small={small} />;
+export function PlayerCard({ c, small, size }: { c: CardData; small?: boolean; size?: number }) {
+  if (c.kind === "slab") return <SlabTile c={c} small={small} size={size} />;
   if (c.slab_id) return <SlabCard c={c} small={small} />;
   const r = RARITIES[c.rarity];
   const primary = `#${c.color ?? "334155"}`;

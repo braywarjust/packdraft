@@ -2,13 +2,14 @@ import { BoltIcon } from "@/components/Icons";
 import { TeamBadge } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand, userPresets } from "@/lib/branding";
 import Link from "next/link";
-import { one, Team } from "@/lib/db";
-import { boostableGame, getLeague, roster, standings, teamWeek } from "@/lib/league";
-import { boostSlabs, equippedSlabCards, teamBoosts } from "@/lib/boost";
+import { one, Matchup, Team } from "@/lib/db";
+import { defaultDay, getLeague, standings, teamDays, teamWeek } from "@/lib/league";
 import { currentUser } from "@/lib/auth";
 import { TeamCourt } from "@/components/TeamCourt";
+import { RosterBoard } from "@/components/RosterBoard";
+import { LineupViews } from "@/components/LineupViews";
 import { AutoRefresh } from "@/components/AutoRefresh";
-import { applyPresetAction, autoSet, boostPlayer, dropPlayer, renameTeam, setSlot, unboostPlayer } from "../../../actions";
+import { applyPresetAction, autoSet, dropPlayer, renameTeam, setSlot } from "../../../actions";
 import { Fpts, PointsKey } from "@/components/Fpts";
 
 export async function TeamView({ leagueId, teamId, editable }: { leagueId: number; teamId: number; editable: boolean }) {
@@ -22,22 +23,20 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
   // Slab boosts: who can still be boosted for his next game, and what each of those days is already boosted with.
   const me = editable ? await currentUser() : null;
   const presets = me ? userPresets(me.id) : [];
-  // Slab equips: players with a game left this week who have a slab of theirs to equip (or one already on).
-  const boosts = teamBoosts(t.id);
-  const mySlabs = me ? boostSlabs(me.id) : [];
-  const onCards = me ? new Map(equippedSlabCards(me.id).map((s) => [s.cardId, s])) : new Map();
-  const boostable = me && l.draft_status === "done" && !l.champion_team_id
-    ? roster(t.id).flatMap((p) => {
-        const g = boostableGame(l, p);
-        if (!g) return [];
-        const eq = boosts.get(`${p.id}|${g.key}`);
-        const equipped = eq ? onCards.get(eq.card_id) ?? null : null;
-        if (!equipped && !mySlabs.some((s) => s.playerId === p.id)) return [];
-        return [{ playerId: p.id, dayKey: g.key, day: g.label, equipped }];
-      })
-    : [];
-
   const b = teamBrand(t);
+  const td = l.draft_status === "done" ? teamDays(l, t.id, l.current_week) : null;
+  // Current and next matchup boxes (ESPN's team header).
+  const box = (week: number) => {
+    const m = one<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ? AND (home_team_id = ? OR away_team_id = ?)", l.id, week, t.id, t.id);
+    if (!m) return null;
+    const side = (tid: number, stored: number | null) => {
+      const x = one<Team>("SELECT * FROM teams WHERE id = ?", tid)!;
+      const score = m.final && stored != null ? stored : week === l.current_week ? (tid === t.id ? tw.score : teamWeek(l, tid, week).score) : 0;
+      return { id: tid, brand: teamBrand(x), score };
+    };
+    return { m, sides: [side(m.home_team_id, m.home_score), side(m.away_team_id, m.away_score)] };
+  };
+  const boxes = l.draft_status === "done" ? ([["Current matchup", box(l.current_week)], ["Next matchup", box(l.current_week + 1)]] as const).filter(([, x]) => x) : [];
   const table = standings(l.id);
   const rank = table.findIndex((x) => x.id === t.id) + 1;
   const ord = (n: number) => `${n}${["th", "st", "nd", "rd"][(n % 100 >> 3) ^ 1 && n % 10] || "th"}`;
@@ -81,23 +80,39 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         <div className="h-2" style={{ background: `linear-gradient(90deg, ${b.alt}, ${b.color}, ${b.alt})` }} />
       </section>
 
+      {boxes.length > 0 && (
+        <div className="relative grid gap-3 sm:grid-cols-2">
+          {boxes.map(([label, x]) => (
+            <Link key={label} href={`/league/${leagueId}/matchup/${x!.m.id}`} className="card block p-3 transition hover:border-brand/50">
+              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-500">{label}{x!.m.final ? " · Final" : ""}</p>
+              {x!.sides.map((sd) => (
+                <div key={sd.id} className="flex items-center gap-2.5 py-1">
+                  <TeamBadge brand={sd.brand} size={28} />
+                  <span className={`min-w-0 flex-1 truncate text-sm ${sd.id === t.id ? "font-black text-white" : "font-semibold text-white/70"}`}>{sd.brand.name}</span>
+                  <span className="font-mono text-lg font-black text-white">{Math.round(sd.score * 10) / 10}</span>
+                </div>
+              ))}
+            </Link>
+          ))}
+        </div>
+      )}
+
       <div className="relative">
-        {l.draft_status !== "done" ? (
+        {l.draft_status !== "done" || !td ? (
           <p className="card p-6 text-zinc-500">Rosters fill up during the draft.</p>
-        ) : (
-          <TeamCourt
-            players={players}
-            editable={editable}
-            brand={b}
-            setSlot={editable ? setSlot.bind(null, leagueId) : undefined}
-            autoSet={editable ? autoSet.bind(null, leagueId) : undefined}
-            drop={editable ? dropPlayer.bind(null, leagueId) : undefined}
-            boost={editable && me ? {
-              slabs: mySlabs, boostable,
-              set: boostPlayer.bind(null, leagueId), clear: unboostPlayer.bind(null, leagueId),
-            } : undefined}
-          />
-        )}
+        ) : (() => {
+          const actions = {
+            setSlot: editable ? setSlot.bind(null, leagueId) : undefined,
+            autoSet: editable ? autoSet.bind(null, leagueId) : undefined,
+            drop: editable ? dropPlayer.bind(null, leagueId) : undefined,
+          };
+          return (
+            <LineupViews
+              board={<RosterBoard key="box" days={td.days} rows={td.rows} totals={td.totals} initialDay={defaultDay(td.days)} players={players} editable={editable} brand={b} {...actions} />}
+              court={<TeamCourt key="court" players={players} editable={editable} brand={b} courtOnly {...actions} />}
+            />
+          );
+        })()}
       </div>
 
       {editable && (
@@ -119,8 +134,8 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         </details>
       )}
       <PointsKey className="relative" />
-      <p className="relative text-xs text-zinc-400"><BoltIcon className="text-fpts" /> Slab equips: if you have a slab of one of your players, equip it on his next game and his fantasy points for that game are multiplied by the slab&apos;s stamp (1.10x to 2.00x). It locks at tip-off, only counts if he starts, and the slab is used up when the game ends.</p>
-      <p className="relative text-xs text-zinc-400">Lineups are daily. Each player locks at his own tip-off, so you can still swap guys who play later tonight. Points count for whatever slot a player was in when his game started.</p>
+      <p className="relative text-xs text-zinc-400"><BoltIcon className="text-fpts" /> Tap a player to equip one of his slabs on his next game. Boost first, then multiplier. Locks at tip-off.</p>
+      <p className="relative text-xs text-zinc-400">Daily lineups. Each player locks at his own tip-off.</p>
     </div>
   );
 }

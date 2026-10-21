@@ -34,9 +34,9 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
   const lastWeek = l.current_week > 1 ? all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ? AND final = 1", l.id, l.current_week - 1) : [];
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div>
       {l.draft_status === "done" && <AutoRefresh ms={l.week_started_at ? 4000 : 30000} />}
-      <div className="space-y-6 lg:col-span-2">
+      <div className="space-y-6">
         {l.champion_team_id && (() => {
           const champ = teams.find((t) => t.id === l.champion_team_id);
           const s = nbaSeason();
@@ -83,7 +83,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-zinc-400">CPU teams draft and set lineups automatically. When a friend joins with the code they take over a CPU seat.</p>
+            <p className="text-xs text-zinc-400">CPU teams run themselves. A friend who joins takes over one.</p>
           </section>
         )}
 
@@ -94,6 +94,39 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
           </Link>
         )}
 
+        {/* Standings first, above the week's matchup */}
+        <div className="card p-4">
+          <h3 className="mb-3 flex items-center justify-between font-bold">Standings <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">W-L · PF</span></h3>
+          <ol className="grid gap-1.5 lg:grid-cols-2">
+            {standings(l.id).map((t, i) => {
+              const b = brand.get(t.id) ?? teamBrand(t);
+              const mine = me?.id === t.id;
+              return (
+                <li key={t.id}>
+                  <Link href={`/league/${l.id}/team/${t.id}`}
+                    className={`relative flex items-center gap-2.5 overflow-hidden rounded-xl py-2 pl-3 pr-3 transition hover:brightness-125 ${mine ? "ring-2 ring-white/60" : "ring-1 ring-white/5"}`}
+                    style={{ background: `linear-gradient(100deg, ${b.color}cc 0%, ${b.color}55 45%, ${b.alt}22 100%)` }}>
+                    <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: `linear-gradient(${b.color}, ${b.alt})` }} />
+                    <span className="pointer-events-none absolute -right-4 top-1/2 -translate-y-1/2 opacity-15"><TeamBadge brand={b} size={64} ghost /></span>
+                    <span className="relative w-5 text-center font-mono text-lg font-black text-white/80">{i + 1}</span>
+                    <span className="relative"><TeamBadge brand={b} size={30} /></span>
+                    <span className="relative min-w-0 flex-1">
+                      <span className="block truncate text-sm font-bold text-white">{t.name}</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-widest text-white/60">{b.abbr}{mine ? " · You" : ""}</span>
+                    </span>
+                    <span className="relative text-right">
+                      <span className="block font-mono text-sm font-black text-white">{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""}</span>
+                      <span className="block font-mono text-[10px] text-white/70"><Fpts n={t.points_for} live /></span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+        {!isCommish && !me && l.draft_status === "pre" && (
+          <Link href="/leagues" className="btn-primary w-full">Join this league</Link>
+        )}
         {l.draft_status === "done" && (() => {
           const m = matchups.find((x) => me && (x.home_team_id === me.id || x.away_team_id === me.id));
           const sideOf = (tid: number, stored: number | null, final: number) => {
@@ -104,6 +137,8 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
           const h = m && sideOf(m.home_team_id, m.home_score, m.final);
           const a = m && sideOf(m.away_team_id, m.away_score, m.final);
           const live = !!(h && a) && (l.mode === "sim" ? !!l.week_started_at : h.w.score + a.w.score > 0);
+          // The LIVE badge only while one of its players' games is under way, not all week.
+          const playing = !!(h && a) && (l.mode === "sim" || [...h.w.players, ...a.w.players].some((p) => p.now?.state === "in"));
           return (
             <section className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -119,7 +154,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 <div className="h-2 overflow-hidden rounded-full bg-panel2"><div className="h-full bg-gradient-to-r from-brand to-red-800 transition-all" style={{ width: `${progress * 100}%` }} /></div>
               )}
               {m && h && a && (
-                <MatchupCard href={`/league/${l.id}/matchup/${m.id}`} home={h.side} away={a.side} status={m.final ? "final" : live ? "live" : "pre"} winProb={winProb(h.w, a.w)} mine big />
+                <MatchupCard href={`/league/${l.id}/matchup/${m.id}`} home={h.side} away={a.side} status={m.final ? "final" : live ? "live" : "pre"} playing={playing} winProb={winProb(h.w, a.w)} mine big />
               )}
             </section>
           );
@@ -155,10 +190,10 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 <div className="p-5">
                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-600">Every week</p>
                   <h2 className="text-2xl font-black tracking-tight text-white">Win packs, rip slabs</h2>
-                  <p className="mt-1 text-sm text-zinc-500">Every manager earns a pack each week. Top scorer and the champ get extra.</p>
+                  <p className="mt-1 text-sm text-zinc-500">A pack for everyone each week. Bonus for top score and the champ.</p>
                   <div className="mt-4 grid grid-cols-4 gap-2">
                     {rewards.map(([label, id, bonus]) => (
-                      <Link key={label} href="/packs" className="group flex flex-col items-center rounded-xl bg-black/20 px-1 pb-2 pt-3 text-center ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-amber-400/40">
+                      <Link key={label} href={`/league/${l.id}/packs`} className="group flex flex-col items-center rounded-xl bg-black/20 px-1 pb-2 pt-3 text-center ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-amber-400/40">
                         <PackThumb id={id} height={84} showName={false} />
                         <span className="mt-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500">{label}</span>
                         <span className="text-xs font-bold leading-tight text-white">{PACK_BY_ID[id]?.name}</span>
@@ -171,7 +206,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                   <div>
                     <p className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-600">Points pay</p>
                     <h2 className="text-2xl font-black tracking-tight text-white">Every point pays Pack Points</h2>
-                    <p className="mt-1 text-sm text-zinc-500">Every fantasy point your starters score pays you half a Pack Point when their games go final.</p>
+                    <p className="mt-1 text-sm text-zinc-500">Each starter&apos;s fantasy point pays ½ Pack Point at the final.</p>
                   </div>
                   <PointsKey compact />
                   <div className="rounded-xl bg-emerald-500/10 p-3 ring-1 ring-emerald-500/30">
@@ -185,7 +220,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                       <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">Season</p><p className="font-black text-white"><Coins n={mine.season} live /></p></div>
                     </div>
                   )}
-                  <Link href="/packs" className="btn-primary w-full">Spend them in the Pack Shop</Link>
+                  <Link href={`/league/${l.id}/packs`} className="btn-primary w-full">Spend them on League Packs</Link>
                 </div>
               </div>
             </section>
@@ -200,40 +235,6 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
         )}
       </div>
 
-      <aside className="space-y-6">
-        <div className="card p-4">
-          <h3 className="mb-3 flex items-center justify-between font-bold">Standings <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">W-L · PF</span></h3>
-          <ol className="space-y-1.5">
-            {standings(l.id).map((t, i) => {
-              const b = brand.get(t.id) ?? teamBrand(t);
-              const mine = me?.id === t.id;
-              return (
-                <li key={t.id}>
-                  <Link href={`/league/${l.id}/team/${t.id}`}
-                    className={`relative flex items-center gap-2.5 overflow-hidden rounded-xl py-2 pl-3 pr-3 transition hover:brightness-125 ${mine ? "ring-2 ring-white/60" : "ring-1 ring-white/5"}`}
-                    style={{ background: `linear-gradient(100deg, ${b.color}cc 0%, ${b.color}55 45%, ${b.alt}22 100%)` }}>
-                    <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: `linear-gradient(${b.color}, ${b.alt})` }} />
-                    <span className="pointer-events-none absolute -right-4 top-1/2 -translate-y-1/2 opacity-15"><TeamBadge brand={b} size={64} ghost /></span>
-                    <span className="relative w-5 text-center font-mono text-lg font-black text-white/80">{i + 1}</span>
-                    <span className="relative"><TeamBadge brand={b} size={30} /></span>
-                    <span className="relative min-w-0 flex-1">
-                      <span className="block truncate text-sm font-bold text-white">{t.name}</span>
-                      <span className="block text-[10px] font-bold uppercase tracking-widest text-white/60">{b.abbr}{mine ? " · You" : ""}</span>
-                    </span>
-                    <span className="relative text-right">
-                      <span className="block font-mono text-sm font-black text-white">{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""}</span>
-                      <span className="block font-mono text-[10px] text-white/70"><Fpts n={t.points_for} live /></span>
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-        {!isCommish && !me && l.draft_status === "pre" && (
-          <Link href="/leagues" className="btn-primary w-full">Join this league</Link>
-        )}
-      </aside>
     </div>
   );
 }

@@ -31,7 +31,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
     <div className="grid gap-6 lg:grid-cols-2">
       <section className="card space-y-3 p-5 lg:col-span-2">
         <h2 className="text-lg font-bold">League branding</h2>
-        <p className="text-sm text-zinc-500">Name, short name, colours and a transparent PNG logo. Change it whenever you like; it shows across the whole league.</p>
+        <p className="text-sm text-zinc-500">Name, colours and logo for the whole league.</p>
         <BrandEditor label="League" subtitle={`${teams.length} teams`}
           initial={{ name: l.name, abbr: lb.abbr, color: lb.color, alt_color: lb.alt, logo_url: lb.logo }}
           onSave={updateLeagueBrandAction.bind(null, l.id)} />

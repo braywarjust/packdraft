@@ -146,6 +146,9 @@ function open(): DatabaseSync {
   if (!matchupCols.includes("slot")) db.exec("ALTER TABLE matchups ADD COLUMN slot INTEGER");
   const playerCols = (db.prepare("PRAGMA table_info(players)").all() as { name: string }[]).map((c) => c.name);
   if (!playerCols.includes("elig")) db.exec("ALTER TABLE players ADD COLUMN elig TEXT");
+  // League Packs (Update 2.1): the league a pack was bought or won in, and opens in. Older packs have none.
+  const packCols = (db.prepare("PRAGMA table_info(user_packs)").all() as { name: string }[]).map((c) => c.name);
+  if (!packCols.includes("league_id")) db.exec("ALTER TABLE user_packs ADD COLUMN league_id INTEGER");
   if (fresh) carryOverUsers(db);
   db.prepare("UPDATE users SET coins = ? WHERE is_tester = 1 AND coins < ?").run(TESTER_COINS, TESTER_FLOOR);
   db.exec("COMMIT");

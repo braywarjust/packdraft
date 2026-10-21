@@ -27,22 +27,30 @@ export const RARITY_BLURB: Record<Rarity, string> = {
 };
 export const RARITY_ORDER: Rarity[] = ["common", "rare", "epic", "legendary", "grail"];
 
-// Packs drop Slabs of active NBA players. A slab's value is fixed by its tier and how good the player is (slab-cards.ts),
-// so odds are set per pack to keep the average return near 90% (simulated against the player pool: 89-100%).
+// Pricing (Update 2.1), balanced against what a manager actually earns and what a pack actually does for his team:
+//  - A typical week earns about 1,800 Pack Points: ten starters at ~42 fantasy points a game, ~3.5 games each, is
+//    ~1,470 fantasy points × 0.5 = ~735, plus the 150 daily bonus × 7 = 1,050.
+//  - What a slab adds to one game, simulated over a real league pool (boost first, then multiplier): Common ~2 fantasy
+//    points, Rare ~6, Epic ~10, Mythic ~18, Immortal ~26. So each pack's expected gain is Rookie ~2, Starter ~4,
+//    Pro ~7, All-Pro ~9, Hall of Fame ~13, GOAT ~18, Mega ~86.
+//  - Prices step up as a share of that week: Rookie ~1% (an impulse rip), Starter 5%, Pro 12%, All-Pro 25%,
+//    Hall of Fame half a week, GOAT a full week, Mega (five GOAT-grade slabs) about four weeks.
+//  - Every pack costs well over 100× what its slab pays back directly at 0.5 Pack Points a point, so packs are for
+//    winning matchups and collecting, never a way to farm Pack Points.
 export const PACKS: PackType[] = [
   { id: "rookie", name: "Rookie Pack", price: 25, cards: 1, color: "from-slate-500 to-slate-700", accent: "#94a3b8", blurb: "Cheap thrills. Every hit starts somewhere.",
     odds: { common: 94.4, rare: 5, epic: 0.5, legendary: 0.09, grail: 0.01 } },
-  { id: "starter", name: "Starter Pack", price: 100, cards: 1, color: "from-sky-500 to-blue-700", accent: "#38bdf8", blurb: "Solid floor, real upside.",
+  { id: "starter", name: "Starter Pack", price: 90, cards: 1, color: "from-sky-500 to-blue-700", accent: "#38bdf8", blurb: "Solid floor, real upside.",
     odds: { common: 50, rare: 42, epic: 7, legendary: 0.95, grail: 0.05 } },
-  { id: "pro", name: "Pro Pack", price: 250, cards: 1, color: "from-emerald-500 to-teal-700", accent: "#34d399", blurb: "What weekly winners rip.",
+  { id: "pro", name: "Pro Pack", price: 225, cards: 1, color: "from-emerald-500 to-teal-700", accent: "#34d399", blurb: "What weekly winners rip.",
     odds: { common: 20, rare: 48, epic: 27, legendary: 4.85, grail: 0.15 } },
-  { id: "allpro", name: "All-Pro Pack", price: 500, cards: 1, color: "from-fuchsia-500 to-purple-700", accent: "#e879f9", blurb: "Boosted Epic odds.",
+  { id: "allpro", name: "All-Pro Pack", price: 450, cards: 1, color: "from-fuchsia-500 to-purple-700", accent: "#e879f9", blurb: "Boosted Epic odds.",
     odds: { common: 2, rare: 36, epic: 46, legendary: 15.6, grail: 0.4 } },
-  { id: "hof", name: "Hall of Fame Pack", price: 1000, cards: 1, color: "from-amber-400 to-orange-600", accent: "#fbbf24", blurb: "Top scorer of the week gets one of these.",
+  { id: "hof", name: "Hall of Fame Pack", price: 900, cards: 1, color: "from-amber-400 to-orange-600", accent: "#fbbf24", blurb: "Top scorer of the week gets one of these.",
     odds: { common: 0, rare: 15, epic: 40, legendary: 44, grail: 1 } },
-  { id: "goat", name: "GOAT Pack", price: 2500, cards: 1, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Mythic chase.",
+  { id: "goat", name: "GOAT Pack", price: 1800, cards: 1, color: "from-rose-500 via-amber-400 to-emerald-400", accent: "#fb7185", blurb: "Big money. Mythic chase.",
     odds: { common: 0, rare: 0, epic: 10, legendary: 82, grail: 8 } },
-  { id: "megacase", name: "Mega Pack", price: 10000, cards: 5, kind: "case", color: "from-zinc-900 via-amber-500 to-zinc-900", accent: "#f5c15c", blurb: "Five slabs, all Epic or better. The big rip.",
+  { id: "megacase", name: "Mega Pack", price: 7500, cards: 5, kind: "case", color: "from-zinc-900 via-amber-500 to-zinc-900", accent: "#f5c15c", blurb: "Five slabs, all Epic or better. The big rip.",
     odds: { common: 0, rare: 0, epic: 12, legendary: 83, grail: 5 } },
 ];
 export const PACK_BY_ID: Record<string, PackType> = Object.fromEntries(PACKS.map((p) => [p.id, p]));

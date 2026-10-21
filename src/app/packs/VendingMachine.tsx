@@ -12,8 +12,9 @@ import { SlabCount } from "@/components/SlabIcon";
 import { SlabCover } from "@/components/Slab";
 import { CheckIcon, LockIcon } from "@/components/Icons";
 import { useScrollLock } from "@/components/useScrollLock";
+import { usePhone } from "@/components/usePhone";
 
-type Inv = { id: number; pack_type: string; source: string; created_at: number };
+type Inv = { id: number; pack_type: string; source: string; created_at: number; league_id?: number | null };
 type Act<T> = Promise<T | { error: string }>;
 /** Heavy Hitters and the top two rarity tiers count as case hits: their face-down card shakes before the flip. */
 const isBigHit = (c: CardData) => c.s_source === "courtyard" || c.s_source === "auction" || c.rarity === "legendary" || c.rarity === "grail";
@@ -115,10 +116,73 @@ const CASE_SIZE = { sm: [116, 116], md: [220, 220], big: [336, 336] } as const;
 const artSize = (p: PackType, size: "sm" | "md" | "big") => (p.kind === "case" ? CASE_SIZE : PACK_SIZE)[size];
 const slabsLabel = (n: number) => `${n} slab${n === 1 ? "" : "s"}`;
 
-/** Animated pack art (components/PackArt) in the shop's standard boxes. */
-function PackArt({ p, big, md }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[] }) {
-  const [w, h] = artSize(p, big ? "big" : md ? "md" : "sm");
+/** Animated pack art (components/PackArt) in the shop's standard boxes. `phone` shrinks the big rip-screen art to fit. */
+function PackArt({ p, big, md, phone }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[]; phone?: boolean }) {
+  const [w, h] = big && phone ? (p.kind === "case" ? [240, 240] : [200, 254]) : artSize(p, big ? "big" : md ? "md" : "sm");
   return <PackVisual p={p} width={w} height={h} />;
+}
+
+/**
+ * The pack shop on a phone, as the front of a vending machine: every pack in a glass case at once. The six 1-slab packs
+ * sit in two rows of three slots (A1–B3, cheapest first), each with its price on a keypad-style button, and the Mega
+ * Pack fills the wide jackpot slot along the bottom. Tap a slot to check out.
+ */
+function PhoneMachine({ coins, busy, busyId, onPick }: {
+  coins: number; busy: boolean; busyId: string | null; onPick: (p: PackType) => void;
+}) {
+  const singles = PACKS.filter((p) => p.kind !== "case");
+  const mega = PACKS.find((p) => p.kind === "case");
+  const odds = (p: PackType) => {
+    const v = p.odds.legendary + p.odds.grail;
+    return `${+v.toFixed(v < 1 ? 2 : 1)}%`;
+  };
+  const price = (p: PackType, short: boolean) => (
+    <span className={`flex items-center justify-center rounded-md px-1.5 py-1 text-[13px] font-black leading-none ring-1 ${short ? "bg-black/30 text-zinc-500 ring-white/5" : "bg-emerald-500/15 text-emerald-500 ring-emerald-500/30"}`}>
+      <Coins n={p.price} />
+    </span>
+  );
+  return (
+    <div className="rounded-3xl bg-[linear-gradient(180deg,#3b4252,#161b26)] p-2 shadow-2xl ring-1 ring-white/10 sm:hidden">
+      <div className="mb-2 flex items-center justify-between px-2 pt-1">
+        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/60">League Pack Machine</span>
+        <span className="flex items-center gap-1.5 rounded-full bg-black/40 px-2 py-0.5 text-[11px] font-black text-emerald-500"><Coins n={coins} live /></span>
+      </div>
+      {/* The glass case */}
+      <div className="relative overflow-hidden rounded-2xl bg-[#0b1220] p-2 ring-1 ring-inset ring-white/10">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,.08)_0%,transparent_30%,transparent_70%,rgba(255,255,255,.05)_100%)]" />
+        <div className="grid grid-cols-3 gap-x-1.5 gap-y-2">
+          {singles.map((p, i) => {
+            const short = coins < p.price;
+            return (
+              <button key={p.id} onClick={() => onPick(p)} disabled={busy || short}
+                className={`relative flex flex-col items-center gap-1 rounded-xl pb-1.5 pt-1 transition active:scale-95 disabled:cursor-not-allowed ${short ? "opacity-50" : ""}`}>
+                <span className="absolute left-0.5 top-0.5 z-10 rounded bg-black/70 px-1 py-px font-mono text-[9px] font-black text-white/80">{"AB"[Math.floor(i / 3)]}{(i % 3) + 1}</span>
+                <span className={busyId === p.id ? "animate-pulse" : ""}><PackVisual p={p} width={84} height={107} /></span>
+                <span className="whitespace-nowrap text-[9px] font-bold uppercase tracking-wider text-white/50">Mythic+ <b className="text-red-500">{odds(p)}</b></span>
+                {price(p, short)}
+              </button>
+            );
+          })}
+        </div>
+        {mega && (() => {
+          const short = coins < mega.price;
+          return (
+            <button onClick={() => onPick(mega)} disabled={busy || short}
+              className={`mt-2 flex w-full items-center gap-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-amber-400/5 to-amber-500/15 p-2 text-left ring-1 ring-amber-400/30 transition active:scale-[.98] disabled:cursor-not-allowed ${short ? "opacity-50" : ""}`}>
+              <span className={busyId === mega.id ? "animate-pulse" : ""}><PackVisual p={mega} width={88} height={88} /></span>
+              <span className="min-w-0 flex-1 space-y-1">
+                <span className="block text-[9px] font-black uppercase tracking-widest text-amber-400">C1 · Jackpot slot</span>
+                <span className="block text-sm font-black text-white">{mega.name}</span>
+                <span className="block text-[11px] text-zinc-400">{slabsLabel(mega.cards)}, all Epic or better</span>
+              </span>
+              {price(mega, short)}
+            </button>
+          );
+        })()}
+      </div>
+      <p className="px-2 pb-0.5 pt-1.5 text-center text-[10px] text-white/40">Tap a slot to check out and rip it</p>
+    </div>
+  );
 }
 
 function Confetti() {
@@ -144,6 +208,7 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
   rip: (packId: number) => Act<{ ok: boolean; cards: CardData[] }>;
 }) {
   const router = useRouter();
+  const phone = usePhone();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [stage, setStage] = useState<"idle" | "vending" | "ready" | "tearing" | "cards">("idle");
   const [packId, setPackId] = useState<number | null>(null);
@@ -200,6 +265,8 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
 
   const close = () => { setStage("idle"); setCards([]); setPackId(null); router.refresh(); };
   const allFlipped = cards.length > 0 && flipped.size === cards.length;
+  // Revealed slab size: smaller on phones, smaller still for the 5-slab Mega Pack (two to a row).
+  const slabSize = phone ? (cards.length > 1 ? 136 : 200) : 208;
   const rp = PACK_BY_ID[packType];
 
   return (
@@ -223,6 +290,7 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
                   <div className="min-w-0">
                     <p className="text-sm font-bold">{p.name}</p>
                     <p className="truncate text-xs text-zinc-500">{inv.source}</p>
+                    {inv.league_id == null && <p className="truncate text-[10px] font-semibold text-amber-500">Opens in any of your leagues</p>}
                     <span className="mt-2 inline-block rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-white">Open</span>
                   </div>
                 </button>
@@ -233,10 +301,12 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
       )}
 
       <section id="packs" className="scroll-mt-36 space-y-3">
-        <div><h2 className="text-lg font-bold">Packs</h2><p className="text-sm text-zinc-500">One Slab each, five in the Mega Pack. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
-        {/* All seven packs in one row; scrolls sideways when the screen is too narrow. */}
+        <div className="max-sm:hidden"><h2 className="text-lg font-bold">League Packs</h2><p className="text-sm text-zinc-500">1 slab each, 5 in the Mega Pack. Pricier packs, better odds.</p></div>
+        {/* Phones: the whole shop on one screen, as a vending machine front. */}
+        <PhoneMachine coins={coins} busy={stage !== "idle"} busyId={busyId} onPick={setCheckout} />
+        {/* Bigger screens: all seven packs in one row; scrolls sideways when the screen is too narrow. */}
         {/* Generous padding (pulled back with negative margins) so a hovered pack’s lift, tilt and shadow never get clipped by the scroller. */}
-        <div className="-mx-6 -mb-6 -mt-8 flex snap-x scroll-px-6 gap-6 overflow-x-auto px-6 pb-10 pt-11 scrollbar-thin">
+        <div className="-mx-6 -mb-6 -mt-8 hidden snap-x sm:flex scroll-px-6 gap-6 overflow-x-auto px-6 pb-10 pt-11 scrollbar-thin">
           {PACKS.map((p) => {
             const busy = stage !== "idle";
             const short = coins < p.price;
@@ -265,44 +335,45 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
 
       {/* Rip modal */}
       {(stage === "ready" || stage === "tearing" || stage === "cards") && rp && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-zinc-100/95 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex flex-col items-center overflow-y-auto overflow-x-hidden bg-zinc-100/95 p-4 backdrop-blur-sm">
           {/* No words on screen from the pack dropping in until a slab is flipped, and no backing out: it gets opened. */}
           {stage !== "cards" ? (
-            <div className="flex flex-col items-center gap-6" style={{ "--burst": BURST[rp.id] ?? "#ffffff" } as React.CSSProperties}>
+            <div className="my-auto flex flex-col items-center gap-6" style={{ "--burst": BURST[rp.id] ?? "#ffffff" } as React.CSSProperties}>
               <button ref={packRef} onClick={doRip} disabled={stage === "tearing"} className={`relative ${stage === "ready" ? "anim-drop hover:anim-shake" : ""}`}>
                 {stage === "tearing" ? (
                   // Charge and burst: light rays spin up behind the crate while it shakes harder and harder, then it
                   // swells into a flash of its tier colour and the slabs deal in.
                   <div className="relative grid place-items-center">
                     {/* Centred by the keyframes themselves (translate -50%), so no translate classes here. */}
-                    <div className="anim-burst-rays pointer-events-none absolute left-1/2 top-1/2 h-[640px] w-[640px] rounded-full" />
-                    <div className="anim-burst-glow pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] rounded-full" />
-                    <div className="anim-charge relative"><div className="anim-jitter"><PackArt p={rp} big slabs={features[rp.id]} /></div></div>
+                    <div className="anim-burst-rays pointer-events-none absolute left-1/2 top-1/2 rounded-full" style={{ width: phone ? 420 : 640, height: phone ? 420 : 640 }} />
+                    <div className="anim-burst-glow pointer-events-none absolute left-1/2 top-1/2 rounded-full" style={{ width: phone ? 280 : 420, height: phone ? 280 : 420 }} />
+                    <div className="anim-charge relative"><div className="anim-jitter"><PackArt p={rp} big phone={phone} slabs={features[rp.id]} /></div></div>
                   </div>
                 ) : (
-                  <div className="anim-shake"><PackArt p={rp} big slabs={features[rp.id]} /></div>
+                  <div className="anim-shake"><PackArt p={rp} big phone={phone} slabs={features[rp.id]} /></div>
                 )}
               </button>
               {stage === "tearing" && <div className="anim-burst-flash pointer-events-none fixed inset-0 z-[55]" style={burstAt ? ({ "--bx": `${burstAt.x}px`, "--by": `${burstAt.y}px` } as React.CSSProperties) : undefined} />}
             </div>
           ) : (
             // The slabs sit dead centre, where the pack was; the summary hangs below them out of the flow so nothing moves.
-            <div className="relative flex w-full max-w-5xl flex-col items-center">
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-24">
+            // On phones the summary below needs room in the scroll area (pb), since it hangs outside the flow.
+            <div className={`relative my-auto flex w-full max-w-5xl flex-col items-center ${phone ? "pb-36 pt-8" : ""}`}>
+              <div className={`flex flex-wrap justify-center ${phone ? (cards.length > 1 ? "gap-x-3 gap-y-12" : "gap-y-16") : "gap-x-4 gap-y-24"}`}>
                 {cards.map((c, i) => {
                   const isUp = flipped.has(c.id);
                   const hit = isBigHit(c);
                   return (
                     <button key={c.id} onClick={() => !isUp && flip(c)} className={`flip anim-deal ${isUp ? "flipped" : ""}`} style={{ animationDelay: `${i * 120}ms` }}>
                       <div className={hit && !isUp ? "anim-rumble [perspective:1000px]" : ""}>
-                      <div className="flip-inner relative h-[208px] w-[216px]">{/* slab height only, so the slab itself is centred; its caption hangs below */}
+                      <div className="flip-inner relative" style={{ width: slabSize + 8, height: slabSize }}>{/* slab height only, so the slab itself is centred; its caption hangs below */}
                         {/* Face-down slab: the same 208px square as the revealed Slab, centred the same way, so it flips in place.
                             Old graded slabs no longer drop, so every new pull is a square Slab. */}
                         <div className="flip-face absolute inset-0 flex flex-col items-center">
-                          <SlabCover size={208} rarity={c.rarity} />
+                          <SlabCover size={slabSize} rarity={c.rarity} />
                         </div>
                         <div className={`flip-face flip-back absolute inset-0 flex flex-col items-center rounded-xl ${isUp && !c.slab_id && c.kind !== "slab" && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
-                          <PlayerCard c={c} />
+                          <PlayerCard c={c} size={slabSize} />
                         </div>
                       </div>
                       </div>
@@ -310,7 +381,7 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
                   );
                 })}
               </div>
-              <div className="absolute left-1/2 top-full mt-24 flex w-full max-w-xl -translate-x-1/2 justify-center pb-6">
+              <div className={`absolute left-1/2 top-full flex w-full max-w-xl -translate-x-1/2 justify-center pb-6 ${phone ? "mt-14" : "mt-24"}`}>
               {!allFlipped ? (flipped.size > 0 &&
                 <button className="btn-ghost" onClick={() => cards.forEach((c, i) => setTimeout(() => flip(c), i * 350))}>Reveal all</button>
               ) : (

@@ -40,11 +40,11 @@ export function PointsKey({ className = "", compact = false }: { className?: str
     <div className={`grid gap-2 text-xs ${compact ? "" : "sm:grid-cols-2"} ${className}`}>
       <div className="flex items-start gap-2 rounded-lg bg-black/20 p-2.5 ring-1 ring-white/5">
         <FptIcon className="mt-0.5 text-base" />
-        <p className="text-zinc-400"><b className="text-fpts">Fantasy points</b> are what your players score in league games. They decide your matchups and standings.</p>
+        <p className="text-zinc-400"><b className="text-fpts">Fantasy points</b> win your matchups.</p>
       </div>
       <div className="flex items-start gap-2 rounded-lg bg-black/20 p-2.5 ring-1 ring-white/5">
         <CoinIcon className="mt-0.5 text-base text-emerald-500" />
-        <p className="text-zinc-400"><b className="text-white">Pack Points</b> are the currency you spend on packs. Every fantasy point your starters score pays you {PP_PER_POINT} Pack Points.</p>
+        <p className="text-zinc-400"><b className="text-white">Pack Points</b> buy packs. Each fantasy point your starters score pays {PP_PER_POINT}.</p>
       </div>
     </div>
   );

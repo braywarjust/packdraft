@@ -2,27 +2,29 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all, one, Game, Matchup, Team } from "@/lib/db";
-import { beforeOpener, boostableGame, getLeague, maybeFinalize, roster, standings, teamWeek, STARTERS } from "@/lib/league";
+import { beforeOpener, getLeague, maybeFinalize, standings, teamWeek } from "@/lib/league";
 import { cardsWhere, unopenedPacks } from "@/lib/packs-server";
 import { Slab } from "@/components/Slab";
 import { RARITIES, Rarity } from "@/lib/packs";
-import { ensureBranding, favoritePresetId, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
-import { boostSlabs, teamBoosts } from "@/lib/boost";
+import { ensureBranding, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
 import { earnings } from "@/lib/economy";
 import { winProb } from "@/lib/sim";
 import { dayLabel, etDate } from "@/lib/nba/espn";
 import { ActionButton } from "@/components/ActionButton";
 import { Coins, CoinIcon } from "@/components/Coins";
-import { TeamBadge, type BrandLite } from "@/components/TeamBadge";
+import { TeamBadge } from "@/components/TeamBadge";
 import { TeamLogo } from "@/components/TeamLogo";
-import { MatchupCard } from "@/components/MatchupCard";
+import { MatchupStrip } from "@/components/MatchupCard";
 import { PackThumb } from "@/components/PackThumb";
 import { RarityBadge, slabOf } from "@/components/PlayerCard";
-import { BoltIcon } from "@/components/Icons";
+import { Headshot } from "@/components/Headshot";
+import { PlayerButton } from "@/components/PlayerInspector";
+import { SlabOn } from "@/components/SlabIcon";
+import { Fpts } from "@/components/Fpts";
 import { claimBonus } from "./actions";
+import { getProfile } from "@/lib/profile";
+import { Avatar, profileColors } from "@/components/ProfileView";
 
-const DEFAULT_BRAND: BrandLite = { name: "PackDraft", abbr: "PD", color: "#0253a4", alt: "#cc2b31", logo: null };
-type Alert = { href: string; tone: "red" | "amber" | "blue"; text: string; brand?: BrandLite };
 
 export default async function Home() {
   const user = await requireUser();
@@ -49,7 +51,6 @@ export default async function Home() {
      FROM users u WHERE u.is_tester = 0 ORDER BY (u.coins + vault) DESC LIMIT 6`);
 
   // Per-league snapshot + things that need attention.
-  const alerts: Alert[] = [];
   const leagues = myTeams.map((t) => {
     maybeFinalize(t.league_id);
     const l = getLeague(t.league_id)!;
@@ -58,22 +59,8 @@ export default async function Home() {
     const table = standings(l.id);
     const rank = table.findIndex((x) => x.id === t.id) + 1;
     const base = { t: fresh, l, brand, rank, size: table.length };
-    if (l.draft_status === "live") alerts.push({ href: `/league/${l.id}/draft`, tone: "red", text: `${l.name}: the draft is live`, brand });
-    if (l.draft_status !== "done" || l.champion_team_id) return { ...base, card: null, earned: null };
+    if (l.draft_status !== "done" || l.champion_team_id) return { ...base, card: null, earned: null, top: [] };
     const tw = teamWeek(l, t.id, l.current_week);
-    const filled = new Set(tw.players.filter((p) => p.slot !== "BN").map((p) => p.slot));
-    const empty = STARTERS.filter((s) => !filled.has(s)).length;
-    const hurt = tw.players.filter((p) => p.slot !== "BN" && p.injury && /^out/i.test(p.injury)).length;
-    if (empty) alerts.push({ href: `/league/${l.id}/team`, tone: "red", text: `${l.name}: ${empty} empty starting slot${empty > 1 ? "s" : ""}`, brand });
-    if (hurt) alerts.push({ href: `/league/${l.id}/team`, tone: "amber", text: `${l.name}: ${hurt} starter${hurt > 1 ? "s are" : " is"} listed OUT`, brand });
-    // A slab of one of his players who plays today, not equipped yet.
-    if (vault.n > 0 && l.mode !== "sim") {
-      const boosts = teamBoosts(t.id);
-      const mine = new Set(boostSlabs(user.id).map((x) => x.playerId));
-      const ready = roster(t.id).filter((p) => mine.has(p.id) && boostableGame(l, p)?.key === today && !boosts.has(`${p.id}|${today}`));
-      if (ready.length)
-        alerts.push({ href: `/league/${l.id}/team`, tone: "blue", text: `${l.name}: equip your ${ready[0].name} slab${ready.length > 1 ? ` (+${ready.length - 1} more)` : ""} before tonight's game`, brand });
-    }
     const m = one<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ? AND (home_team_id = ? OR away_team_id = ?)", l.id, l.current_week, t.id, t.id);
     let card = null;
     if (m) {
@@ -84,68 +71,55 @@ export default async function Home() {
       };
       const h = side(m.home_team_id, m.home_score), a = side(m.away_team_id, m.away_score);
       const live = l.mode === "sim" ? !!l.week_started_at : h.w.score + a.w.score > 0;
-      card = { href: `/league/${l.id}/matchup/${m.id}`, home: h.s, away: a.s, status: (m.final ? "final" : live ? "live" : "pre") as "final" | "live" | "pre", wp: winProb(h.w, a.w) };
+      // The LIVE badge only while one of its players' games is under way, not all week.
+      const playing = l.mode === "sim" || [...h.w.players, ...a.w.players].some((p) => p.now?.state === "in");
+      card = { href: `/league/${l.id}/matchup/${m.id}`, home: h.s, away: a.s, status: (m.final ? "final" : live ? "live" : "pre") as "final" | "live" | "pre", playing, wp: winProb(h.w, a.w) };
     }
-    return { ...base, card, earned: earnings(l.id, user.id, l.current_week) };
+    // Top performers this week: fantasy points each rostered player has earned for his team (games he started, slabs
+    // included), best first.
+    const top = all<Team>("SELECT * FROM teams WHERE league_id = ?", l.id)
+      .flatMap((x) => (x.id === t.id ? tw : teamWeek(l, x.id, l.current_week)).players.map((p) => ({ p, team: teamBrand(x), mine: x.id === t.id })))
+      .filter((r) => r.p.pts > 0)
+      .sort((a, b) => b.p.pts - a.p.pts)
+      .slice(0, 5);
+    return { ...base, card, earned: earnings(l.id, user.id, l.current_week), top };
   });
-  if (packs.length) alerts.push({ href: "/packs", tone: "blue", text: `${packs.length} unopened pack${packs.length > 1 ? "s" : ""} waiting to be ripped` });
-  if (user.last_bonus !== todayIso) alerts.push({ href: "#bonus", tone: "amber", text: "Your daily Pack Points bonus is ready" });
 
-  // Banner team: your starred Team Studio favourite, else your newest league team, else your first preset.
-  const fav = presets.find((p) => p.id === favoritePresetId(user.id)) ?? null;
-  const asBrand = (p: (typeof presets)[number]): BrandLite => ({ name: p.name, abbr: p.abbr, color: p.color, alt: p.alt_color, logo: p.logo_url });
-  const heroLeague = fav ? leagues.find((x) => x.t.preset_id === fav.id) : leagues[0];
-  const hero = fav ? asBrand(fav) : leagues[0]?.brand ?? (presets[0] ? asBrand(presets[0]) : DEFAULT_BRAND);
-  const otherTeams = leagues.filter((x) => x !== heroLeague);
-  const tones = { red: "border-l-red-500", amber: "border-l-amber-400", blue: "border-l-brand" };
+
+  const profile = getProfile(user.id);
+  const [pc1, pc2] = profile ? profileColors(profile) : [user.color, "#cc2b31"];
 
   return (
     <div className="space-y-6">
-      {/* Hero in your team's colours */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl" style={{ background: `linear-gradient(115deg, ${hero.color} 0%, ${hero.color} 50%, ${hero.alt} 140%)` }}>
-        <div className="pointer-events-none absolute -right-10 top-1/2 -translate-y-1/2 opacity-20"><TeamBadge brand={hero} size={380} ghost /></div>
+      {/* Compact banner in your profile colours, with your profile photo */}
+      <section className="relative overflow-hidden rounded-2xl border border-white/10 shadow-xl" style={{ background: `linear-gradient(115deg, ${pc1} 0%, ${pc1} 55%, ${pc2} 140%)` }}>
         <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 14px)" }} />
-        <div className="relative flex flex-wrap items-center gap-6 p-6 sm:p-8">
-          <TeamBadge brand={hero} size={112} className="drop-shadow-2xl" />
+        <div className="relative flex items-center gap-3 p-3 sm:gap-4 sm:p-4">
+          <Link href="/profile" className="shrink-0"><Avatar src={profile?.user.avatar ?? null} name={user.name} color={user.color} size={56} ring={profile?.look.ring ? pc2 : undefined} /></Link>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Welcome back</p>
-            <h1 className="truncate text-[1.65rem] font-black leading-none tracking-tight text-white sm:text-5xl">{user.name}</h1>
-            <p className="mt-2 text-sm text-white/80">
-              {hero === DEFAULT_BRAND ? "Set up your team in Team Studio to brand your app." : <>{hero.name}{heroLeague ? ` · ${heroLeague.l.name}` : ""}</>}
-            </p>
-            {otherTeams.length > 0 && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">{heroLeague ? "Your other teams" : "Your teams"}</span>
-                {otherTeams.map((x) => (
-                  <Link key={x.t.id} href={`/league/${x.l.id}`} title={`${x.t.name} · ${x.l.name}`}
-                    className="flex items-center gap-1.5 rounded-full bg-black/25 py-1 pl-1 pr-3 text-xs font-semibold text-white ring-1 ring-white/15 transition hover:bg-black/40">
-                    <TeamBadge brand={x.brand} size={24} />
-                    <span className="max-w-[9rem] truncate">{x.l.name}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/70">Welcome back</p>
+            <Link href="/profile" className="block truncate text-xl font-black leading-tight text-white hover:underline sm:text-2xl">{user.name}</Link>
+            {profile?.user.tagline && <p className="truncate text-xs text-white/75">{profile.user.tagline}</p>}
           </div>
-          <div id="bonus" className="flex flex-wrap gap-2">
+          <div id="bonus" className="shrink-0">
             {user.last_bonus !== todayIso
-              ? <ActionButton action={claimBonus} className="btn bg-[#fff] text-black hover:bg-[#e5e7eb]">Claim daily <Coins n={150} /></ActionButton>
-              : <span className="btn pointer-events-none bg-black/25 text-white/70">Daily bonus claimed</span>}
+              ? <ActionButton action={claimBonus} className="btn bg-[#fff] px-3 py-1.5 text-sm text-black hover:bg-[#e5e7eb]">Claim <Coins n={150} /></ActionButton>
+              : <span className="hidden rounded-full bg-black/25 px-3 py-1 text-xs text-white/70 sm:inline">Bonus claimed</span>}
           </div>
         </div>
-        <div className="relative grid grid-cols-2 gap-px bg-black/20 sm:grid-cols-4">
+        <div className="relative flex gap-px overflow-x-auto bg-black/20 text-white scrollbar-thin">
           {([
-            ["Pack Points", <Coins key="c" n={user.coins} live />, "/packs"],
+            ["Pack Points", <Coins key="c" n={user.coins} live />, "/collection"],
             ["Slabs", <span key="v">{vault.n}</span>, "/collection"],
-            ["Unopened packs", String(packs.length), "/packs"],
-            ["Open bets", bets.n ? <span key="b">{bets.n} · to win <Coins n={bets.toWin} /></span> : "None", "/bets"],
+            ["Packs", String(packs.length), "/packs"],
+            ["Open bets", bets.n ? <span key="b">{bets.n}</span> : "0", "/bets"],
           ] as [string, React.ReactNode, string][]).map(([k, v, href]) => (
-            <Link key={k} href={href} className="bg-black/25 px-5 py-3 backdrop-blur transition hover:bg-black/35">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>
-              <p className="truncate font-mono text-xl font-black text-white">{v}</p>
+            <Link key={k} href={href} className="min-w-[5.5rem] flex-1 bg-black/25 px-3 py-1.5 backdrop-blur transition hover:bg-black/35">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-white/60">{k}</p>
+              <p className="truncate font-mono text-sm font-black">{v}</p>
             </Link>
           ))}
         </div>
-        <div className="h-2" style={{ background: `linear-gradient(90deg, ${hero.alt}, ${hero.color}, ${hero.alt})` }} />
       </section>
 
       {presets.length === 0 && (
@@ -153,26 +127,12 @@ export default async function Home() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Start here</p>
             <p className="text-lg font-semibold">Set up your team: name, colours and logo</p>
-            <p className="text-sm text-zinc-500">Do it once in Team Studio, then pick it whenever you join a league.</p>
+            <p className="text-sm text-zinc-500">Set it once in Team Studio, use it in every league.</p>
           </div>
           <span className="btn-primary shrink-0">Open Team Studio</span>
         </Link>
       )}
 
-      {alerts.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-black uppercase tracking-widest text-zinc-500">Needs your attention</h2>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {alerts.map((a, i) => (
-              <Link key={i} href={a.href} className={`card flex items-center gap-3 border-l-4 px-4 py-3 text-sm font-semibold transition hover:border-zinc-300 ${tones[a.tone]}`}>
-                {a.brand ? <TeamBadge brand={a.brand} size={24} /> : <BoltIcon className="text-amber-600" />}
-                <span className="min-w-0 flex-1">{a.text}</span>
-                <span className="text-xs text-brand">Go →</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="space-y-4 lg:col-span-2">
@@ -185,7 +145,7 @@ export default async function Home() {
               No leagues yet. <Link href="/leagues/new" className="text-brand underline">Create one</Link> for the crew or <Link href="/leagues" className="text-brand underline">join with a code</Link>.
             </div>
           )}
-          {leagues.map(({ t, l, brand, rank, size, card, earned }) => (
+          {leagues.map(({ t, l, brand, rank, size, card, earned, top }) => (
             <div key={t.id} className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <Link href={`/league/${l.id}`} className="flex min-w-0 items-center gap-2 font-bold hover:underline">
@@ -199,7 +159,7 @@ export default async function Home() {
                 {earned && <span className="flex items-center gap-1 text-xs text-zinc-500">Earned this week <span className="font-bold text-emerald-600"><Coins n={earned.week} live /></span></span>}
               </div>
               {card ? (
-                <MatchupCard href={card.href} home={card.home} away={card.away} status={card.status} winProb={card.wp} mine />
+                <MatchupStrip href={card.href} home={card.home} away={card.away} status={card.status} playing={card.playing} winProb={card.wp} />
               ) : (
                 <Link href={l.draft_status === "live" ? `/league/${l.id}/draft` : `/league/${l.id}`}
                   className="relative flex items-center gap-4 overflow-hidden rounded-2xl p-5 shadow-xl ring-1 ring-white/10 transition hover:-translate-y-0.5"
@@ -212,6 +172,36 @@ export default async function Home() {
                   </div>
                   <span className="btn relative bg-[#fff] text-black">{l.draft_status === "live" ? "Draft room" : "Open league"}</span>
                 </Link>
+              )}
+              {top.length > 0 && (
+                <div className="card p-3 sm:p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-zinc-400">Top performers · Week {l.current_week}</h3>
+                    <Link href={`/league/${l.id}/matchups`} className="text-xs text-brand hover:underline">Matchups</Link>
+                  </div>
+                  <ol className="space-y-1">
+                    {top.map(({ p, team, mine }, i) => (
+                      <li key={p.id} className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 ${i === 0 ? "bg-amber-400/10 ring-1 ring-amber-400/30" : "bg-ink/40"}`}>
+                        <span className={`w-4 text-center font-mono text-sm font-black ${i === 0 ? "text-amber-400" : "text-zinc-500"}`}>{i + 1}</span>
+                        <Headshot src={p.headshot} name={p.name} size={34} />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-1.5 text-sm font-bold text-white">
+                            <PlayerButton id={p.id} league={l.id} className="truncate">{p.name}</PlayerButton>
+                            <TeamLogo team={p.team} size={14} />
+                            <SlabOn boost={p.boost} />
+                          </span>
+                          <span className="flex items-center gap-1 truncate text-[11px] text-zinc-500">
+                            <TeamBadge brand={team} size={14} /><span className="truncate">{team.name}{mine ? " · You" : ""}</span> · {p.played} GP
+                          </span>
+                        </span>
+                        <span className="text-right">
+                          <span className="block font-mono text-base font-black text-white"><Fpts n={p.pts} /></span>
+                          <span className="block text-[10px] text-zinc-500">{(p.pts / Math.max(1, p.played)).toFixed(1)}/g</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               )}
             </div>
           ))}

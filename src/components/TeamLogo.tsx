@@ -14,6 +14,6 @@ export function TeamLogo({ team, size = 20, className = "" }: { team: string; si
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={`https://a.espncdn.com/i/teamlogos/nba/${step === 0 ? "500-dark" : "500"}/${slug}.png`} alt={team} title={team} width={size} height={size}
-      loading="lazy" onError={() => setStep((s) => s + 1)} className={`inline-block shrink-0 object-contain ${className}`} style={{ width: size, height: size }} />
+      loading="lazy" onError={() => setStep((s) => s + 1)} className={`inline-block max-w-none shrink-0 object-contain ${className}`} style={{ width: size, height: size }} />
   );
 }

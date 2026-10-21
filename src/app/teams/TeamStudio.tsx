@@ -65,11 +65,12 @@ export function TeamStudio({ presets, startNew, favorite }: { presets: P[]; star
     setUploading(true);
     const fd = new FormData();
     fd.append("file", f);
-    const r = await fetch("/api/upload/logo", { method: "POST", body: fd });
-    const j = await r.json();
+    const r = await fetch("/api/upload/logo", { method: "POST", body: fd }).catch(() => null);
+    const j: { url?: string; error?: string } = r ? await r.json().catch(() => ({})) : {};
     setUploading(false);
-    if (!r.ok) { setErr(j.error ?? "Upload failed"); return; }
-    setEdit((e) => (e ? { ...e, logo_url: j.url } : e));
+    if (!r?.ok || !j.url) { setErr(j.error ?? (r?.status === 413 ? "That image is too big. Try a smaller one." : "Upload failed. Check your connection and try again.")); return; }
+    const url = j.url;
+    setEdit((e) => (e ? { ...e, logo_url: url } : e));
   };
   const save = () => edit && start(async () => {
     const r = (await savePresetAction(edit)) as { error?: string };
@@ -133,17 +134,17 @@ export function TeamStudio({ presets, startNew, favorite }: { presets: P[]; star
               <ColorField label="Secondary colour" value={edit.alt_color} onChange={(v) => setEdit({ ...edit, alt_color: v })} />
             </div>
             <div>
-              <label className="label">Logo (transparent PNG)</label>
+              <label className="label">Logo</label>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="grid h-16 w-16 place-items-center rounded-lg border border-line bg-[repeating-conic-gradient(#2c3445_0_25%,#252c3b_0_50%)] bg-[length:12px_12px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {edit.logo_url ? <img src={edit.logo_url} alt="" className="h-14 w-14 object-contain" /> : <span className="text-[10px] text-zinc-500">None</span>}
                 </div>
-                <input ref={file} type="file" accept="image/png" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
+                <input ref={file} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
                 <button type="button" onClick={() => file.current?.click()} disabled={uploading} className="btn-ghost">{uploading ? "Uploading…" : edit.logo_url ? "Replace logo" : "Upload logo"}</button>
                 {edit.logo_url && <button type="button" onClick={() => setEdit({ ...edit, logo_url: null })} className="text-xs text-zinc-500 hover:text-red-600">Remove</button>}
               </div>
-              <p className="mt-1.5 text-xs text-zinc-500">PNG with a transparent background. Empty edges are trimmed automatically. No logo? Your short name and colours make a badge instead.</p>
+              <p className="mt-1.5 text-xs text-zinc-500">Any photo or image. Plain backgrounds are removed. No logo? We make a badge from your colours.</p>
             </div>
             {err && <p className="text-sm text-red-600">{err}</p>}
             <div className="flex gap-2">

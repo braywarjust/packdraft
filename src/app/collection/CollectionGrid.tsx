@@ -101,7 +101,21 @@ export function CollectionGrid({ cards, mine, coins = 0, reroll }: { cards: Grid
                 <div className="rounded-xl border border-fpts/40 bg-fpts/5 p-4">
                   <p className="text-xs text-zinc-500">Fantasy points buff</p>
                   <p className="flex items-center gap-1.5 text-3xl font-black text-fpts"><FptIcon tone="blue" />{open.mult.toFixed(2)}x</p>
-                  <p className="mt-1 text-xs text-zinc-500">One use. If {open.name} is on your fantasy team, equip it on one of his games from your team page and his fantasy points for that game are multiplied by {open.mult.toFixed(2)}. The slab leaves your collection when the game ends.</p>
+                  <p className="mt-1 text-xs text-zinc-500">One game, on {open.name} only. Multiplies his fantasy points{open.boost_pts != null ? ", boost included" : ""}. Equip from his player card.</p>
+                </div>
+              )}
+              {open.kind === "slab" && open.boost_pts != null && (
+                <div className="rounded-xl border border-orange-500/40 bg-orange-500/5 p-4">
+                  <p className="text-xs text-zinc-500">Stat boost</p>
+                  <div className="mt-1 grid grid-cols-3 gap-2 text-center">
+                    {([["Points", open.boost_pts], ["Rebounds", open.boost_reb ?? 0], ["Assists", open.boost_ast ?? 0]] as const).map(([k, v]) => (
+                      <div key={k} className={`rounded-lg py-2 ${v ? "bg-orange-500/15" : "bg-zinc-100"}`}>
+                        <p className={`text-2xl font-black ${v ? "text-orange-500" : "text-zinc-400"}`}>+{v}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{k}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-500">One game, on {open.name} only. Added to his box score at the final{open.mult != null ? `, then ${open.mult.toFixed(2)}x` : ""}.</p>
                 </div>
               )}
               {mine && reroll && open.kind === "slab" && !open.equipped && <RerollPanel card={open} coins={coins} onStart={() => setRerolling(open)} />}

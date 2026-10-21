@@ -42,7 +42,7 @@ export default async function LeagueLayout({ children, params }: { children: Rea
         <div className="card flex flex-wrap items-center justify-between gap-3 border-l-4 border-l-amber-400 px-4 py-3">
           <div>
             <p className="font-bold">The season tips off {dayLabel(l.start_date!)}</p>
-            <p className="text-sm text-zinc-500">Week 1 starts on opening night of the NBA regular season. Until then nothing scores and there are no Pack Points to earn, so set your lineup and hang tight.</p>
+            <p className="text-sm text-zinc-500">Week 1 starts on NBA opening night. Set your lineup until then.</p>
           </div>
           <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-black uppercase text-black">Preseason</span>
         </div>

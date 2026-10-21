@@ -12,6 +12,7 @@ import { BoostChip, BoostModal, EquipPanel, LineupEditor, type BoostProps } from
 import { FptIcon } from "./Fpts";
 import { Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
+import { SlabOn } from "@/components/SlabIcon";
 
 import { eligible, posLabel, slotLabel as lbl } from "@/lib/scoring";
 
@@ -31,6 +32,8 @@ type Props = {
   autoSet?: () => Promise<unknown>;
   drop?: (playerId: number) => Promise<unknown>;
   boost?: BoostProps;
+  /** Court only, without its own Court/List switch (the page has a Box score/Court switch). */
+  courtOnly?: boolean;
 };
 
 /** Half-court floor in the team's colours with the logo at centre. */
@@ -86,7 +89,7 @@ function PlayerTile({ p, slot, big, brand, state }: {
               <TeamLogo team={p.team} size={big ? 24 : 20} className="absolute -bottom-1 -right-1" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className={`line-clamp-2 font-black leading-tight text-white ${big ? "text-lg" : "text-base"}`}><PlayerButton id={p.id}>{p.name}</PlayerButton></p>
+              <p className={`line-clamp-2 font-black leading-tight text-white ${big ? "text-lg" : "text-base"}`}><PlayerButton id={p.id}>{p.name}</PlayerButton> <SlabOn boost={p.boost} /></p>
               <p className="text-xs text-zinc-400">{posLabel(p.pos)} · {p.team} <InjuryTag injury={p.injury} /></p>
               <p className="mt-0.5 font-mono text-[11px] text-zinc-500">{p.played}/{p.total} GP</p>
               <p className="mt-0.5 whitespace-nowrap font-mono text-xs font-bold text-zinc-800"><span className="text-[10px] font-black uppercase tracking-wider text-fpts">Proj </span><Fpts n={p.proj} />/g</p>
@@ -121,14 +124,14 @@ function PlayerTile({ p, slot, big, brand, state }: {
 }
 
 export function TeamCourt(props: Props) {
-  const { players, editable, brand, setSlot, autoSet, drop, boost } = props;
+  const { players, editable, brand, setSlot, autoSet, drop, boost, courtOnly } = props;
   const router = useRouter();
   const [view, setView] = useState<"court" | "list">("court");
   const [pending, start] = useTransition();
   const [err, setErr] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
   const [boosting, setBoosting] = useState<LivePlayer | null>(null);
-  useEffect(() => { try { if (localStorage.getItem(VIEW_KEY) === "list") setView("list"); } catch {} }, []);
+  useEffect(() => { try { if (!courtOnly && localStorage.getItem(VIEW_KEY) === "list") setView("list"); } catch {} }, [courtOnly]);
   const pick = (v: "court" | "list") => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch {} };
 
   const act = (fn: () => Promise<unknown>) => start(async () => {
@@ -166,7 +169,7 @@ export function TeamCourt(props: Props) {
           </>
         )}
         {err && <span className="text-sm text-red-600">{err}</span>}
-        <div className="ml-auto flex rounded-lg bg-panel2 p-1 text-xs font-semibold">
+        <div className={`ml-auto flex rounded-lg bg-panel2 p-1 text-xs font-semibold ${courtOnly ? "hidden" : ""}`}>
           <button onClick={() => pick("court")} className={`rounded-md px-3 py-1.5 ${view === "court" ? "bg-brand text-white" : "text-zinc-500"}`}>Court</button>
           <button onClick={() => pick("list")} className={`rounded-md px-3 py-1.5 ${view === "list" ? "bg-brand text-white" : "text-zinc-500"}`}>List</button>
         </div>

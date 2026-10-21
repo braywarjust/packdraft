@@ -93,7 +93,7 @@ export function ProfileEditor({ initial, nba, maxFeatured }: { initial: Initial;
               {avatar && <button type="button" className="btn-ghost" onClick={() => setAvatar(null)}>Remove</button>}
             </div>
           </div>
-          <p className="text-xs text-zinc-500">Any photo works. It&apos;s cropped to a circle around the most interesting part.</p>
+          <p className="text-xs text-zinc-500">Any photo. We crop it to a circle.</p>
           <div>
             <label className="label">Username</label>
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} className="input" />
@@ -118,7 +118,7 @@ export function ProfileEditor({ initial, nba, maxFeatured }: { initial: Initial;
                   </button>
                 ))}
               </div>
-            ) : <p className="text-sm text-zinc-500">Make a team in Team Studio to use its colours and logo here.</p>}
+            ) : <p className="text-sm text-zinc-500">Make a team in Team Studio to use its colours.</p>}
           </div>
           <div>
             <label className="label">Favourite NBA team</label>

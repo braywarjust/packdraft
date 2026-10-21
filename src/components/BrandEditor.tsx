@@ -26,7 +26,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
 }
 
 /**
- * Name / short name / two colours / transparent PNG logo, with a live banner preview.
+ * Name / short name / two colours / logo (any image), with a live banner preview.
  * `fields`: render hidden inputs (name, brand_abbr, brand_color, brand_alt, brand_logo) for a surrounding server form.
  * `onSave`: show a Save button that calls it.
  */
@@ -48,11 +48,12 @@ export function BrandEditor({ initial, label = "League", placeholder = "The Pack
     setUploading(true);
     const fd = new FormData();
     fd.append("file", f);
-    const r = await fetch("/api/upload/logo", { method: "POST", body: fd });
-    const j = await r.json();
+    const r = await fetch("/api/upload/logo", { method: "POST", body: fd }).catch(() => null);
+    const j: { url?: string; error?: string } = r ? await r.json().catch(() => ({})) : {};
     setUploading(false);
-    if (!r.ok) { setErr(j.error ?? "Upload failed"); return; }
-    setB((x) => ({ ...x, logo_url: j.url }));
+    if (!r?.ok || !j.url) { setErr(j.error ?? (r?.status === 413 ? "That image is too big. Try a smaller one." : "Upload failed. Check your connection and try again.")); return; }
+    const url = j.url;
+    setB((x) => ({ ...x, logo_url: url }));
   };
 
   return (
@@ -76,13 +77,13 @@ export function BrandEditor({ initial, label = "League", placeholder = "The Pack
         <ColorField label="Secondary colour" value={b.alt_color} onChange={(v) => setB({ ...b, alt_color: v })} />
       </div>
       <div>
-        <label className="label">Logo (transparent PNG)</label>
+        <label className="label">Logo</label>
         <div className="flex flex-wrap items-center gap-3">
           <div className="grid h-14 w-14 place-items-center rounded-lg border border-line bg-[repeating-conic-gradient(#2c3445_0_25%,#252c3b_0_50%)] bg-[length:12px_12px]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {b.logo_url ? <img src={b.logo_url} alt="" className="h-12 w-12 object-contain" /> : <span className="text-[10px] text-zinc-500">None</span>}
           </div>
-          <input ref={file} type="file" accept="image/png" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
+          <input ref={file} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
           <button type="button" onClick={() => file.current?.click()} disabled={uploading} className="btn-ghost">{uploading ? "Uploading…" : b.logo_url ? "Replace logo" : "Upload logo"}</button>
           {b.logo_url && <button type="button" onClick={() => setB({ ...b, logo_url: null })} className="text-xs text-zinc-500 hover:text-red-600">Remove</button>}
         </div>

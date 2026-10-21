@@ -7,6 +7,7 @@ import { Headshot } from "@/components/Headshot";
 import { CoinIcon, Coins } from "@/components/Coins";
 import { TeamLogo } from "@/components/TeamLogo";
 import { placeBetAction } from "../actions";
+import { useScrollLock } from "@/components/useScrollLock";
 
 type Offer = { key: string; market: string; side: string; line: number | null; odds: number; label: string; playerId?: number; stat?: string };
 type Game = {
@@ -41,6 +42,8 @@ export function Sportsbook({ initial }: { initial: Data }) {
   const [d, setD] = useState(initial);
   const [tab, setTab] = useState<"board" | "mine">("board");
   const [slip, setSlip] = useState<Pick[]>([]);
+  const [slipOpen, setSlipOpen] = useState(false);
+  useScrollLock(slipOpen);
   const [parlay, setParlay] = useState(true);
   const [stake, setStake] = useState(100);
   const [open, setOpen] = useState<string | null>(null);
@@ -115,8 +118,62 @@ export function Sportsbook({ initial }: { initial: Data }) {
 
   const openBets = d.bets.filter((b) => b.status === "open");
 
+  const slipCard = (
+        <div className="card p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-bold">Bet slip</h2>
+            {slip.length > 0 && <button onClick={() => setSlip([])} className="text-xs text-zinc-500 hover:text-red-600">Clear</button>}
+          </div>
+          {slip.length === 0 ? (
+            <p className="text-sm text-zinc-500">Tap any odds to add a pick. 2+ picks = parlay.</p>
+          ) : (
+            <div className="space-y-3">
+              {slip.length > 1 && (
+                <div className="flex rounded-lg bg-panel2 p-1 text-xs font-semibold">
+                  <button onClick={() => setParlay(true)} className={`flex-1 rounded-md py-1.5 ${parlay ? "bg-brand text-white" : "text-zinc-500"}`}>Parlay</button>
+                  <button onClick={() => setParlay(false)} className={`flex-1 rounded-md py-1.5 ${!parlay ? "bg-brand text-white" : "text-zinc-500"}`}>Singles</button>
+                </div>
+              )}
+              <ul className="space-y-2">
+                {slip.map((p) => (
+                  <li key={p.key} className="rounded-lg bg-ink/40 p-2 text-sm">
+                    <div className="flex justify-between gap-2">
+                      <span className="font-semibold">{p.label}</span>
+                      <button onClick={() => setSlip((s) => s.filter((x) => x.key !== p.key))} className="text-zinc-400 hover:text-red-600" aria-label="Remove"><XIcon /></button>
+                    </div>
+                    <p className="flex justify-between text-xs text-zinc-500">
+                      <span className="flex items-center gap-1">{p.game.split(" @ ").map((t) => <TeamLogo key={t} team={t} size={14} />)}{p.game}</span>
+                      <span className={`font-mono font-bold ${p.moved ? "text-amber-600" : "text-emerald-600"}`}>{am(p.odds)}{p.moved && " (moved)"}</span>
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <div>
+                <label className="label">{asParlay ? "Stake" : slip.length > 1 ? "Stake per bet" : "Stake"}</label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <CoinIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" />
+                    <input type="number" min={10} max={2500} value={stake} onChange={(e) => setStake(Math.max(0, Number(e.target.value) || 0))} className="input pl-9 font-mono" />
+                  </div>
+                  {[50, 100, 250].map((n) => <button key={n} onClick={() => setStake(n)} className="btn-ghost px-2 py-1.5 text-xs">{n}</button>)}
+                </div>
+              </div>
+              <div className="space-y-1 text-sm">
+                {asParlay && <p className="flex justify-between"><span className="text-zinc-500">Parlay odds</span><span className="font-mono font-bold">{am(legsOdds)}</span></p>}
+                <p className="flex justify-between"><span className="text-zinc-500">Total stake</span><Coins n={totalStake} /></p>
+                <p className="flex justify-between font-bold"><span>Potential payout</span><span className="text-emerald-600"><Coins n={toWin} /></span></p>
+              </div>
+              <button onClick={place} disabled={pending || stake < 10 || totalStake > d.coins} className="btn-primary w-full">
+                {pending ? "Placing…" : totalStake > d.coins ? "Not enough Pack Points" : `Place ${asParlay ? "parlay" : slip.length > 1 ? `${slip.length} bets` : "bet"}`}
+              </button>
+            </div>
+          )}
+          {msg && <p className={`mt-3 text-sm ${msg.bad ? "text-red-600" : "text-emerald-600"}`}>{msg.t}</p>}
+        </div>
+  );
+
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className={`grid gap-6 lg:grid-cols-3 ${slip.length ? "max-lg:pb-20" : ""}`}>
       <div className="space-y-4 lg:col-span-2">
         <div className="flex gap-2">
           <button onClick={() => setTab("board")} className={tab === "board" ? "tab tab-active" : "tab"}>Games</button>
@@ -125,7 +182,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
 
         {tab === "board" && (
           <>
-            {d.games.length === 0 && <p className="card p-6 text-zinc-500">No games on the board right now. Check back when the next slate is scheduled.</p>}
+            {d.games.length === 0 && <p className="card p-6 text-zinc-500">No games on the board right now.</p>}
             {d.games.map((g) => {
               const label = `${g.away} @ ${g.home}`;
               const hp = Math.round(g.winProbHome * 100);
@@ -143,18 +200,20 @@ export function Sportsbook({ initial }: { initial: Data }) {
                     <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                       <line x1="54" y1="0" x2="46" y2="100" stroke="#fff" strokeOpacity=".7" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                     </svg>
-                    <div className="relative grid h-full grid-cols-[1fr_auto_1fr] items-center gap-3 px-4">
+                    <div className="relative grid h-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 px-2.5 sm:gap-3 sm:px-4">
                       {(["away", "home"] as const).map((side, i) => {
                         const t = g.teams[side];
                         const score = side === "away" ? g.awayScore : g.homeScore;
                         const team = (
-                          <div key={side} className={`flex min-w-0 items-center gap-3 ${i ? "flex-row-reverse text-right" : ""}`}>
-                            <TeamLogo team={t.abbr} size={48} className="drop-shadow-[0_4px_8px_rgba(0,0,0,.5)]" />
+                          <div key={side} className={`flex min-w-0 items-center gap-1.5 sm:gap-3 ${i ? "flex-row-reverse text-right" : ""}`}>
+                            <TeamLogo team={t.abbr} size={48} className="drop-shadow-[0_4px_8px_rgba(0,0,0,.5)] max-sm:!h-8 max-sm:!w-8" />
                             <div className="min-w-0">
                               <p className="hidden truncate text-[11px] font-bold uppercase tracking-widest text-white/75 xl:block">{t.name.replace(` ${t.short}`, "")}</p>
-                              <p className="text-lg font-black leading-tight text-white xl:text-xl">{t.short}</p>
+                              <p className={`truncate font-black leading-tight text-white sm:text-lg xl:text-xl ${t.short.length > 9 ? "max-sm:text-[12px]" : "max-sm:text-sm"}`}>{t.short}</p>
+                              {/* Until the banner is wide (xl), the score sits under the name so a long name and a 3-digit score both fit */}
+                              {g.state !== "pre" && <p className="font-mono text-2xl font-black leading-none text-white sm:text-3xl xl:hidden">{score}</p>}
                             </div>
-                            {g.state !== "pre" && <p className={`font-mono text-3xl font-black text-white ${i ? "mr-auto" : "ml-auto"}`}>{score}</p>}
+                            {g.state !== "pre" && <p className={`shrink-0 font-mono text-3xl font-black text-white max-xl:hidden ${i ? "mr-auto" : "ml-auto"}`}>{score}</p>}
                           </div>
                         );
                         return i === 0 ? [team, (
@@ -162,7 +221,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
                             {g.live ? <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white">● LIVE</span>
                               : g.state === "post" ? <span className="rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-black text-white">FINAL</span>
                               : <span className="text-lg font-black italic text-white">@</span>}
-                            <span className="whitespace-nowrap rounded bg-black/35 px-1.5 py-0.5 text-[10px] font-semibold text-white">{g.live ? g.detail : time(g.start)}</span>
+                            <span className="whitespace-nowrap rounded bg-black/35 px-1.5 py-0.5 text-[9px] font-semibold text-white sm:text-[10px]">{g.live ? g.detail : <><span className="max-sm:hidden">{time(g.start)}</span><span className="sm:hidden">{time(g.start).replace(/^\w+ /, "").replace(/ ET$/, "")}</span></>}</span>
                           </div>
                         )] : team;
                       })}
@@ -174,16 +233,17 @@ export function Sportsbook({ initial }: { initial: Data }) {
                       <div className="flex-1" style={{ background: g.teams.home.color }} />
                     </div>
                   )}
-                  <div className="grid grid-cols-[1fr_repeat(3,minmax(0,5.5rem))] items-center gap-2 px-4 py-3 text-sm">
-                    <span className="text-[11px] font-semibold uppercase text-zinc-400">{!g.open ? "Betting closed" : g.live ? `Win prob ${g.away} ${100 - hp}% · ${g.home} ${hp}%` : ""}</span>
+                  <div className="grid grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,4.4rem))] items-center gap-1.5 px-2.5 py-3 text-sm sm:grid-cols-[1fr_repeat(3,minmax(0,5.5rem))] sm:gap-2 sm:px-4">
+                    <span className="min-w-0 text-[10px] font-semibold uppercase leading-tight text-zinc-400 sm:text-[11px]">{!g.open ? "Betting closed" : g.live ? `Win prob ${g.away} ${100 - hp}% · ${g.home} ${hp}%` : ""}</span>
                     <span className="text-center text-[11px] font-semibold uppercase text-zinc-400">Spread</span>
                     <span className="text-center text-[11px] font-semibold uppercase text-zinc-400">Total</span>
-                    <span className="text-center text-[11px] font-semibold uppercase text-zinc-400">Moneyline</span>
+                    <span className="text-center text-[11px] font-semibold uppercase text-zinc-400"><span className="max-sm:hidden">Moneyline</span><span className="sm:hidden">ML</span></span>
                     {([["away", 0], ["home", 1]] as const).map(([side, i]) => (
                       <div key={side} className="contents">
-                        <span className="flex items-center gap-2 border-l-4 pl-2 font-bold" style={{ borderColor: g.teams[side].color === "#000000" ? g.teams[side].alt : g.teams[side].color }}>
+                        <span className="flex min-w-0 items-center gap-1.5 border-l-4 pl-1.5 font-bold sm:gap-2 sm:pl-2" style={{ borderColor: g.teams[side].color === "#000000" ? g.teams[side].alt : g.teams[side].color }}>
                           <TeamLogo team={g.teams[side].abbr} size={24} />
-                          <span className="truncate">{g.teams[side].short}</span>
+                          <span className="truncate max-sm:hidden">{g.teams[side].short}</span>
+                          <span className="sm:hidden">{g.teams[side].abbr}</span>
                         </span>
                         <OddsButton o={g.spread[i]} top={fmtLine(g.spread[i].line)} picked={picked.has(g.spread[i].key)} disabled={!g.open} onClick={() => toggle(g.spread[i], label)} />
                         <OddsButton o={g.total[i]} top={`${i ? "U" : "O"} ${g.total[i].line}`} picked={picked.has(g.total[i].key)} disabled={!g.open} onClick={() => toggle(g.total[i], label)} />
@@ -284,62 +344,36 @@ export function Sportsbook({ initial }: { initial: Data }) {
       </div>
 
       <aside className="h-fit space-y-3 lg:sticky lg:top-20">
-        <div className="card p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-bold">Bet slip</h2>
-            {slip.length > 0 && <button onClick={() => setSlip([])} className="text-xs text-zinc-500 hover:text-red-600">Clear</button>}
-          </div>
-          {slip.length === 0 ? (
-            <p className="text-sm text-zinc-500">Tap any odds to add a pick. Add more than one to build a parlay.</p>
-          ) : (
-            <div className="space-y-3">
-              {slip.length > 1 && (
-                <div className="flex rounded-lg bg-panel2 p-1 text-xs font-semibold">
-                  <button onClick={() => setParlay(true)} className={`flex-1 rounded-md py-1.5 ${parlay ? "bg-brand text-white" : "text-zinc-500"}`}>Parlay</button>
-                  <button onClick={() => setParlay(false)} className={`flex-1 rounded-md py-1.5 ${!parlay ? "bg-brand text-white" : "text-zinc-500"}`}>Singles</button>
-                </div>
-              )}
-              <ul className="space-y-2">
-                {slip.map((p) => (
-                  <li key={p.key} className="rounded-lg bg-ink/40 p-2 text-sm">
-                    <div className="flex justify-between gap-2">
-                      <span className="font-semibold">{p.label}</span>
-                      <button onClick={() => setSlip((s) => s.filter((x) => x.key !== p.key))} className="text-zinc-400 hover:text-red-600" aria-label="Remove"><XIcon /></button>
-                    </div>
-                    <p className="flex justify-between text-xs text-zinc-500">
-                      <span className="flex items-center gap-1">{p.game.split(" @ ").map((t) => <TeamLogo key={t} team={t} size={14} />)}{p.game}</span>
-                      <span className={`font-mono font-bold ${p.moved ? "text-amber-600" : "text-emerald-600"}`}>{am(p.odds)}{p.moved && " (moved)"}</span>
-                    </p>
-                  </li>
-                ))}
-              </ul>
-              <div>
-                <label className="label">{asParlay ? "Stake" : slip.length > 1 ? "Stake per bet" : "Stake"}</label>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <CoinIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" />
-                    <input type="number" min={10} max={2500} value={stake} onChange={(e) => setStake(Math.max(0, Number(e.target.value) || 0))} className="input pl-9 font-mono" />
-                  </div>
-                  {[50, 100, 250].map((n) => <button key={n} onClick={() => setStake(n)} className="btn-ghost px-2 py-1.5 text-xs">{n}</button>)}
-                </div>
-              </div>
-              <div className="space-y-1 text-sm">
-                {asParlay && <p className="flex justify-between"><span className="text-zinc-500">Parlay odds</span><span className="font-mono font-bold">{am(legsOdds)}</span></p>}
-                <p className="flex justify-between"><span className="text-zinc-500">Total stake</span><Coins n={totalStake} /></p>
-                <p className="flex justify-between font-bold"><span>Potential payout</span><span className="text-emerald-600"><Coins n={toWin} /></span></p>
-              </div>
-              <button onClick={place} disabled={pending || stake < 10 || totalStake > d.coins} className="btn-primary w-full">
-                {pending ? "Placing…" : totalStake > d.coins ? "Not enough Pack Points" : `Place ${asParlay ? "parlay" : slip.length > 1 ? `${slip.length} bets` : "bet"}`}
-              </button>
-            </div>
-          )}
-          {msg && <p className={`mt-3 text-sm ${msg.bad ? "text-red-600" : "text-emerald-600"}`}>{msg.t}</p>}
-        </div>
+        {/* Bigger screens: the slip sits in the sidebar. Phones get the floating slip below. */}
+        <div className="max-lg:hidden">{slipCard}</div>
         <div className="card p-4 text-xs text-zinc-500">
           <p className="mb-1 font-semibold text-zinc-700">House rules</p>
-          <p>Bets are <Coins n={10} />–<Coins n={2500} />, max payout <Coins n={50000} />. Lines and odds are set by PackDraft from season averages and update live with the score and box score. Bets settle when the game goes final. Landing exactly on a line is a push (stake back; that parlay leg drops out). Live betting closes in the final minute.</p>
+          <p>Bets are <Coins n={10} />–<Coins n={2500} />, max payout <Coins n={50000} />. Lines move live with the score. Bets settle at the final. Exactly on the line is a push. Live betting closes in the last minute.</p>
         </div>
       </aside>
+
+      {/* Phones: a slip bar floats above the tab bar once you have picks; tap it to open the slip as a sheet. */}
+      {slip.length > 0 && !slipOpen && (
+        <button onClick={() => setSlipOpen(true)}
+          className="fixed inset-x-3 z-30 flex items-center gap-3 rounded-2xl bg-brand px-4 py-3 text-left text-white shadow-2xl shadow-black/50 lg:hidden"
+          style={{ bottom: "calc(4.75rem + env(safe-area-inset-bottom))" }}>
+          <span className="grid h-7 min-w-7 place-items-center rounded-full bg-white px-1.5 text-sm font-black text-brand">{slip.length}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-black">Bet slip</span>
+            <span className="block truncate text-xs text-white/80">{asParlay ? `${slip.length}-leg parlay · ${am(legsOdds)}` : slip.length > 1 ? `${slip.length} singles` : slip[0].label}</span>
+          </span>
+          <span className="text-right text-xs"><span className="block text-white/70">To win</span><b className="text-sm"><Coins n={toWin} /></b></span>
+        </button>
+      )}
+      {slipOpen && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSlipOpen(false)}>
+          <div className="safe-bottom anim-deal max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-panel p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-zinc-500/50" />
+            {slipCard}
+            <button onClick={() => setSlipOpen(false)} className="mt-2 w-full py-2 text-center text-sm text-zinc-500">Keep browsing</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

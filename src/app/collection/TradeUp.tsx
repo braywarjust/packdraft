@@ -1,5 +1,6 @@
 "use client";
 
+import { usePhone } from "@/components/usePhone";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { RARITIES, RARITY_HEX, TRADE_UP, TRADE_UP_COUNT, type Rarity } from "@/lib/packs";
@@ -35,6 +36,7 @@ export function TradeUp({ cards, coins, action }: { cards: (CardData & { created
 
 function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; coins: number; action: Act; onClose: () => void }) {
   useScrollLock(true);
+  const phone = usePhone();
   const router = useRouter();
   const [pending, start] = useTransition();
   const byTier = useMemo(() => Object.fromEntries(TIERS.map((t) => [t, cards.filter((c) => c.rarity === t).sort((a, b) => a.value - b.value)])) as Record<Rarity, CardData[]>, [cards]);
@@ -71,15 +73,15 @@ function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; co
         <div className="flex items-center justify-between border-b border-line/60 px-5 py-3">
           <div>
             <p className="text-lg font-black text-white">Trade up</p>
-            <p className="text-xs text-zinc-500">Trade {TRADE_UP_COUNT} slabs of one rarity plus a fee for 1 slab of the next rarity. Five of the same player gets you him again, one tier up.</p>
+            <p className="text-xs text-zinc-500">{TRADE_UP_COUNT} slabs + a fee = 1 slab a tier up. Five of one player keeps him.</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
         </div>
 
         {fusing ? (
-          <div className="flex flex-col items-center gap-5 p-8 text-center" aria-live="polite">
+          <div className="flex flex-col items-center gap-5 p-5 text-center sm:p-8" aria-live="polite">
             <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">Trading up {TRADE_UP_COUNT} {RARITIES[tier].label} slabs to {RARITIES[step.to].label}</p>
-            <div className="relative grid h-[300px] w-full max-w-[520px] place-items-center">
+            <div className="relative grid w-full max-w-[520px] place-items-center" style={{ height: phone ? 240 : 300 }}>
               <span className="trade-flash absolute h-40 w-40 rounded-full blur-xl" style={{ background: RARITY_HEX[step.to] }} />
               <span className="reroll-ring absolute h-56 w-56 rounded-full border-2" style={{ borderColor: RARITY_HEX[step.to], animationDelay: "1.1s" }} />
               <span className="reroll-ring absolute h-56 w-56 rounded-full border-2" style={{ borderColor: RARITY_HEX[step.to], animationDelay: "1.9s" }} />
@@ -87,19 +89,19 @@ function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; co
                 const a = (-90 + i * (360 / fusing.length)) * (Math.PI / 180);
                 return (
                   <div key={c.id} className="trade-fuse absolute"
-                    style={{ ["--x" as string]: `${Math.round(Math.cos(a) * 170)}px`, ["--y" as string]: `${Math.round(Math.sin(a) * 105)}px`, ["--r" as string]: `${(i - 2) * 8}deg`, animationDelay: `${i * 0.06}s` }}>
-                    <Slab s={slabOf(c)} size={96} />
+                    style={{ ["--x" as string]: `${Math.round(Math.cos(a) * (phone ? 108 : 170))}px`, ["--y" as string]: `${Math.round(Math.sin(a) * (phone ? 88 : 105))}px`, ["--r" as string]: `${(i - 2) * 8}deg`, animationDelay: `${i * 0.06}s` }}>
+                    <Slab s={slabOf(c)} size={phone ? 68 : 96} />
                   </div>
                 );
               })}
-              <div className="logo-play trade-logo relative w-[200px]"><AnimatedLogo className="w-full drop-shadow-[0_10px_30px_rgba(0,0,0,.6)]" /></div>
+              <div className="logo-play trade-logo relative w-[150px] sm:w-[200px]"><AnimatedLogo className="w-full drop-shadow-[0_10px_30px_rgba(0,0,0,.6)]" /></div>
             </div>
             <p className="animate-pulse text-sm font-semibold text-zinc-400">Forging your {RARITIES[step.to].label} slab…</p>
           </div>
         ) : result ? (
-          <div className="flex flex-col items-center gap-4 p-8 text-center">
+          <div className="flex flex-col items-center gap-4 p-5 text-center sm:p-8">
             <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">You traded up to</p>
-            <div className="reroll-in"><Slab s={slabOf(result)} size={260} /></div>
+            <div className="reroll-in"><Slab s={slabOf(result)} size={phone ? 210 : 260} /></div>
             <p className="text-xl font-black text-white">{RARITIES[result.rarity].label} {result.name}</p>
             <div className="flex gap-2">
               <button className="btn-ghost" onClick={() => setResult(null)}>Trade up again</button>

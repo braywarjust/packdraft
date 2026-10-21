@@ -25,7 +25,7 @@ export default async function LoginPage() {
         <Logo height={84} />
         <div className="relative my-12 max-w-md">
           <h1 className="text-4xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-5xl">Fantasy NBA for you and your friends.</h1>
-          <p className="mt-4 text-lg text-zinc-600">Draft, set your lineup, win your matchup and rip mystery packs. Powered by live NBA stats.</p>
+          <p className="mt-4 text-lg text-zinc-600">Draft, win your matchup, rip packs. Live NBA stats.</p>
         </div>
         <ul className="relative grid gap-3 sm:grid-cols-2">
           {FEATURES.map(([t, d]) => (
@@ -41,7 +41,7 @@ export default async function LoginPage() {
       <section className="flex items-center justify-center bg-white p-8 sm:p-12">
         <div className="w-full max-w-sm">
           <h2 className="text-2xl font-bold tracking-tight">Sign in</h2>
-          <p className="mb-6 mt-1 text-sm text-zinc-500">Enter your name. A new name creates a new account. Add a PIN so nobody else can sign in as you.</p>
+          <p className="mb-6 mt-1 text-sm text-zinc-500">New name = new account. Add a PIN to lock it.</p>
           <ActionForm action={login} submit="Continue">
             <div>
               <label className="label">Name</label>
