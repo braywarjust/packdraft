@@ -6,7 +6,7 @@ import { beforeOpener, boostableGame, getLeague, maybeFinalize, roster, standing
 import { cardsWhere, unopenedPacks } from "@/lib/packs-server";
 import { Slab } from "@/components/Slab";
 import { RARITIES, Rarity } from "@/lib/packs";
-import { ensureBranding, favoritePresetId, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
+import { ensureBranding, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
 import { boostSlabs, teamBoosts } from "@/lib/boost";
 import { earnings } from "@/lib/economy";
 import { winProb } from "@/lib/sim";
@@ -24,8 +24,9 @@ import { PlayerButton } from "@/components/PlayerInspector";
 import { SlabOn } from "@/components/SlabIcon";
 import { Fpts } from "@/components/Fpts";
 import { claimBonus } from "./actions";
+import { getProfile } from "@/lib/profile";
+import { Avatar, profileColors } from "@/components/ProfileView";
 
-const DEFAULT_BRAND: BrandLite = { name: "PackDraft", abbr: "PD", color: "#0253a4", alt: "#cc2b31", logo: null };
 type Alert = { href: string; tone: "red" | "amber" | "blue"; text: string; brand?: BrandLite };
 
 export default async function Home() {
@@ -104,61 +105,42 @@ export default async function Home() {
   if (packs.length) alerts.push({ href: "/packs", tone: "blue", text: `${packs.length} unopened pack${packs.length > 1 ? "s" : ""} waiting to be ripped` });
   if (user.last_bonus !== todayIso) alerts.push({ href: "#bonus", tone: "amber", text: "Your daily Pack Points bonus is ready" });
 
-  // Banner team: your starred Team Studio favourite, else your newest league team, else your first preset.
-  const fav = presets.find((p) => p.id === favoritePresetId(user.id)) ?? null;
-  const asBrand = (p: (typeof presets)[number]): BrandLite => ({ name: p.name, abbr: p.abbr, color: p.color, alt: p.alt_color, logo: p.logo_url });
-  const heroLeague = fav ? leagues.find((x) => x.t.preset_id === fav.id) : leagues[0];
-  const hero = fav ? asBrand(fav) : leagues[0]?.brand ?? (presets[0] ? asBrand(presets[0]) : DEFAULT_BRAND);
-  const otherTeams = leagues.filter((x) => x !== heroLeague);
   const tones = { red: "border-l-red-500", amber: "border-l-amber-400", blue: "border-l-brand" };
+
+  const profile = getProfile(user.id);
+  const [pc1, pc2] = profile ? profileColors(profile) : [user.color, "#cc2b31"];
 
   return (
     <div className="space-y-6">
-      {/* Hero in your team's colours */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl" style={{ background: `linear-gradient(115deg, ${hero.color} 0%, ${hero.color} 50%, ${hero.alt} 140%)` }}>
-        <div className="pointer-events-none absolute -right-10 top-1/2 -translate-y-1/2 opacity-20"><TeamBadge brand={hero} size={380} ghost /></div>
+      {/* Compact banner in your profile colours, with your profile photo */}
+      <section className="relative overflow-hidden rounded-2xl border border-white/10 shadow-xl" style={{ background: `linear-gradient(115deg, ${pc1} 0%, ${pc1} 55%, ${pc2} 140%)` }}>
         <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 14px)" }} />
-        <div className="relative flex flex-wrap items-center gap-6 p-6 sm:p-8">
-          <TeamBadge brand={hero} size={112} className="drop-shadow-2xl" />
+        <div className="relative flex items-center gap-3 p-3 sm:gap-4 sm:p-4">
+          <Link href="/profile" className="shrink-0"><Avatar src={profile?.user.avatar ?? null} name={user.name} color={user.color} size={56} ring={profile?.look.ring ? pc2 : undefined} /></Link>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">Welcome back</p>
-            <h1 className="truncate text-[1.65rem] font-black leading-none tracking-tight text-white sm:text-5xl">{user.name}</h1>
-            <p className="mt-2 text-sm text-white/80">
-              {hero === DEFAULT_BRAND ? "Set up your team in Team Studio to brand your app." : <>{hero.name}{heroLeague ? ` · ${heroLeague.l.name}` : ""}</>}
-            </p>
-            {otherTeams.length > 0 && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">{heroLeague ? "Your other teams" : "Your teams"}</span>
-                {otherTeams.map((x) => (
-                  <Link key={x.t.id} href={`/league/${x.l.id}`} title={`${x.t.name} · ${x.l.name}`}
-                    className="flex items-center gap-1.5 rounded-full bg-black/25 py-1 pl-1 pr-3 text-xs font-semibold text-white ring-1 ring-white/15 transition hover:bg-black/40">
-                    <TeamBadge brand={x.brand} size={24} />
-                    <span className="max-w-[9rem] truncate">{x.l.name}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/70">Welcome back</p>
+            <Link href="/profile" className="block truncate text-xl font-black leading-tight text-white hover:underline sm:text-2xl">{user.name}</Link>
+            {profile?.user.tagline && <p className="truncate text-xs text-white/75">{profile.user.tagline}</p>}
           </div>
-          <div id="bonus" className="flex flex-wrap gap-2">
+          <div id="bonus" className="shrink-0">
             {user.last_bonus !== todayIso
-              ? <ActionButton action={claimBonus} className="btn bg-[#fff] text-black hover:bg-[#e5e7eb]">Claim daily <Coins n={150} /></ActionButton>
-              : <span className="btn pointer-events-none bg-black/25 text-white/70">Daily bonus claimed</span>}
+              ? <ActionButton action={claimBonus} className="btn bg-[#fff] px-3 py-1.5 text-sm text-black hover:bg-[#e5e7eb]">Claim <Coins n={150} /></ActionButton>
+              : <span className="hidden rounded-full bg-black/25 px-3 py-1 text-xs text-white/70 sm:inline">Bonus claimed</span>}
           </div>
         </div>
-        <div className="relative grid grid-cols-2 gap-px bg-black/20 sm:grid-cols-4">
+        <div className="relative flex gap-px overflow-x-auto bg-black/20 text-white scrollbar-thin">
           {([
-            ["Pack Points", <Coins key="c" n={user.coins} live />, "/packs"],
+            ["Pack Points", <Coins key="c" n={user.coins} live />, "/collection"],
             ["Slabs", <span key="v">{vault.n}</span>, "/collection"],
-            ["Unopened packs", String(packs.length), "/packs"],
-            ["Open bets", bets.n ? <span key="b">{bets.n} · to win <Coins n={bets.toWin} /></span> : "None", "/bets"],
+            ["Packs", String(packs.length), "/packs"],
+            ["Open bets", bets.n ? <span key="b">{bets.n}</span> : "0", "/bets"],
           ] as [string, React.ReactNode, string][]).map(([k, v, href]) => (
-            <Link key={k} href={href} className="bg-black/25 px-5 py-3 backdrop-blur transition hover:bg-black/35">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>
-              <p className="truncate font-mono text-xl font-black text-white">{v}</p>
+            <Link key={k} href={href} className="min-w-[5.5rem] flex-1 bg-black/25 px-3 py-1.5 backdrop-blur transition hover:bg-black/35">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-white/60">{k}</p>
+              <p className="truncate font-mono text-sm font-black">{v}</p>
             </Link>
           ))}
         </div>
-        <div className="h-2" style={{ background: `linear-gradient(90deg, ${hero.alt}, ${hero.color}, ${hero.alt})` }} />
       </section>
 
       {presets.length === 0 && (
