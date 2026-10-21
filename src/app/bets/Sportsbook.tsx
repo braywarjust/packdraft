@@ -210,10 +210,10 @@ export function Sportsbook({ initial }: { initial: Data }) {
                             <div className="min-w-0">
                               <p className="hidden truncate text-[11px] font-bold uppercase tracking-widest text-white/75 xl:block">{t.name.replace(` ${t.short}`, "")}</p>
                               <p className={`truncate font-black leading-tight text-white sm:text-lg xl:text-xl ${t.short.length > 9 ? "max-sm:text-[12px]" : "max-sm:text-sm"}`}>{t.short}</p>
-                              {/* Phones: the score sits under the name so both fit */}
-                              {g.state !== "pre" && <p className="font-mono text-2xl font-black leading-none text-white sm:hidden">{score}</p>}
+                              {/* Until the banner is wide (xl), the score sits under the name so a long name and a 3-digit score both fit */}
+                              {g.state !== "pre" && <p className="font-mono text-2xl font-black leading-none text-white sm:text-3xl xl:hidden">{score}</p>}
                             </div>
-                            {g.state !== "pre" && <p className={`font-mono text-3xl font-black text-white max-sm:hidden ${i ? "mr-auto" : "ml-auto"}`}>{score}</p>}
+                            {g.state !== "pre" && <p className={`shrink-0 font-mono text-3xl font-black text-white max-xl:hidden ${i ? "mr-auto" : "ml-auto"}`}>{score}</p>}
                           </div>
                         );
                         return i === 0 ? [team, (
