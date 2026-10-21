@@ -9,6 +9,7 @@ import "./globals.css";
 import { currentUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { unopenedPacks } from "@/lib/packs-server";
+import { incomingTradeCount } from "@/lib/slab-trades";
 import { logout } from "./actions";
 import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
@@ -65,6 +66,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <Sidebar
           user={{ name: user.name, color: user.color, coins: user.coins, tester: !!user.is_tester, avatar: avatarOf(user.id) }}
           packs={packs}
+          offers={incomingTradeCount(user.id)}
           leagues={leagues.map((l) => ({ id: l.id, name: l.name, live: !!l.live, brand: leagueBrand(l) }))}
           logout={logout}
         />

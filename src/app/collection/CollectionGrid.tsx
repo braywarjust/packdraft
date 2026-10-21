@@ -1,6 +1,7 @@
 "use client";
 
 import { XIcon } from "@/components/Icons";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CardData, PlayerCard, RarityBadge, SlabImage, slabBadges, slabOf } from "@/components/PlayerCard";
 import { Slab } from "@/components/Slab";
@@ -22,7 +23,8 @@ function certUrl(c: GridCard) {
   return `https://www.ebay.com/sch/i.html?_nkw=${c.s_cert}`;
 }
 
-export function CollectionGrid({ cards, mine, coins = 0, reroll }: { cards: GridCard[]; mine?: boolean; coins?: number; reroll?: RerollAct }) {
+/** tradeWith: the collection owner's id when the viewer can trade with them (themselves included), for the Trade buttons. */
+export function CollectionGrid({ cards, mine, coins = 0, reroll, tradeWith }: { cards: GridCard[]; mine?: boolean; coins?: number; reroll?: RerollAct; tradeWith?: number }) {
   const [open, setOpen] = useState<GridCard | null>(null);
   const [rerolling, setRerolling] = useState<GridCard | null>(null);
   useScrollLock(!!open);
@@ -117,6 +119,11 @@ export function CollectionGrid({ cards, mine, coins = 0, reroll }: { cards: Grid
                   </div>
                   <p className="mt-2 text-xs text-zinc-500">One game, on {open.name} only. Added to his box score at the final{open.mult != null ? `, then ${open.mult.toFixed(2)}x` : ""}.</p>
                 </div>
+              )}
+              {tradeWith != null && !open.equipped && (
+                <Link href={mine ? `/collection/trades?give=${open.id}` : `/collection/trades?to=${tradeWith}&get=${open.id}`} className="btn-ghost w-full justify-center">
+                  {mine ? "Trade or gift this slab" : `Make an offer for this slab`}
+                </Link>
               )}
               {mine && reroll && open.kind === "slab" && !open.equipped && <RerollPanel card={open} coins={coins} onStart={() => setRerolling(open)} />}
               {open.kind !== "slab" && <div className="rounded-xl border border-zinc-200 p-4">

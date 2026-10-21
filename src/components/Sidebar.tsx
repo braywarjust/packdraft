@@ -15,10 +15,12 @@ import { useLiveBalance } from "./useLiveBalance";
 const STORE_KEY = "pd-sidebar";
 
 export function Sidebar({
-  user, packs, leagues, logout,
+  user, packs, offers = 0, leagues, logout,
 }: {
   user: { name: string; color: string; coins: number; tester?: boolean; avatar?: string | null };
   packs: number;
+  /** Slab trade offers waiting on this manager. */
+  offers?: number;
   leagues: { id: number; name: string; live: boolean; brand?: BrandLite }[];
   logout: () => Promise<void>;
 }) {
@@ -42,7 +44,7 @@ export function Sidebar({
     // Packs live inside each league (League Packs), so unopened packs show on Leagues.
     { href: "/leagues", label: "Leagues", icon: I.leagues, badge: packs },
     { href: "/teams", label: "Team Studio", icon: I.studio },
-    { href: "/collection", label: "Collection", icon: I.collection },
+    { href: "/collection", label: "Collection", icon: I.collection, badge: offers },
     { href: "/bets", label: "Sportsbook", icon: I.bets },
     { href: "/casino", label: "Casino", icon: I.casino },
     { href: "/mock-draft", label: "Mock Draft", icon: I.mock },
@@ -51,7 +53,7 @@ export function Sidebar({
   const tabs = [
     { href: "/", label: "Home", icon: I.home, exact: true, badge: 0 },
     { href: leagues.length === 1 ? `/league/${leagues[0].id}` : "/leagues", label: "League", icon: I.leagues, exact: false, badge: packs },
-    { href: "/collection", label: "Slabs", icon: I.collection, exact: false, badge: 0 },
+    { href: "/collection", label: "Slabs", icon: I.collection, exact: false, badge: offers },
   ];
   const isActive = (href: string, exact?: boolean) => (exact ? path === href : path === href || path.startsWith(`${href}/`) || (href === "/leagues" && path.startsWith("/league/")));
 
