@@ -22,8 +22,8 @@ export const slabOf = (c: CardData): SlabData => ({
 });
 
 /** A square Slab with a short caption underneath. */
-export function SlabTile({ c, small }: { c: CardData; small?: boolean }) {
-  const size = small ? 176 : 208;
+export function SlabTile({ c, small, size: sz }: { c: CardData; small?: boolean; size?: number }) {
+  const size = sz ?? (small ? 176 : 208);
   return (
     <div className="flex flex-col items-center" style={{ width: size + 8 }}>
       <div className="relative">
@@ -114,8 +114,8 @@ function cardSeason(c: CardData & { created_at?: number }) {
   return d.getMonth() >= 6 ? d.getFullYear() + 1 : d.getFullYear();
 }
 
-export function PlayerCard({ c, small }: { c: CardData; small?: boolean }) {
-  if (c.kind === "slab") return <SlabTile c={c} small={small} />;
+export function PlayerCard({ c, small, size }: { c: CardData; small?: boolean; size?: number }) {
+  if (c.kind === "slab") return <SlabTile c={c} small={small} size={size} />;
   if (c.slab_id) return <SlabCard c={c} small={small} />;
   const r = RARITIES[c.rarity];
   const primary = `#${c.color ?? "334155"}`;

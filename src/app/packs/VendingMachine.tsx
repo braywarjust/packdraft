@@ -12,6 +12,7 @@ import { SlabCount } from "@/components/SlabIcon";
 import { SlabCover } from "@/components/Slab";
 import { CheckIcon, LockIcon } from "@/components/Icons";
 import { useScrollLock } from "@/components/useScrollLock";
+import { usePhone } from "@/components/usePhone";
 
 type Inv = { id: number; pack_type: string; source: string; created_at: number; league_id?: number | null };
 type Act<T> = Promise<T | { error: string }>;
@@ -115,9 +116,9 @@ const CASE_SIZE = { sm: [116, 116], md: [220, 220], big: [336, 336] } as const;
 const artSize = (p: PackType, size: "sm" | "md" | "big") => (p.kind === "case" ? CASE_SIZE : PACK_SIZE)[size];
 const slabsLabel = (n: number) => `${n} slab${n === 1 ? "" : "s"}`;
 
-/** Animated pack art (components/PackArt) in the shop's standard boxes. */
-function PackArt({ p, big, md }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[] }) {
-  const [w, h] = artSize(p, big ? "big" : md ? "md" : "sm");
+/** Animated pack art (components/PackArt) in the shop's standard boxes. `phone` shrinks the big rip-screen art to fit. */
+function PackArt({ p, big, md, phone }: { p: PackType; big?: boolean; md?: boolean; slabs?: number[]; phone?: boolean }) {
+  const [w, h] = big && phone ? (p.kind === "case" ? [240, 240] : [200, 254]) : artSize(p, big ? "big" : md ? "md" : "sm");
   return <PackVisual p={p} width={w} height={h} />;
 }
 
@@ -207,6 +208,7 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
   rip: (packId: number) => Act<{ ok: boolean; cards: CardData[] }>;
 }) {
   const router = useRouter();
+  const phone = usePhone();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [stage, setStage] = useState<"idle" | "vending" | "ready" | "tearing" | "cards">("idle");
   const [packId, setPackId] = useState<number | null>(null);
@@ -263,6 +265,8 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
 
   const close = () => { setStage("idle"); setCards([]); setPackId(null); router.refresh(); };
   const allFlipped = cards.length > 0 && flipped.size === cards.length;
+  // Revealed slab size: smaller on phones, smaller still for the 5-slab Mega Pack (two to a row).
+  const slabSize = phone ? (cards.length > 1 ? 136 : 200) : 208;
   const rp = PACK_BY_ID[packType];
 
   return (
@@ -331,44 +335,45 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
 
       {/* Rip modal */}
       {(stage === "ready" || stage === "tearing" || stage === "cards") && rp && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-zinc-100/95 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex flex-col items-center overflow-y-auto overflow-x-hidden bg-zinc-100/95 p-4 backdrop-blur-sm">
           {/* No words on screen from the pack dropping in until a slab is flipped, and no backing out: it gets opened. */}
           {stage !== "cards" ? (
-            <div className="flex flex-col items-center gap-6" style={{ "--burst": BURST[rp.id] ?? "#ffffff" } as React.CSSProperties}>
+            <div className="my-auto flex flex-col items-center gap-6" style={{ "--burst": BURST[rp.id] ?? "#ffffff" } as React.CSSProperties}>
               <button ref={packRef} onClick={doRip} disabled={stage === "tearing"} className={`relative ${stage === "ready" ? "anim-drop hover:anim-shake" : ""}`}>
                 {stage === "tearing" ? (
                   // Charge and burst: light rays spin up behind the crate while it shakes harder and harder, then it
                   // swells into a flash of its tier colour and the slabs deal in.
                   <div className="relative grid place-items-center">
                     {/* Centred by the keyframes themselves (translate -50%), so no translate classes here. */}
-                    <div className="anim-burst-rays pointer-events-none absolute left-1/2 top-1/2 h-[640px] w-[640px] rounded-full" />
-                    <div className="anim-burst-glow pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] rounded-full" />
-                    <div className="anim-charge relative"><div className="anim-jitter"><PackArt p={rp} big slabs={features[rp.id]} /></div></div>
+                    <div className="anim-burst-rays pointer-events-none absolute left-1/2 top-1/2 rounded-full" style={{ width: phone ? 420 : 640, height: phone ? 420 : 640 }} />
+                    <div className="anim-burst-glow pointer-events-none absolute left-1/2 top-1/2 rounded-full" style={{ width: phone ? 280 : 420, height: phone ? 280 : 420 }} />
+                    <div className="anim-charge relative"><div className="anim-jitter"><PackArt p={rp} big phone={phone} slabs={features[rp.id]} /></div></div>
                   </div>
                 ) : (
-                  <div className="anim-shake"><PackArt p={rp} big slabs={features[rp.id]} /></div>
+                  <div className="anim-shake"><PackArt p={rp} big phone={phone} slabs={features[rp.id]} /></div>
                 )}
               </button>
               {stage === "tearing" && <div className="anim-burst-flash pointer-events-none fixed inset-0 z-[55]" style={burstAt ? ({ "--bx": `${burstAt.x}px`, "--by": `${burstAt.y}px` } as React.CSSProperties) : undefined} />}
             </div>
           ) : (
             // The slabs sit dead centre, where the pack was; the summary hangs below them out of the flow so nothing moves.
-            <div className="relative flex w-full max-w-5xl flex-col items-center">
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-24">
+            // On phones the summary below needs room in the scroll area (pb), since it hangs outside the flow.
+            <div className={`relative my-auto flex w-full max-w-5xl flex-col items-center ${phone ? "pb-36 pt-8" : ""}`}>
+              <div className={`flex flex-wrap justify-center ${phone ? (cards.length > 1 ? "gap-x-3 gap-y-12" : "gap-y-16") : "gap-x-4 gap-y-24"}`}>
                 {cards.map((c, i) => {
                   const isUp = flipped.has(c.id);
                   const hit = isBigHit(c);
                   return (
                     <button key={c.id} onClick={() => !isUp && flip(c)} className={`flip anim-deal ${isUp ? "flipped" : ""}`} style={{ animationDelay: `${i * 120}ms` }}>
                       <div className={hit && !isUp ? "anim-rumble [perspective:1000px]" : ""}>
-                      <div className="flip-inner relative h-[208px] w-[216px]">{/* slab height only, so the slab itself is centred; its caption hangs below */}
+                      <div className="flip-inner relative" style={{ width: slabSize + 8, height: slabSize }}>{/* slab height only, so the slab itself is centred; its caption hangs below */}
                         {/* Face-down slab: the same 208px square as the revealed Slab, centred the same way, so it flips in place.
                             Old graded slabs no longer drop, so every new pull is a square Slab. */}
                         <div className="flip-face absolute inset-0 flex flex-col items-center">
-                          <SlabCover size={208} rarity={c.rarity} />
+                          <SlabCover size={slabSize} rarity={c.rarity} />
                         </div>
                         <div className={`flip-face flip-back absolute inset-0 flex flex-col items-center rounded-xl ${isUp && !c.slab_id && c.kind !== "slab" && RANK[c.rarity] >= 2 ? "anim-glow" : ""}`} style={{ "--glow": GLOW[c.rarity] } as React.CSSProperties}>
-                          <PlayerCard c={c} />
+                          <PlayerCard c={c} size={slabSize} />
                         </div>
                       </div>
                       </div>
@@ -376,7 +381,7 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
                   );
                 })}
               </div>
-              <div className="absolute left-1/2 top-full mt-24 flex w-full max-w-xl -translate-x-1/2 justify-center pb-6">
+              <div className={`absolute left-1/2 top-full flex w-full max-w-xl -translate-x-1/2 justify-center pb-6 ${phone ? "mt-14" : "mt-24"}`}>
               {!allFlipped ? (flipped.size > 0 &&
                 <button className="btn-ghost" onClick={() => cards.forEach((c, i) => setTimeout(() => flip(c), i * 350))}>Reveal all</button>
               ) : (

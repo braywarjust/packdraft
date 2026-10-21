@@ -1,5 +1,6 @@
 "use client";
 
+import { usePhone } from "@/components/usePhone";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { RARITIES, RARITY_HEX, REROLL_FEE } from "@/lib/packs";
@@ -71,24 +72,25 @@ export function RerollStage({ card, coins, action, onDone }: { card: CardData; c
   }, []);
 
   const rolling = !result && !err;
+  const phone = usePhone();
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="card w-full max-w-lg p-8 text-center" aria-live="polite">
+      <div className="card w-full max-w-lg p-5 text-center sm:p-8" aria-live="polite">
         {rolling ? (
           <div className="flex flex-col items-center gap-5">
             <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">Re-rolling your {RARITIES[from.rarity].label} {from.name}</p>
-            <div className="relative grid h-[260px] w-[260px] place-items-center [perspective:900px]">
+            <div className="relative grid place-items-center [perspective:900px]" style={{ width: phone ? 210 : 260, height: phone ? 210 : 260 }}>
               <span className="reroll-ring absolute inset-6 rounded-full border-2" style={{ borderColor: RARITY_HEX[from.rarity] }} />
               <span className="reroll-ring absolute inset-6 rounded-full border-2" style={{ borderColor: RARITY_HEX[from.rarity], animationDelay: ".8s" }} />
-              <div className="reroll-out absolute"><Slab s={slabOf(from)} size={200} /></div>
-              <div className="logo-play reroll-float relative w-[200px]"><AnimatedLogo className="w-full drop-shadow-[0_10px_30px_rgba(0,0,0,.6)]" /></div>
+              <div className="reroll-out absolute"><Slab s={slabOf(from)} size={phone ? 160 : 200} /></div>
+              <div className="logo-play reroll-float relative w-[160px] sm:w-[200px]"><AnimatedLogo className="w-full drop-shadow-[0_10px_30px_rgba(0,0,0,.6)]" /></div>
             </div>
             <p className="animate-pulse text-sm font-semibold text-zinc-400">Finding your new player…</p>
           </div>
         ) : result ? (
           <div className="flex flex-col items-center gap-4">
             <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">{from.name} re-rolled into</p>
-            <div className="reroll-in"><Slab s={slabOf(result)} size={260} /></div>
+            <div className="reroll-in"><Slab s={slabOf(result)} size={phone ? 210 : 260} /></div>
             <p className="text-xl font-black text-white">{RARITIES[result.rarity].label} {result.name}</p>
             <div className="flex flex-wrap justify-center gap-2">
               <button className="fx-btn fx-green" disabled={pending || balance < REROLL_FEE[result.rarity]} onClick={() => go(result)}>

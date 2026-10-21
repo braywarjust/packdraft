@@ -138,7 +138,7 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
       <section id="odds" className="scroll-mt-36 space-y-3">
         <div>
           <h2 className="text-lg font-bold">Odds per slab</h2>
-          <p className="text-sm text-zinc-500">Chance per slab. Packs average about 90% of their price back in value.</p>
+          <p className="text-sm text-zinc-500">Chance per slab. Prices are set against a typical week (~1,800 Pack Points): GOAT ≈ one week.</p>
         </div>
         <div className="card overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">
