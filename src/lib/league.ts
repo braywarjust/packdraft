@@ -1,6 +1,6 @@
 import { all, one, run, tx, League, Team, Player, Matchup, Game } from "./db";
 import { leagueSeed, rng, simSchedule, gameProgress, simGame, partial, simClock } from "./sim";
-import { STARTERS, ROSTER_MAX, eligible, fpts, statLine, Line, slotLabel, posLabel } from "./scoring";
+import { STARTERS, ROSTER_MAX, eligible, statLine, Line, slotLabel, posLabel } from "./scoring";
 import { addDays, etDate, weekday, dayLabel } from "./nba/espn";
 import { season as nbaSeason, seasonLabel } from "./nba/season";
 import { PACK_BY_ID } from "./packs";
