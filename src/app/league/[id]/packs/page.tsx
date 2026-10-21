@@ -48,7 +48,7 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
             <p className="text-xs font-black uppercase tracking-[0.3em] text-white/70">{b.abbr} · League Pack Shop</p>
             <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">League Packs</h2>
             <p className="mt-2 hidden max-w-xl text-sm text-white/80 sm:block">
-              Every slab in these packs is a player on a team in {l.name}. Pull your own guys to power up your lineup, or your rivals&apos; best players to brag about.
+              Every slab is a player on a {l.name} roster. Pull your guys, or your rivals&apos;.
             </p>
           </div>
           <Link href={`/league/${l.id}/packs/pool`} className="btn-primary shrink-0 max-sm:px-3 max-sm:py-1.5 max-sm:text-sm">See the pack pool</Link>
@@ -72,7 +72,7 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
       ) : pool.length === 0 ? (
         <div className="card border-l-4 border-l-amber-400 p-5">
           <p className="font-bold">The pack pool is empty until the draft</p>
-          <p className="text-sm text-zinc-500">League Packs only drop players on this league&apos;s rosters. Once the draft fills the teams, the shop opens. Packs you already have will wait.</p>
+          <p className="text-sm text-zinc-500">The shop opens once the draft fills the rosters.</p>
         </div>
       ) : (
         <VendingMachine features={packFeatures(PACKS)} coins={u.coins} inventory={inventory}
@@ -85,7 +85,7 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
               <h2 className="text-lg font-bold">In the pack pool</h2>
-              <p className="text-sm text-zinc-500">The {pool.length} players on {l.name}&apos;s rosters right now. Adds, drops, trades and each new draft update it on their own. Better players come up a little more often.</p>
+              <p className="text-sm text-zinc-500">Every rostered player ({pool.length}). Updates with every roster move.</p>
             </div>
             <Link href={`/league/${l.id}/packs/pool`} className="btn-ghost">Browse the whole pool</Link>
           </div>
@@ -103,8 +103,7 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
         <div>
           <h2 className="text-lg font-bold">Rarity tiers and rolls</h2>
           <p className="text-sm text-zinc-500">
-            Every slab rolls its loot when it drops: an orange <b className="text-orange-500">stat boost</b> added to his points, rebounds and assists when his game ends,
-            a blue <b className="text-fpts">fantasy points multiplier</b> applied after that, or once in a while both. The rarer the tier, the bigger the rolls.
+            Each slab rolls an orange <b className="text-orange-500">stat boost</b>, a blue <b className="text-fpts">multiplier</b>, or rarely both. Rarer tier, bigger rolls.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
@@ -121,7 +120,7 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
                   <div className="shrink-0 sm:hidden"><SlabCover size={84} rarity={r} /></div>
                   <div className="hidden sm:block"><SlabCover size={130} rarity={r} /></div>
                   <div className="min-w-0 flex-1 space-y-2 sm:w-full">
-                  <p className="text-xs text-zinc-500 sm:text-center">{RARITY_BLURB[r]}</p>
+                  <p className="text-xs text-zinc-500 max-sm:hidden sm:text-center">{RARITY_BLURB[r]}</p>
                   <dl className="w-full space-y-1 text-xs">
                     <div className="flex justify-between gap-2"><dt className="text-zinc-500">Stat boost {rules.boostPct}%</dt><dd className="text-right font-bold text-orange-500">{rules.boost}</dd></div>
                     <div className="flex justify-between gap-2"><dt className="text-zinc-500">Multiplier {rules.multPct}%</dt><dd className="text-right font-bold text-fpts">{rules.multPct ? rules.mult : "Never"}</dd></div>
@@ -139,7 +138,7 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
       <section id="odds" className="scroll-mt-36 space-y-3">
         <div>
           <h2 className="text-lg font-bold">Odds per slab</h2>
-          <p className="text-sm text-zinc-500">The chance each slab you pull lands in each tier. Every pack is built to return roughly 90% of its price in slab value on average, so the fun is in the swings.</p>
+          <p className="text-sm text-zinc-500">Chance per slab. Packs average about 90% of their price back in value.</p>
         </div>
         <div className="card overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">
@@ -183,9 +182,9 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {([
             ["The pool", `Only players on ${l.name}'s rosters (${pool.length} right now). It follows the league by itself: adds, drops, trades, keepers and every new draft.`],
-            ["Earning packs", "Weekly wins, losses, the top score and the title all pay out League Packs here. Packs you buy here open here too."],
-            ["Stat boosts", "Orange stamp. When the game he's equipped for ends, the boost is added to his points, rebounds and assists, then his fantasy points are counted."],
-            ["Multipliers", "Blue stamp. Equipped before tip-off, it multiplies his fantasy points for that game, boost included, and the Pack Points they pay. One slab per player per game; used up when it ends."],
+            ["Earning packs", "Win, lose, top score or title: you earn packs here."],
+            ["Stat boosts", "Orange stamp. Added to his PTS, REB and AST when his game ends."],
+            ["Multipliers", "Blue stamp. Multiplies his fantasy points for one game, boost included. Used up after."],
           ] as const).map(([k, v]) => (
             <div key={k} className="rounded-xl bg-ink/40 p-3">
               <p className="mb-1 text-xs font-black uppercase tracking-wider text-brand">{k}</p>

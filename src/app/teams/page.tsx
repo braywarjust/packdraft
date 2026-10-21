@@ -12,7 +12,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <PageHeader icon="studio" eyebrow={welcome ? `Welcome to PackDraft, ${u.name}` : "Your teams"} title="Team Studio"
-        description="Set up your team names, colours and logos once. When you create or join a league, just pick one of these and your branding shows up across the whole league." />
+        description="Make your team look once, then use it in any league." />
       {welcome && presets.length === 0 && (
         <p className="card mb-6 border-l-4 border-l-brand p-4 text-sm text-zinc-700">
           First things first: build your team. Give it a name and colours, and upload a transparent PNG logo if you have one. You can make more later.

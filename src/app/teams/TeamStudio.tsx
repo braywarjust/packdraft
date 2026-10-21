@@ -143,7 +143,7 @@ export function TeamStudio({ presets, startNew, favorite }: { presets: P[]; star
                 <button type="button" onClick={() => file.current?.click()} disabled={uploading} className="btn-ghost">{uploading ? "Uploading…" : edit.logo_url ? "Replace logo" : "Upload logo"}</button>
                 {edit.logo_url && <button type="button" onClick={() => setEdit({ ...edit, logo_url: null })} className="text-xs text-zinc-500 hover:text-red-600">Remove</button>}
               </div>
-              <p className="mt-1.5 text-xs text-zinc-500">PNG with a transparent background. Empty edges are trimmed automatically. No logo? Your short name and colours make a badge instead.</p>
+              <p className="mt-1.5 text-xs text-zinc-500">Transparent PNG. No logo? We make a badge from your colours.</p>
             </div>
             {err && <p className="text-sm text-red-600">{err}</p>}
             <div className="flex gap-2">

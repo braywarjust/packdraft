@@ -10,7 +10,7 @@ export default async function EditProfile() {
   const p = getProfile(u.id)!;
   return (
     <div>
-      <PageHeader eyebrow="Your profile" title="Edit profile" description="Everything here is optional. Changes show in the live preview before you save." />
+      <PageHeader eyebrow="Your profile" title="Edit profile" description="All optional. Preview updates live." />
       <ProfileEditor initial={p} nba={nbaTeams().map((t) => ({ abbr: t.abbr, name: t.name, color: `#${t.color ?? "1f2937"}`, alt: `#${t.alt ?? "111827"}` }))} maxFeatured={MAX_FEATURED} />
     </div>
   );

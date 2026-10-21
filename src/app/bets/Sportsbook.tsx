@@ -125,7 +125,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
             {slip.length > 0 && <button onClick={() => setSlip([])} className="text-xs text-zinc-500 hover:text-red-600">Clear</button>}
           </div>
           {slip.length === 0 ? (
-            <p className="text-sm text-zinc-500">Tap any odds to add a pick. Add more than one to build a parlay.</p>
+            <p className="text-sm text-zinc-500">Tap any odds to add a pick. 2+ picks = parlay.</p>
           ) : (
             <div className="space-y-3">
               {slip.length > 1 && (
@@ -182,7 +182,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
 
         {tab === "board" && (
           <>
-            {d.games.length === 0 && <p className="card p-6 text-zinc-500">No games on the board right now. Check back when the next slate is scheduled.</p>}
+            {d.games.length === 0 && <p className="card p-6 text-zinc-500">No games on the board right now.</p>}
             {d.games.map((g) => {
               const label = `${g.away} @ ${g.home}`;
               const hp = Math.round(g.winProbHome * 100);
@@ -348,7 +348,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
         <div className="max-lg:hidden">{slipCard}</div>
         <div className="card p-4 text-xs text-zinc-500">
           <p className="mb-1 font-semibold text-zinc-700">House rules</p>
-          <p>Bets are <Coins n={10} />–<Coins n={2500} />, max payout <Coins n={50000} />. Lines and odds are set by PackDraft from season averages and update live with the score and box score. Bets settle when the game goes final. Landing exactly on a line is a push (stake back; that parlay leg drops out). Live betting closes in the final minute.</p>
+          <p>Bets are <Coins n={10} />–<Coins n={2500} />, max payout <Coins n={50000} />. Lines move live with the score. Bets settle at the final. Exactly on the line is a push. Live betting closes in the last minute.</p>
         </div>
       </aside>
 

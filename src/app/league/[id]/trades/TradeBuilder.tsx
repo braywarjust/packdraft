@@ -54,7 +54,7 @@ export function TradeBuilder({
         <div><p className="label">You get (<Fpts n={val(get, theirs)} />/g)</p>{list(theirs, get, setGet)}</div>
       </div>
       <input value={note} onChange={(e) => setNote(e.target.value)} className="input" placeholder="Add some persuasion (or trash talk)…" />
-      {partner?.cpu && <p className="text-xs text-zinc-500">CPU managers respond instantly and want a little more projected value back than they give.</p>}
+      {partner?.cpu && <p className="text-xs text-zinc-500">CPU teams answer instantly and want a bit of value back.</p>}
       <div className="flex items-center gap-3">
         <button
           className="btn-primary"

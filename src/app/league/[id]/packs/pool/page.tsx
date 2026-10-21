@@ -41,8 +41,7 @@ export default async function LeaguePackPool({ params, searchParams }: { params:
           <p className="text-xs font-bold uppercase tracking-widest text-brand">League Packs</p>
           <h2 className="text-2xl font-black tracking-tight">Pack pool</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            These {pool.length} players are everyone on a team in {l.name}, and they&apos;re the only slabs League Packs here can drop. The pool updates by
-            itself when rosters change and when a new season&apos;s draft happens.
+            Every {l.name} rostered player ({pool.length}): the only slabs these packs drop. Updates with every roster move and draft.
           </p>
         </div>
         <Link href={`/league/${l.id}/packs`} className="btn-ghost">Back to League Packs</Link>
@@ -53,9 +52,7 @@ export default async function LeaguePackPool({ params, searchParams }: { params:
           {RARITY_ORDER.map((r) => <Link key={r} href={`?tier=${r}`} className={`tab ${tier === r ? "tab-active" : ""} ${RARITIES[r].text}`}>{RARITIES[r].label}</Link>)}
         </div>
         <p className="text-xs text-zinc-500">
-          Shown as {RARITIES[tier].label} with its best roll. {RARITIES[tier].label} slabs roll a stat boost {rules.boostPct}% of the time
-          (<b className="text-orange-500">{rules.boost}</b>){rules.multPct ? <>, a multiplier {rules.multPct}% (<b className="text-fpts">{rules.mult}</b>)</> : ", never a multiplier"}
-          {rules.bothPct ? <>, and both {rules.bothPct}%</> : ""}.
+          Best {RARITIES[tier].label} roll shown. Boost {rules.boostPct}% (<b className="text-orange-500">{rules.boost}</b>){rules.multPct ? <> · Multiplier {rules.multPct}% (<b className="text-fpts">{rules.mult}</b>)</> : ""}{rules.bothPct ? <> · Both {rules.bothPct}%</> : ""}
         </p>
       </div>
 

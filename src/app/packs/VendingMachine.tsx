@@ -297,7 +297,7 @@ export function VendingMachine({ coins, inventory, buy, rip, features = {} }: {
       )}
 
       <section id="packs" className="scroll-mt-36 space-y-3">
-        <div className="max-sm:hidden"><h2 className="text-lg font-bold">League Packs</h2><p className="text-sm text-zinc-500">One Slab each, five in the Mega Pack, all from this league&apos;s pool. Pricier packs tilt the odds toward the top tiers. Tap a pack to check out and rip it.</p></div>
+        <div className="max-sm:hidden"><h2 className="text-lg font-bold">League Packs</h2><p className="text-sm text-zinc-500">1 slab each, 5 in the Mega Pack. Pricier packs, better odds.</p></div>
         {/* Phones: the whole shop on one screen, as a vending machine front. */}
         <PhoneMachine coins={coins} busy={stage !== "idle"} busyId={busyId} onPick={setCheckout} />
         {/* Bigger screens: all seven packs in one row; scrolls sideways when the screen is too narrow. */}

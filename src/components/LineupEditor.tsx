@@ -192,10 +192,10 @@ export function EquipPanel({ boost, players, onEquip }: { boost: BoostProps; pla
     <section className="card relative overflow-hidden p-4" style={{ boxShadow: "inset 0 0 0 1px rgba(56,189,248,.35)" }}>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="flex items-center gap-2 font-black text-white"><FptIcon tone="blue" /> Equip slabs</h3>
-        <p className="text-xs text-zinc-500">Slabs of your players boost one game: stat boosts are added to his box score when it ends, then multipliers multiply it. Equip before tip-off; used up when the game ends.</p>
+        <p className="text-xs text-zinc-500">Boost one game. Equip before tip-off.</p>
       </div>
       {rows.length === 0 ? (
-        <p className="text-sm text-zinc-500">You don&apos;t have slabs of anyone on this roster yet (or they have no games left this week). Rip packs to find slabs of your players.</p>
+        <p className="text-sm text-zinc-500">No slabs of your players yet. Rip packs to find some.</p>
       ) : (
         <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin">
           {rows.map(({ b, p, mine, best }) => (
@@ -233,7 +233,7 @@ export function BoostModal({ boost, player, info, pending, onClose, run }: {
         <div className="flex items-center justify-between border-b border-line/60 p-4">
           <div>
             <p className="flex items-center gap-1.5 font-bold"><FptIcon tone="blue" /> Equip a slab on {player.name}</p>
-            <p className="text-xs text-zinc-500">{info?.day} · projected <Fpts n={player.proj} /> fantasy points. His slab&apos;s stat boost is added when that game ends, then its multiplier applies. Then it&apos;s used up.</p>
+            <p className="text-xs text-zinc-500">{info?.day} · projected <Fpts n={player.proj} /> fantasy points. One use.</p>
           </div>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900" aria-label="Close"><XIcon /></button>
         </div>
@@ -254,7 +254,7 @@ export function BoostModal({ boost, player, info, pending, onClose, run }: {
           ))}
         </div>
         <div className="flex items-center justify-between border-t border-line/60 px-4 py-2 text-xs text-zinc-500">
-          <span>One slab per player per game. It locks at tip-off, only counts if he starts, and leaves your collection when the game ends.</span>
+          <span>One per game. Locks at tip-off. Counts only if he starts.</span>
           {on && player.boost?.state === "pre" && (
             <button className="text-red-600 hover:underline" onClick={() => run(() => boost.clear(player.id))}>Unequip</button>
           )}

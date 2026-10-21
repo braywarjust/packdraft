@@ -71,7 +71,7 @@ function TradeUpModal({ cards, coins, action, onClose }: { cards: CardData[]; co
         <div className="flex items-center justify-between border-b border-line/60 px-5 py-3">
           <div>
             <p className="text-lg font-black text-white">Trade up</p>
-            <p className="text-xs text-zinc-500">Trade {TRADE_UP_COUNT} slabs of one rarity plus a fee for 1 slab of the next rarity. Five of the same player gets you him again, one tier up.</p>
+            <p className="text-xs text-zinc-500">{TRADE_UP_COUNT} slabs + a fee = 1 slab a tier up. Five of one player keeps him.</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
         </div>

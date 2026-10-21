@@ -127,7 +127,7 @@ export default async function Home() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Start here</p>
             <p className="text-lg font-semibold">Set up your team: name, colours and logo</p>
-            <p className="text-sm text-zinc-500">Do it once in Team Studio, then pick it whenever you join a league.</p>
+            <p className="text-sm text-zinc-500">Set it once in Team Studio, use it in every league.</p>
           </div>
           <span className="btn-primary shrink-0">Open Team Studio</span>
         </Link>

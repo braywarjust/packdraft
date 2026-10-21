@@ -83,7 +83,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-zinc-400">CPU teams draft and set lineups automatically. When a friend joins with the code they take over a CPU seat.</p>
+            <p className="text-xs text-zinc-400">CPU teams run themselves. A friend who joins takes over one.</p>
           </section>
         )}
 
@@ -190,7 +190,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 <div className="p-5">
                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-600">Every week</p>
                   <h2 className="text-2xl font-black tracking-tight text-white">Win packs, rip slabs</h2>
-                  <p className="mt-1 text-sm text-zinc-500">Every manager earns a pack each week. Top scorer and the champ get extra.</p>
+                  <p className="mt-1 text-sm text-zinc-500">A pack for everyone each week. Bonus for top score and the champ.</p>
                   <div className="mt-4 grid grid-cols-4 gap-2">
                     {rewards.map(([label, id, bonus]) => (
                       <Link key={label} href={`/league/${l.id}/packs`} className="group flex flex-col items-center rounded-xl bg-black/20 px-1 pb-2 pt-3 text-center ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-amber-400/40">
@@ -206,7 +206,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                   <div>
                     <p className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-600">Points pay</p>
                     <h2 className="text-2xl font-black tracking-tight text-white">Every point pays Pack Points</h2>
-                    <p className="mt-1 text-sm text-zinc-500">Every fantasy point your starters score pays you half a Pack Point when their games go final.</p>
+                    <p className="mt-1 text-sm text-zinc-500">Each starter&apos;s fantasy point pays ½ Pack Point at the final.</p>
                   </div>
                   <PointsKey compact />
                   <div className="rounded-xl bg-emerald-500/10 p-3 ring-1 ring-emerald-500/30">

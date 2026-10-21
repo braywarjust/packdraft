@@ -29,11 +29,11 @@ export default async function PacksHub() {
   return (
     <div className="space-y-5">
       <PageHeader icon="packs" eyebrow="League Packs" title="Pick a league"
-        description="Packs live inside your leagues now. Each league's packs only drop players on that league's rosters, so pick where you want to rip.">
+        description="Each league's packs drop that league's players. Pick one.">
         <span className="rounded-full bg-panel2 px-3 py-1.5 text-sm font-bold text-emerald-600"><Coins n={u.coins} live /></span>
       </PageHeader>
       {anywhere > 0 && (
-        <p className="card border-l-4 border-l-amber-400 p-4 text-sm">You have <b>{anywhere}</b> pack{anywhere > 1 ? "s" : ""} from before League Packs. {anywhere > 1 ? "They open" : "It opens"} in whichever league you rip {anywhere > 1 ? "them" : "it"} in.</p>
+        <p className="card border-l-4 border-l-amber-400 p-4 text-sm"><b>{anywhere}</b> older pack{anywhere > 1 ? "s" : ""}: open{anywhere > 1 ? "" : "s"} in any league.</p>
       )}
       {leagues.length === 0 ? (
         <div className="card p-8 text-center text-sm text-zinc-500">Join or create a league to get League Packs. <Link href="/leagues" className="text-brand underline">Find a league</Link></div>

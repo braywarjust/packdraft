@@ -134,8 +134,8 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         </details>
       )}
       <PointsKey className="relative" />
-      <p className="relative text-xs text-zinc-400"><BoltIcon className="text-fpts" /> Slab equips: tap one of your players to open his card and equip one of his slabs on his next game. Players with a slab on show the slab icon. When that game ends, its orange stat boost is added to his points, rebounds and assists, then its blue multiplier stamp (1.10x to 2.00x) multiplies his fantasy points. It locks at tip-off, only counts if he starts, and the slab is used up when the game ends.</p>
-      <p className="relative text-xs text-zinc-400">Lineups are daily. Each player locks at his own tip-off, so you can still swap guys who play later tonight. Points count for whatever slot a player was in when his game started.</p>
+      <p className="relative text-xs text-zinc-400"><BoltIcon className="text-fpts" /> Tap a player to equip one of his slabs on his next game. Boost first, then multiplier. Locks at tip-off.</p>
+      <p className="relative text-xs text-zinc-400">Daily lineups. Each player locks at his own tip-off.</p>
     </div>
   );
 }

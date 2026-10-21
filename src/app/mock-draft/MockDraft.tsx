@@ -62,7 +62,7 @@ export function MockDraft({ players, userName }: { players: PoolPlayer[]; userNa
     return (
       <div className="mx-auto max-w-lg card space-y-4 p-6">
         <h1 className="flex items-center gap-3 text-2xl font-black"><span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/15 text-brand ring-1 ring-brand/30"><NavIcon d={NAV_ICONS.mock} size={24} /></span>Mock draft</h1>
-        <p className="text-sm text-zinc-500">Practice against bots that draft by ADP. Nothing here counts. Picks come fast.</p>
+        <p className="text-sm text-zinc-500">Practice against bots. Nothing counts.</p>
         <div className="grid grid-cols-2 gap-4">
           <div><label className="label">Teams</label>
             <select className="input" value={teams} onChange={(e) => { setTeams(Number(e.target.value)); setSlot(1); }}>

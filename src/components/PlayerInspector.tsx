@@ -63,7 +63,7 @@ function SlabMarket({ d, reload }: { d: PlayerInfo; reload: () => void }) {
       </div>
       {eq && (
         <p className="mb-1.5 text-[11px] text-zinc-500">
-          {eq.day ? <>Equip one on his next game: <b className="text-white">{eq.day}</b>. Locks at tip-off, used up when it ends.</> : eq.why}
+          {eq.day ? <>Next game: <b className="text-white">{eq.day}</b>. One use.</> : eq.why}
         </p>
       )}
       <div className="space-y-1.5">
@@ -88,7 +88,7 @@ function SlabMarket({ d, reload }: { d: PlayerInfo; reload: () => void }) {
         })}
       </div>
       {err && <p className="mt-1 text-xs text-red-500">{err}</p>}
-      {d.mySlabs.some((s) => s.boost) && <p className="mt-1.5 text-[11px] text-zinc-500">Stat boosts are added to his points, rebounds and assists when the game ends, before any multiplier.</p>}
+      {d.mySlabs.some((s) => s.boost) && <p className="mt-1.5 text-[11px] text-zinc-500">Boosts add on at the final, before the multiplier.</p>}
     </section>
   );
 }

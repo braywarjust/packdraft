@@ -97,7 +97,7 @@ export function RosterBoard({ days, rows, totals, initialDay, players, editable,
           </table>
         </div>
       </section>
-      <p className="text-xs text-zinc-500">UTIL takes anyone, G takes a PG or SG, F takes an SF or PF. Bench points don&apos;t count.</p>
+      <p className="text-xs text-zinc-500">G = PG/SG · F = SF/PF · UTIL = anyone · Bench doesn&apos;t score</p>
 
       {boost && boosting && (
         <BoostModal boost={boost} player={boosting} info={canBoost.get(boosting.id)} pending={pending} onClose={() => setBoosting(null)}

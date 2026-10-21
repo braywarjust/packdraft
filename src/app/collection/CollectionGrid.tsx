@@ -101,7 +101,7 @@ export function CollectionGrid({ cards, mine, coins = 0, reroll }: { cards: Grid
                 <div className="rounded-xl border border-fpts/40 bg-fpts/5 p-4">
                   <p className="text-xs text-zinc-500">Fantasy points buff</p>
                   <p className="flex items-center gap-1.5 text-3xl font-black text-fpts"><FptIcon tone="blue" />{open.mult.toFixed(2)}x</p>
-                  <p className="mt-1 text-xs text-zinc-500">One use. If {open.name} is on your fantasy team, equip it on one of his games from your team page and his fantasy points for that game{open.boost_pts != null ? ", stat boost included," : ""} are multiplied by {open.mult.toFixed(2)}. The slab leaves your collection when the game ends.</p>
+                  <p className="mt-1 text-xs text-zinc-500">One game, on {open.name} only. Multiplies his fantasy points{open.boost_pts != null ? ", boost included" : ""}. Equip from his player card.</p>
                 </div>
               )}
               {open.kind === "slab" && open.boost_pts != null && (
@@ -115,7 +115,7 @@ export function CollectionGrid({ cards, mine, coins = 0, reroll }: { cards: Grid
                       </div>
                     ))}
                   </div>
-                  <p className="mt-2 text-xs text-zinc-500">One use. Equip it on one of {open.name}&apos;s games before tip-off and these are added to his box score when that game ends{open.mult != null ? `, then the ${open.mult.toFixed(2)}x multiplier applies` : ""}. The slab leaves your collection when the game ends.</p>
+                  <p className="mt-2 text-xs text-zinc-500">One game, on {open.name} only. Added to his box score at the final{open.mult != null ? `, then ${open.mult.toFixed(2)}x` : ""}.</p>
                 </div>
               )}
               {mine && reroll && open.kind === "slab" && !open.equipped && <RerollPanel card={open} coins={coins} onStart={() => setRerolling(open)} />}
