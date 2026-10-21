@@ -52,7 +52,7 @@ export default async function Collection({ searchParams }: { searchParams: Promi
           <Link key={r} href={qs({ r })} className={`tab ${sp.r === r ? "tab-active" : ""} ${RARITIES[r].text}`}>{RARITIES[r].label} ({counts[r]})</Link>
         ))}
         <span className="mx-2 h-5 w-px bg-line" />
-        <Link href={qs({ sort: undefined })} className={`tab ${!sp.sort ? "tab-active" : ""}`}>Top value</Link>
+        <Link href={qs({ sort: undefined })} className={`tab ${!sp.sort ? "tab-active" : ""}`}>Best</Link>
         <Link href={qs({ sort: "new" })} className={`tab ${sp.sort === "new" ? "tab-active" : ""}`}>Newest</Link>
         <Link href="/collection/trades" className="btn-ghost ml-auto gap-2">
           Trades{!!offers && <span className="rounded-full bg-accent px-2 text-xs font-bold text-white">{offers}</span>}

@@ -7,7 +7,6 @@ import { CardData, PlayerCard, RarityBadge, SlabImage, slabBadges, slabOf } from
 import { Slab } from "@/components/Slab";
 import { RARITIES } from "@/lib/packs";
 import { Logo, LogoWatermark } from "@/components/Logo";
-import { Coins } from "@/components/Coins";
 import { FptIcon } from "@/components/Fpts";
 import { useScrollLock } from "@/components/useScrollLock";
 import { RerollPanel, RerollStage, type RerollAct } from "./Reroll";
@@ -34,7 +33,6 @@ export function CollectionGrid({ cards, mine, coins = 0, reroll, tradeWith }: { 
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const detail = open?.s_detail ? (JSON.parse(open.s_detail) as { match: string; n: number; low?: number; high?: number }) : null;
   const factors = open?.s_factors ? (JSON.parse(open.s_factors) as string[]) : [];
 
   return (
@@ -126,21 +124,6 @@ export function CollectionGrid({ cards, mine, coins = 0, reroll, tradeWith }: { 
                 </Link>
               )}
               {mine && reroll && open.kind === "slab" && !open.equipped && <RerollPanel card={open} coins={coins} onStart={() => setRerolling(open)} />}
-              {open.kind !== "slab" && <div className="rounded-xl border border-zinc-200 p-4">
-                <p className="text-xs text-zinc-500">Market value</p>
-                <p className="text-3xl font-bold text-emerald-600"><Coins n={open.value} /></p>
-                <p className="mt-1 text-xs text-zinc-500">
-                  {open.s_source === "auction"
-                    ? "Ultra Heavy Hitter: priced at its record public auction sale."
-                    : open.s_source === "courtyard"
-                    ? "Courtyard fair market value for this exact slab (Heavy Hitter)."
-                    : open.s_source === "ebay" && detail
-                    ? detail.match === "cert"
-                      ? `This exact slab is listed on eBay (${detail.n} listing${detail.n > 1 ? "s" : ""}).`
-                      : <>Median of {detail.n} eBay listings for this card in this grade{detail.low != null && <> (<Coins n={detail.low} />–<Coins n={detail.high!} />)</>}.</>
-                    : open.slab_id ? "Estimated from the rarity score. Add eBay keys to price from live listings." : "Generated card value."}
-                </p>
-              </div>}
               {open.slab_id && (
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                   <dt className="text-zinc-500">Cert</dt>

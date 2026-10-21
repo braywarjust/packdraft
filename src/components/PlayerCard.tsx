@@ -2,7 +2,6 @@
 import { RARITIES, Rarity } from "@/lib/packs";
 import { Slab, type SlabData } from "@/components/Slab";
 import { TeamLogo } from "@/components/TeamLogo";
-import { Coins } from "@/components/Coins";
 
 export type CardData = {
   id: number; name: string; pos: string; team: string; rarity: Rarity; grade: number; serial: number; print_run: number; value: number;
@@ -87,9 +86,6 @@ export function SlabCard({ c, small }: { c: CardData; small?: boolean }) {
       <div className="mt-2 w-full text-center">
         <RarityBadge rarity={c.rarity} />
         <p className="mt-1 truncate text-xs font-semibold text-zinc-900">{c.name}</p>
-        <p className="font-mono text-xs font-bold text-emerald-600" title={c.s_source === "ebay" ? "eBay market value" : c.s_source === "auction" ? "Record auction sale" : c.s_source === "courtyard" ? "Courtyard fair market value" : "Estimated value"}>
-          <Coins n={c.value} />{c.s_source ? "" : "*"}
-        </p>
       </div>
     </div>
   );
@@ -154,10 +150,6 @@ export function PlayerCard({ c, small, size }: { c: CardData; small?: boolean; s
             <span><span className={`pos pos-${c.pos} mr-1`}>{c.pos}</span>{c.team}</span>
             <span className={r.text}>#{c.serial}/{c.print_run}</span>
           </div>
-        </div>
-        <div className="mt-1 flex items-center justify-between px-0.5 text-[11px]">
-          <span className="text-zinc-400">FMV</span>
-          <span className="font-mono font-bold text-emerald-600"><Coins n={c.value} /></span>
         </div>
       </div>
     </div>

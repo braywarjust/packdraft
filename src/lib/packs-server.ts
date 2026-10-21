@@ -67,7 +67,7 @@ export async function openPack(userId: number, packId: number, leagueId: number)
   if (big.length && !user.is_tester) {
     for (const c of big) {
       const both = c.mult != null && c.boost_pts != null ? " with a multiplier AND a stat boost" : "";
-      postSystem(leagueId, `${user.name} pulled ${c.rarity === "grail" ? "an" : "a"} ${RARITIES[c.rarity].label.toUpperCase()} ${c.name} slab${both} worth ${fmtCoins(c.value)}!`);
+      postSystem(leagueId, `${user.name} pulled ${c.rarity === "grail" ? "an" : "a"} ${RARITIES[c.rarity].label.toUpperCase()} ${c.name} slab${both}!`);
     }
   }
   return cards;
