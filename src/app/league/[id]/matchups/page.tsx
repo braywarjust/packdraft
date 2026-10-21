@@ -40,9 +40,11 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
       const t = teams.get(tid)!;
       return { id: tid, brand: teamBrand(t), record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`, score: m.final && stored != null ? stored : w.score, proj: w.score + w.remain };
     };
-    const live = !m.final && (l.mode === "sim" ? !!l.week_started_at && current : h.players.concat(a.players).some((p) => p.now?.state === "in"));
+    const live = !m.final && (l.mode === "sim" ? !!l.week_started_at && current : h.players.concat(a.players).some((p) => p.now?.state !== "pre" && p.now != null) && h.score + a.score > 0);
     const status: "pre" | "live" | "final" = m.final ? "final" : live ? "live" : "pre";
-    return { m, home: side(m.home_team_id, h, m.home_score), away: side(m.away_team_id, a, m.away_score), status, wp: m.final ? 0.5 : winProb(h, a), mine: !!me && (m.home_team_id === me.id || m.away_team_id === me.id) };
+    // The LIVE badge only while one of its players' games is under way, not all week.
+    const playing = l.mode === "sim" || h.players.concat(a.players).some((p) => p.now?.state === "in");
+    return { m, playing, home: side(m.home_team_id, h, m.home_score), away: side(m.away_team_id, a, m.away_score), status, wp: m.final ? 0.5 : winProb(h, a), mine: !!me && (m.home_team_id === me.id || m.away_team_id === me.id) };
   });
   const anyLive = cards.some((c) => c.status === "live");
 
@@ -81,7 +83,7 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
         {cards.map((c, i) => (
           <div key={c.m.id} className="space-y-1.5">
             {c.m.kind && <p className="text-xs font-black uppercase tracking-widest text-zinc-500">{c.m.kind === "consolation" ? "3rd place game" : roundTitle(lastWeek - week)}</p>}
-            <MatchupCard href={`/league/${l.id}/matchup/${c.m.id}`} home={c.home} away={c.away} status={c.status} winProb={c.wp} mine={c.mine} big={i === 0 && c.mine} />
+            <MatchupCard href={`/league/${l.id}/matchup/${c.m.id}`} home={c.home} away={c.away} status={c.status} playing={c.playing} winProb={c.wp} mine={c.mine} big={i === 0 && c.mine} />
           </div>
         ))}
         {playoffs && cards.length === 0 && <p className="card p-6 text-center text-sm text-zinc-500">Matchups to be determined</p>}

@@ -11,8 +11,9 @@ function Wrap({ href, className, style, children }: { href?: string; className: 
 }
 
 /** A head-to-head card split in the two teams' colours, logos facing off, scores big. */
-export function MatchupCard({ href, home, away, status, winProb, mine, big = false }: {
-  href?: string; home: MatchSide; away: MatchSide; status: "pre" | "live" | "final"; winProb: number; mine?: boolean; big?: boolean;
+/** `playing`: a game in this matchup is under way right now. The week can be live (scores shown) between game nights; the LIVE badge only shows while someone's playing. */
+export function MatchupCard({ href, home, away, status, winProb, mine, big = false, playing = true }: {
+  href?: string; home: MatchSide; away: MatchSide; status: "pre" | "live" | "final"; winProb: number; mine?: boolean; big?: boolean; playing?: boolean;
 }) {
   const hp = Math.round(winProb * 100);
   const winner = status === "final" ? (home.score > away.score ? "home" : away.score > home.score ? "away" : null) : null;
@@ -57,7 +58,7 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
       <div className="relative flex items-center gap-2 p-3 sm:gap-3 sm:p-5">
         {side(home, "home")}
         <div className="flex shrink-0 flex-col items-center gap-1 px-1">
-          {status === "live" ? <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white">● LIVE</span>
+          {status === "live" && playing ? <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white">● LIVE</span>
             : status === "final" ? <span className="rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-black text-white">FINAL</span>
             : <span className="text-lg font-black italic text-white/80">VS</span>}
           {mine && <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">You</span>}

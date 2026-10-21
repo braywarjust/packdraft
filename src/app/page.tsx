@@ -83,9 +83,10 @@ export default async function Home() {
         return { w, s: { id: tid, brand: teamBrand(team), record: `${team.wins}-${team.losses}${team.ties ? `-${team.ties}` : ""}`, score: m.final && stored != null ? stored : w.score, proj: w.score + w.remain } };
       };
       const h = side(m.home_team_id, m.home_score), a = side(m.away_team_id, m.away_score);
-      // Real matchups read LIVE only while one of their players' games is under way, not all week.
-      const live = l.mode === "sim" ? !!l.week_started_at : [...h.w.players, ...a.w.players].some((p) => p.now?.state === "in");
-      card = { href: `/league/${l.id}/matchup/${m.id}`, home: h.s, away: a.s, status: (m.final ? "final" : live ? "live" : "pre") as "final" | "live" | "pre", wp: winProb(h.w, a.w) };
+      const live = l.mode === "sim" ? !!l.week_started_at : h.w.score + a.w.score > 0;
+      // The LIVE badge only while one of its players' games is under way, not all week.
+      const playing = l.mode === "sim" || [...h.w.players, ...a.w.players].some((p) => p.now?.state === "in");
+      card = { href: `/league/${l.id}/matchup/${m.id}`, home: h.s, away: a.s, status: (m.final ? "final" : live ? "live" : "pre") as "final" | "live" | "pre", playing, wp: winProb(h.w, a.w) };
     }
     return { ...base, card, earned: earnings(l.id, user.id, l.current_week) };
   });
@@ -200,7 +201,7 @@ export default async function Home() {
                 {earned && <span className="flex items-center gap-1 text-xs text-zinc-500">Earned this week <span className="font-bold text-emerald-600"><Coins n={earned.week} live /></span></span>}
               </div>
               {card ? (
-                <MatchupCard href={card.href} home={card.home} away={card.away} status={card.status} winProb={card.wp} mine />
+                <MatchupCard href={card.href} home={card.home} away={card.away} status={card.status} playing={card.playing} winProb={card.wp} mine />
               ) : (
                 <Link href={l.draft_status === "live" ? `/league/${l.id}/draft` : `/league/${l.id}`}
                   className="relative flex items-center gap-4 overflow-hidden rounded-2xl p-5 shadow-xl ring-1 ring-white/10 transition hover:-translate-y-0.5"

@@ -103,8 +103,9 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
           };
           const h = m && sideOf(m.home_team_id, m.home_score, m.final);
           const a = m && sideOf(m.away_team_id, m.away_score, m.final);
-          // Real matchups read LIVE only while one of their players' games is under way, not all week.
-          const live = !!(h && a) && (l.mode === "sim" ? !!l.week_started_at : [...h.w.players, ...a.w.players].some((p) => p.now?.state === "in"));
+          const live = !!(h && a) && (l.mode === "sim" ? !!l.week_started_at : h.w.score + a.w.score > 0);
+          // The LIVE badge only while one of its players' games is under way, not all week.
+          const playing = !!(h && a) && (l.mode === "sim" || [...h.w.players, ...a.w.players].some((p) => p.now?.state === "in"));
           return (
             <section className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -120,7 +121,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 <div className="h-2 overflow-hidden rounded-full bg-panel2"><div className="h-full bg-gradient-to-r from-brand to-red-800 transition-all" style={{ width: `${progress * 100}%` }} /></div>
               )}
               {m && h && a && (
-                <MatchupCard href={`/league/${l.id}/matchup/${m.id}`} home={h.side} away={a.side} status={m.final ? "final" : live ? "live" : "pre"} winProb={winProb(h.w, a.w)} mine big />
+                <MatchupCard href={`/league/${l.id}/matchup/${m.id}`} home={h.side} away={a.side} status={m.final ? "final" : live ? "live" : "pre"} playing={playing} winProb={winProb(h.w, a.w)} mine big />
               )}
             </section>
           );
