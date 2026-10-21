@@ -116,7 +116,7 @@ export function ensureSlabCards() {
 
 export type PoolPlayer = { id: number; name: string; team: string; pos: string; proj: number; idx: number };
 
-/** Every active player on an NBA team (trade-ups and re-rolls draw from this). */
+/** Every active player on an NBA team (re-rolls draw from this). */
 export function slabPool() {
   const idx = currentIndexes();
   return all<Omit<PoolPlayer, "idx">>("SELECT p.id, p.name, p.team, p.pos, p.proj FROM players p JOIN nba_teams t ON t.abbr = p.team WHERE p.active = 1 ORDER BY p.team, p.proj DESC")

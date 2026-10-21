@@ -11,7 +11,7 @@ import {
   startNewSeason, canStartNewSeason,
 } from "@/lib/league";
 import { PACK_BY_ID } from "@/lib/packs";
-import { openPack, rerollSlab, tradeUp } from "@/lib/packs-server";
+import { openPack, rerollSlab } from "@/lib/packs-server";
 import { etDate } from "@/lib/nba/espn";
 import { placeBet } from "@/lib/bets";
 import { applyPreset, deletePreset, getPreset, saveLeagueBrand, savePreset, setFavoritePreset } from "@/lib/branding";
@@ -288,6 +288,17 @@ export async function autoSet(leagueId: number) {
   });
 }
 
+/** Auto Manager on or off for my team; turning it on sets today's best lineup straight away. */
+export async function setAutoManage(leagueId: number, on: boolean) {
+  return wrap(async () => {
+    const { l, t } = await myLeagueTeam(leagueId);
+    run("UPDATE teams SET auto_manage = ? WHERE id = ?", on ? 1 : 0, t.id);
+    if (on) tx(() => autoLineup(l, t.id));
+    revalidatePath(`/league/${leagueId}/team`);
+    return { ok: true };
+  });
+}
+
 export async function dropPlayer(leagueId: number, playerId: number) {
   return wrap(async () => {
     const { l, t } = await myLeagueTeam(leagueId);
@@ -469,16 +480,6 @@ export async function ripPack(leagueId: number, packId: number) {
     const u = await requireUser();
     const cards = await openPack(u.id, packId, leagueId);
     return { ok: true, cards };
-  });
-}
-
-/** Trade five slabs of one rarity (plus the fee) for one slab of the next rarity up. */
-export async function tradeUpSlabs(cardIds: number[]) {
-  return wrap(async () => {
-    const u = await requireUser();
-    const card = tradeUp(u.id, cardIds);
-    revalidatePath("/", "layout");
-    return { ok: true, card };
   });
 }
 

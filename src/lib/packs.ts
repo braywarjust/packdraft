@@ -57,18 +57,8 @@ export const PACK_BY_ID: Record<string, PackType> = Object.fromEntries(PACKS.map
 
 export const BUYBACK_RATE = 0.9;
 
-/**
- * Trade-ups: turn TRADE_UP_COUNT slabs of one tier, plus a Pack Points fee, into one slab of the next tier.
- * Fees climb with the tier; Mythic to Immortal costs the most. (Five slabs plus the fee is worth roughly what the
- * new tier's slab averages, so it's a ladder, not a money printer.) Immortal can't be traded up.
- */
-export const TRADE_UP_COUNT = 5;
-
 /** Pack Points to re-roll a slab into a different player at the same rarity. Rarer slabs cost more. */
 export const REROLL_FEE: Record<Rarity, number> = { common: 10, rare: 40, epic: 150, legendary: 600, grail: 3000 };
-export const TRADE_UP: Partial<Record<Rarity, { to: Rarity; fee: number }>> = {
-  common: { to: "rare", fee: 25 }, rare: { to: "epic", fee: 100 }, epic: { to: "legendary", fee: 400 }, legendary: { to: "grail", fee: 2500 },
-};
 
 function expectedPerCard(odds: PackType["odds"]) {
   let ev = 0;
