@@ -39,19 +39,18 @@ export function Sidebar({
 
   const items = [
     { href: "/", label: "Home", icon: I.home, exact: true },
-    { href: "/leagues", label: "Leagues", icon: I.leagues },
+    // Packs live inside each league (League Packs), so unopened packs show on Leagues.
+    { href: "/leagues", label: "Leagues", icon: I.leagues, badge: packs },
     { href: "/teams", label: "Team Studio", icon: I.studio },
-    { href: "/packs", label: "League Packs", icon: I.packs, badge: packs },
     { href: "/collection", label: "Collection", icon: I.collection },
     { href: "/bets", label: "Sportsbook", icon: I.bets },
     { href: "/casino", label: "Casino", icon: I.casino },
     { href: "/mock-draft", label: "Mock Draft", icon: I.mock },
   ];
-  // Bottom tab bar on phones: your league (or the leagues list), packs, collection, casino; the rest is under "More".
+  // Bottom tab bar on phones: home, your league (or the leagues list, with unopened packs), collection; the rest is under "More".
   const tabs = [
     { href: "/", label: "Home", icon: I.home, exact: true, badge: 0 },
-    { href: leagues.length === 1 ? `/league/${leagues[0].id}` : "/leagues", label: "League", icon: I.leagues, exact: false, badge: 0 },
-    { href: "/packs", label: "Packs", icon: I.packs, exact: false, badge: packs },
+    { href: leagues.length === 1 ? `/league/${leagues[0].id}` : "/leagues", label: "League", icon: I.leagues, exact: false, badge: packs },
     { href: "/collection", label: "Slabs", icon: I.collection, exact: false, badge: 0 },
   ];
   const isActive = (href: string, exact?: boolean) => (exact ? path === href : path === href || path.startsWith(`${href}/`) || (href === "/leagues" && path.startsWith("/league/")));
@@ -151,7 +150,7 @@ export function Sidebar({
       )}
       {/* Phones: app-style tab bar along the bottom (above the iPhone home bar). "More" opens the full menu. */}
       <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur lg:hidden" aria-label="Main">
-        <div className="mx-auto grid max-w-lg grid-cols-5">
+        <div className="mx-auto grid max-w-lg grid-cols-4">
           {tabs.map((t) => {
             const on = isActive(t.href, t.exact);
             return (

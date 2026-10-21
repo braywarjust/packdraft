@@ -116,14 +116,18 @@ export default async function LeaguePacks({ params }: { params: Promise<{ id: st
                   <span className="text-sm font-black uppercase tracking-wider">{RARITIES[r].label}</span>
                   <span className="text-[10px] font-bold opacity-80">Tier {i + 1}</span>
                 </div>
-                <div className="flex flex-col items-center gap-3 p-4 text-sm">
-                  <SlabCover size={130} rarity={r} />
-                  <p className="text-center text-xs text-zinc-500">{RARITY_BLURB[r]}</p>
+                {/* Phones: small slab beside the rolls, so the five tiers don't take five screens. */}
+                <div className="flex items-center gap-3 p-3 text-sm sm:flex-col sm:p-4">
+                  <div className="shrink-0 sm:hidden"><SlabCover size={84} rarity={r} /></div>
+                  <div className="hidden sm:block"><SlabCover size={130} rarity={r} /></div>
+                  <div className="min-w-0 flex-1 space-y-2 sm:w-full">
+                  <p className="text-xs text-zinc-500 sm:text-center">{RARITY_BLURB[r]}</p>
                   <dl className="w-full space-y-1 text-xs">
                     <div className="flex justify-between gap-2"><dt className="text-zinc-500">Stat boost {rules.boostPct}%</dt><dd className="text-right font-bold text-orange-500">{rules.boost}</dd></div>
                     <div className="flex justify-between gap-2"><dt className="text-zinc-500">Multiplier {rules.multPct}%</dt><dd className="text-right font-bold text-fpts">{rules.multPct ? rules.mult : "Never"}</dd></div>
                     <div className="flex justify-between gap-2"><dt className="text-zinc-500">Both</dt><dd className="text-right font-bold">{rules.bothPct ? `${rules.bothPct}%` : "Never"}</dd></div>
                   </dl>
+                  </div>
                 </div>
               </div>
             );
