@@ -14,6 +14,7 @@ import { logout } from "./actions";
 import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
 import { BalancePill } from "@/components/BalancePill";
+import { NavShell } from "@/components/NavShell";
 import { avatarOf } from "@/lib/profile";
 import { PackFacesProvider } from "@/components/PackFaces";
 import { livePackFaces } from "@/lib/pack-faces-server";
@@ -77,7 +78,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <BalancePill coins={user.coins} />
             </div>
           </div>
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-8 sm:py-8 lg:pt-2">{children}</main>
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-8 sm:py-8 lg:pt-2"><NavShell>{children}</NavShell></main>
           <footer className="hidden border-t border-line bg-zinc-50 lg:block">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-6 text-sm text-zinc-500 sm:px-8">
               <Logo height={30} />

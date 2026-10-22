@@ -90,8 +90,8 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
   .hit-y:not(.absolute):not(.fixed) { position: relative; }
   .hit-y::after { content: ""; position: absolute; inset: -8px 0; }
 }
-/* The page loader waits a beat before showing, so fast pages never flash it. */
-.page-loading { animation: pageLoadIn .2s ease .12s both; }
+/* The page loader shows the instant you tap a link (NavShell) and fades in fast. */
+.page-loading { animation: pageLoadIn .12s ease both; }
 @keyframes pageLoadIn { from { opacity: 0; } to { opacity: 1; } }
 .logo-fast .pdl-pop, .logo-fast .pdl-blue, .logo-fast .pdl-red, .logo-fast .pdl-letter, .logo-fast .pdl-ring, .logo-fast .pdl-shine { animation-duration: 1.2s !important; }
 @media (max-width: 1023px) {

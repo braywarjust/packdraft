@@ -7,7 +7,7 @@ Every PackDraft update is listed here, newest first. Version numbers follow the 
 
 - Slab Trades: Pack Points you offer leave your balance as soon as you send the offer, go to the other manager if they accept, and come back if it's declined, cancelled or called off.
 - Re-rolls only land on players rostered in your league (the same pool League Packs use), so every slab you can get is a player on a league roster right now.
-- Snappier app: tabs light up the moment you tap them, pages show the animated PackDraft logo while they load, and busy buttons play a small logo instead of "…".
+- Snappier app: tapping a link swaps the page for the animated PackDraft logo right away while the next page loads behind it, tabs light up the moment you tap them, and busy buttons play a small logo instead of "…".
 - Bigger tap targets on phones: buttons, tabs, the slot pills on My Team, close buttons and player names are easier to hit.
 - Repo cleanup: removed unused components, old pack and slab-back images, Next.js starter files and the Blender art scripts.
 - Project organisation: changelog, naming conventions, pull request template, `DEPLOY.md` moved to `docs/`.
