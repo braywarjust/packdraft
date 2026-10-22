@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { all, one, run, tx, User } from "./db";
 import { PACK_BY_ID, RARITIES, REROLL_FEE, Rarity, fmtCoins } from "./packs";
 import { postSystem } from "./league";
-import { ensureSlabCards, insertSlab, leaguePool, pickPlayer, rollLoot, rollSlab, slabPool, slabValue } from "./slab-cards";
+import { ensureSlabCards, insertSlab, leaguePool, pickPlayer, rerollPool, rollLoot, rollSlab, slabValue } from "./slab-cards";
 import { ensureBoosts } from "./boost";
 import { slabPlayerPhoto } from "./nba/photos";
 
@@ -76,26 +76,30 @@ export async function openPack(userId: number, packId: number, leagueId: number)
 /**
  * Re-roll a slab: pay the tier's fee and the slab becomes a different player at the same rarity, picked the same way
  * packs pick (leaning a little toward better, popular players), with a fresh roll (multiplier and/or stat boost). The old slab is gone
- * (cards.sold = 4).
+ * (cards.sold = 4). The new player comes from the league pool (rerollPool), and the new slab keeps the old one's pack so
+ * it stays tied to that league.
  */
 export function rerollSlab(userId: number, cardId: number) {
   ensureSlabCards();
   const user = one<User>("SELECT * FROM users WHERE id = ?", userId)!;
   const newId = tx(() => {
-    const c = one<{ id: number; player_id: number; rarity: Rarity }>(
-      "SELECT id, player_id, rarity FROM cards WHERE id = ? AND user_id = ? AND sold = 0 AND kind = 'slab'", cardId, userId);
+    const c = one<{ id: number; player_id: number; rarity: Rarity; pack_id: number; league_id: number | null }>(
+      `SELECT c.id, c.player_id, c.rarity, c.pack_id, up.league_id FROM cards c LEFT JOIN user_packs up ON up.id = c.pack_id
+       WHERE c.id = ? AND c.user_id = ? AND c.sold = 0 AND c.kind = 'slab'`, cardId, userId);
     if (!c) throw new Error("That slab isn't in your collection");
     ensureBoosts();
     if (one("SELECT 1 FROM slab_equips WHERE consumed_at IS NULL AND card_id = ?", cardId)) throw new Error("That slab is equipped for a game. Unequip it first");
     const fee = REROLL_FEE[c.rarity];
     const coins = one<{ coins: number }>("SELECT coins FROM users WHERE id = ?", userId)!.coins;
     if (coins < fee) throw new Error(`Re-rolling a ${RARITIES[c.rarity].label} slab costs ${fmtCoins(fee)}`);
-    const pick = pickPlayer(slabPool().filter((p) => p.id !== c.player_id), rand);
+    const pool = rerollPool(userId, c.league_id).filter((p) => p.id !== c.player_id);
+    if (!pool.length) throw new Error("Re-rolls pick from your league's rostered players. Join a league with a drafted roster first");
+    const pick = pickPlayer(pool, rand);
     const loot = rollLoot(c.rarity, pick.proj, rand);
     run("UPDATE cards SET sold = 4 WHERE id = ?", cardId);
     run("DELETE FROM profile_featured WHERE card_id = ?", cardId);
     run("UPDATE users SET coins = coins - ? WHERE id = ?", fee, userId);
-    return insertSlab(userId, 0, pick.id, c.rarity, slabValue(c.rarity, pick.idx, loot), loot);
+    return insertSlab(userId, c.pack_id, pick.id, c.rarity, slabValue(c.rarity, pick.idx, loot), loot);
   });
   const card = cardsWhere("c.id = ?", newId)[0];
   if ((card.rarity === "legendary" || card.rarity === "grail") && !user.is_tester) {

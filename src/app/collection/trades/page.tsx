@@ -72,7 +72,7 @@ function TradeRow({ t, me }: { t: SlabTrade; me: number }) {
   const outgoing = t.status === "pending" && t.from_user_id === me;
   const [label, tone] = STATUS[t.status];
   const fromMe = t.from_user_id === me;
-  const side = (who: string, cs: Card[], pp: number) => (
+  const side = (who: string, cs: Card[], pp: number, held = false) => (
     <div className="min-w-0 flex-1 space-y-2">
       <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{who}</p>
       {cs.length === 0 && !pp && <p className="text-sm text-zinc-400">Nothing</p>}
@@ -89,7 +89,7 @@ function TradeRow({ t, me }: { t: SlabTrade; me: number }) {
           );
         })}
       </div>
-      {!!pp && <p className="text-sm font-bold text-emerald-600">+ <Coins n={pp} /></p>}
+      {!!pp && <p className="text-sm font-bold text-emerald-600">+ <Coins n={pp} />{held && <span className="ml-1.5 text-xs font-semibold text-zinc-500">held until they answer</span>}</p>}
     </div>
   );
   return (
@@ -104,7 +104,7 @@ function TradeRow({ t, me }: { t: SlabTrade; me: number }) {
         <span className={`text-xs font-bold uppercase tracking-wide ${tone}`}>{label}</span>
       </div>
       <div className="flex flex-col gap-4 sm:flex-row">
-        {side(fromMe ? "You send" : `${t.fromName} sends`, t.giveCards, t.give_pp)}
+        {side(fromMe ? "You send" : `${t.fromName} sends`, t.giveCards, t.give_pp, t.status === "pending" && !!t.pp_held)}
         <div className="hidden w-px bg-line sm:block" />
         {side(fromMe ? `${t.toName} sends` : "You send", t.getCards, t.get_pp)}
       </div>

@@ -2,9 +2,13 @@
 // they like. One side can be empty, so a trade can also be a gift ("here, have this Curry") or a buy ("500 PP for your
 // Curry"). The other manager accepts or declines; the proposer can cancel while it's pending.
 //
+// Pack Points you offer leave your balance the moment you send the offer (Update 3.2), so you can't spend them twice
+// while it's pending. They go to the other manager if they accept, and come back to you if the offer is declined,
+// cancelled or called off. Offers sent before 3.2 (pp_held = 0) still take the Pack Points on accept.
+//
 // Accepting re-checks everything inside one transaction: every slab must still be owned by the same manager, unused,
-// not equipped for a game, and both balances must cover their Pack Points. Then the slabs change owner (cards.user_id)
-// and the Pack Points move. A slab keeps its card id, rarity, serial, multiplier and stat boost when it moves, so it
+// not equipped for a game, and the receiver's balance must cover what they're asked for. Then the slabs change owner
+// (cards.user_id) and the Pack Points move. A slab keeps its card id, rarity, serial, multiplier and stat boost when it moves, so it
 // can't be duplicated and its buff goes with it (it still only works on its own player). Featured-on-profile pins of
 // moved slabs are dropped. Any other pending trade that included a moved slab can no longer happen and is voided.
 //
@@ -28,12 +32,16 @@ export function ensureSlabTrades() {
     note TEXT, status TEXT NOT NULL DEFAULT 'pending', reason TEXT, created_at INTEGER NOT NULL, decided_at INTEGER)`);
   run("CREATE INDEX IF NOT EXISTS idx_slab_trades_to ON slab_trades(to_user_id, status)");
   run("CREATE INDEX IF NOT EXISTS idx_slab_trades_from ON slab_trades(from_user_id, status)");
+  if (!all<{ name: string }>("PRAGMA table_info(slab_trades)").some((c) => c.name === "pp_held"))
+    run("ALTER TABLE slab_trades ADD COLUMN pp_held INTEGER NOT NULL DEFAULT 0");
   ready = true;
 }
 
 export type SlabTradeRow = {
   id: number; from_user_id: number; to_user_id: number; give: string; get: string; give_pp: number; get_pp: number;
   note: string | null; status: "pending" | "accepted" | "declined" | "cancelled" | "void"; reason: string | null; created_at: number; decided_at: number | null;
+  /** 1 when the proposer's Pack Points were taken at offer time and are being held by the trade. */
+  pp_held: number;
 };
 
 const ids = (s: string) => JSON.parse(s) as number[];
@@ -71,10 +79,20 @@ export function proposeSlabTrade(from: User, toUserId: number, give: number[], g
   if (!g.length && !gp) throw new Error("Offer a slab or some Pack Points for theirs");
   checkSide(g, from.id);
   checkSide(w, to.id);
-  if (gp > from.coins) throw new Error(`You only have ${fmtCoins(from.coins)}`);
-  const r = run(`INSERT INTO slab_trades (from_user_id, to_user_id, give, get, give_pp, get_pp, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    from.id, to.id, JSON.stringify(g), JSON.stringify(w), gp, wp, note.trim().slice(0, 200) || null, Date.now());
-  return Number(r.lastInsertRowid);
+  return tx(() => {
+    const coins = one<{ coins: number }>("SELECT coins FROM users WHERE id = ?", from.id)!.coins;
+    if (gp > coins) throw new Error(`You only have ${fmtCoins(coins)}`);
+    if (gp) run("UPDATE users SET coins = coins - ? WHERE id = ?", gp, from.id);
+    const r = run(`INSERT INTO slab_trades (from_user_id, to_user_id, give, get, give_pp, get_pp, note, created_at, pp_held) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      from.id, to.id, JSON.stringify(g), JSON.stringify(w), gp, wp, note.trim().slice(0, 200) || null, Date.now());
+    return Number(r.lastInsertRowid);
+  });
+}
+
+/** End a pending trade without a swap, handing held Pack Points back to the proposer. */
+function closeTrade(t: SlabTradeRow, status: "declined" | "cancelled" | "void", reason: string | null = null) {
+  const r = run("UPDATE slab_trades SET status = ?, reason = ?, decided_at = ? WHERE id = ? AND status = 'pending'", status, reason, Date.now(), t.id);
+  if (Number(r.changes) === 1 && t.pp_held && t.give_pp) run("UPDATE users SET coins = coins + ? WHERE id = ?", t.give_pp, t.from_user_id);
 }
 
 /** Pending trades that touch any of these cards can't go through any more. */
@@ -83,7 +101,7 @@ function voidTradesWith(cardIds: number[], exceptId: number, reason: string) {
   const set = new Set(cardIds);
   for (const t of all<SlabTradeRow>("SELECT * FROM slab_trades WHERE status = 'pending' AND id != ?", exceptId))
     if ([...ids(t.give), ...ids(t.get)].some((id) => set.has(id)))
-      run("UPDATE slab_trades SET status = 'void', reason = ?, decided_at = ? WHERE id = ?", reason, Date.now(), t.id);
+      closeTrade(t, "void", reason);
 }
 
 /** Accept (the receiver), decline (the receiver) or cancel (the proposer) a pending trade. */
@@ -95,7 +113,7 @@ export function respondSlabTrade(me: User, tradeId: number, accept: boolean) {
     if (!t || (t.to_user_id !== me.id && t.from_user_id !== me.id)) throw new Error("Trade not found");
     if (t.status !== "pending") throw new Error(`That trade was already ${t.status === "void" ? "called off" : t.status}`);
     if (!accept) {
-      run("UPDATE slab_trades SET status = ?, decided_at = ? WHERE id = ?", t.to_user_id === me.id ? "declined" : "cancelled", Date.now(), t.id);
+      closeTrade(t, t.to_user_id === me.id ? "declined" : "cancelled");
       return null;
     }
     if (t.to_user_id !== me.id) throw new Error("Only the other manager can accept");
@@ -104,13 +122,13 @@ export function respondSlabTrade(me: User, tradeId: number, accept: boolean) {
       checkSide(give, t.from_user_id);
       checkSide(get, t.to_user_id);
       const bal = (id: number) => one<{ coins: number }>("SELECT coins FROM users WHERE id = ?", id)!.coins;
-      if (t.give_pp > bal(t.from_user_id)) throw new Error("They no longer have the Pack Points they offered");
+      if (!t.pp_held && t.give_pp > bal(t.from_user_id)) throw new Error("They no longer have the Pack Points they offered");
       if (t.get_pp > bal(t.to_user_id)) throw new Error(`This trade asks for ${fmtCoins(t.get_pp)} and you don't have enough`);
     } catch (e) {
       // A slab moved or got equipped, or a balance dropped: this trade can't happen as offered. Pack Points shortfalls
       // on your own side don't void it, so you can top up and accept.
       const msg = e instanceof Error ? e.message : String(e);
-      if (!msg.includes("you don't have enough")) run("UPDATE slab_trades SET status = 'void', reason = ?, decided_at = ? WHERE id = ?", msg, Date.now(), t.id);
+      if (!msg.includes("you don't have enough")) closeTrade(t, "void", msg);
       return { error: msg };
     }
     const move = run.bind(null, "UPDATE cards SET user_id = ? WHERE id = ? AND user_id = ? AND sold = 0");
@@ -120,12 +138,13 @@ export function respondSlabTrade(me: User, tradeId: number, accept: boolean) {
     if (moved.length) {
       run(`DELETE FROM profile_featured WHERE card_id IN (${moved.map(() => "?").join(",")})`, ...moved);
     }
-    const pp = (amt: number, payer: number, payee: number) => {
+    const pp = (amt: number, payer: number | null, payee: number) => {
       if (!amt) return;
-      run("UPDATE users SET coins = coins - ? WHERE id = ?", amt, payer);
+      if (payer != null) run("UPDATE users SET coins = coins - ? WHERE id = ?", amt, payer);
       run("UPDATE users SET coins = coins + ? WHERE id = ?", amt, payee);
     };
-    pp(t.give_pp, t.from_user_id, t.to_user_id);
+    // Held Pack Points already left the proposer when they sent the offer.
+    pp(t.give_pp, t.pp_held ? null : t.from_user_id, t.to_user_id);
     pp(t.get_pp, t.to_user_id, t.from_user_id);
     run("UPDATE slab_trades SET status = 'accepted', decided_at = ? WHERE id = ?", Date.now(), t.id);
     voidTradesWith(moved, t.id, "A slab in this trade was traded away");

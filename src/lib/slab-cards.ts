@@ -1,6 +1,6 @@
 // Slabs: square, animated collectible cards of active NBA players that come out of packs.
 //
-// Every active player on an NBA roster is in the pool. Better and more popular players come up a little more often.
+// Slabs only drop players on a league roster right now (packs and re-rolls alike). Better and more popular players come up a little more often.
 // A slab's value is its tier's base price times the player's price index (slab-market.ts: ESPN stats + popularity),
 // and it moves with his stats as the season goes. Old graded slabs (the photo vault) no longer drop, but cards people
 // already own stay in their collections.
@@ -116,13 +116,6 @@ export function ensureSlabCards() {
 
 export type PoolPlayer = { id: number; name: string; team: string; pos: string; proj: number; idx: number };
 
-/** Every active player on an NBA team (re-rolls draw from this). */
-export function slabPool() {
-  const idx = currentIndexes();
-  return all<Omit<PoolPlayer, "idx">>("SELECT p.id, p.name, p.team, p.pos, p.proj FROM players p JOIN nba_teams t ON t.abbr = p.team WHERE p.active = 1 ORDER BY p.team, p.proj DESC")
-    .map((p) => ({ ...p, idx: idx.get(p.id) ?? 0.2 }));
-}
-
 /**
  * A league's pack pool: every player on a roster in that league right now. League Packs only drop these players, so the
  * pool follows the league on its own: adds, drops, trades, waivers, keepers and each new draft change it.
@@ -133,6 +126,18 @@ export function leaguePool(leagueId: number) {
     `SELECT p.id, p.name, p.team, p.pos, p.proj, r.team_id FROM roster r JOIN players p ON p.id = r.player_id JOIN nba_teams t ON t.abbr = p.team
      WHERE r.league_id = ? ORDER BY p.proj DESC`, leagueId)
     .map((p) => ({ ...p, idx: idx.get(p.id) ?? 0.2 }));
+}
+
+/**
+ * The pool a manager's re-rolls draw from: the league the slab was pulled in, if they still play there, else every
+ * player rostered in any of their leagues. Like leaguePool, it follows trades, adds and drops on its own.
+ */
+export function rerollPool(userId: number, leagueId: number | null) {
+  if (leagueId != null && one("SELECT 1 FROM teams WHERE league_id = ? AND user_id = ?", leagueId, userId)) return leaguePool(leagueId);
+  const seen = new Set<number>();
+  return all<{ league_id: number }>("SELECT DISTINCT league_id FROM teams WHERE user_id = ?", userId)
+    .flatMap((l) => leaguePool(l.league_id))
+    .filter((p) => !seen.has(p.id) && !!seen.add(p.id));
 }
 
 /** Pick a player from a pool, leaning a little toward better, popular ones. */
