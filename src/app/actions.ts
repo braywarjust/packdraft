@@ -181,7 +181,7 @@ export async function updateSettings(leagueId: number, form: FormData) {
       String(form.get("reward_win") || l.reward_win), String(form.get("reward_loss") || l.reward_loss), String(form.get("reward_top") || l.reward_top),
       pre ? num("keeper_count", l.keeper_count) : l.keeper_count, pre ? num("faab_budget", l.faab_budget) : l.faab_budget,
       pre ? Math.min(24, Math.max(1, num("season_weeks", l.season_weeks))) : l.season_weeks,
-      Math.min(72, Math.max(0, num("trade_review_hours", l.trade_review_hours ?? 24))),
+      Math.min(72, Math.max(0, num("trade_review_hours", l.trade_review_hours ?? 0))),
       form.get("trade_deadline_week") != null ? Number(form.get("trade_deadline_week")) || null : l.trade_deadline_week ?? null, l.id,
     );
     if (pre) run("UPDATE teams SET faab = ? WHERE league_id = ?", num("faab_budget", l.faab_budget), l.id);

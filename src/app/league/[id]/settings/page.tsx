@@ -54,7 +54,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
         <h3 className="pt-2 font-bold">Trades</h3>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Commish review</label>
-            <select name="trade_review_hours" defaultValue={String(l.trade_review_hours ?? 24)} className="input">
+            <select name="trade_review_hours" defaultValue={String(l.trade_review_hours ?? 0)} className="input">
               <option value="0">Off (trades go through at once)</option><option value="12">12 hours</option><option value="24">1 day</option><option value="48">2 days</option>
             </select></div>
           <div><label className="label">Trade deadline</label>

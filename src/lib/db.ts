@@ -161,7 +161,7 @@ function open(): DatabaseSync {
     id INTEGER PRIMARY KEY, player_id INTEGER NOT NULL, headline TEXT NOT NULL, story TEXT, published TEXT NOT NULL)`);
   db.exec("CREATE INDEX IF NOT EXISTS idx_news_player ON player_news(player_id, published)");
   db.exec("CREATE TABLE IF NOT EXISTS player_news_fetch (player_id INTEGER PRIMARY KEY, fetched_at INTEGER NOT NULL)");
-  if (!leagueCols.includes("trade_review_hours")) db.exec("ALTER TABLE leagues ADD COLUMN trade_review_hours INTEGER NOT NULL DEFAULT 24");
+  if (!leagueCols.includes("trade_review_hours")) db.exec("ALTER TABLE leagues ADD COLUMN trade_review_hours INTEGER NOT NULL DEFAULT 0");
   if (!leagueCols.includes("trade_deadline_week")) db.exec("ALTER TABLE leagues ADD COLUMN trade_deadline_week INTEGER");
   const tradeCols = (db.prepare("PRAGMA table_info(trades)").all() as { name: string }[]).map((c) => c.name);
   if (!tradeCols.includes("review_until")) db.exec("ALTER TABLE trades ADD COLUMN review_until INTEGER");
