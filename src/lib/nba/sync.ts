@@ -101,26 +101,36 @@ function upsertGame(g: Awaited<ReturnType<typeof fetchScoreboard>>["games"][numb
 }
 
 /** Make sure the schedule for these dates is cached (refreshed every few hours). */
-export async function ensureSchedule(from: string, to: string) {
+/**
+ * Fetch ESPN's schedule for the days in [from, to] that are due, all at once. `onlyMissing` fetches only days never
+ * loaded (pages use it so they never wait on a refresh); `limit` caps how many days one call fetches (the background
+ * loop uses it to warm the rest of the season a few days at a time). Returns how many days it fetched.
+ */
+export async function ensureSchedule(from: string, to: string, opts: { onlyMissing?: boolean; limit?: number } = {}) {
   const today = etDate();
+  const due: string[] = [];
   for (let d = from; d <= to; d = addDays(d, 1)) {
-    const key = `sched:${d}`;
-    const last = Number(metaGet(key) ?? 0);
+    const last = Number(metaGet(`sched:${d}`) ?? 0);
+    if (opts.onlyMissing && last) continue;
     // A past day is cached for good once every game on it is final. Until then keep re-checking it: late games run
     // past midnight ET, and without this they'd stay "live" forever (and their slabs and Pack Points never settle).
     const unfinished = d < today && !!one("SELECT 1 FROM games WHERE date_et = ? AND state != 'post' AND start_ts <= ?", d, Date.now());
     const maxAge = d === today || unfinished ? 60_000 : d < today ? 24 * 3600_000 * 365 : 6 * 3600_000;
-    if (Date.now() - last < maxAge) continue;
+    if (Date.now() - last >= maxAge) due.push(d);
+  }
+  const days = due.slice(0, opts.limit ?? due.length);
+  await Promise.all(days.map(async (d) => {
     try {
       const { games } = await fetchScoreboard(d);
       tx(() => {
         for (const g of games) upsertGame(g);
-        metaSet(key, String(Date.now()));
+        metaSet(`sched:${d}`, String(Date.now()));
       });
     } catch (e) {
       console.warn("[packdraft] schedule fetch failed", d, (e as Error).message);
     }
-  }
+  }));
+  return days.length;
 }
 
 async function refreshBox(gameId: string, final: boolean) {
