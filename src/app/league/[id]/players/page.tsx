@@ -1,3 +1,4 @@
+import { QueryArea } from "@/components/NavShell";
 import { posLabel } from "@/lib/scoring";
 import { LockIcon } from "@/components/Icons";
 import { TeamLogo } from "@/components/TeamLogo";
@@ -63,6 +64,7 @@ export default async function Players({ params, searchParams }: { params: Promis
             <input name="q" defaultValue={q} placeholder="Search players" className="input w-full sm:w-56" />
           </form>
         </div>
+        <QueryArea>
         {view === "news" ? (
           <div className="space-y-2">
             <p className="text-xs text-zinc-500">The latest ESPN fantasy news on every rostered player and the top free agents. Tap a name for the full player card.</p>
@@ -129,6 +131,7 @@ export default async function Players({ params, searchParams }: { params: Promis
           </table>
         </div>
         </>)}
+        </QueryArea>
       </div>
       <aside className="space-y-4">
         {me && (

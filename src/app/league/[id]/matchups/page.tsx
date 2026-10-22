@@ -1,3 +1,4 @@
+import { QueryArea } from "@/components/NavShell";
 import { ForwardIcon, PlayIcon } from "@/components/Icons";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
@@ -75,6 +76,7 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
         ))}
       </div>
 
+      <QueryArea className="space-y-5">
       {current && l.week_started_at && (
         <div className="h-2 overflow-hidden rounded-full bg-panel2"><div className="h-full bg-gradient-to-r from-brand to-red-800 transition-all" style={{ width: `${progress * 100}%` }} /></div>
       )}
@@ -90,6 +92,7 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
       </div>
 
       {playoffs && rounds > 0 && <Bracket l={l} teams={teams} />}
+      </QueryArea>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { QueryArea } from "@/components/NavShell";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
@@ -56,6 +57,7 @@ export default async function LeaguePackPool({ params, searchParams }: { params:
         </p>
       </div>
 
+      <QueryArea className="space-y-5">
       {pool.length === 0 && <p className="card p-6 text-center text-sm text-zinc-500">The pool is empty until the draft fills the rosters.</p>}
 
       {teams.filter((x) => x.players.length).map(({ t, players }) => {
@@ -83,6 +85,7 @@ export default async function LeaguePackPool({ params, searchParams }: { params:
           </section>
         );
       })}
+      </QueryArea>
     </div>
   );
 }

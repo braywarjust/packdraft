@@ -1,3 +1,4 @@
+import { QueryArea } from "@/components/NavShell";
 import { SlabCount } from "@/components/SlabIcon";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
@@ -61,10 +62,12 @@ export default async function Collection({ searchParams }: { searchParams: Promi
           <ActionButton action={clearTestCards} className="btn-ghost" confirm="Delete all test pulls?">Clear test pulls</ActionButton>
         )}
       </div>
+      <QueryArea className="space-y-5">
       {cards.length === 0 && (
         <div className="card p-8 text-center text-zinc-500">No slabs yet. <Link className="text-brand underline" href="/packs">Open packs in the Pack Shop</Link>.</div>
       )}
       <CollectionGrid cards={cards} mine={mine} coins={me.coins} reroll={rerollSlabAction} tradeWith={canTrade ? viewing.id : undefined} />
+      </QueryArea>
     </div>
   );
 }
