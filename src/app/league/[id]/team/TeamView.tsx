@@ -73,7 +73,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         ) : (
           <RosterBoard days={td.days} rows={td.rows} totals={td.totals} initialDay={defaultDay(td.days)} players={players} editable={editable} brand={b}
             setSlot={editable ? setSlot.bind(null, leagueId) : undefined} drop={editable ? dropPlayer.bind(null, leagueId) : undefined}
-            header={editable ? <AutoManageToggle on={!!t.auto_manage} set={setAutoManage.bind(null, leagueId)} /> : undefined} />
+            header={editable ? <AutoManageToggle key="auto-manager" on={!!t.auto_manage} set={setAutoManage.bind(null, leagueId)} /> : undefined} />
         )}
       </div>
 
