@@ -235,7 +235,7 @@ export function BoostModal({ boost, player, info, pending, onClose, run }: {
             <p className="flex items-center gap-1.5 font-bold"><FptIcon tone="blue" /> Equip a slab on {player.name}</p>
             <p className="text-xs text-zinc-500">{info?.day} · projected <Fpts n={player.proj} /> fantasy points. One use.</p>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900" aria-label="Close"><XIcon /></button>
+          <button onClick={onClose} className="hit press text-zinc-400 hover:text-zinc-900" aria-label="Close"><XIcon /></button>
         </div>
         <div className="grid flex-1 grid-cols-2 justify-items-center gap-3 overflow-y-auto p-4 scrollbar-thin sm:grid-cols-4">
           {on && (
@@ -256,7 +256,7 @@ export function BoostModal({ boost, player, info, pending, onClose, run }: {
         <div className="flex items-center justify-between border-t border-line/60 px-4 py-2 text-xs text-zinc-500">
           <span>One per game. Locks at tip-off. Counts only if he starts.</span>
           {on && player.boost?.state === "pre" && (
-            <button className="text-red-600 hover:underline" onClick={() => run(() => boost.clear(player.id))}>Unequip</button>
+            <button className="hit press text-red-600 hover:underline" onClick={() => run(() => boost.clear(player.id))}>Unequip</button>
           )}
         </div>
       </div>

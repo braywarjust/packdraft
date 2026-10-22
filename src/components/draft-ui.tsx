@@ -80,7 +80,7 @@ export function PlayerPool({ players, canPick, onPick, queue, onQueue, busy }: {
             <span className="flex-1 truncate font-medium"><PlayerButton id={p.id} className="inline">{p.name}</PlayerButton> <InjuryTag injury={p.injury ?? null} /> <TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" /><span className="text-xs text-zinc-400">{p.team}</span></span>
             <span className="font-mono text-xs text-zinc-500"><Fpts n={p.proj} /></span>
             {onQueue && (
-              <button title="Queue" onClick={() => onQueue(p.id, !queue?.includes(p.id))} className={`text-xs ${queue?.includes(p.id) ? "text-amber-600" : "text-zinc-400 hover:text-zinc-700"}`}><StarIcon /></button>
+              <button title="Queue" onClick={() => onQueue(p.id, !queue?.includes(p.id))} className={`hit press text-xs ${queue?.includes(p.id) ? "text-amber-600" : "text-zinc-400 hover:text-zinc-700"}`}><StarIcon /></button>
             )}
             <button disabled={!canPick || busy} onClick={() => onPick(p.id)} className="btn-lime px-2 py-0.5 text-xs">Draft</button>
           </li>

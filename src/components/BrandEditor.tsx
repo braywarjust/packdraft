@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./LoadingLogo";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { TeamBadge } from "./TeamBadge";
@@ -85,7 +86,7 @@ export function BrandEditor({ initial, label = "League", placeholder = "The Pack
           </div>
           <input ref={file} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
           <button type="button" onClick={() => file.current?.click()} disabled={uploading} className="btn-ghost">{uploading ? "Uploading…" : b.logo_url ? "Replace logo" : "Upload logo"}</button>
-          {b.logo_url && <button type="button" onClick={() => setB({ ...b, logo_url: null })} className="text-xs text-zinc-500 hover:text-red-600">Remove</button>}
+          {b.logo_url && <button type="button" onClick={() => setB({ ...b, logo_url: null })} className="hit press text-xs text-zinc-500 hover:text-red-600">Remove</button>}
         </div>
       </div>
       {fields && (
@@ -99,7 +100,7 @@ export function BrandEditor({ initial, label = "League", placeholder = "The Pack
       {err && <p className="text-sm text-red-600">{err}</p>}
       {onSave && (
         <div className="flex items-center gap-3">
-          <button type="button" disabled={pending || uploading} className="btn-primary"
+          <button type="button" disabled={pending || uploading} className="btn-primary relative"
             onClick={() => start(async () => {
               setMsg(null);
               const r = (await onSave(b)) as { error?: string };
@@ -107,7 +108,7 @@ export function BrandEditor({ initial, label = "League", placeholder = "The Pack
               setErr(null);
               setMsg("Saved");
               router.refresh();
-            })}>{pending ? "Saving…" : `Save ${label.toLowerCase()} branding`}</button>
+            })}><Busy on={pending} label="Saving">{`Save ${label.toLowerCase()} branding`}</Busy></button>
           {msg && <span className="text-sm text-emerald-600">{msg}</span>}
         </div>
       )}

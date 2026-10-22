@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
+import { LoadingLogo } from "./LoadingLogo";
 import Link from "next/link";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -31,7 +32,7 @@ export function openPlayer(id: number, league?: number | null) {
 
 export function PlayerButton({ id, league, className = "", children }: { id: number; league?: number | null; className?: string; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={(e) => { e.stopPropagation(); openPlayer(id, league); }} className={`min-w-0 cursor-pointer text-left hover:underline decoration-fpts underline-offset-2 ${className}`}>
+    <button type="button" onClick={(e) => { e.stopPropagation(); openPlayer(id, league); }} className={`hit-y min-w-0 cursor-pointer text-left hover:underline decoration-fpts underline-offset-2 ${className}`}>
       {children}
     </button>
   );
@@ -252,8 +253,8 @@ export function PlayerInspectorHost() {
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-2 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setReq(null)}>
       <div className="relative my-2 w-full max-w-3xl sm:my-8 overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <button onClick={() => setReq(null)} aria-label="Close" className="absolute right-1.5 top-1.5 z-10 sm:right-3 sm:top-3 rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
-        {data ? <Body d={data} reload={reload} /> : <p className="p-10 text-center text-sm text-zinc-500">{err ?? "Loading player…"}</p>}
+        <button onClick={() => setReq(null)} aria-label="Close" className="hit press absolute right-1.5 top-1.5 z-10 sm:right-3 sm:top-3 rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
+        {data ? <Body d={data} reload={reload} /> : err ? <p className="p-10 text-center text-sm text-zinc-500">{err}</p> : <div className="grid place-items-center p-10"><LoadingLogo size={96} label="Loading player" /></div>}
       </div>
     </div>
   );

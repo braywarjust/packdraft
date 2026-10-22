@@ -26,7 +26,7 @@ export function AutoManageToggle({ on, set }: { on: boolean; set: (on: boolean) 
         {err && <p className="text-xs text-red-500">{err}</p>}
       </div>
       <button type="button" role="switch" aria-checked={on} aria-label="Auto Manager" disabled={pending} onClick={flip}
-        className={`relative h-7 w-12 shrink-0 rounded-full transition ${on ? "bg-emerald-500" : "bg-panel2 ring-1 ring-line"} ${pending ? "opacity-60" : ""}`}>
+        className={`hit relative h-7 w-12 shrink-0 rounded-full transition ${on ? "bg-emerald-500" : "bg-panel2 ring-1 ring-line"} ${pending ? "opacity-60" : ""}`}>
         <span className={`absolute top-1 h-5 w-5 rounded-full bg-[#fff] shadow transition-all ${on ? "left-6" : "left-1"}`} />
       </button>
     </section>

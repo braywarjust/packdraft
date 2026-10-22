@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
+import { Busy } from "@/components/LoadingLogo";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { Avatar, ProfileView, type ProfileViewData } from "@/components/ProfileView";
@@ -155,8 +156,8 @@ export function ProfileEditor({ initial, nba, maxFeatured }: { initial: Initial;
               <div key={id} className="flex items-center gap-2 rounded-xl bg-black/20 p-2 ring-1 ring-white/10">
                 <span className="grid h-6 w-6 place-items-center rounded-full bg-fpts text-xs font-black text-black">{i + 1}</span>
                 <span className="max-w-[140px] truncate text-sm font-semibold">{c.name}</span>
-                <button type="button" className="rounded px-1.5 text-zinc-400 hover:text-white disabled:opacity-30" disabled={i === 0} onClick={() => moveCard(i, -1)} aria-label="Move left">&lsaquo;</button>
-                <button type="button" className="rounded px-1.5 text-zinc-400 hover:text-white disabled:opacity-30" disabled={i === featured.length - 1} onClick={() => moveCard(i, 1)} aria-label="Move right">&rsaquo;</button>
+                <button type="button" className="hit press rounded px-1.5 text-zinc-400 hover:text-white disabled:opacity-30" disabled={i === 0} onClick={() => moveCard(i, -1)} aria-label="Move left">&lsaquo;</button>
+                <button type="button" className="hit press rounded px-1.5 text-zinc-400 hover:text-white disabled:opacity-30" disabled={i === featured.length - 1} onClick={() => moveCard(i, 1)} aria-label="Move right">&rsaquo;</button>
               </div>
             ); })}
           </div>
@@ -198,7 +199,7 @@ export function ProfileEditor({ initial, nba, maxFeatured }: { initial: Initial;
         <div className="mx-auto flex max-w-6xl items-center justify-end gap-3 px-4 py-3 sm:px-8">
           {err && <p className="mr-auto text-sm text-red-500">{err}</p>}
           <button type="button" className="btn-ghost" onClick={() => router.push(`/profile/${initial.user.id}`)}>Cancel</button>
-          <button type="button" className="btn-primary inline-flex items-center gap-2" disabled={pending || uploading} onClick={save}><CheckIcon />{pending ? "Saving…" : "Save profile"}</button>
+          <button type="button" className="btn-primary relative inline-flex items-center gap-2" disabled={pending || uploading} onClick={save}><Busy on={pending} label="Saving"><CheckIcon />Save profile</Busy></button>
         </div>
       </div>
     </div>

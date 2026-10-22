@@ -61,7 +61,7 @@ export function CollectionGrid({ cards, mine, coins = 0, reroll, tradeWith }: { 
                 <span className="hidden h-5 w-px bg-zinc-200 sm:block" />
                 <span className="hidden text-xs font-semibold uppercase tracking-[0.25em] text-zinc-400 sm:block">{open.kind === "slab" ? "Slab" : "Slab Vault"}</span>
               </div>
-              <button onClick={() => setOpen(null)} aria-label="Close" className="rounded-md p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900"><XIcon /></button>
+              <button onClick={() => setOpen(null)} aria-label="Close" className="hit press rounded-md p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900"><XIcon /></button>
             </div>
             <div className="relative grid gap-6 overflow-hidden p-6 md:grid-cols-[auto_1fr]">
             <LogoWatermark color="red" opacity={0.06} height={230} className="-bottom-12 -right-10" />

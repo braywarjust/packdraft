@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "@/components/LoadingLogo";
 import { askConfirm } from "@/components/Confirm";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -142,13 +143,13 @@ export function TeamStudio({ presets, startNew, favorite }: { presets: P[]; star
                 </div>
                 <input ref={file} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
                 <button type="button" onClick={() => file.current?.click()} disabled={uploading} className="btn-ghost">{uploading ? "Uploading…" : edit.logo_url ? "Replace logo" : "Upload logo"}</button>
-                {edit.logo_url && <button type="button" onClick={() => setEdit({ ...edit, logo_url: null })} className="text-xs text-zinc-500 hover:text-red-600">Remove</button>}
+                {edit.logo_url && <button type="button" onClick={() => setEdit({ ...edit, logo_url: null })} className="hit press text-xs text-zinc-500 hover:text-red-600">Remove</button>}
               </div>
               <p className="mt-1.5 text-xs text-zinc-500">Any photo or image. Plain backgrounds are removed. No logo? We make a badge from your colours.</p>
             </div>
             {err && <p className="text-sm text-red-600">{err}</p>}
             <div className="flex gap-2">
-              <button onClick={save} disabled={pending || uploading} className="btn-primary">{pending ? "Saving…" : edit.id ? "Save changes" : "Save team"}</button>
+              <button onClick={save} disabled={pending || uploading} className="btn-primary relative"><Busy on={pending} label="Saving">{edit.id ? "Save changes" : "Save team"}</Busy></button>
               <button onClick={() => { setEdit(null); setErr(null); }} className="btn-ghost">Cancel</button>
             </div>
           </div>
