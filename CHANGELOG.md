@@ -3,7 +3,7 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
-## Unreleased
+## 3.2 — Snappy app and fair trades (2026-10-22)
 
 - Slab Trades: Pack Points you offer leave your balance as soon as you send the offer, go to the other manager if they accept, and come back if it's declined, cancelled or called off.
 - Re-rolls only land on players rostered in your league (the same pool League Packs use), so every slab you can get is a player on a league roster right now.
