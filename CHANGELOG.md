@@ -3,6 +3,14 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
+## 3.3 — My Team fits your phone (2026-10-22)
+
+- Lineup swaps stick: tap a player's slot, then a green slot to swap him there. Tapping a bench player's slot swaps him in for the starter you picked. A manual swap turns Auto Manager off, so it no longer undoes your move.
+- No more jumping: picking a player keeps the page still, and Bench, Drop and Slab sit on one slim line above the table.
+- Auto Manager is one slim switch at the top of the My Team card on phone and computer.
+- My Team on iPhone shows Opp, game time, PTS, REB, AST and fantasy points, all on screen with no sideways scrolling.
+- Matchup drops the live scoring feed, so both box scores use the full width and show every stat on bigger screens.
+
 ## 3.2.1 — Pull to refresh (2026-10-22)
 
 - Pull to refresh on iPhone: in the home-screen app, pull down from the top of any page to reload it. The PackDraft logo turns as you pull and plays while the page reloads.
