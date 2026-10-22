@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Busy } from "./LoadingLogo";
 
 type Result = { error?: string; ok?: boolean };
 
@@ -18,7 +19,9 @@ export function ActionForm({
     <form action={formAction} className={className}>
       {children}
       {state?.error && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-600">{state.error}</p>}
-      <button className={submitClass} disabled={pending}>{pending ? "Working…" : submit}</button>
+      <button className={`${submitClass} relative`} disabled={pending} aria-busy={pending}>
+        <Busy on={pending}>{submit}</Busy>
+      </button>
     </form>
   );
 }

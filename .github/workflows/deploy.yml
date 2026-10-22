@@ -19,7 +19,7 @@ jobs:
       - name: Check the server is set up
         id: check
         run: |
-          if [ -z "$HOST" ]; then echo "No ORACLE_HOST secret yet: skipping deploy (see DEPLOY.md step 5)."; echo "skip=1" >> "$GITHUB_OUTPUT"; fi
+          if [ -z "$HOST" ]; then echo "No ORACLE_HOST secret yet: skipping deploy (see docs/DEPLOY.md step 5)."; echo "skip=1" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/checkout@v4
         if: steps.check.outputs.skip != '1'
       - uses: actions/setup-node@v4

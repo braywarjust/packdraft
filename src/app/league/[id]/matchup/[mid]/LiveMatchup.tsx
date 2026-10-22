@@ -1,5 +1,6 @@
 "use client";
 
+import { PageLoading } from "@/components/LoadingLogo";
 import { TeamBadge, type BrandLite } from "@/components/TeamBadge";
 import { TeamLogo } from "@/components/TeamLogo";
 import Link from "next/link";
@@ -81,7 +82,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
     return () => { stop = true; clearTimeout(timer); };
   }, [matchupId]);
 
-  if (!d) return <p className="text-zinc-500">Loading matchup…</p>;
+  if (!d) return <PageLoading text="Loading matchup…" />;
   // Your team always on the left, like ESPN.
   const flip = d.away.id === d.mine;
   const [home, away] = flip ? [d.away, d.home] : [d.home, d.away];

@@ -1,3 +1,4 @@
+import { PageShell } from "@/components/NavShell";
 import { dayLabel } from "@/lib/nba/espn";
 import { TeamBadge } from "@/components/TeamBadge";
 import { ensureBranding, leagueBrand } from "@/lib/branding";
@@ -48,7 +49,7 @@ export default async function LeagueLayout({ children, params }: { children: Rea
         </div>
       )}
       <LeagueTabs id={l.id} isCommish={l.commissioner_id === u.id} hasTeam={!!team} drafting={l.draft_status === "live"} />
-      {children}
+      <PageShell>{children}</PageShell>
     </div>
   );
 }

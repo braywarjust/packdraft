@@ -1,6 +1,7 @@
 "use client";
 
 import { askConfirm } from "./Confirm";
+import { Busy } from "./LoadingLogo";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -19,8 +20,9 @@ export function ActionButton({
   return (
     <span className="inline-flex flex-col items-start gap-1">
       <button
-        className={className}
+        className={`${className} relative`}
         disabled={pending}
+        aria-busy={pending}
         onClick={async () => {
           if (confirmText && !(await askConfirm(confirmText))) return;
           start(async () => {
@@ -34,7 +36,7 @@ export function ActionButton({
           });
         }}
       >
-        {pending ? "…" : children}
+        <Busy on={pending}>{children}</Busy>
       </button>
       {msg && <span className={`text-xs ${msg.bad ? "text-red-600" : "text-emerald-600"}`}>{msg.text}</span>}
     </span>

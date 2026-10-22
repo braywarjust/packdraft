@@ -29,7 +29,9 @@ export function Sidebar({
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   useScrollLock(open);
-  useEffect(() => setOpen(false), [path]);
+  // The tab you tap lights up right away, before the next page has loaded, so presses feel instant.
+  const [tapped, setTapped] = useState<string | null>(null);
+  useEffect(() => { setOpen(false); setTapped(null); }, [path]);
   useEffect(() => setCollapsed(document.documentElement.dataset.sidebar === "collapsed"), []);
 
   const toggle = () => {
@@ -55,7 +57,7 @@ export function Sidebar({
     { href: leagues.length === 1 ? `/league/${leagues[0].id}` : "/leagues", label: "League", icon: I.leagues, exact: false, badge: packs },
     { href: "/collection", label: "Slabs", icon: I.collection, exact: false, badge: offers },
   ];
-  const isActive = (href: string, exact?: boolean) => (exact ? path === href : path === href || path.startsWith(`${href}/`) || (href === "/leagues" && path.startsWith("/league/")));
+  const isActive = (href: string, exact?: boolean) => tapped ? tapped === href : (exact ? path === href : path === href || path.startsWith(`${href}/`) || (href === "/leagues" && path.startsWith("/league/")));
 
   // `mini` = icon-only rail (desktop collapsed). The mobile drawer always shows the full menu.
   const nav = (mini: boolean) => (
@@ -67,8 +69,8 @@ export function Sidebar({
         {items.map((it) => {
           const active = isActive(it.href, it.exact);
           return (
-            <Link key={it.href} href={it.href} title={mini ? it.label : undefined}
-              className={`relative flex items-center rounded-lg border bg-white text-sm font-medium transition ${mini ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} ${active ? "border-brand/30 text-brand shadow-sm" : "border-zinc-200/70 text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"}`}>
+            <Link key={it.href} href={it.href} title={mini ? it.label : undefined} onClick={() => setTapped(it.href)}
+              className={`press relative flex items-center rounded-lg border bg-white text-sm font-medium transition ${mini ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} ${active ? "border-brand/30 text-brand shadow-sm" : "border-zinc-200/70 text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"}`}>
               {active && <span className="absolute inset-y-2 left-0 w-1 rounded-r bg-accent" />}
               <Icon d={it.icon} box={28} />
               {!mini && <span className="flex-1">{it.label}</span>}
@@ -85,10 +87,10 @@ export function Sidebar({
             <p className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">My leagues</p>
             <div className="space-y-1">
               {leagues.map((l) => {
-                const active = path.startsWith(`/league/${l.id}`);
+                const active = tapped ? tapped === `/league/${l.id}` : path.startsWith(`/league/${l.id}`);
                 return (
-                  <Link key={l.id} href={`/league/${l.id}`}
-                    className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${active ? "bg-white font-medium text-brand shadow-sm" : "text-zinc-600 hover:bg-white hover:text-zinc-900"}`}>
+                  <Link key={l.id} href={`/league/${l.id}`} onClick={() => setTapped(`/league/${l.id}`)}
+                    className={`press flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${active ? "bg-white font-medium text-brand shadow-sm" : "text-zinc-600 hover:bg-white hover:text-zinc-900"}`}>
                     {l.brand ? <TeamBadge brand={l.brand} size={20} /> : <span className={`h-2 w-2 rounded-full ${l.live ? "bg-accent" : "bg-zinc-300"}`} />}
                     <span className="min-w-0 flex-1 leading-tight">
                       <span className="block truncate font-bold tracking-wide">{l.brand?.abbr ?? l.name}</span>
@@ -115,7 +117,7 @@ export function Sidebar({
               </div>
             )}
             <form action={logout}>
-              <button title="Log out" className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900"><Icon d={I.logout} /></button>
+              <button title="Log out" className="hit press rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900"><Icon d={I.logout} /></button>
             </form>
           </div>
         </div>
@@ -138,8 +140,8 @@ export function Sidebar({
       <div className="safe-top sticky top-0 z-40 flex items-center justify-between border-b border-zinc-200 bg-white/95 px-4 pb-2.5 backdrop-blur lg:hidden">
         <Link href="/" aria-label="PackDraft home"><Logo height={34} /></Link>
         <div className="flex items-center gap-3">
-          <Link href="/packs" className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700"><span className="text-emerald-600"><Coins n={coins} live /></span></Link>
-          <button onClick={() => setOpen(true)} className="rounded-md p-1.5 text-zinc-700 hover:bg-zinc-100" aria-label="Open menu">
+          <Link href="/packs" className="press rounded-full border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-700"><span className="text-emerald-600"><Coins n={coins} live /></span></Link>
+          <button onClick={() => setOpen(true)} className="hit press rounded-md p-1.5 text-zinc-700 hover:bg-zinc-100" aria-label="Open menu">
             <Icon d="M4 6h16M4 12h16M4 18h16" />
           </button>
         </div>
@@ -156,14 +158,14 @@ export function Sidebar({
           {tabs.map((t) => {
             const on = isActive(t.href, t.exact);
             return (
-              <Link key={t.label} href={t.href} className={`relative flex flex-col items-center gap-0.5 pb-1.5 pt-2 text-[10px] font-bold ${on ? "text-brand" : "text-zinc-500"}`}>
+              <Link key={t.label} href={t.href} onClick={() => setTapped(t.href)} className={`press relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 pb-1.5 pt-2 text-[10px] font-bold ${on ? "text-brand" : "text-zinc-500"}`}>
                 <Icon d={t.icon} size={22} />
                 {t.label}
                 {!!t.badge && <span className="absolute right-[22%] top-1 rounded-full bg-accent px-1 text-[9px] leading-4 text-white">{t.badge}</span>}
               </Link>
             );
           })}
-          <button onClick={() => setOpen(true)} className="flex flex-col items-center gap-0.5 pb-1.5 pt-2 text-[10px] font-bold text-zinc-500" aria-label="More">
+          <button onClick={() => setOpen(true)} className="press flex min-h-[52px] flex-col items-center justify-center gap-0.5 pb-1.5 pt-2 text-[10px] font-bold text-zinc-500" aria-label="More">
             <Icon d="M4 6h16M4 12h16M4 18h16" size={22} />
             More
           </button>

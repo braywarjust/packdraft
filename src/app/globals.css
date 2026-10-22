@@ -75,6 +75,25 @@ body {
 html, body { overflow-x: clip; }
 html { -webkit-text-size-adjust: 100%; }
 body { -webkit-tap-highlight-color: transparent; }
+/* Update 3.2: snappy presses. Taps fire right away (no double-tap-zoom wait), and pressables shrink the moment they're
+   pressed instead of waiting on the server. Phones and tablets get bigger hit areas: buttons at least 44px tall, tabs
+   40px, and `.hit` pads small icon buttons with an invisible ring. */
+a, button, summary, label, select, [role="button"] { touch-action: manipulation; }
+.press { transition-property: transform, color, background-color, border-color, box-shadow; transition-duration: .1s; }
+.press:active { transform: scale(.96); }
+@media (pointer: coarse) {
+  .btn, .btn-primary, .btn-ghost, .btn-lime, .btn-danger, .fx-btn { min-height: 44px; }
+  .tab { display: inline-flex; align-items: center; min-height: 40px; }
+  .hit:not(.absolute):not(.fixed) { position: relative; }
+  .hit::after { content: ""; position: absolute; inset: -10px; }
+  /* Taller only, for links in tight rows (player names) so they don't cover their neighbours. */
+  .hit-y:not(.absolute):not(.fixed) { position: relative; }
+  .hit-y::after { content: ""; position: absolute; inset: -8px 0; }
+}
+/* The page loader shows the instant you tap a link (NavShell) and fades in fast. */
+.page-loading { animation: pageLoadIn .12s ease both; }
+@keyframes pageLoadIn { from { opacity: 0; } to { opacity: 1; } }
+.logo-fast .pdl-pop, .logo-fast .pdl-blue, .logo-fast .pdl-red, .logo-fast .pdl-letter, .logo-fast .pdl-ring, .logo-fast .pdl-shine { animation-duration: 1.2s !important; }
 @media (max-width: 1023px) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 16px; }
   .safe-top { padding-top: max(env(safe-area-inset-top), .625rem); }
@@ -84,7 +103,7 @@ body { -webkit-tap-highlight-color: transparent; }
 }
 
 @utility card { @apply rounded-xl border border-line bg-panel; }
-@utility btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50; }
+@utility btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition duration-100 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50; }
 @utility btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark; }
 @utility btn-lime { @apply btn border border-zinc-300 bg-panel text-zinc-900 hover:border-brand hover:text-brand; }
 @utility btn-ghost { @apply btn border border-line bg-panel text-zinc-800 hover:border-zinc-400; }
@@ -101,7 +120,7 @@ body { -webkit-tap-highlight-color: transparent; }
 @utility pos-PF { @apply bg-emerald-500/15 text-emerald-700; }
 @utility pos-UTIL { @apply bg-violet-500/15 text-violet-700; }
 @utility pos-BN { @apply bg-zinc-200 text-zinc-500; }
-@utility tab { @apply whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900; }
+@utility tab { @apply whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold text-zinc-500 transition duration-100 hover:bg-zinc-100 hover:text-zinc-900 active:scale-[0.96]; }
 @utility tab-active { @apply bg-brand text-white hover:bg-brand hover:text-white; }
 @utility navlink { @apply whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold text-zinc-700 hover:bg-blue-50 hover:text-brand; }
 
@@ -195,7 +214,7 @@ body { -webkit-tap-highlight-color: transparent; }
    across every few seconds (faster on hover), the icon moves on hover, and it presses in. Transform and opacity only. */
 .fx-btn { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
   border-radius: .55rem; padding: .5rem 1rem; font-size: .875rem; font-weight: 800; letter-spacing: .01em; white-space: nowrap;
-  transition: transform .15s ease, background-color .15s ease; box-shadow: 0 6px 18px -8px var(--fx-glow), inset 0 1px 0 rgba(255,255,255,.25); }
+  transition: transform .08s ease, background-color .15s ease; box-shadow: 0 6px 18px -8px var(--fx-glow), inset 0 1px 0 rgba(255,255,255,.25); }
 .fx-btn::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,.45) 50%, transparent 70%); transform: translateX(-120%); animation: fxShine 3.4s ease-in-out infinite; }
 .fx-btn:hover:not(:disabled) { transform: translateY(-1px); }
@@ -262,17 +281,6 @@ body { -webkit-tap-highlight-color: transparent; }
 
 .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 6px; }
-
-/* Foil sheen over pack renders (see PackSheen): a soft, wide glow that drifts slowly back and forth across
-   the pack. The sweep range keeps the glow's centre between ~15% and ~85% of the width, so it never leaves the pack. */
-@keyframes packSheen { from { background-position: 32% 0; } to { background-position: 68% 0; } }
-.pack-sheen {
-  background: linear-gradient(110deg, transparent 34%, rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0.2) 45%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.2) 55%, rgba(255, 255, 255, 0.06) 60%, transparent 66%);
-  background-size: 300% 100%;
-  background-repeat: no-repeat;
-  animation: packSheen 7s ease-in-out infinite alternate;
-}
-@media (prefers-reduced-motion: reduce) { .pack-sheen { animation: none; opacity: 0; } }
 
 /* ---------- Casino ---------- */
 /* Vehicles are centred by their lane wrapper, so these only move them vertically. */

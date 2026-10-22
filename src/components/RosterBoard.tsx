@@ -50,7 +50,7 @@ export function RosterBoard({ days, rows, totals, initialDay, players, editable,
     const target = !!(sel && sel.id !== r?.id && eligible(slot, sel.pos) && !(r && r.locked) && !sel.locked && (slot !== "BN" || sel.slot !== "BN"));
     const mine = !!r && selected === r.id;
     const movable = canEdit && !!r && !r.locked;
-    const cls = `inline-flex h-8 w-11 items-center justify-center rounded-full text-[11px] font-black ring-1 transition sm:w-14 ${
+    const cls = `hit press inline-flex h-8 w-11 items-center justify-center rounded-full text-[11px] font-black ring-1 transition sm:w-14 ${
       target ? "bg-emerald-500 text-black ring-emerald-400 animate-pulse" : mine ? "bg-white text-black ring-white" : movable ? "text-white ring-white/40 hover:bg-white/10" : "text-zinc-400 ring-line"}`;
     const style = !target && !mine && movable ? { boxShadow: `inset 0 0 0 1.5px ${brand.color}` } : undefined;
     if (target) return <button type="button" disabled={pending} onClick={() => act(() => setSlot!(sel!.id, slot))} className={cls} title={`Move ${sel!.name} here`}>{slotPill(slot)}</button>;

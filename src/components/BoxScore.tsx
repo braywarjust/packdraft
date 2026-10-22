@@ -31,7 +31,7 @@ export function DayStrip({ days, day, onDay, totals }: { days: DayInfo[]; day: s
   const cur = days[i];
   const arrow = (dir: -1 | 1) => (
     <button type="button" disabled={!days[i + dir]} onClick={() => onDay(days[i + dir].key)} aria-label={dir < 0 ? "Previous day" : "Next day"}
-      className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-xl font-black text-brand ring-1 ring-line transition hover:bg-panel2 disabled:opacity-30">
+      className="press grid h-10 w-10 shrink-0 place-items-center rounded-lg text-xl font-black text-brand ring-1 ring-line transition hover:bg-panel2 disabled:opacity-30">
       {dir < 0 ? "‹" : "›"}
     </button>
   );

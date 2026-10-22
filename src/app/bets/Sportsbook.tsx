@@ -122,7 +122,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
         <div className="card p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-bold">Bet slip</h2>
-            {slip.length > 0 && <button onClick={() => setSlip([])} className="text-xs text-zinc-500 hover:text-red-600">Clear</button>}
+            {slip.length > 0 && <button onClick={() => setSlip([])} className="hit press text-xs text-zinc-500 hover:text-red-600">Clear</button>}
           </div>
           {slip.length === 0 ? (
             <p className="text-sm text-zinc-500">Tap any odds to add a pick. 2+ picks = parlay.</p>
@@ -139,7 +139,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
                   <li key={p.key} className="rounded-lg bg-ink/40 p-2 text-sm">
                     <div className="flex justify-between gap-2">
                       <span className="font-semibold">{p.label}</span>
-                      <button onClick={() => setSlip((s) => s.filter((x) => x.key !== p.key))} className="text-zinc-400 hover:text-red-600" aria-label="Remove"><XIcon /></button>
+                      <button onClick={() => setSlip((s) => s.filter((x) => x.key !== p.key))} className="hit press text-zinc-400 hover:text-red-600" aria-label="Remove"><XIcon /></button>
                     </div>
                     <p className="flex justify-between text-xs text-zinc-500">
                       <span className="flex items-center gap-1">{p.game.split(" @ ").map((t) => <TeamLogo key={t} team={t} size={14} />)}{p.game}</span>

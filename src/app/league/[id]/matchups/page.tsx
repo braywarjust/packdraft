@@ -1,3 +1,4 @@
+import { QueryArea } from "@/components/NavShell";
 import { ForwardIcon, PlayIcon } from "@/components/Icons";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
@@ -25,8 +26,9 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
   const week = Math.min(lastWeek, Math.max(1, Number(wq) || l.current_week));
   const playoffs = week > l.season_weeks;
   const future = week > l.current_week;
-  // Upcoming weeks: fetch that week's NBA schedule so the projections count real games.
-  if (future && l.mode !== "sim") await ensureSchedule(...weekRange(l, week));
+  // Upcoming weeks: make sure that week's NBA schedule is here so the projections count real games. The background
+  // loop keeps the season loaded, so this only waits on days it hasn't reached yet (and fetches those all at once).
+  if (future && l.mode !== "sim") await ensureSchedule(...weekRange(l, week), { onlyMissing: true });
   const current = week === l.current_week && !l.champion_team_id;
   const teams = new Map(leagueTeams(l.id).map((t) => [t.id, t]));
   const me = userTeam(l.id, u.id);
@@ -75,6 +77,7 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
         ))}
       </div>
 
+      <QueryArea className="space-y-5">
       {current && l.week_started_at && (
         <div className="h-2 overflow-hidden rounded-full bg-panel2"><div className="h-full bg-gradient-to-r from-brand to-red-800 transition-all" style={{ width: `${progress * 100}%` }} /></div>
       )}
@@ -90,6 +93,7 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
       </div>
 
       {playoffs && rounds > 0 && <Bracket l={l} teams={teams} />}
+      </QueryArea>
     </div>
   );
 }

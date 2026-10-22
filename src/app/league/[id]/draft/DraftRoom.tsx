@@ -1,5 +1,6 @@
 "use client";
 
+import { PageLoading } from "@/components/LoadingLogo";
 import { StarIcon } from "@/components/Icons";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -46,7 +47,7 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
     setBusy(false);
   };
 
-  if (!s) return <p className="text-zinc-500">Loading draft room…</p>;
+  if (!s) return <PageLoading text="Loading draft room…" />;
 
   const myTurn = s.status === "live" && s.current?.teamId === s.myTeamId;
   const onClock = s.order.find((t) => t.id === s.current?.teamId);

@@ -134,7 +134,7 @@ export function Chat({ leagueId, rivals, send, canPost }: {
             <div className="flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={image} alt="" className="h-16 rounded-lg" />
-              <button className="text-xs text-red-600" onClick={() => setImage(null)}>Remove</button>
+              <button className="hit press text-xs text-red-600" onClick={() => setImage(null)}>Remove</button>
             </div>
           )}
           <div className="flex flex-wrap gap-1">

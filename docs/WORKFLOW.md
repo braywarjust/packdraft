@@ -29,7 +29,7 @@ You ask Claude  →  Claude edits code on your Mac  →  tests it on localhost  
    spends Pack Points, what should happen in edge cases. Ask Claude for a **plan first** for anything big.
 2. **Test on real data**: Claude runs `bash deploy/pull-data.sh` so localhost has a copy of the live league, then
    builds against it. Nothing done on localhost touches the live site.
-3. Claude works on a **feature branch** (`feature/<name>`) so half-done work never goes live. You can look at it on
+3. Claude works on a **feature branch** (`feature/update-<version>`, see [Naming conventions](#naming-conventions)) so half-done work never goes live. You can look at it on
    localhost and ask for changes as many times as you like.
 4. When you're happy, say "ship it": Claude runs a full production build, merges the branch into `main` and pushes.
    GitHub deploys it.
@@ -40,6 +40,31 @@ New features often need new tables or columns. Claude adds them as **migrations 
 `ALTER TABLE ... ADD COLUMN` pattern), which run automatically when the new code starts on the server. Existing
 accounts, leagues and Pack Points are never wiped by a deploy. One-off data fixes on the live site ("give everyone
 500 Pack Points", "fix this roster") are done by Claude directly on the server's database, after a backup.
+
+## Naming conventions
+
+Every change belongs to an update, and the update's version number ties everything together.
+
+| What | Format | Example |
+| --- | --- | --- |
+| Version | `MAJOR.MINOR` for an update, `MAJOR.MINOR.PATCH` for a fix to it | `3.1`, `3.1.1` |
+| `package.json` version | always three numbers | `3.1.0`, `3.1.1` |
+| Feature branch | `feature/update-<version>` | `feature/update-3.2` |
+| Fix branch | `fix/<short-name>` | `fix/draft-clock` |
+| Commit message | `Update <version>: <what changed>` | `Update 3.2: playoff bracket on Matchups` |
+| Tag | `v<version>`, on the commit that ships it | `v3.1`, `v3.1.1` |
+| GitHub Release | `PackDraft <version>: <headline>` | `PackDraft 3.1: League hub` |
+
+- **Which number goes up:** MAJOR for a big change to how the game plays (3.0 added Slab Trades). MINOR for a new
+  feature or a batch of improvements (3.1 added the League hub). PATCH for bug fixes and small tweaks with no new
+  feature.
+- **Commit messages:** start with a capital letter and say what changed, not how ("Update 3.2: trades show both
+  rosters", not "fixed stuff"). Housekeeping that isn't part of an update (docs, cleanup) starts with `Docs:` or
+  `Chore:`.
+- **Shipping an update:** bump `package.json`, add the update to `CHANGELOG.md`, merge into `main`, then tag the
+  merge commit (`git tag -a v3.2 -m "Update 3.2: Playoffs"`) and push the tag. Never move or reuse a tag that has been
+  pushed: fix forward with a patch version instead.
+- **Old branches:** delete a feature branch once it's merged and tagged; the tag keeps the history.
 
 ## If something goes wrong
 

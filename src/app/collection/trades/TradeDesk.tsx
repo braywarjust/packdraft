@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import type { CardData } from "@/components/PlayerCard";
+import { Busy } from "@/components/LoadingLogo";
 import { Coins } from "@/components/Coins";
 import { TradeThumb, buffText, cardLabel } from "./TradeSlab";
 
@@ -112,14 +113,14 @@ export function TradeDesk({
       </div>
       <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} className="input" placeholder="Make your pitch (or talk some trash)…" />
       <div className="flex flex-wrap items-center gap-3">
-        <button className="btn-primary" disabled={pending || kind === "ask"} onClick={send}>
-          {pending ? "…" : kind === "gift" ? `Send gift to ${partner?.name}` : "Send offer"}
+        <button className="btn-primary relative" disabled={pending || kind === "ask"} onClick={send} aria-busy={pending}>
+          <Busy on={pending} label="Sending">{kind === "gift" ? `Send gift to ${partner?.name}` : "Send offer"}</Busy>
         </button>
         {kind === "ask" && <span className="text-xs text-zinc-500">Pick slabs to send, or add Pack Points for theirs.</span>}
         {msg && <span className={`text-sm ${msg.bad ? "text-red-600" : "text-emerald-600"}`}>{msg.t}</span>}
       </div>
       <p className="text-xs text-zinc-500">
-        Slabs keep their multiplier and stat boost when they change hands, and still only work on their own player. Nothing moves until {partner?.name ?? "they"} accept{partner ? "s" : ""}.
+        Slabs keep their multiplier and stat boost when they change hands, and still only work on their own player. Pack Points you add leave your balance when you send the offer and come back if it&apos;s declined or cancelled. Slabs don&apos;t move until {partner?.name ?? "they"} accept{partner ? "s" : ""}.
       </p>
     </div>
   );
