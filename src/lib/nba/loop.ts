@@ -5,6 +5,7 @@ import { dailyWaivers, getLeague, rolloverLeagues, tickLeague, weekRange } from 
 import { ensureCatalog } from "../slabs";
 import { settleBets } from "../bets";
 import { snapshotPrices } from "../slab-market";
+import { tickNews } from "../news";
 
 let busy = false;
 export async function tick() {
@@ -30,6 +31,7 @@ export async function tick() {
     }
     settleBets();
     snapshotPrices();
+    await tickNews().catch(() => undefined);
   } finally {
     busy = false;
   }

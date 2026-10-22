@@ -152,6 +152,19 @@ function open(): DatabaseSync {
   // Auto Manager (Update 2.2): the team's lineup is re-set to today's best on every league tick.
   const teamCols = (db.prepare("PRAGMA table_info(teams)").all() as { name: string }[]).map((c) => c.name);
   if (!teamCols.includes("auto_manage")) db.exec("ALTER TABLE teams ADD COLUMN auto_manage INTEGER NOT NULL DEFAULT 0");
+  // League hub (Update 3.1): activity feed, player news, commish trade review and a trade deadline.
+  db.exec(`CREATE TABLE IF NOT EXISTS league_activity (
+    id INTEGER PRIMARY KEY, league_id INTEGER NOT NULL, season INTEGER, team_id INTEGER NOT NULL, kind TEXT NOT NULL,
+    data TEXT NOT NULL, created_at INTEGER NOT NULL)`);
+  db.exec("CREATE INDEX IF NOT EXISTS idx_activity ON league_activity(league_id, id)");
+  db.exec(`CREATE TABLE IF NOT EXISTS player_news (
+    id INTEGER PRIMARY KEY, player_id INTEGER NOT NULL, headline TEXT NOT NULL, story TEXT, published TEXT NOT NULL)`);
+  db.exec("CREATE INDEX IF NOT EXISTS idx_news_player ON player_news(player_id, published)");
+  db.exec("CREATE TABLE IF NOT EXISTS player_news_fetch (player_id INTEGER PRIMARY KEY, fetched_at INTEGER NOT NULL)");
+  if (!leagueCols.includes("trade_review_hours")) db.exec("ALTER TABLE leagues ADD COLUMN trade_review_hours INTEGER NOT NULL DEFAULT 24");
+  if (!leagueCols.includes("trade_deadline_week")) db.exec("ALTER TABLE leagues ADD COLUMN trade_deadline_week INTEGER");
+  const tradeCols = (db.prepare("PRAGMA table_info(trades)").all() as { name: string }[]).map((c) => c.name);
+  if (!tradeCols.includes("review_until")) db.exec("ALTER TABLE trades ADD COLUMN review_until INTEGER");
   if (fresh) carryOverUsers(db);
   db.prepare("UPDATE users SET coins = ? WHERE is_tester = 1 AND coins < ?").run(TESTER_COINS, TESTER_FLOOR);
   db.exec("COMMIT");
@@ -248,6 +261,10 @@ export type League = {
   playoff_seeds?: string | null;
   /** The NBA season this league is playing (ESPN's year: 2026-27 is 2027). */
   season?: number | null;
+  /** Accepted trades wait this long for the commish to veto them (0 = they go through at once). */
+  trade_review_hours?: number;
+  /** Last week trades can be made (null = no deadline). */
+  trade_deadline_week?: number | null;
   // Branding (added by branding.ts ensureBranding)
   color?: string | null; alt_color?: string | null; abbr?: string | null; logo_url?: string | null;
 };

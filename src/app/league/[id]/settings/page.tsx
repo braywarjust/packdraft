@@ -51,6 +51,18 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
           <div><label className="label">Keepers per team {pre ? "" : "(locked)"}</label><input name="keeper_count" type="number" min={0} max={5} defaultValue={l.keeper_count} disabled={!pre} className="input" /></div>
           <div><label className="label">Regular season weeks {pre ? "" : "(locked)"}</label><input name="season_weeks" type="number" min={1} max={24} defaultValue={l.season_weeks} disabled={!pre} className="input" /></div>
         </div>
+        <h3 className="pt-2 font-bold">Trades</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">Commish review</label>
+            <select name="trade_review_hours" defaultValue={String(l.trade_review_hours ?? 24)} className="input">
+              <option value="0">Off (trades go through at once)</option><option value="12">12 hours</option><option value="24">1 day</option><option value="48">2 days</option>
+            </select></div>
+          <div><label className="label">Trade deadline</label>
+            <select name="trade_deadline_week" defaultValue={String(l.trade_deadline_week ?? "")} className="input">
+              <option value="">No deadline</option>
+              {Array.from({ length: l.season_weeks }, (_, i) => <option key={i} value={i + 1}>End of Week {i + 1}</option>)}
+            </select></div>
+        </div>
         <h3 className="pt-2 font-bold">Pack rewards</h3>
         <div className="grid gap-3 sm:grid-cols-3">
           <div><label className="label">Win</label>{sel("reward_win", l.reward_win)}</div>

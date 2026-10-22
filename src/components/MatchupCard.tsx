@@ -2,8 +2,33 @@ import { CrownIcon } from "./Icons";
 import Link from "next/link";
 import { TeamBadge, type BrandLite } from "./TeamBadge";
 import { Fpts } from "@/components/Fpts";
+import { Headshot } from "./Headshot";
 
-export type MatchSide = { id: number; brand: BrandLite; record: string; score: number; proj: number };
+export type TopPlayer = { id: number; name: string; headshot: string | null; pts: number };
+/** `top`: the side's best scorers this week (ESPN scoreboard's "Top Performers"), shown once the week has points. */
+export type MatchSide = { id: number; brand: BrandLite; record: string; score: number; proj: number; top?: TopPlayer[] };
+
+/** A team's three best scorers so far this matchup. */
+export function topPerformers(players: { id: number; name: string; headshot: string | null; pts: number }[]): TopPlayer[] {
+  return players.filter((p) => p.pts > 0).sort((a, b) => b.pts - a.pts).slice(0, 3).map(({ id, name, headshot, pts }) => ({ id, name, headshot, pts }));
+}
+
+function Performers({ s, align }: { s: MatchSide; align: "home" | "away" }) {
+  if (!s.top?.length) return <div className="flex-1" />;
+  return (
+    <div className={`flex min-w-0 flex-1 gap-1.5 sm:gap-2 ${align === "away" ? "flex-row-reverse" : ""}`}>
+      {s.top.map((p, i) => (
+        <div key={p.id} title={`${p.name}: ${Math.round(p.pts * 10) / 10} fantasy points this week (top performer)`} className={`flex min-w-0 shrink-0 items-center gap-1.5 rounded-lg bg-black/35 py-1 pl-1 pr-2 ring-1 ring-white/10 ${align === "away" ? "flex-row-reverse pl-2 pr-1 text-right" : ""} ${i === 2 ? "max-sm:hidden" : ""}`}>
+          <Headshot src={p.headshot} name={p.name} size={26} />
+          <span className="min-w-0 leading-tight">
+            <span className="block max-w-[5.5rem] truncate text-[11px] font-bold text-white max-sm:hidden">{p.name.split(" ").slice(1).join(" ") || p.name}</span>
+            <span className="block font-mono text-[10px] font-bold text-white/80">{Math.round(p.pts)}<span className="max-sm:hidden"> pts</span></span>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /** Links when given an href (cards in lists); a plain block on the matchup page itself. */
 function Wrap({ href, className, style, children }: { href?: string; className: string; style: React.CSSProperties; children: React.ReactNode }) {
@@ -65,6 +90,12 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
         </div>
         {side(away, "away")}
       </div>
+      {status !== "pre" && (home.top?.length || away.top?.length) ? (
+        <div className="relative flex items-center gap-3 px-3 pb-3 sm:px-5">
+          <Performers s={home} align="home" />
+          <Performers s={away} align="away" />
+        </div>
+      ) : null}
       {status !== "final" && (
         <div className="relative px-4 pb-3 sm:px-5">
           <div className="flex h-2 overflow-hidden rounded-full bg-black/30 ring-1 ring-black/30">

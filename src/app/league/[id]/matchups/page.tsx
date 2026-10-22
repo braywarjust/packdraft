@@ -11,7 +11,7 @@ import { ensureSchedule } from "@/lib/nba/sync";
 import { winProb } from "@/lib/sim";
 import { ActionButton } from "@/components/ActionButton";
 import { AutoRefresh } from "@/components/AutoRefresh";
-import { MatchupCard, type MatchSide } from "@/components/MatchupCard";
+import { MatchupCard, topPerformers, type MatchSide } from "@/components/MatchupCard";
 import { finishWeekNow, startWeekAction } from "../../../actions";
 
 export default async function MatchupsPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ week?: string }> }) {
@@ -38,7 +38,7 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
     const h = teamWeek(l, m.home_team_id, week), a = teamWeek(l, m.away_team_id, week);
     const side = (tid: number, w: typeof h, stored: number | null): MatchSide => {
       const t = teams.get(tid)!;
-      return { id: tid, brand: teamBrand(t), record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`, score: m.final && stored != null ? stored : w.score, proj: w.score + w.remain };
+      return { id: tid, brand: teamBrand(t), record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`, score: m.final && stored != null ? stored : w.score, proj: w.score + w.remain, top: topPerformers(w.players) };
     };
     const live = !m.final && (l.mode === "sim" ? !!l.week_started_at && current : h.players.concat(a.players).some((p) => p.now?.state !== "pre" && p.now != null) && h.score + a.score > 0);
     const status: "pre" | "live" | "final" = m.final ? "final" : live ? "live" : "pre";

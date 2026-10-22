@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { boostPlayer, unboostPlayer } from "@/app/actions";
-import type { PlayerInfo } from "@/lib/player-info";
+import type { PlayerInfo as BaseInfo } from "@/lib/player-info";
+import type { NewsItem } from "@/lib/news";
+import { newsAgo } from "@/lib/news-time";
+
+type PlayerInfo = BaseInfo & { news?: NewsItem[] };
 import { InjuryTag } from "./Headshot";
 import { TeamLogo } from "./TeamLogo";
 import { TeamBadge } from "./TeamBadge";
@@ -132,6 +136,8 @@ function Body({ d, reload }: { d: PlayerInfo; reload: () => void }) {
           ))}
         </div>
 
+        {d.news && d.news.length > 0 && <NewsList items={d.news} />}
+
         <SlabMarket d={d} reload={reload} />
 
         {s && (
@@ -193,6 +199,27 @@ function Body({ d, reload }: { d: PlayerInfo; reload: () => void }) {
         </section>
       </div>
     </>
+  );
+}
+
+/** ESPN news blurbs: the headline, with the analysis ("Spin") under it. Latest one open, older ones tap to expand. */
+function NewsList({ items }: { items: NewsItem[] }) {
+  const [open, setOpen] = useState(items[0]?.id);
+  return (
+    <section>
+      <p className="label">Player news</p>
+      <ul className="space-y-1.5">
+        {items.map((n) => (
+          <li key={n.id}>
+            <button type="button" onClick={() => setOpen(open === n.id ? -1 : n.id)} className="w-full rounded-xl bg-ink px-3 py-2 text-left ring-1 ring-white/5 hover:ring-white/15">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{newsAgo(n.published)}</p>
+              <p className="text-sm font-semibold leading-snug text-white">{n.headline}</p>
+              {open === n.id && n.story && <p className="mt-1.5 text-xs leading-relaxed text-zinc-600"><b className="text-fpts">Spin:</b> {n.story}</p>}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

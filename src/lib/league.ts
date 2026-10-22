@@ -6,6 +6,7 @@ import { season as nbaSeason, seasonLabel } from "./nba/season";
 import { PACK_BY_ID } from "./packs";
 import { creditGame, weekRate } from "./economy";
 import { cardBuff, consumeEquip, ensureBoosts, slabbedFpts, teamBoosts } from "./boost";
+import { logActivity } from "./activity";
 
 export { STARTERS, ROSTER_MAX, eligible };
 /** A player's fantasy positions ("PG,SG"), falling back to his G/F/C. */
@@ -444,6 +445,7 @@ export function teamDays(l: League, teamId: number, week: number) {
 
 /** Freeze lineups for started games, finish weeks, and keep CPU lineups fresh. Safe to call often. */
 export function tickLeague(leagueId: number) {
+  processTradeReviews(leagueId);
   const l = getLeague(leagueId);
   if (!l || l.draft_status !== "done" || l.champion_team_id) return;
   consumeEquips(l);
@@ -716,6 +718,7 @@ export function processWaivers(leagueId: number) {
       run("INSERT INTO roster (team_id, player_id, slot, league_id) VALUES (?, ?, 'BN', ?)", c.team_id, c.add_player_id, leagueId);
       run("UPDATE teams SET faab = faab - ? WHERE id = ?", c.bid, c.team_id);
       run("UPDATE waiver_claims SET status = 'won' WHERE id = ?", c.id);
+      logActivity(getLeague(leagueId)!, c.team_id, "claim", { add: c.add_player_id, drop: c.drop_player_id, bid: c.bid });
       const p = one<Player>("SELECT * FROM players WHERE id = ?", c.add_player_id)!;
       postSystem(leagueId, `Waivers: ${team.name} claimed ${p.name} for $${c.bid} FAAB.`);
     });
@@ -732,19 +735,79 @@ export function dailyWaivers(leagueId: number) {
 
 // ---------- Trades ----------
 
+type TradeRow = { id: number; league_id: number; from_team_id: number; to_team_id: number; give: string; get: string; status: string; review_until: number | null };
+
+/** Trading is open after the draft, before the deadline week ends, and not in the offseason. */
+export function tradesOpen(l: League): { ok: true } | { ok: false; why: string } {
+  if (l.draft_status !== "done") return { ok: false, why: "Trades open after the draft" };
+  if (l.champion_team_id) return { ok: false, why: "The season is over" };
+  if (l.trade_deadline_week && l.current_week > l.trade_deadline_week) return { ok: false, why: `The trade deadline passed after ${weekName(l, l.trade_deadline_week)}` };
+  return { ok: true };
+}
+
+/**
+ * The other team said yes. With trade review on, the trade waits for the commish (who can veto or push it through)
+ * and goes through by itself when the review period ends; otherwise it happens now.
+ */
+export function acceptTrade(tradeId: number): "review" | "done" {
+  const t = one<TradeRow>("SELECT * FROM trades WHERE id = ?", tradeId)!;
+  const l = getLeague(t.league_id)!;
+  const hours = l.trade_review_hours ?? 0;
+  if (hours <= 0) {
+    executeTrade(tradeId);
+    return "done";
+  }
+  checkTrade(t);
+  run("UPDATE trades SET status = 'review', review_until = ? WHERE id = ?", Date.now() + hours * 3600_000, tradeId);
+  const name = (id: number) => one<Team>("SELECT name FROM teams WHERE id = ?", id)!.name;
+  postSystem(t.league_id, `${name(t.to_team_id)} accepted ${name(t.from_team_id)}'s trade. It goes through in ${hours} hours unless the commish vetoes it.`);
+  return "review";
+}
+
+/** Trades whose review period is over go through (or are voided if a player has moved since). */
+export function processTradeReviews(leagueId: number) {
+  for (const t of all<TradeRow>("SELECT * FROM trades WHERE league_id = ? AND status = 'review' AND review_until <= ?", leagueId, Date.now())) {
+    try {
+      executeTrade(t.id);
+    } catch (e) {
+      run("UPDATE trades SET status = 'voided' WHERE id = ? AND status = 'review'", t.id);
+      postSystem(leagueId, `A trade was voided: ${(e as Error).message.toLowerCase()}.`);
+    }
+  }
+}
+
+/** Commish veto of a trade in review. */
+export function vetoTrade(tradeId: number) {
+  tx(() => {
+    const t = one<TradeRow>("SELECT * FROM trades WHERE id = ?", tradeId);
+    if (!t || t.status !== "review") throw new Error("That trade isn't in review");
+    run("UPDATE trades SET status = 'vetoed' WHERE id = ?", tradeId);
+    logActivity(getLeague(t.league_id)!, t.from_team_id, "veto", { other: t.to_team_id, give: JSON.parse(t.give), get: JSON.parse(t.get) });
+    const name = (id: number) => one<Team>("SELECT name FROM teams WHERE id = ?", id)!.name;
+    postSystem(t.league_id, `The commish vetoed the trade between ${name(t.from_team_id)} and ${name(t.to_team_id)}.`);
+  });
+}
+
+function checkTrade(t: TradeRow) {
+  const give: number[] = JSON.parse(t.give);
+  const get: number[] = JSON.parse(t.get);
+  for (const pid of give) if (!one("SELECT 1 FROM roster WHERE team_id = ? AND player_id = ?", t.from_team_id, pid)) throw new Error("A player in this trade has moved");
+  for (const pid of get) if (!one("SELECT 1 FROM roster WHERE team_id = ? AND player_id = ?", t.to_team_id, pid)) throw new Error("A player in this trade has moved");
+  if (roster(t.from_team_id).length - give.length + get.length > ROSTER_MAX || roster(t.to_team_id).length - get.length + give.length > ROSTER_MAX)
+    throw new Error("Trade would put a roster over the limit");
+}
+
 export function executeTrade(tradeId: number) {
   tx(() => {
-    const t = one<{ id: number; league_id: number; from_team_id: number; to_team_id: number; give: string; get: string; status: string }>("SELECT * FROM trades WHERE id = ?", tradeId)!;
-    if (t.status !== "pending") throw new Error("Trade is no longer pending");
+    const t = one<TradeRow>("SELECT * FROM trades WHERE id = ?", tradeId)!;
+    if (t.status !== "pending" && t.status !== "review") throw new Error("Trade is no longer pending");
+    checkTrade(t);
     const give: number[] = JSON.parse(t.give);
     const get: number[] = JSON.parse(t.get);
-    for (const pid of give) if (!one("SELECT 1 FROM roster WHERE team_id = ? AND player_id = ?", t.from_team_id, pid)) throw new Error("A player in this trade has moved");
-    for (const pid of get) if (!one("SELECT 1 FROM roster WHERE team_id = ? AND player_id = ?", t.to_team_id, pid)) throw new Error("A player in this trade has moved");
-    if (roster(t.from_team_id).length - give.length + get.length > ROSTER_MAX || roster(t.to_team_id).length - get.length + give.length > ROSTER_MAX)
-      throw new Error("Trade would put a roster over the limit");
     for (const pid of give) run("UPDATE roster SET team_id = ?, slot = 'BN' WHERE league_id = ? AND player_id = ?", t.to_team_id, t.league_id, pid);
     for (const pid of get) run("UPDATE roster SET team_id = ?, slot = 'BN' WHERE league_id = ? AND player_id = ?", t.from_team_id, t.league_id, pid);
     run("UPDATE trades SET status = 'accepted' WHERE id = ?", tradeId);
+    logActivity(getLeague(t.league_id)!, t.from_team_id, "trade", { other: t.to_team_id, give, get });
     const name = (id: number) => one<Team>("SELECT * FROM teams WHERE id = ?", id)!.name;
     const pn = (ids: number[]) => ids.map((id) => one<Player>("SELECT name FROM players WHERE id = ?", id)!.name).join(", ") || "nothing";
     postSystem(t.league_id, `TRADE: ${name(t.from_team_id)} sends ${pn(give)} to ${name(t.to_team_id)} for ${pn(get)}.`);
@@ -845,7 +908,7 @@ export function startNewSeason(l: League, year: number | null) {
     run(`DELETE FROM draft_queue WHERE team_id IN ${inTeams}`, ...ids);
     for (const t of ["roster", "matchups", "draft_picks", "keepers"]) run(`DELETE FROM ${t} WHERE league_id = ?`, l.id);
     run("UPDATE waiver_claims SET status = 'cancelled' WHERE league_id = ? AND status = 'pending'", l.id);
-    run("UPDATE trades SET status = 'cancelled' WHERE league_id = ? AND status = 'pending'", l.id);
+    run("UPDATE trades SET status = 'cancelled' WHERE league_id = ? AND status IN ('pending', 'review')", l.id);
     run("UPDATE teams SET wins = 0, losses = 0, ties = 0, points_for = 0, points_against = 0, faab = ? WHERE league_id = ?", fresh.faab_budget, l.id);
     run(`UPDATE leagues SET season = ?, draft_status = 'pre', draft_order = NULL, pick_deadline = NULL, last_pick_at = NULL, current_week = 1,
          week_started_at = NULL, champion_team_id = NULL, start_date = NULL, long_weeks = NULL, playoff_seeds = NULL WHERE id = ?`, year, l.id);

@@ -8,8 +8,9 @@ import { clearSession, currentUser, hashPin, requireUser, setSession } from "@/l
 import {
   getLeague, userTeam, leagueTeams, startDraft, advanceDraft, makePick, autoLineup, moveToSlot, roster, ROSTER_MAX,
   isLocked, executeTrade, startWeek, finalizeWeek, postSystem, processWaivers, ROUNDS, setBoost, clearBoost,
-  startNewSeason, canStartNewSeason,
+  startNewSeason, canStartNewSeason, acceptTrade, vetoTrade, tradesOpen,
 } from "@/lib/league";
+import { logActivity } from "@/lib/activity";
 import { PACK_BY_ID } from "@/lib/packs";
 import { openPack, rerollSlab } from "@/lib/packs-server";
 import { proposeSlabTrade, respondSlabTrade } from "@/lib/slab-trades";
@@ -172,13 +173,16 @@ export async function updateSettings(leagueId: number, form: FormData) {
     const num = (k: string, d: number) => (form.get(k) != null ? Number(form.get(k)) : d);
     run(
       `UPDATE leagues SET name = ?, is_public = ?, scoring = ?, mode = ?, waiver_type = ?, pick_seconds = ?, sim_minutes = ?,
-       reward_win = ?, reward_loss = ?, reward_top = ?, keeper_count = ?, faab_budget = ?, season_weeks = ? WHERE id = ?`,
+       reward_win = ?, reward_loss = ?, reward_top = ?, keeper_count = ?, faab_budget = ?, season_weeks = ?,
+       trade_review_hours = ?, trade_deadline_week = ? WHERE id = ?`,
       String(form.get("name") || l.name).slice(0, 40), form.get("is_public") ? 1 : 0, String(form.get("scoring") || l.scoring),
       pre && form.get("mode") ? (form.get("mode") === "sim" ? "sim" : "real") : l.mode,
       String(form.get("waiver_type") || l.waiver_type), num("pick_seconds", l.pick_seconds), Math.max(0.5, num("sim_minutes", l.sim_minutes)),
       String(form.get("reward_win") || l.reward_win), String(form.get("reward_loss") || l.reward_loss), String(form.get("reward_top") || l.reward_top),
       pre ? num("keeper_count", l.keeper_count) : l.keeper_count, pre ? num("faab_budget", l.faab_budget) : l.faab_budget,
-      pre ? Math.min(24, Math.max(1, num("season_weeks", l.season_weeks))) : l.season_weeks, l.id,
+      pre ? Math.min(24, Math.max(1, num("season_weeks", l.season_weeks))) : l.season_weeks,
+      Math.min(72, Math.max(0, num("trade_review_hours", l.trade_review_hours ?? 24))),
+      form.get("trade_deadline_week") != null ? Number(form.get("trade_deadline_week")) || null : l.trade_deadline_week ?? null, l.id,
     );
     if (pre) run("UPDATE teams SET faab = ? WHERE league_id = ?", num("faab_budget", l.faab_budget), l.id);
     revalidatePath(`/league/${leagueId}`, "layout");
@@ -306,6 +310,7 @@ export async function dropPlayer(leagueId: number, playerId: number) {
     const p = one<Player>("SELECT * FROM players WHERE id = ?", playerId)!;
     if (isLocked(l, p)) throw new Error("Player's game has started");
     run("DELETE FROM roster WHERE team_id = ? AND player_id = ?", t.id, playerId);
+    logActivity(l, t.id, "drop", { drop: playerId });
     postSystem(leagueId, `${t.name} dropped ${p.name}.`);
     revalidatePath(`/league/${leagueId}`, "layout");
     return { ok: true };
@@ -331,6 +336,7 @@ export async function addPlayer(leagueId: number, addId: number, dropId: number 
     tx(() => {
       if (dropId) run("DELETE FROM roster WHERE team_id = ? AND player_id = ?", t.id, dropId);
       run("INSERT INTO roster (team_id, player_id, slot, league_id) VALUES (?, ?, 'BN', ?)", t.id, addId, leagueId);
+      logActivity(l, t.id, "add", { add: addId, drop: dropId });
     });
     postSystem(leagueId, `${t.name} added ${p.name}.`);
     revalidatePath(`/league/${leagueId}`, "layout");
@@ -361,7 +367,8 @@ export async function runWaivers(leagueId: number) {
 export async function proposeTrade(leagueId: number, toTeamId: number, give: number[], get: number[], note: string) {
   return wrap(async () => {
     const { l, t } = await myLeagueTeam(leagueId);
-    if (l.draft_status !== "done") throw new Error("Trades open after the draft");
+    const open = tradesOpen(l);
+    if (!open.ok) throw new Error(open.why);
     if (!give.length && !get.length) throw new Error("Add players to the trade");
     const to = one<Team>("SELECT * FROM teams WHERE id = ? AND league_id = ?", toTeamId, leagueId);
     if (!to || to.id === t.id) throw new Error("Pick a trade partner");
@@ -372,9 +379,9 @@ export async function proposeTrade(leagueId: number, toTeamId: number, give: num
       // CPU GMs accept if they get at least 5% more projected value back.
       const val = (ids: number[]) => ids.reduce((s, pid) => s + (one<Player>("SELECT proj FROM players WHERE id = ?", pid)?.proj ?? 0), 0);
       if (val(give) >= val(get) * 1.05) {
-        executeTrade(id);
+        const r = acceptTrade(id);
         revalidatePath(`/league/${leagueId}`, "layout");
-        return { ok: true, message: `${to.name} accepted!` };
+        return { ok: true, message: r === "review" ? `${to.name} accepted! It's in commish review now.` : `${to.name} accepted!` };
       }
       run("UPDATE trades SET status = 'rejected' WHERE id = ?", id);
       return { ok: true, message: `${to.name} rejected it. The algorithm says sweeten the deal.` };
@@ -387,16 +394,31 @@ export async function proposeTrade(leagueId: number, toTeamId: number, give: num
 
 export async function respondTrade(leagueId: number, tradeId: number, accept: boolean) {
   return wrap(async () => {
-    const { t } = await myLeagueTeam(leagueId);
-    const tr = one<{ to_team_id: number; from_team_id: number; status: string }>("SELECT * FROM trades WHERE id = ?", tradeId);
+    const { l, t } = await myLeagueTeam(leagueId);
+    const tr = one<{ to_team_id: number; from_team_id: number; status: string }>("SELECT * FROM trades WHERE id = ? AND league_id = ?", tradeId, leagueId);
     if (!tr || tr.status !== "pending") throw new Error("Trade not pending");
     if (accept) {
       if (tr.to_team_id !== t.id) throw new Error("Not your trade to accept");
-      executeTrade(tradeId);
+      const open = tradesOpen(l);
+      if (!open.ok) throw new Error(open.why);
+      acceptTrade(tradeId);
     } else {
       if (tr.to_team_id !== t.id && tr.from_team_id !== t.id) throw new Error("Not your trade");
       run("UPDATE trades SET status = ? WHERE id = ?", tr.from_team_id === t.id ? "cancelled" : "rejected", tradeId);
     }
+    revalidatePath(`/league/${leagueId}`, "layout");
+    return { ok: true };
+  });
+}
+
+/** Commish: veto a trade in review, or push it through now. */
+export async function reviewTrade(leagueId: number, tradeId: number, approve: boolean) {
+  return wrap(async () => {
+    await commish(leagueId);
+    const tr = one<{ status: string }>("SELECT status FROM trades WHERE id = ? AND league_id = ?", tradeId, leagueId);
+    if (!tr || tr.status !== "review") throw new Error("That trade isn't in review");
+    if (approve) executeTrade(tradeId);
+    else vetoTrade(tradeId);
     revalidatePath(`/league/${leagueId}`, "layout");
     return { ok: true };
   });

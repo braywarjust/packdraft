@@ -1,5 +1,5 @@
 import { ForwardIcon, PlayIcon } from "@/components/Icons";
-import { MatchupCard } from "@/components/MatchupCard";
+import { MatchupCard, topPerformers } from "@/components/MatchupCard";
 import { PackThumb } from "@/components/PackThumb";
 import { TeamBadge, TeamName } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand } from "@/lib/branding";
@@ -17,6 +17,10 @@ import { ActionButton } from "@/components/ActionButton";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { fillCpu, finishWeekNow, newSeasonAction, startDraftAction, startWeekAction } from "../../actions";
 import { Fpts, FptIcon, PointsKey } from "@/components/Fpts";
+import { fullStandings, teamSeasonStats } from "@/lib/standings";
+import { leagueActivity } from "@/lib/activity";
+import { ActivityFeed } from "@/components/ActivityFeed";
+import { FullStandings } from "@/components/FullStandings";
 
 export default async function LeagueHome({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,6 +35,8 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
   const progress = weekProgress(l);
   const matchups = all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ?", l.id, l.current_week);
   const teamName = new Map(teams.map((t) => [t.id, t.name]));
+  const full = l.draft_status === "done" ? fullStandings(l) : null;
+  const clinch = new Map(full?.map((r) => [r.team.id, r.clinch]) ?? []);
   const lastWeek = l.current_week > 1 ? all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ? AND final = 1", l.id, l.current_week - 1) : [];
 
   return (
@@ -112,7 +118,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                     <span className="relative"><TeamBadge brand={b} size={30} /></span>
                     <span className="relative min-w-0 flex-1">
                       <span className="block truncate text-sm font-bold text-white">{t.name}</span>
-                      <span className="block text-[10px] font-bold uppercase tracking-widest text-white/60">{b.abbr}{mine ? " · You" : ""}</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-widest text-white/60">{b.abbr}{mine ? " · You" : ""}{clinch.get(t.id) && <span className="ml-1.5 rounded bg-black/40 px-1 font-mono normal-case tracking-normal text-amber-300">{clinch.get(t.id)}</span>}</span>
                     </span>
                     <span className="relative text-right">
                       <span className="block font-mono text-sm font-black text-white">{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""}</span>
@@ -123,6 +129,17 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
               );
             })}
           </ol>
+          {full && (() => {
+            const stats = l.mode === "sim" ? null : teamSeasonStats(l);
+            return (
+              <FullStandings leagueId={l.id} myTeamId={me?.id ?? null} playoffTeams={Math.min(l.playoff_teams ?? 4, teams.length)}
+                rows={full.map((r) => ({ id: r.team.id, brand: brand.get(r.team.id) ?? teamBrand(r.team), rank: r.rank, w: r.w, l: r.l, t: r.t, pct: r.pct, gb: r.gb, pf: r.pf, pa: r.pa, streak: r.streak, moves: r.moves, playoffPct: r.playoffPct, clinch: r.clinch }))}
+                stats={stats && full.map((r) => {
+                  const x = stats.get(r.team.id)!;
+                  return { id: r.team.id, brand: brand.get(r.team.id) ?? teamBrand(r.team), fgm: x.fgm, fga: x.fga, ftm: x.ftm, fta: x.fta, tpm: x.tpm, reb: x.reb, ast: x.ast, stl: x.stl, blk: x.blk, to: x.to, pts: x.pts };
+                })} />
+            );
+          })()}
         </div>
         {!isCommish && !me && l.draft_status === "pre" && (
           <Link href="/leagues" className="btn-primary w-full">Join this league</Link>
@@ -132,7 +149,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
           const sideOf = (tid: number, stored: number | null, final: number) => {
             const t = teams.find((x) => x.id === tid)!;
             const w = teamWeek(l, tid, l.current_week);
-            return { w, side: { id: tid, brand: brand.get(tid)!, record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`, score: final && stored != null ? stored : w.score, proj: w.score + w.remain } };
+            return { w, side: { id: tid, brand: brand.get(tid)!, record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`, score: final && stored != null ? stored : w.score, proj: w.score + w.remain, top: topPerformers(w.players) } };
           };
           const h = m && sideOf(m.home_team_id, m.home_score, m.final);
           const a = m && sideOf(m.away_team_id, m.away_score, m.final);
@@ -159,6 +176,11 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
             </section>
           );
         })()}
+
+        {l.draft_status === "done" && (
+          <ActivityFeed items={leagueActivity(l, { limit: 60 })} myTeamId={me?.id ?? null}
+            brands={Object.fromEntries(teams.map((t) => [t.id, brand.get(t.id)!]))} />
+        )}
 
         {(() => {
           const past = leagueHistory(l.id);

@@ -12,6 +12,8 @@ import { AddPlayer } from "./AddPlayer";
 import { addPlayer, cancelClaim, runWaivers } from "../../../actions";
 import { Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
+import { newsAgo } from "@/lib/news-time";
+import { leagueNewsPlayers, newsFeed, refreshNews } from "@/lib/news";
 
 export default async function Players({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ q?: string; pos?: string; view?: string }> }) {
   const { id } = await params;
@@ -27,6 +29,14 @@ export default async function Players({ params, searchParams }: { params: Promis
     `SELECT * FROM players WHERE active = 1 AND (? = 'ALL' OR (',' || COALESCE(elig, pos) || ',') LIKE ?) AND name LIKE ? ORDER BY ${l.scoring === "dk" ? "proj_dk" : "proj"} DESC LIMIT 400`, pos, `%,${pos},%`, `%${q}%`)
     .filter((p) => (view === "fa" ? !owners.has(p.id) : true))
     .slice(0, 80);
+  let news: { item: ReturnType<typeof newsFeed>[number]; p: Player }[] = [];
+  if (view === "news") {
+    const ids = leagueNewsPlayers(l.id);
+    await refreshNews(ids, 16);
+    const byId = new Map(all<Player>(`SELECT * FROM players WHERE id IN (${ids.map(() => "?").join(",") || "NULL"})`, ...ids).map((p) => [p.id, p]));
+    const match = (p: Player) => (pos === "ALL" || `,${p.elig || p.pos},`.includes(`,${pos},`)) && p.name.toLowerCase().includes(q.toLowerCase());
+    news = newsFeed(ids.filter((id) => byId.has(id) && match(byId.get(id)!)), 40).map((item) => ({ item, p: byId.get(item.player_id)! }));
+  }
   const myRoster = me ? roster(me.id).map((p) => ({ id: p.id, name: p.name, pos: p.pos })) : [];
   const claims = me ? all<{ id: number; add: string; drop: string | null; bid: number; status: string }>(
     `SELECT c.id, a.name "add", d.name "drop", c.bid, c.status FROM waiver_claims c JOIN players a ON a.id = c.add_player_id LEFT JOIN players d ON d.id = c.drop_player_id
@@ -39,7 +49,7 @@ export default async function Players({ params, searchParams }: { params: Promis
       <div className="space-y-3 lg:col-span-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex gap-1">
-            {[["fa", "Free agents"], ["all", "All players"]].map(([v, label]) => (
+            {[["fa", "Free agents"], ["all", "All players"], ["news", "News"]].map(([v, label]) => (
               <Link key={v} href={qs({ view: v })} className={`tab ${view === v ? "tab-active" : ""}`}>{label}</Link>
             ))}
           </div>
@@ -53,6 +63,31 @@ export default async function Players({ params, searchParams }: { params: Promis
             <input name="q" defaultValue={q} placeholder="Search players" className="input w-full sm:w-56" />
           </form>
         </div>
+        {view === "news" ? (
+          <div className="space-y-2">
+            <p className="text-xs text-zinc-500">The latest ESPN fantasy news on every rostered player and the top free agents. Tap a name for the full player card.</p>
+            {news.length === 0 && <p className="card p-6 text-center text-sm text-zinc-500">No news yet. It fills in over the next few minutes.</p>}
+            {news.map(({ item, p }) => {
+              const owner = owners.get(p.id);
+              return (
+                <article key={item.id} className="card flex gap-3 p-3">
+                  <Headshot src={p.headshot} name={p.name} size={44} />
+                  <div className="min-w-0 flex-1">
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+                      <PlayerButton id={p.id} league={l.id} className="inline font-bold text-white">{p.name}</PlayerButton>
+                      <span className="text-xs text-zinc-400"><TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" />{p.team} {posLabel(p.elig || p.pos)}</span>
+                      <InjuryTag injury={p.injury} />
+                      <span className={`rounded-full px-1.5 text-[10px] font-bold ${owner ? "bg-panel2 text-zinc-600" : "bg-emerald-500/15 text-emerald-600"}`}>{owner ?? (faab ? "Waivers" : "Free agent")}</span>
+                      <span className="ml-auto text-[11px] text-zinc-500">{newsAgo(item.published)}</span>
+                    </p>
+                    <p className="mt-1 text-sm font-semibold leading-snug text-white">{item.headline}</p>
+                    {item.story && <p className="mt-1 text-xs leading-relaxed text-zinc-600"><b className="text-fpts">Spin:</b> {item.story}</p>}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (<>
         <p className="text-xs text-zinc-500">
           {faab ? `FAAB waivers: put in blind bids. Claims process every night at midnight ET (sim leagues: at each tip-off). Highest bid wins; ties go to the worse record.` : "Free agency: adds are instant."}
         </p>
@@ -93,6 +128,7 @@ export default async function Players({ params, searchParams }: { params: Promis
             </tbody>
           </table>
         </div>
+        </>)}
       </div>
       <aside className="space-y-4">
         {me && (
