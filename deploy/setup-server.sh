@@ -68,4 +68,4 @@ sudo systemctl reload caddy
 
 echo
 echo "Done. HTTPS is set up for https://$DOMAIN"
-echo "Next: copy your data over from your Mac with deploy/push-data.sh (see DEPLOY.md)."
+echo "Next: copy your data over from your Mac with deploy/push-data.sh (see docs/DEPLOY.md)."

@@ -2,6 +2,8 @@
 
 Private fantasy NBA for you and your friends, running on real live NBA stats, with a mystery-pack vending machine wired into your leagues.
 
+**Current version: 3.1 (League hub).** See [CHANGELOG.md](CHANGELOG.md) for every update.
+
 ## Run it
 
 Double-click **Start PackDraft.command** in this folder, or:
@@ -26,18 +28,32 @@ Everything is stored in `data/packdraft-nba.db` (SQLite, built into Node 22.5+).
 - **Drafts**: live snake draft room with pick clock, autodraft, queue, keepers auto-slotted into their round. Mock drafts against bots any time.
 - **Rosters**: G, G, F, F, C, 3 UTIL + 5 bench. Daily lineups: each player locks at his own tip-off, and points count for the slot he was in when his game started. Add/drop, nightly FAAB waivers, trades (CPU teams answer instantly).
 - **Live scoring**: real-time matchup page with box-score lines, games played/left this week, win probability with a trend line, and a scoring feed.
-- **League Packs**: each league has its own pack shop (its Packs tab): six packs from $25 to $2,500, plus the 5-slab Mega Pack, with animated pack art. Every pack holds **Slabs**: square, animated cards of the players on that league's rosters (the league pack pool, browsable at `/league/<id>/packs/pool`), so the pool follows adds, drops, trades and each new draft. Packs bought or won in a league open there; packs from before League Packs open in any league. Slabs are for keeping: they can't be sold back (trade five up for a rarer one instead). Big pulls get announced in that league's chat.
+- **League Packs**: each league has its own pack shop (its Packs tab): six packs from $25 to $2,500, plus the 5-slab Mega Pack, with animated pack art. Every pack holds **Slabs**: square, animated cards of the players on that league's rosters (the league pack pool, browsable at `/league/<id>/packs/pool`), so the pool follows adds, drops, trades and each new draft. Packs bought or won in a league open there; packs from before League Packs open in any league. Slabs can't be sold back, but they can be traded (see Slab Trades). Big pulls get announced in that league's chat.
 - **Rarity system**: Common, Rare, Epic, Mythic and Immortal. Each tier adds motion (a turning sunburst and shimmer, twinkling stars, a fuller star field, an icy-blue frame and frost sheen for Immortal; slab backs are in the tier colour, with shooting stars on Immortal backs). A slab's value is its tier times how good the player is; packs return about 90% of their price on average. Graded slabs from the old photo vault no longer drop, but owned ones stay in collections.
 - **Rolls and equips**: every slab drops with a roll: an orange **stat boost** (+1 to +5 on points, rebounds and/or assists), a blue **multiplier stamp** (1.10x to 2.00x), or rarely both. Commons are always small +1 boosts with no multiplier; the best roll is an Immortal with +5/+5/+5 and 2.00x. If that player is on your fantasy team, equip the slab on one of his games this week from your team page: when the game ends the boost is added to his box score, then the multiplier applies to his fantasy points for that game, and to the Pack Points they pay. One slab per player per game; it locks at tip-off and is used up when the game ends (shown as Equipped in your collection until then).
+- **Slab Trades**: swap slabs with friends, add Pack Points to either side, or gift one. Offers are voided if a slab moves.
+- **League hub**: recent activity (adds, drops, waivers, trades), full standings with playoff odds and clinch tags, top scorers on matchup cards, ESPN player news, and optional commish trade review with a trade deadline.
+- **Auto Manager**: one toggle on My Team starts the best players with a game today and benches the rest.
 - **Weekly rewards**: every matchup win, loss, the week's top score and the champion earn packs.
 - **Chat**: per-league chat with image uploads, GIFs, emoji and a smack talk generator.
-- **DFS**: host a contest on any upcoming night of real NBA games ($50k cap, G/G/F/F/C/3 UTIL). It locks at the first tip-off and settles when every game is final. Simulated slates are available too.
+- **Sportsbook and Casino**: bet Pack Points on real NBA games, or play the casino games.
+
+## Project layout
+
+```
+src/app/         pages and API routes (Next.js App Router)
+src/components/  shared UI (slabs, packs, lineups, standings, ...)
+src/lib/         game logic: leagues, scoring, packs, slabs, economy, database (db.ts)
+src/lib/nba/     ESPN data sync, season calendar, player photos
+public/          logos and icons
+deploy/          server setup, deploy and data copy scripts
+docs/            DEPLOY.md (putting it online), WORKFLOW.md (shipping updates, naming conventions)
+```
 
 ## Notes
 
 - ESPN's endpoints are unofficial. If ESPN changes them, live data stops until the code is updated; simulated mode keeps working.
 - Live scoring only advances while the app is running on your computer. If it was off during games, it catches up on box scores the next time it starts.
-- PSA's website, 130point and SportsCardsPro block automated lookups, and PSA's free API has no prices, so eBay's free API is the market source. eBay values are current asking prices, not sold prices.
 - GIF search needs a free GIPHY key. Put it in `.env.local`:
   ```
   GIPHY_API_KEY=your_key_here
