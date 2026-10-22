@@ -7,7 +7,6 @@
 //             (Easy 2 cars / 24 lanes, Medium 4 / 22, Hard 6 / 20, Expert 11 / 15: Medium reads 1.15x, 1.37x, 1.65x, 2.00x...)
 //   Blackjack infinite deck, dealer peeks and stands on all 17s, blackjack 3:2, insurance 2:1, double any two,
 //             split once                                                       RTP ~99.5% with basic strategy
-// scripts/casino/sim.mjs re-checks these by simulation.
 import crypto from "node:crypto";
 import { all, one, run, topUpTester, tx } from "./db";
 
