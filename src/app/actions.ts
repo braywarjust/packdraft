@@ -278,7 +278,8 @@ async function myLeagueTeam(leagueId: number) {
 export async function setSlot(leagueId: number, playerId: number, slot: string) {
   return wrap(async () => {
     const { l, t } = await myLeagueTeam(leagueId);
-    tx(() => moveToSlot(l, t.id, playerId, slot));
+    // A manual move turns Auto Manager off; otherwise the next league tick would put the old lineup straight back.
+    tx(() => { moveToSlot(l, t.id, playerId, slot); run("UPDATE teams SET auto_manage = 0 WHERE id = ?", t.id); });
     revalidatePath(`/league/${leagueId}/team`);
     return { ok: true };
   });

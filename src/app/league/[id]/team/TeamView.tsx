@@ -67,14 +67,13 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         <div className="h-1" style={{ background: `linear-gradient(90deg, ${b.alt}, ${b.color}, ${b.alt})` }} />
       </section>
 
-      {editable && td && <div className="relative"><AutoManageToggle on={!!t.auto_manage} set={setAutoManage.bind(null, leagueId)} /></div>}
-
       <div className="relative">
         {l.draft_status !== "done" || !td ? (
           <p className="card p-6 text-zinc-500">Rosters fill up during the draft.</p>
         ) : (
           <RosterBoard days={td.days} rows={td.rows} totals={td.totals} initialDay={defaultDay(td.days)} players={players} editable={editable} brand={b}
-            setSlot={editable ? setSlot.bind(null, leagueId) : undefined} drop={editable ? dropPlayer.bind(null, leagueId) : undefined} />
+            setSlot={editable ? setSlot.bind(null, leagueId) : undefined} drop={editable ? dropPlayer.bind(null, leagueId) : undefined}
+            header={editable ? <AutoManageToggle on={!!t.auto_manage} set={setAutoManage.bind(null, leagueId)} /> : undefined} />
         )}
       </div>
 

@@ -16,6 +16,14 @@ export const STAT_COLS: [string, (l: Line) => number][] = [
   ["REB", (l) => l.reb], ["AST", (l) => l.ast], ["STL", (l) => l.stl], ["BLK", (l) => l.blk], ["TO", (l) => l.to], ["PTS", (l) => l.pts],
 ];
 
+/**
+ * fit: phones show only Opp, game, PTS, REB, AST and fantasy points, so the whole row fits without scrolling sideways.
+ * The other stat columns hide below sm, and PTS gets its own phone-only cell so it leads.
+ */
+const PHONE_COLS = new Set(["REB", "AST"]);
+const colHide = (fit: boolean | undefined, k: string) => (fit && !PHONE_COLS.has(k) ? "max-sm:hidden" : "");
+const phonePad = (fit: boolean | undefined) => (fit ? "max-sm:px-1" : "");
+
 /** "L. Doncic" for tight spaces. */
 export const shortName = (n: string) => {
   const parts = n.split(" ");
@@ -55,69 +63,75 @@ export function DayStrip({ days, day, onDay, totals }: { days: DayInfo[]; day: s
 }
 
 /** One player row of a box score: slot (or a custom slot cell), player, opponent and status, stat line, fantasy points. */
-export function BoxRow({ r, slotCell, highlight, compactName }: { r: DayRow | null; slotCell: React.ReactNode; highlight?: string; compactName?: boolean }) {
+export function BoxRow({ r, slotCell, highlight, compactName, fit }: { r: DayRow | null; slotCell: React.ReactNode; highlight?: string; compactName?: boolean; fit?: boolean }) {
   const g = r?.game;
   const live = g?.state === "in";
   const dash = <span className="text-zinc-500">-</span>;
+  const stat = (f: (l: Line) => number) => (g?.line && g.state !== "pre" ? f(g.line) : dash);
+  const pad = phonePad(fit);
   return (
     <tr className={`border-t border-line/60 ${highlight ?? ""}`}>
-      <td className="sticky left-0 z-10 w-[56px] min-w-[56px] bg-panel px-1.5 py-2 sm:w-[76px] sm:min-w-[76px] sm:pl-3">{slotCell}</td>
-      <td className="sticky left-[56px] z-10 border-r border-line/60 bg-panel py-2 pr-2 sm:left-[76px]">
+      <td className={`sticky left-0 z-10 w-[56px] min-w-[56px] bg-panel px-1.5 py-2 sm:w-[76px] sm:min-w-[76px] sm:pl-3 ${fit ? "max-sm:w-[50px] max-sm:min-w-[50px] max-sm:px-1" : ""}`}>{slotCell}</td>
+      <td className={`sticky left-[56px] z-10 border-r border-line/60 bg-panel py-2 pr-2 sm:left-[76px] ${fit ? "max-sm:static max-sm:w-full max-sm:max-w-0 max-sm:pr-1" : ""}`}>
         {r ? (
-          <div className="flex min-w-[150px] items-center gap-2 sm:min-w-[220px]">
-            <Headshot src={r.headshot} name={r.name} size={36} />
+          <div className={`flex items-center gap-2 sm:min-w-[220px] ${fit ? "" : "min-w-[150px]"}`}>
+            <Headshot src={r.headshot} name={r.name} size={36} className={fit ? "max-sm:hidden" : ""} />
             <div className="min-w-0">
               <p className="flex items-center gap-1 text-sm font-semibold leading-tight text-white">
                 <PlayerButton id={r.id} className="truncate">{compactName ? shortName(r.name) : <><span className="sm:hidden">{shortName(r.name)}</span><span className="hidden sm:inline">{r.name}</span></>}</PlayerButton>
                 <SlabOn boost={r.boost} />
                 <InjuryTag injury={r.injury} />
               </p>
-              <p className="flex items-center gap-1 text-[11px] text-zinc-500">
-                <TeamLogo team={r.team} size={13} />{r.team} <span className="font-semibold text-zinc-400">{r.pos.split(",").join(", ")}</span>
+              <p className="flex items-center gap-1 truncate text-[11px] text-zinc-500">
+                <TeamLogo team={r.team} size={13} />{r.team} <span className="truncate font-semibold text-zinc-400">{r.pos.split(",").join(", ")}</span>
               </p>
               {r.boost && <p className="mt-0.5 flex gap-1"><BoostChip boost={r.boost} /></p>}
             </div>
           </div>
         ) : <span className="text-sm text-zinc-500">Empty</span>}
       </td>
-      <td className="whitespace-nowrap px-2 text-xs font-semibold text-brand">{g ? g.opp : dash}</td>
-      <td className={`whitespace-nowrap px-2 text-xs ${live ? "font-bold text-red-500" : g?.state === "post" ? "font-semibold text-white/75" : "text-brand"}`}>
-        {g ? <>{live && "● "}{g.status}</> : ""}
+      <td className={`whitespace-nowrap px-2 text-xs font-semibold text-brand ${pad}`}>{g ? g.opp : dash}</td>
+      <td className={`whitespace-nowrap px-2 text-xs ${pad} ${fit ? "max-sm:text-[10px]" : ""} ${live ? "font-bold text-red-500" : g?.state === "post" ? "font-semibold text-white/75" : "text-brand"}`}>
+        {g ? <>{live && "● "}{fit && g.status.endsWith(" ET") ? <>{g.status.slice(0, -3)}<span className="max-sm:hidden"> ET</span></> : g.status}</> : ""}
       </td>
+      {fit && <td className="border-l border-line/30 px-1 text-center font-mono text-xs text-white/85 sm:hidden">{stat((l) => l.pts)}</td>}
       {STAT_COLS.map(([k, f]) => (
-        <td key={k} className="border-l border-line/30 px-2 text-center font-mono text-xs text-white/85 first:border-l-0">{g?.line && g.state !== "pre" ? f(g.line) : dash}</td>
+        <td key={k} className={`border-l border-line/30 px-2 text-center font-mono text-xs text-white/85 first:border-l-0 ${pad} ${colHide(fit, k)}`}>{stat(f)}</td>
       ))}
-      <td className="border-l border-line/60 px-3 text-right font-mono text-sm font-black text-white">{r?.fpts != null ? <Fpts n={r.fpts} /> : dash}</td>
+      <td className={`whitespace-nowrap border-l border-line/60 px-3 text-right font-mono text-sm font-black text-white ${fit ? "max-sm:px-1.5 max-sm:text-xs" : ""}`}>{r?.fpts != null ? <Fpts n={r.fpts} iconClass={fit ? "max-sm:hidden" : ""} /> : dash}</td>
     </tr>
   );
 }
 
 /** Table header for BoxRow tables. */
-export function BoxHead({ dayLabel, first = "Slot" }: { dayLabel: string; first?: string }) {
+export function BoxHead({ dayLabel, first = "Slot", fit }: { dayLabel: string; first?: string; fit?: boolean }) {
+  const pad = phonePad(fit);
   return (
     <thead className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
       <tr>
         <th className="sticky left-0 z-10 bg-panel px-1.5 py-2 text-left sm:pl-3">{first}</th>
         <th className="sticky left-[56px] z-10 border-r border-line/60 bg-panel py-2 text-left sm:left-[76px]">Player</th>
-        <th className="px-2 text-left">Opp</th>
-        <th className="px-2 text-left">{dayLabel}</th>
-        {STAT_COLS.map(([k]) => <th key={k} className="px-2 text-center">{k}</th>)}
-        <th className="border-l border-line/60 px-3 text-right">Fpts</th>
+        <th className={`px-2 text-left ${pad}`}>Opp</th>
+        <th className={`px-2 text-left ${pad}`}>{dayLabel}</th>
+        {fit && <th className="px-1 text-center sm:hidden">PTS</th>}
+        {STAT_COLS.map(([k]) => <th key={k} className={`px-2 text-center ${pad} ${colHide(fit, k)}`}>{k}</th>)}
+        <th className={`border-l border-line/60 px-3 text-right ${fit ? "max-sm:px-1.5" : ""}`}>{fit ? <><span className="sm:hidden">FP</span><span className="max-sm:hidden">Fpts</span></> : "Fpts"}</th>
       </tr>
     </thead>
   );
 }
 
 /** Starters' totals row. */
-export function BoxTotals({ rows, total }: { rows: DayRow[]; total: number }) {
+export function BoxTotals({ rows, total, fit }: { rows: DayRow[]; total: number; fit?: boolean }) {
   const sum = (f: (l: Line) => number) => rows.reduce((s, r) => s + (r.game?.line && r.game.state !== "pre" ? f(r.game.line) : 0), 0);
   return (
     <tr className="border-t border-line bg-panel2/60 font-mono text-xs font-bold text-white">
       <td className="sticky left-0 z-10 bg-panel2 py-2" />
       <td className="sticky left-[56px] z-10 border-r border-line/60 bg-panel2 py-2 text-right font-sans text-[10px] uppercase tracking-widest text-zinc-400 sm:left-[76px]">Starters</td>
       <td /><td />
-      {STAT_COLS.map(([k, f]) => <td key={k} className="px-2 text-center">{sum(f)}</td>)}
-      <td className="border-l border-line/60 px-3 text-right text-sm"><Fpts n={total} /></td>
+      {fit && <td className="px-1 text-center sm:hidden">{sum((l) => l.pts)}</td>}
+      {STAT_COLS.map(([k, f]) => <td key={k} className={`px-2 text-center ${phonePad(fit)} ${colHide(fit, k)}`}>{sum(f)}</td>)}
+      <td className={`whitespace-nowrap border-l border-line/60 px-3 text-right text-sm ${fit ? "max-sm:px-1.5 max-sm:text-xs" : ""}`}><Fpts n={total} iconClass={fit ? "max-sm:hidden" : ""} /></td>
     </tr>
   );
 }

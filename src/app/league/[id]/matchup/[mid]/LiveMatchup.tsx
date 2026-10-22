@@ -23,7 +23,6 @@ type Data = {
   week: number; final: boolean; live: boolean; mode: string; range: string | null; progress: number | null; league: string; leagueId: number;
   home: Side; away: Side; winProb: number; others: Other[]; days: DayInfo[]; day: string; mine: number | null;
 };
-type Event = { key: string; name: string; delta: number; line: string; side: "home" | "away" };
 
 import { STARTERS } from "@/lib/scoring";
 const lbl = (s: string) => s.replace(/\d$/, "");
@@ -43,7 +42,6 @@ function Spark({ points }: { points: number[] }) {
 export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchupId: number }) {
   const [d, setD] = useState<Data | null>(null);
   const [history, setHistory] = useState<number[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
   const [flash, setFlash] = useState<Set<number>>(new Set());
   const prev = useRef<Map<number, number>>(new Map());
   const [day, setDay] = useState<string | null>(null);
@@ -58,23 +56,15 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
         const j = (await r.json()) as Data;
         setD(j);
         if (!j.final) setHistory((h) => (h[h.length - 1] === j.winProb ? h : [...h.slice(-150), j.winProb]));
-        const newEvents: Event[] = [];
         const changed = new Set<number>();
         for (const side of ["home", "away"] as const) {
           for (const p of j[side].players) {
             const before = prev.current.get(p.id);
-            if (before !== undefined && Math.abs(p.pts - before) >= 0.5 && p.slot !== "BN") {
-              const delta = p.pts - before;
-              changed.add(p.id);
-              newEvents.push({ key: `${p.id}-${Date.now()}`, side, name: p.name, delta, line: p.now?.line ?? "" });
-            }
+            if (before !== undefined && Math.abs(p.pts - before) >= 0.5 && p.slot !== "BN") changed.add(p.id);
             prev.current.set(p.id, p.pts);
           }
         }
-        if (newEvents.length) {
-          setEvents((e) => [...newEvents, ...e].slice(0, 30));
-          setFlash(changed);
-        }
+        if (changed.size) setFlash(changed);
         if (!j.final) timer = setTimeout(load, j.live || (j.progress ?? 0) > 0 ? 5000 : 30000);
       } else timer = setTimeout(load, 15000);
     };
@@ -177,59 +167,48 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
         </table>
       </div>
 
-      <div className="grid gap-4 2xl:grid-cols-3">
-        <div className="space-y-4 2xl:col-span-2">
-          <div className="card p-3"><DayStrip days={d.days} day={curDay} onDay={setDay} /></div>
+      <div className="space-y-4">
+        <div className="card p-3"><DayStrip days={d.days} day={curDay} onDay={setDay} /></div>
 
-          {/* Phones: head to head by slot, ESPN app style */}
-          <div className="card divide-y divide-line/60 overflow-hidden sm:hidden">
-            {pairs.map(({ slot, a, b }, i) => (
-              <div key={`${slot}${i}`} className={`flex items-stretch ${slot === "BN" ? "opacity-70" : ""}`}>
-                {h2hCell(a, false)}
-                <span className="flex w-9 shrink-0 items-center justify-center bg-panel2 text-[10px] font-black text-zinc-400">{slot === "BN" ? "BN" : lbl(slot)}</span>
-                {h2hCell(b, true)}
-              </div>
-            ))}
-            <div className="flex items-center justify-between bg-panel2 px-3 py-2 font-mono text-sm font-black text-white">
-              <span><Fpts n={home.totals[curDay] ?? 0} /></span>
-              <span className="font-sans text-[10px] uppercase tracking-widest text-zinc-400">{curInfo?.label}</span>
-              <span><Fpts n={away.totals[curDay] ?? 0} /></span>
+        {/* Phones: head to head by slot, ESPN app style */}
+        <div className="card divide-y divide-line/60 overflow-hidden sm:hidden">
+          {pairs.map(({ slot, a, b }, i) => (
+            <div key={`${slot}${i}`} className={`flex items-stretch ${slot === "BN" ? "opacity-70" : ""}`}>
+              {h2hCell(a, false)}
+              <span className="flex w-9 shrink-0 items-center justify-center bg-panel2 text-[10px] font-black text-zinc-400">{slot === "BN" ? "BN" : lbl(slot)}</span>
+              {h2hCell(b, true)}
             </div>
+          ))}
+          <div className="flex items-center justify-between bg-panel2 px-3 py-2 font-mono text-sm font-black text-white">
+            <span><Fpts n={home.totals[curDay] ?? 0} /></span>
+            <span className="font-sans text-[10px] uppercase tracking-widest text-zinc-400">{curInfo?.label}</span>
+            <span><Fpts n={away.totals[curDay] ?? 0} /></span>
           </div>
+        </div>
 
-          {/* Bigger screens: both box scores */}
-          {[home, away].map((sd) => {
-            const rows = sd.days[curDay] ?? [];
-            const by = new Map(rows.filter((r) => r.slot !== "BN").map((r) => [r.slot, r]));
-            return (
-              <section key={sd.id} className="card hidden overflow-hidden sm:block">
-                <h3 className="flex items-center gap-2 border-b border-line/60 px-4 py-3 font-black text-white">
-                  <TeamBadge brand={sd.brand} size={26} />{sd.name} box score
-                  <span className="ml-auto font-mono text-base"><Fpts n={sd.totals[curDay] ?? 0} /></span>
-                </h3>
-                <div className="overflow-x-auto scrollbar-thin">
-                  <table className="w-full min-w-[900px] text-sm">
-                    <BoxHead dayLabel={curInfo?.top ?? ""} />
-                    <tbody>
-                      {STARTERS.map((slot) => <BoxRow key={slot} r={by.get(slot) ?? null} slotCell={<span className={`pos pos-${lbl(slot)}`}>{lbl(slot)}</span>} />)}
-                      <BoxTotals rows={STARTERS.map((x) => by.get(x)).filter(Boolean) as DayRow[]} total={sd.totals[curDay] ?? 0} />
-                      {rows.filter((r) => r.slot === "BN").map((r) => <BoxRow key={r.id} r={r} slotCell={<span className="pos">BN</span>} highlight="opacity-75" />)}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            );
-          })}
-        </div>
-        <div className="card p-4">
-          <p className="label">Live scoring feed</p>
-          {events.length === 0 && <p className="text-sm text-zinc-400">{d.final ? "This one's in the books." : "Updates roll in here while games are live."}</p>}
-          <ul className="space-y-2 text-sm">
-            {events.map((e) => (
-              <li key={e.key} className={`anim-deal rounded-lg border-l-2 bg-ink/60 px-2 py-1.5 ${e.side === "home" ? "border-brand" : "border-accent"}`}>{e.name} {e.delta > 0 ? "+" : "-"}<Fpts n={Math.abs(e.delta)} />{e.delta >= 8 ? " (big play)" : ""} · {e.line}</li>
-            ))}
-          </ul>
-        </div>
+        {/* Bigger screens: both box scores */}
+        {[home, away].map((sd) => {
+          const rows = sd.days[curDay] ?? [];
+          const by = new Map(rows.filter((r) => r.slot !== "BN").map((r) => [r.slot, r]));
+          return (
+            <section key={sd.id} className="card hidden overflow-hidden sm:block">
+              <h3 className="flex items-center gap-2 border-b border-line/60 px-4 py-3 font-black text-white">
+                <TeamBadge brand={sd.brand} size={26} />{sd.name} box score
+                <span className="ml-auto font-mono text-base"><Fpts n={sd.totals[curDay] ?? 0} /></span>
+              </h3>
+              <div className="overflow-x-auto scrollbar-thin">
+                <table className="w-full min-w-[900px] text-sm">
+                  <BoxHead dayLabel={curInfo?.top ?? ""} />
+                  <tbody>
+                    {STARTERS.map((slot) => <BoxRow key={slot} r={by.get(slot) ?? null} slotCell={<span className={`pos pos-${lbl(slot)}`}>{lbl(slot)}</span>} />)}
+                    <BoxTotals rows={STARTERS.map((x) => by.get(x)).filter(Boolean) as DayRow[]} total={sd.totals[curDay] ?? 0} />
+                    {rows.filter((r) => r.slot === "BN").map((r) => <BoxRow key={r.id} r={r} slotCell={<span className="pos">BN</span>} highlight="opacity-75" />)}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          );
+        })}
       </div>
     </div>
   );
