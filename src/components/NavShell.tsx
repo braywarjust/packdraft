@@ -105,13 +105,21 @@ export function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** The results under a page's filters: changing a filter only swaps this part. */
+/**
+ * The results under a page's filters: changing a filter only swaps this part. The old results stay in the layout
+ * (just invisible) while the logo plays over them, so the page keeps its height and you stay where you'd scrolled to.
+ */
 export function QueryArea({ children, className }: { children: React.ReactNode; className?: string }) {
   const { kind } = useContext(NavCtx);
+  const on = kind === "query";
   return (
-    <>
-      <div className={className} hidden={kind === "query"}>{children}</div>
-      {kind === "query" && <div className="page-loading grid min-h-[240px] place-items-center"><LoadingLogo size={110} /></div>}
-    </>
+    <div className="relative">
+      <div className={`${className ?? ""} ${on ? "invisible" : ""}`} aria-hidden={on || undefined}>{children}</div>
+      {on && (
+        <div className="absolute inset-0">
+          <div className="page-loading sticky top-[30vh] grid min-h-[240px] place-items-center"><LoadingLogo size={110} /></div>
+        </div>
+      )}
+    </div>
   );
 }

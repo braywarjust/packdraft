@@ -3,6 +3,11 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
+## 3.2.1 — Pull to refresh (2026-10-22)
+
+- Pull to refresh on iPhone: in the home-screen app, pull down from the top of any page to reload it. The PackDraft logo turns as you pull and plays while the page reloads.
+- You keep your place: tapping a filter (week buttons on Matchups, positions and views on Players, rarity and sort on Collection, pack pool tiers) no longer jumps you back to the top of the page.
+
 ## 3.2 — Snappy app and fair trades (2026-10-22)
 
 - Slab Trades: Pack Points you offer leave your balance as soon as you send the offer, go to the other manager if they accept, and come back if it's declined, cancelled or called off.

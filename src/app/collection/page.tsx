@@ -44,17 +44,17 @@ export default async function Collection({ searchParams }: { searchParams: Promi
       <PageHeader icon="collection" eyebrow="Slab vault" title={mine ? "My collection" : `${viewing.name}'s collection`}
         description={<span className="flex flex-wrap items-center gap-x-2 gap-y-1 leading-none"><SlabCount n={cards.length} className="font-semibold text-white" /></span>}>
           {users.map((x) => (
-            <Link key={x.id} href={qs({ u: String(x.id) })} className={`tab ${x.id === viewing.id ? "tab-active" : ""}`}>{x.id === me.id ? "Me" : x.name}</Link>
+            <Link key={x.id} href={qs({ u: String(x.id) })} scroll={false} className={`tab ${x.id === viewing.id ? "tab-active" : ""}`}>{x.id === me.id ? "Me" : x.name}</Link>
           ))}
       </PageHeader>
       <div className="flex flex-wrap items-center gap-2">
-        <Link href={qs({ r: undefined })} className={`tab ${!sp.r ? "tab-active" : ""}`}>All</Link>
+        <Link href={qs({ r: undefined })} scroll={false} className={`tab ${!sp.r ? "tab-active" : ""}`}>All</Link>
         {(Object.keys(RARITIES) as Rarity[]).map((r) => (
-          <Link key={r} href={qs({ r })} className={`tab ${sp.r === r ? "tab-active" : ""} ${RARITIES[r].text}`}>{RARITIES[r].label} ({counts[r]})</Link>
+          <Link key={r} href={qs({ r })} scroll={false} className={`tab ${sp.r === r ? "tab-active" : ""} ${RARITIES[r].text}`}>{RARITIES[r].label} ({counts[r]})</Link>
         ))}
         <span className="mx-2 h-5 w-px bg-line" />
-        <Link href={qs({ sort: undefined })} className={`tab ${!sp.sort ? "tab-active" : ""}`}>Best</Link>
-        <Link href={qs({ sort: "new" })} className={`tab ${sp.sort === "new" ? "tab-active" : ""}`}>Newest</Link>
+        <Link href={qs({ sort: undefined })} scroll={false} className={`tab ${!sp.sort ? "tab-active" : ""}`}>Best</Link>
+        <Link href={qs({ sort: "new" })} scroll={false} className={`tab ${sp.sort === "new" ? "tab-active" : ""}`}>Newest</Link>
         <Link href="/collection/trades" className="btn-ghost ml-auto gap-2">
           Trades{!!offers && <span className="rounded-full bg-accent px-2 text-xs font-bold text-white">{offers}</span>}
         </Link>

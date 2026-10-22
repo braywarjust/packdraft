@@ -15,6 +15,7 @@ import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
 import { BalancePill } from "@/components/BalancePill";
 import { NavShell } from "@/components/NavShell";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { avatarOf } from "@/lib/profile";
 import { PackFacesProvider } from "@/components/PackFaces";
 import { livePackFaces } from "@/lib/pack-faces-server";
@@ -64,6 +65,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <ConfirmHost />
         <NoTooltips />
         <PlayerInspectorHost />
+        <PullToRefresh />
         <Sidebar
           user={{ name: user.name, color: user.color, coins: user.coins, tester: !!user.is_tester, avatar: avatarOf(user.id) }}
           packs={packs}
