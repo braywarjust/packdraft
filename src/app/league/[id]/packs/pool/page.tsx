@@ -50,7 +50,7 @@ export default async function LeaguePackPool({ params, searchParams }: { params:
 
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          {RARITY_ORDER.map((r) => <Link key={r} href={`?tier=${r}`} className={`tab ${tier === r ? "tab-active" : ""} ${RARITIES[r].text}`}>{RARITIES[r].label}</Link>)}
+          {RARITY_ORDER.map((r) => <Link key={r} href={`?tier=${r}`} scroll={false} className={`tab ${tier === r ? "tab-active" : ""} ${RARITIES[r].text}`}>{RARITIES[r].label}</Link>)}
         </div>
         <p className="text-xs text-zinc-500">
           Best {RARITIES[tier].label} roll shown. Boost {rules.boostPct}% (<b className="text-orange-500">{rules.boost}</b>){rules.multPct ? <> · Multiplier {rules.multPct}% (<b className="text-fpts">{rules.mult}</b>)</> : ""}{rules.bothPct ? <> · Both {rules.bothPct}%</> : ""}

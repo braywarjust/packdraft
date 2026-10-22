@@ -51,12 +51,12 @@ export default async function Players({ params, searchParams }: { params: Promis
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex gap-1">
             {[["fa", "Free agents"], ["all", "All players"], ["news", "News"]].map(([v, label]) => (
-              <Link key={v} href={qs({ view: v })} className={`tab ${view === v ? "tab-active" : ""}`}>{label}</Link>
+              <Link key={v} href={qs({ view: v })} scroll={false} className={`tab ${view === v ? "tab-active" : ""}`}>{label}</Link>
             ))}
           </div>
           <div className="flex gap-1">
             {["ALL", "PG", "SG", "SF", "PF", "C"].map((p) => (
-              <Link key={p} href={qs({ pos: p })} className={`tab ${pos === p ? "tab-active" : ""}`}>{p}</Link>
+              <Link key={p} href={qs({ pos: p })} scroll={false} className={`tab ${pos === p ? "tab-active" : ""}`}>{p}</Link>
             ))}
           </div>
           <form className="w-full sm:ml-auto sm:w-auto">

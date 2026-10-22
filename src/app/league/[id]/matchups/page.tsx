@@ -70,7 +70,7 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
 
       <div className="flex flex-wrap gap-1.5">
         {Array.from({ length: lastWeek }, (_, i) => i + 1).map((w) => (
-          <Link key={w} href={`/league/${l.id}/matchups?week=${w}`} title={weekName(l, w)}
+          <Link key={w} href={`/league/${l.id}/matchups?week=${w}`} scroll={false} title={weekName(l, w)}
             className={`tab shrink-0 ${w === week ? "tab-active" : w > l.current_week ? "opacity-60" : ""} ${w === l.season_weeks + 1 ? "ml-2" : ""}`}>
             {weekShort(l, w)}{w === l.current_week && !l.champion_team_id && w !== week ? " •" : ""}
           </Link>
