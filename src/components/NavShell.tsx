@@ -1,20 +1,34 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { PageLoading } from "./LoadingLogo";
+
+/**
+ * Every page switch shows the loader for at least this long, so it plays the same on every page instead of flickering
+ * on fast ones. Set to the slowest page: locally pages take 15–110ms (the matchup page is the slowest), and the live
+ * server adds roughly 150ms of network plus a slower CPU, so the slowest live page lands around 500–700ms.
+ */
+export const LOADER_MS = 700;
 
 /**
  * Page switches feel instant (Update 3.2): the moment you tap a link to another page, the current page is swapped
  * for the logo loader, and the new page fills in behind it. The loader goes away when the address changes (the new
- * page, or its own loading.tsx, takes over), or after a while if the page never changes (a redirect back here).
+ * page, or its own loading.tsx, takes over) and LOADER_MS has passed since the tap, or after a while if the page
+ * never changes (a redirect back here).
  */
 export function NavShell({ children }: { children: React.ReactNode }) {
   const [pending, setPending] = useState(false);
   const path = usePathname();
-  const done = useCallback(() => setPending(false), []);
+  const startedAt = useRef(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // The new page is ready: keep the loader up until it has played for LOADER_MS, then show the page.
+  const done = useCallback(() => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setPending(false), Math.max(0, LOADER_MS - (performance.now() - startedAt.current)));
+  }, []);
 
-  useEffect(() => setPending(false), [path]);
+  useEffect(() => done(), [path, done]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -25,6 +39,8 @@ export function NavShell({ children }: { children: React.ReactNode }) {
       if (to.origin !== location.origin || to.pathname.startsWith("/api/")) return;
       // Same page (or just a #section on it): nothing to load.
       if (to.pathname === location.pathname && to.search === location.search) return;
+      clearTimeout(timer.current);
+      startedAt.current = performance.now();
       setPending(true);
       window.scrollTo({ top: 0 });
     };
