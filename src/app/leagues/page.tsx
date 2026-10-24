@@ -4,6 +4,7 @@ import { PresetPicker } from "@/components/PresetPicker";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
+import { scoringLabel } from "@/lib/scoring";
 import { ActionForm } from "@/components/ActionForm";
 import { joinLeague } from "../actions";
 import { PageHeader } from "@/components/PageHeader";
@@ -53,7 +54,7 @@ export default async function LeaguesPage() {
               <TeamBadge brand={leagueBrand(l)} size={40} />
               <div className="min-w-0">
                 <p className="font-bold">{l.name}</p>
-                <p className="text-sm text-zinc-500">Commish {l.commish} · {l.humans}/{l.max_teams} managers · {l.scoring === "dk" ? "DK scoring" : "ESPN scoring"}</p>
+                <p className="text-sm text-zinc-500">LM {l.commish} · {l.humans}/{l.max_teams} managers · {scoringLabel(l.scoring)}</p>
               </div>
               </div>
               <ActionForm action={joinLeague} submit="Join" className="flex gap-2" submitClass="btn-primary">
@@ -66,7 +67,7 @@ export default async function LeaguesPage() {
       </div>
       <aside className="card h-fit p-5">
         <h2 className="mb-1 font-bold">Join with invite code</h2>
-        <p className="mb-4 text-sm text-zinc-500">Your commish can find it on the league page.</p>
+        <p className="mb-4 text-sm text-zinc-500">Your League Manager can find it on the league page.</p>
         <ActionForm action={joinLeague} submit="Join league">
           <div><label className="label">Invite code</label><input name="code" className="input uppercase" placeholder="A1B2C3" required /></div>
           <PresetPicker presets={presets} compact />

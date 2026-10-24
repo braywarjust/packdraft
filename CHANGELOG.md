@@ -3,6 +3,15 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
+## 3.4 — League Settings and League Manager (2026-10-24)
+
+- League Manager: whoever creates a league is its League Manager (LM), shown with an LM tag under Teams. The LM can change every league setting and can hand the job to another manager with "Make LM". "Commish" is now "League Manager" everywhere.
+- One Settings tab for everyone: every manager can read the league's settings, and only the LM can change them. Sections follow ESPN: Basic, Draft, Scoring, Acquisitions and waivers, Trades, Season and playoffs, Pack rewards.
+- Custom scoring: set points for PTS, 3PM, 3PA, FGM, FGA, FTM, FTA, REB, AST, STL, BLK, TO, double-doubles and triple-doubles, or start from ESPN Points or DraftKings Style. League chat says when the scoring changes. With custom points, Pack Points are still paid on ESPN points.
+- Acquisition limits: a cap on adds per matchup and per season (free agent adds and waiver claims count, trades don't). Players shows how many you've used.
+- Trade limit: a cap on trades per team per season, shown on Trades. The LM review period and trade deadline moved into the same Trades section.
+- Playoff teams can be set before the draft.
+
 ## 3.3 — My Team fits your phone (2026-10-22)
 
 - Lineup swaps stick: tap a player's slot, then a green slot to swap him there. Tapping a bench player's slot swaps him in for the starter you picked. A manual swap turns Auto Manager off, so it no longer undoes your move.

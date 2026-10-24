@@ -10,7 +10,7 @@ import {
   isLocked, executeTrade, startWeek, finalizeWeek, postSystem, processWaivers, ROUNDS, setBoost, clearBoost,
   startNewSeason, canStartNewSeason, acceptTrade, vetoTrade, tradesOpen,
 } from "@/lib/league";
-import { logActivity } from "@/lib/activity";
+import { acquisitionBlock, logActivity, tradeBlock } from "@/lib/activity";
 import { PACK_BY_ID } from "@/lib/packs";
 import { openPack, rerollSlab } from "@/lib/packs-server";
 import { proposeSlabTrade, respondSlabTrade } from "@/lib/slab-trades";
@@ -18,6 +18,7 @@ import { etDate } from "@/lib/nba/espn";
 import { placeBet } from "@/lib/bets";
 import { applyPreset, deletePreset, getPreset, saveLeagueBrand, savePreset, setFavoritePreset } from "@/lib/branding";
 import { ensureSchedule } from "@/lib/nba/sync";
+import { PRESET_IDS, STATS, WEIGHT_MAX, WEIGHT_MIN, encodeWeights, scoringBlurb, scoringLabel, type Weights } from "@/lib/scoring";
 
 type Result = { error?: string; ok?: boolean };
 const wrap = async <T,>(fn: () => Promise<T> | T): Promise<T | { error: string }> => {
@@ -85,7 +86,7 @@ export async function createLeague(_: Result | undefined, form: FormData): Promi
     const r = run(
       `INSERT INTO leagues (name, commissioner_id, is_public, max_teams, scoring, mode, season_weeks, waiver_type, faab_budget, keeper_count, pick_seconds, sim_minutes, invite_code, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      name, u.id, form.get("is_public") ? 1 : 0, maxTeams, String(form.get("scoring") ?? "espn"), form.get("mode") === "sim" ? "sim" : "real",
+      name, u.id, form.get("is_public") ? 1 : 0, maxTeams, PRESET_IDS.includes(String(form.get("scoring"))) ? String(form.get("scoring")) : "espn", form.get("mode") === "sim" ? "sim" : "real",
       Math.min(24, Math.max(1, Number(form.get("season_weeks") ?? 20))), String(form.get("waiver_type") ?? "faab"),
       faab, Number(form.get("keeper_count") ?? 0), Number(form.get("pick_seconds") ?? 60), Number(form.get("sim_minutes") ?? 5), code(), Date.now(),
     );
@@ -135,7 +136,7 @@ export async function joinLeague(_: Result | undefined, form: FormData): Promise
 async function commish(leagueId: number) {
   const u = await requireUser();
   const l = getLeague(leagueId);
-  if (!l || l.commissioner_id !== u.id) throw new Error("Commissioner only");
+  if (!l || l.commissioner_id !== u.id) throw new Error("League Manager only");
   return { u, l };
 }
 
@@ -170,21 +171,50 @@ export async function updateSettings(leagueId: number, form: FormData) {
   return wrap(async () => {
     const { l } = await commish(leagueId);
     const pre = l.draft_status === "pre";
-    const num = (k: string, d: number) => (form.get(k) != null ? Number(form.get(k)) : d);
+    const num = (k: string, d: number) => (form.get(k) != null && form.get(k) !== "" ? Number(form.get(k)) : d);
+    // Blank or "none" means no limit.
+    const limit = (k: string, d: number | null | undefined) => {
+      if (form.get(k) == null) return d ?? null;
+      const v = String(form.get(k)).trim();
+      return v === "" || v === "none" ? null : Math.max(0, Math.min(99, Math.round(Number(v) || 0)));
+    };
+    const weights: Weights = {};
+    for (const [k] of STATS) {
+      const v = Number(form.get(`w_${k}`));
+      if (Number.isFinite(v) && v) weights[k] = Math.max(WEIGHT_MIN, Math.min(WEIGHT_MAX, Math.round(v * 100) / 100));
+    }
+    const scoring = STATS.some(([k]) => form.get(`w_${k}`) != null) ? encodeWeights(weights) : l.scoring;
+    if (scoring === "c:") throw new Error("Give at least one stat some points");
     run(
       `UPDATE leagues SET name = ?, is_public = ?, scoring = ?, mode = ?, waiver_type = ?, pick_seconds = ?, sim_minutes = ?,
-       reward_win = ?, reward_loss = ?, reward_top = ?, keeper_count = ?, faab_budget = ?, season_weeks = ?,
-       trade_review_hours = ?, trade_deadline_week = ? WHERE id = ?`,
-      String(form.get("name") || l.name).slice(0, 40), form.get("is_public") ? 1 : 0, String(form.get("scoring") || l.scoring),
+       reward_win = ?, reward_loss = ?, reward_top = ?, keeper_count = ?, faab_budget = ?, season_weeks = ?, playoff_teams = ?,
+       trade_review_hours = ?, trade_deadline_week = ?, trade_limit = ?, acq_per_week = ?, acq_per_season = ? WHERE id = ?`,
+      String(form.get("name") || l.name).slice(0, 40), form.get("is_public") ? 1 : 0, scoring,
       pre && form.get("mode") ? (form.get("mode") === "sim" ? "sim" : "real") : l.mode,
-      String(form.get("waiver_type") || l.waiver_type), num("pick_seconds", l.pick_seconds), Math.max(0.5, num("sim_minutes", l.sim_minutes)),
+      String(form.get("waiver_type") || l.waiver_type), Math.max(10, num("pick_seconds", l.pick_seconds)), Math.max(0.5, num("sim_minutes", l.sim_minutes)),
       String(form.get("reward_win") || l.reward_win), String(form.get("reward_loss") || l.reward_loss), String(form.get("reward_top") || l.reward_top),
       pre ? num("keeper_count", l.keeper_count) : l.keeper_count, pre ? num("faab_budget", l.faab_budget) : l.faab_budget,
       pre ? Math.min(24, Math.max(1, num("season_weeks", l.season_weeks))) : l.season_weeks,
+      pre ? Math.min(l.max_teams, Math.max(2, num("playoff_teams", l.playoff_teams ?? 4))) : l.playoff_teams ?? 4,
       Math.min(72, Math.max(0, num("trade_review_hours", l.trade_review_hours ?? 0))),
-      form.get("trade_deadline_week") != null ? Number(form.get("trade_deadline_week")) || null : l.trade_deadline_week ?? null, l.id,
+      form.get("trade_deadline_week") != null ? Number(form.get("trade_deadline_week")) || null : l.trade_deadline_week ?? null,
+      limit("trade_limit", l.trade_limit), limit("acq_per_week", l.acq_per_week), limit("acq_per_season", l.acq_per_season), l.id,
     );
     if (pre) run("UPDATE teams SET faab = ? WHERE league_id = ?", num("faab_budget", l.faab_budget), l.id);
+    if (scoring !== l.scoring) postSystem(l.id, `The League Manager changed the scoring to ${scoringLabel(scoring)}: ${scoringBlurb(scoring)}.`);
+    revalidatePath(`/league/${leagueId}`, "layout");
+    return { ok: true };
+  });
+}
+
+/** LM: hand the League Manager role to another manager in the league. */
+export async function transferManager(leagueId: number, userId: number) {
+  return wrap(async () => {
+    const { u, l } = await commish(leagueId);
+    const t = one<Team & { user: string }>("SELECT t.*, u.name user FROM teams t JOIN users u ON u.id = t.user_id WHERE t.league_id = ? AND t.user_id = ? AND t.is_cpu = 0", l.id, userId);
+    if (!t || userId === u.id) throw new Error("Pick another manager in this league");
+    run("UPDATE leagues SET commissioner_id = ? WHERE id = ?", userId, l.id);
+    postSystem(l.id, `${u.name} made ${t.user} (${t.name}) the League Manager.`);
     revalidatePath(`/league/${leagueId}`, "layout");
     return { ok: true };
   });
@@ -326,6 +356,8 @@ export async function addPlayer(leagueId: number, addId: number, dropId: number 
     if (one("SELECT 1 FROM roster WHERE league_id = ? AND player_id = ?", leagueId, addId)) throw new Error("Already rostered");
     const size = roster(t.id).length - (dropId ? 1 : 0);
     if (size >= ROSTER_MAX) throw new Error("Roster full: pick someone to drop");
+    const blocked = acquisitionBlock(l, t.id);
+    if (blocked) throw new Error(blocked);
     if (l.waiver_type === "faab") {
       if (bid < 0 || bid > t.faab) throw new Error(`Bid must be between $0 and $${t.faab}`);
       run("INSERT INTO waiver_claims (league_id, team_id, add_player_id, drop_player_id, bid, created_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -373,6 +405,8 @@ export async function proposeTrade(leagueId: number, toTeamId: number, give: num
     if (!give.length && !get.length) throw new Error("Add players to the trade");
     const to = one<Team>("SELECT * FROM teams WHERE id = ? AND league_id = ?", toTeamId, leagueId);
     if (!to || to.id === t.id) throw new Error("Pick a trade partner");
+    const limited = tradeBlock(l, t.id) ?? tradeBlock(l, to.id, to.name);
+    if (limited) throw new Error(limited);
     const r = run("INSERT INTO trades (league_id, from_team_id, to_team_id, give, get, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
       leagueId, t.id, to.id, JSON.stringify(give), JSON.stringify(get), note.slice(0, 280), Date.now());
     const id = Number(r.lastInsertRowid);
@@ -382,7 +416,7 @@ export async function proposeTrade(leagueId: number, toTeamId: number, give: num
       if (val(give) >= val(get) * 1.05) {
         const r = acceptTrade(id);
         revalidatePath(`/league/${leagueId}`, "layout");
-        return { ok: true, message: r === "review" ? `${to.name} accepted! It's in commish review now.` : `${to.name} accepted!` };
+        return { ok: true, message: r === "review" ? `${to.name} accepted! It's in League Manager review now.` : `${to.name} accepted!` };
       }
       run("UPDATE trades SET status = 'rejected' WHERE id = ?", id);
       return { ok: true, message: `${to.name} rejected it. The algorithm says sweeten the deal.` };
@@ -412,7 +446,7 @@ export async function respondTrade(leagueId: number, tradeId: number, accept: bo
   });
 }
 
-/** Commish: veto a trade in review, or push it through now. */
+/** LM: veto a trade in review, or push it through now. */
 export async function reviewTrade(leagueId: number, tradeId: number, approve: boolean) {
   return wrap(async () => {
     await commish(leagueId);
@@ -436,7 +470,7 @@ export async function startWeekAction(leagueId: number) {
   });
 }
 
-/** Commish: close out the finished season and reset the league for the next draft. */
+/** LM: close out the finished season and reset the league for the next draft. */
 export async function newSeasonAction(leagueId: number) {
   return wrap(async () => {
     const { l } = await commish(leagueId);
@@ -626,7 +660,7 @@ export async function favoritePresetAction(presetId: number | null) {
   });
 }
 
-/** Commish: rename and re-brand the league (logo, colours, short name) any time. */
+/** LM: rename and re-brand the league (logo, colours, short name) any time. */
 export async function updateLeagueBrandAction(leagueId: number, b: { name: string; abbr: string; color: string; alt_color: string; logo_url: string | null }) {
   return wrap(async () => {
     await commish(leagueId);

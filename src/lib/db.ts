@@ -165,6 +165,12 @@ function open(): DatabaseSync {
   if (!leagueCols.includes("trade_deadline_week")) db.exec("ALTER TABLE leagues ADD COLUMN trade_deadline_week INTEGER");
   const tradeCols = (db.prepare("PRAGMA table_info(trades)").all() as { name: string }[]).map((c) => c.name);
   if (!tradeCols.includes("review_until")) db.exec("ALTER TABLE trades ADD COLUMN review_until INTEGER");
+  // League settings (Update 3.4): acquisition and trade limits (null = no limit), and the matchup week each move was made in.
+  if (!leagueCols.includes("acq_per_week")) db.exec("ALTER TABLE leagues ADD COLUMN acq_per_week INTEGER");
+  if (!leagueCols.includes("acq_per_season")) db.exec("ALTER TABLE leagues ADD COLUMN acq_per_season INTEGER");
+  if (!leagueCols.includes("trade_limit")) db.exec("ALTER TABLE leagues ADD COLUMN trade_limit INTEGER");
+  const actCols = (db.prepare("PRAGMA table_info(league_activity)").all() as { name: string }[]).map((c) => c.name);
+  if (!actCols.includes("week")) db.exec("ALTER TABLE league_activity ADD COLUMN week INTEGER");
   if (fresh) carryOverUsers(db);
   db.prepare("UPDATE users SET coins = ? WHERE is_tester = 1 AND coins < ?").run(TESTER_COINS, TESTER_FLOOR);
   db.exec("COMMIT");
@@ -265,6 +271,11 @@ export type League = {
   trade_review_hours?: number;
   /** Last week trades can be made (null = no deadline). */
   trade_deadline_week?: number | null;
+  /** Players each team can add (free agents and waiver claims) per matchup and per season; null = no limit. */
+  acq_per_week?: number | null;
+  acq_per_season?: number | null;
+  /** Trades each team can make per season; null = no limit. */
+  trade_limit?: number | null;
   // Branding (added by branding.ts ensureBranding)
   color?: string | null; alt_color?: string | null; abbr?: string | null; logo_url?: string | null;
 };

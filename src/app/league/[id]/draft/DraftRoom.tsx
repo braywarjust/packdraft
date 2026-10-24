@@ -61,7 +61,7 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
         <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
           <div>
             <p className="text-lg font-bold">The draft hasn&apos;t started.</p>
-            <p className="text-sm text-zinc-500">Snake draft, {s.rounds} rounds. Order is randomized when the commish starts it. {s.keepers.length > 0 && `${s.keepers.length} keepers are locked in.`}</p>
+            <p className="text-sm text-zinc-500">Snake draft, {s.rounds} rounds. Order is randomized when the League Manager starts it. {s.keepers.length > 0 && `${s.keepers.length} keepers are locked in.`}</p>
           </div>
           <div className="flex gap-2">
             <Link href="/mock-draft" className="btn-ghost">Warm up with a mock draft</Link>
