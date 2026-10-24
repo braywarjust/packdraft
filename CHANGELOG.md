@@ -3,7 +3,7 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
-## 3.4 — League Settings and League Manager (unreleased)
+## 3.4 — League Settings and League Manager (2026-10-24)
 
 - League Manager: whoever creates a league is its League Manager (LM), shown with an LM tag under Teams. The LM can change every league setting and can hand the job to another manager with "Make LM". "Commish" is now "League Manager" everywhere.
 - One Settings tab for everyone: every manager can read the league's settings, and only the LM can change them. Sections follow ESPN: Basic, Draft, Scoring, Acquisitions and waivers, Trades, Season and playoffs, Pack rewards.
