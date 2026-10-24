@@ -57,7 +57,7 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
         <div>
           <h2 className="text-2xl font-black">{playoffs ? weekName(l, week) : `Week ${week} matchups`}</h2>
           <p className="text-sm text-zinc-500">
-            {l.mode === "sim" ? (current ? (l.week_started_at ? "Simulated week in progress." : "Simulated week: the commish tips it off.") : "Final scores.")
+            {l.mode === "sim" ? (current ? (l.week_started_at ? "Simulated week in progress." : "Simulated week: the League Manager tips it off.") : "Final scores.")
               : (() => { const [s, e] = weekRange(l, week); return `${dayLabel(s)} – ${dayLabel(e)}${current ? " · scores update live during games" : future ? " · upcoming" : " · final"}`; })()}
           </p>
         </div>

@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { all, one, Player } from "@/lib/db";
 import { getLeague, leagueTeams, processTradeReviews, roster, tradesOpen, userTeam, weekName } from "@/lib/league";
+import { tradeCount } from "@/lib/activity";
 import { ActionButton } from "@/components/ActionButton";
 import { TradeBuilder } from "./TradeBuilder";
 import { proposeTrade, respondTrade, reviewTrade } from "../../../actions";
@@ -8,7 +9,7 @@ import { proposeTrade, respondTrade, reviewTrade } from "../../../actions";
 type Trade = { id: number; from_team_id: number; to_team_id: number; give: string; get: string; note: string | null; status: string; created_at: number; review_until: number | null };
 
 const STATUS: Record<string, [string, string]> = {
-  accepted: ["accepted", "text-emerald-600"], pending: ["pending", "text-amber-600"], review: ["in commish review", "text-amber-600"],
+  accepted: ["accepted", "text-emerald-600"], pending: ["pending", "text-amber-600"], review: ["in LM review", "text-amber-600"],
   vetoed: ["vetoed", "text-red-600"], voided: ["voided", "text-red-600"],
 };
 
@@ -41,8 +42,9 @@ export default async function Trades({ params, searchParams }: { params: Promise
             propose={proposeTrade.bind(null, l.id)}
           />
           <p className="mt-3 text-xs text-zinc-500">
-            {(l.trade_review_hours ?? 0) > 0 ? `Accepted trades wait ${l.trade_review_hours} hours for the commish to review before they go through.` : "Accepted trades go through right away."}
+            {(l.trade_review_hours ?? 0) > 0 ? `Accepted trades wait ${l.trade_review_hours} hours for the League Manager to review before they go through.` : "Accepted trades go through right away."}
             {l.trade_deadline_week ? ` Trade deadline: end of ${weekName(l, l.trade_deadline_week)}.` : ""}
+            {l.trade_limit != null ? ` Trade limit: ${l.trade_limit} per team this season (you've made ${tradeCount(l, me.id)}).` : ""}
           </p>
           </>
         ) : (

@@ -1,12 +1,12 @@
 import { all, one, run, tx, League, Team, Player, Matchup, Game } from "./db";
 import { leagueSeed, rng, simSchedule, gameProgress, simGame, partial, simClock } from "./sim";
-import { STARTERS, ROSTER_MAX, eligible, statLine, Line, slotLabel, posLabel } from "./scoring";
+import { STARTERS, ROSTER_MAX, eligible, statLine, Line, slotLabel, posLabel, fpts, PRESET_IDS } from "./scoring";
 import { addDays, etDate, weekday, dayLabel } from "./nba/espn";
 import { season as nbaSeason, seasonLabel } from "./nba/season";
 import { PACK_BY_ID } from "./packs";
 import { creditGame, weekRate } from "./economy";
 import { cardBuff, consumeEquip, ensureBoosts, slabbedFpts, teamBoosts } from "./boost";
-import { logActivity } from "./activity";
+import { acquisitionBlock, logActivity, tradeBlock } from "./activity";
 
 export { STARTERS, ROSTER_MAX, eligible };
 /** A player's fantasy positions ("PG,SG"), falling back to his G/F/C. */
@@ -31,7 +31,17 @@ export function awardPack(userId: number, packType: string, source: string, leag
   run("INSERT INTO user_packs (user_id, pack_type, source, league_id, created_at) VALUES (?, ?, ?, ?, ?)", userId, packType, source, leagueId, Date.now());
 }
 
-export const projFor = (p: { proj: number; proj_dk: number }, scoring: string) => (scoring === "dk" ? p.proj_dk : p.proj);
+/** Projected fantasy points per game: stored for the presets, worked out from season averages for custom scoring. */
+export function projFor(p: { proj: number; proj_dk: number; avg?: string | null }, scoring: string) {
+  if (scoring === "espn") return p.proj;
+  if (scoring === "dk") return p.proj_dk;
+  if (!p.avg) return p.proj;
+  const key = `${scoring}|${p.avg}`;
+  let v = customProj.get(key);
+  if (v == null) customProj.set(key, (v = Math.round(fpts(JSON.parse(p.avg) as Line, scoring) * 10) / 10));
+  return v;
+}
+const customProj = new Map<string, number>();
 const isOut = (p: { injury: string | null }) => !!p.injury && /^out/i.test(p.injury);
 
 // ---------- Weeks ----------
@@ -292,9 +302,11 @@ export function teamWeek(l: League, teamId: number, week: number) {
   const rate = weekRate(l.id, week);
   const owner = one<{ user_id: number | null }>("SELECT user_id FROM teams WHERE id = ?", teamId)?.user_id ?? null;
   const boosts = teamBoosts(teamId);
-  const gamePts = (playerId: number, g: PGame) => slabbedFpts(g.line!, l.scoring, boosts.get(`${playerId}|${g.key}`), g.final);
-  const pay = (playerId: number, key: string, raw: number) => {
-    if (active && owner) creditGame({ leagueId: l.id, week, teamId, userId: owner, playerId, gameKey: key, fpts: raw, rate });
+  const gamePts = (playerId: number, g: PGame, scoring = l.scoring) => slabbedFpts(g.line!, scoring, boosts.get(`${playerId}|${g.key}`), g.final);
+  // Custom scoring decides matchups only: Pack Points are paid on ESPN points so a league can't inflate them.
+  const payScoring = PRESET_IDS.includes(l.scoring) ? l.scoring : "espn";
+  const pay = (playerId: number, g: PGame, raw: number) => {
+    if (active && owner) creditGame({ leagueId: l.id, week, teamId, userId: owner, playerId, gameKey: g.key, fpts: payScoring === l.scoring ? raw : gamePts(playerId, g, payScoring), rate });
   };
   const frozen = new Map(
     all<{ date_et: string; player_id: number; slot: string }>("SELECT * FROM daily_slots WHERE team_id = ?", teamId).map((r) => [`${r.player_id}|${r.date_et}`, r.slot]),
@@ -315,7 +327,7 @@ export function teamWeek(l: League, teamId: number, week: number) {
       if (g.line && frozen.get(k) && frozen.get(k) !== "BN") {
         const raw = gamePts(p.id, g);
         pts += raw;
-        if (g.final) pay(p.id, g.key, raw);
+        if (g.final) pay(p.id, g, raw);
       }
     }
     const proj = projFor(p, l.scoring);
@@ -349,7 +361,7 @@ export function teamWeek(l: League, teamId: number, week: number) {
     if (g?.line) {
       const raw = gamePts(pid, g);
       ghost += raw;
-      if (g.final) pay(pid, key, raw);
+      if (g.final) pay(pid, g, raw);
     }
   }
   const order = (s: string) => (s === "BN" ? 99 : STARTERS.indexOf(s as (typeof STARTERS)[number]));
@@ -603,7 +615,7 @@ export function finishDraft(leagueId: number) {
   for (const t of teams) autoLineup(l, t.id);
   for (const [w, h, a] of schedule(teams.map((t) => t.id), l.season_weeks))
     run("INSERT INTO matchups (league_id, week, home_team_id, away_team_id) VALUES (?, ?, ?, ?)", leagueId, w, h, a);
-  if (l.mode === "sim") postSystem(leagueId, "Draft complete! Set your lineups; the commish kicks off each simulated week.");
+  if (l.mode === "sim") postSystem(leagueId, "Draft complete! Set your lineups; the League Manager kicks off each simulated week.");
   else {
     const [s, e] = weekRange(l, 1);
     postSystem(leagueId, `Draft complete! Week 1 runs ${dayLabel(s)} – ${dayLabel(e)} with real NBA games. Set your lineup daily; players lock at tip-off.`);
@@ -710,7 +722,7 @@ export function processWaivers(leagueId: number) {
       const taken = one("SELECT 1 FROM roster WHERE league_id = ? AND player_id = ?", leagueId, c.add_player_id);
       const dropOk = !c.drop_player_id || one("SELECT 1 FROM roster WHERE team_id = ? AND player_id = ?", c.team_id, c.drop_player_id);
       const size = roster(c.team_id).length - (c.drop_player_id ? 1 : 0);
-      if (taken || !dropOk || team.faab < c.bid || size >= ROSTER_MAX) {
+      if (taken || !dropOk || team.faab < c.bid || size >= ROSTER_MAX || acquisitionBlock(getLeague(leagueId)!, c.team_id)) {
         run("UPDATE waiver_claims SET status = 'failed' WHERE id = ?", c.id);
         return;
       }
@@ -760,7 +772,7 @@ export function acceptTrade(tradeId: number): "review" | "done" {
   checkTrade(t);
   run("UPDATE trades SET status = 'review', review_until = ? WHERE id = ?", Date.now() + hours * 3600_000, tradeId);
   const name = (id: number) => one<Team>("SELECT name FROM teams WHERE id = ?", id)!.name;
-  postSystem(t.league_id, `${name(t.to_team_id)} accepted ${name(t.from_team_id)}'s trade. It goes through in ${hours} hours unless the commish vetoes it.`);
+  postSystem(t.league_id, `${name(t.to_team_id)} accepted ${name(t.from_team_id)}'s trade. It goes through in ${hours} hours unless the League Manager vetoes it.`);
   return "review";
 }
 
@@ -784,11 +796,16 @@ export function vetoTrade(tradeId: number) {
     run("UPDATE trades SET status = 'vetoed' WHERE id = ?", tradeId);
     logActivity(getLeague(t.league_id)!, t.from_team_id, "veto", { other: t.to_team_id, give: JSON.parse(t.give), get: JSON.parse(t.get) });
     const name = (id: number) => one<Team>("SELECT name FROM teams WHERE id = ?", id)!.name;
-    postSystem(t.league_id, `The commish vetoed the trade between ${name(t.from_team_id)} and ${name(t.to_team_id)}.`);
+    postSystem(t.league_id, `The League Manager vetoed the trade between ${name(t.from_team_id)} and ${name(t.to_team_id)}.`);
   });
 }
 
 function checkTrade(t: TradeRow) {
+  const l = getLeague(t.league_id)!;
+  for (const id of [t.from_team_id, t.to_team_id]) {
+    const limited = tradeBlock(l, id, one<Team>("SELECT name FROM teams WHERE id = ?", id)!.name);
+    if (limited) throw new Error(limited);
+  }
   const give: number[] = JSON.parse(t.give);
   const get: number[] = JSON.parse(t.get);
   for (const pid of give) if (!one("SELECT 1 FROM roster WHERE team_id = ? AND player_id = ?", t.from_team_id, pid)) throw new Error("A player in this trade has moved");
@@ -913,7 +930,7 @@ export function startNewSeason(l: League, year: number | null) {
     run(`UPDATE leagues SET season = ?, draft_status = 'pre', draft_order = NULL, pick_deadline = NULL, last_pick_at = NULL, current_week = 1,
          week_started_at = NULL, champion_team_id = NULL, start_date = NULL, long_weeks = NULL, playoff_seeds = NULL WHERE id = ?`, year, l.id);
     const label = year ? seasonLabel(year) : "the new season";
-    postSystem(l.id, `${champ ? `${champ.name} are the ${fresh.season ? seasonLabel(fresh.season) : "last"} champs. ` : ""}Welcome to ${label}! Rosters are cleared and records reset. The commish sets up the draft; your teams, logos and chat carry over.`);
+    postSystem(l.id, `${champ ? `${champ.name} are the ${fresh.season ? seasonLabel(fresh.season) : "last"} champs. ` : ""}Welcome to ${label}! Rosters are cleared and records reset. The League Manager sets up the draft; your teams, logos and chat carry over.`);
   });
 }
 

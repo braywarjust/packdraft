@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export function LeagueTabs({ id, isCommish, hasTeam, drafting }: { id: number; isCommish: boolean; hasTeam: boolean; drafting: boolean }) {
+export function LeagueTabs({ id, hasTeam, drafting }: { id: number; hasTeam: boolean; drafting: boolean }) {
   const path = usePathname() ?? "";
   const base = `/league/${id}`;
   // Light up the tapped tab right away; the page loader covers the wait for the page itself.
@@ -19,7 +19,7 @@ export function LeagueTabs({ id, isCommish, hasTeam, drafting }: { id: number; i
     { href: `${base}/trades`, label: "Trades" },
     { href: `${base}/draft`, label: drafting ? "Draft Room (live)" : "Draft" },
     { href: `${base}/chat`, label: "Chat" },
-    ...(isCommish ? [{ href: `${base}/settings`, label: "Commish" }] : []),
+    { href: `${base}/settings`, label: "Settings" },
   ];
   return (
     <nav className="flex gap-1 overflow-x-auto border-b border-line pb-2 scrollbar-thin">

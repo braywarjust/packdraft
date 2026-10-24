@@ -5,6 +5,7 @@ import { TeamLogo } from "@/components/TeamLogo";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
+import { acquisitions } from "@/lib/activity";
 import { getLeague, roster, userTeam, isLocked, playerGames, projFor } from "@/lib/league";
 import { Player } from "@/lib/db";
 import { Headshot, InjuryTag } from "@/components/Headshot";
@@ -137,7 +138,13 @@ export default async function Players({ params, searchParams }: { params: Promis
         {me && (
           <div className="card p-4">
             <h3 className="font-bold">My claims</h3>
-            {faab && <p className="mb-2 text-xs text-zinc-500">${me.faab} FAAB remaining</p>}
+            {faab && <p className="text-xs text-zinc-500">${me.faab} FAAB remaining</p>}
+            {(l.acq_per_week != null || l.acq_per_season != null) && (() => {
+              const n = acquisitions(l, me.id);
+              return <p className="text-xs text-zinc-500">
+                {[l.acq_per_week != null && `${n.week} of ${l.acq_per_week} adds this matchup`, l.acq_per_season != null && `${n.season} of ${l.acq_per_season} this season`].filter(Boolean).join(" · ")}
+              </p>;
+            })()}
             {claims.length === 0 && <p className="text-sm text-zinc-400">No claims yet.</p>}
             <ul className="space-y-2 text-sm">
               {claims.map((c) => (
@@ -154,7 +161,7 @@ export default async function Players({ params, searchParams }: { params: Promis
         )}
         {l.commissioner_id === u.id && faab && l.draft_status === "done" && (
           <div className="card p-4">
-            <p className="mb-2 text-sm text-zinc-700">Commish: process all pending claims right now.</p>
+            <p className="mb-2 text-sm text-zinc-700">League Manager: process all pending claims right now.</p>
             <ActionButton action={runWaivers.bind(null, l.id)}>Run waivers now</ActionButton>
           </div>
         )}

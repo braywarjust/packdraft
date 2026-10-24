@@ -34,7 +34,7 @@ export function ActivityFeed({ items, brands, myTeamId }: { items: ActivityItem[
       case "claim": return <>claimed {who(i.add!)} off waivers for <b className="text-white">${i.bid}</b>{i.drop && <>, dropped {who(i.drop)}</>}</>;
       case "drop": return <>dropped {who(i.drop!)}</>;
       case "trade": return <>traded {list(i.give)} to <b className="text-white">{name(i.otherId)}</b> for {list(i.get)}</>;
-      case "veto": return <>had a trade with <b className="text-white">{name(i.otherId)}</b> vetoed by the commish</>;
+      case "veto": return <>had a trade with <b className="text-white">{name(i.otherId)}</b> vetoed by the League Manager</>;
     }
   };
 

@@ -7,7 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { seasonLabel } from "@/lib/nba/season";
 import { beforeOpener, canView, getLeague, maybeFinalize, userTeam, weekName } from "@/lib/league";
 import { LeagueTabs } from "@/components/LeagueTabs";
-import { SCORING } from "@/lib/scoring";
+import { scoringLabel } from "@/lib/scoring";
 
 export default async function LeagueLayout({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,7 +29,7 @@ export default async function LeagueLayout({ children, params }: { children: Rea
               <TeamBadge brand={b} size={64} className="drop-shadow-xl max-sm:!h-12 max-sm:!w-12" />
               <div className="min-w-0 flex-1">
                 <p className="line-clamp-2 text-[10px] font-bold uppercase tracking-widest text-white/70 sm:text-[11px]">
-                  {b.abbr} · {l.season ? `${seasonLabel(l.season)} · ` : ""}{l.is_public ? "Public" : "Private"} league · {l.mode === "sim" ? "Simulated" : "Real NBA"} · {SCORING[l.scoring]?.label ?? l.scoring} · {l.champion_team_id ? "Offseason" : l.draft_status === "done" ? (l.current_week > l.season_weeks ? weekName(l, l.current_week) : `Week ${l.current_week} of ${l.season_weeks}`) : l.draft_status === "live" ? "Draft in progress" : "Pre-draft"}
+                  {b.abbr} · {l.season ? `${seasonLabel(l.season)} · ` : ""}{l.is_public ? "Public" : "Private"} league · {l.mode === "sim" ? "Simulated" : "Real NBA"} · {scoringLabel(l.scoring)} · {l.champion_team_id ? "Offseason" : l.draft_status === "done" ? (l.current_week > l.season_weeks ? weekName(l, l.current_week) : `Week ${l.current_week} of ${l.season_weeks}`) : l.draft_status === "live" ? "Draft in progress" : "Pre-draft"}
                 </p>
                 <h1 className="line-clamp-2 text-2xl font-black leading-tight text-white sm:truncate sm:text-3xl">{l.name}</h1>
               </div>
@@ -48,7 +48,7 @@ export default async function LeagueLayout({ children, params }: { children: Rea
           <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-black uppercase text-black">Preseason</span>
         </div>
       )}
-      <LeagueTabs id={l.id} isCommish={l.commissioner_id === u.id} hasTeam={!!team} drafting={l.draft_status === "live"} />
+      <LeagueTabs id={l.id} hasTeam={!!team} drafting={l.draft_status === "live"} />
       <PageShell>{children}</PageShell>
     </div>
   );

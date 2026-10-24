@@ -4,10 +4,40 @@ import { all, one, run, League, Player } from "./db";
 export type ActivityKind = "add" | "drop" | "claim" | "trade" | "veto";
 type Data = { add?: number; drop?: number | null; bid?: number; other?: number; give?: number[]; get?: number[] };
 
-export function logActivity(l: Pick<League, "id" | "season">, teamId: number, kind: ActivityKind, data: Data) {
-  run("INSERT INTO league_activity (league_id, season, team_id, kind, data, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    l.id, l.season ?? null, teamId, kind, JSON.stringify(data), Date.now());
+export function logActivity(l: Pick<League, "id" | "season" | "current_week">, teamId: number, kind: ActivityKind, data: Data) {
+  run("INSERT INTO league_activity (league_id, season, week, team_id, kind, data, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    l.id, l.season ?? null, l.current_week, teamId, kind, JSON.stringify(data), Date.now());
 }
+
+/** Players a team has added (free agents and waiver claims) this season and in this matchup week. Trades don't count, as on ESPN. */
+export function acquisitions(l: Pick<League, "id" | "season" | "current_week">, teamId: number) {
+  const r = one<{ season: number; week: number }>(
+    `SELECT COUNT(*) season, COALESCE(SUM(week = ?), 0) week FROM league_activity
+     WHERE league_id = ? AND season IS ? AND team_id = ? AND kind IN ('add', 'claim')`, l.current_week, l.id, l.season ?? null, teamId);
+  return { season: r?.season ?? 0, week: r?.week ?? 0 };
+}
+
+/** Why this team can't add another player right now, or null if it can. */
+export function acquisitionBlock(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "acq_per_season">, teamId: number): string | null {
+  const n = acquisitions(l, teamId);
+  const used = (max: number, when: string) => (max === 0 ? `This league allows no adds ${when}` : `You've hit the limit of ${max} add${max === 1 ? "" : "s"} ${when}`);
+  if (l.acq_per_week != null && n.week >= l.acq_per_week) return used(l.acq_per_week, "this matchup");
+  if (l.acq_per_season != null && n.season >= l.acq_per_season) return used(l.acq_per_season, "this season");
+  return null;
+}
+
+/** Why this team (named `who`, or "You") can't make another trade this season, or null if it can. */
+export function tradeBlock(l: Pick<League, "id" | "season" | "trade_limit">, teamId: number, who?: string): string | null {
+  if (l.trade_limit == null || tradeCount(l, teamId) < l.trade_limit) return null;
+  if (l.trade_limit === 0) return "This league allows no trades";
+  return `${who ? `${who} has` : "You've"} hit the limit of ${l.trade_limit} trade${l.trade_limit === 1 ? "" : "s"} this season`;
+}
+
+/** Trades a team has made this season (either side). */
+export const tradeCount = (l: Pick<League, "id" | "season">, teamId: number) =>
+  one<{ n: number }>(
+    `SELECT COUNT(*) n FROM league_activity WHERE league_id = ? AND season IS ? AND kind = 'trade'
+     AND (team_id = ? OR json_extract(data, '$.other') = ?)`, l.id, l.season ?? null, teamId, teamId)?.n ?? 0;
 
 type PlayerRef = { id: number; name: string; pos: string; team: string };
 export type ActivityItem = {
