@@ -3,7 +3,7 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
-## 4.0-R — Fantasy Coins and the League Shop
+## 4.0-R — Fantasy Coins and the League Shop (2026-10-25)
 
 - Pack Points are now **Fantasy Coins**, with a new blue coin icon. Your balance carries over. Every fantasy point your starters score still pays 0.5 coins when the game goes final.
 - Three currencies at the top right of every page: Fantasy Coins, Acquisitions and Trades (for the league you're in).
