@@ -93,9 +93,9 @@ export function RosterBoard({ days, rows: serverRows, totals, initialDay, editab
     const mine = !!r && selected === r.id;
     const movable = canEdit && !!r && !r.locked;
     // Big, quick pills: instant colour on press (no transition delay), a firm squeeze, no double-tap zoom wait on phones.
-    const cls = `hit inline-flex h-9 w-11 touch-manipulation select-none items-center justify-center rounded-full text-[11px] font-black ring-1 transition-transform duration-75 active:scale-90 sm:w-14 ${
+    const cls = `hit inline-flex h-7 w-10 touch-manipulation select-none items-center justify-center rounded-full text-[11px] font-black ring-1 transition-transform duration-75 active:scale-90 sm:w-12 ${
       target ? "bg-emerald-500 text-black ring-2 ring-emerald-300 shadow-[0_0_12px_rgba(16,185,129,.55)]"
-        : mine ? "scale-105 bg-[#fff] text-[#0b0f17] ring-2 ring-[#fff] shadow-[0_0_12px_rgba(255,255,255,.35)]"
+        : mine ? "bg-[#fff] text-[#0b0f17] ring-2 ring-[#fff] shadow-[0_0_12px_rgba(255,255,255,.35)]"
           : movable ? "text-white ring-white/40 hover:bg-white/10 active:bg-white/20" : "text-zinc-400 ring-line"}`;
     const style = !target && !mine && movable ? { boxShadow: `inset 0 0 0 1.5px ${brand.color}` } : undefined;
     if (target) return swapIn
