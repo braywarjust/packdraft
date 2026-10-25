@@ -44,7 +44,7 @@ export default async function Trades({ params, searchParams }: { params: Promise
           <p className="mt-3 text-xs text-zinc-500">
             {(l.trade_review_hours ?? 0) > 0 ? `Accepted trades wait ${l.trade_review_hours} hours for the League Manager to review before they go through.` : "Accepted trades go through right away."}
             {l.trade_deadline_week ? ` Trade deadline: end of ${weekName(l, l.trade_deadline_week)}.` : ""}
-            {l.trade_limit != null ? ` Free trades: ${l.trade_limit} per team this season (you've made ${tradeCount(l, me.id)}). After that each trade uses a Trade from the League Shop (you have ${me.trade_tokens ?? 0}).` : ""}
+            {l.trade_limit != null ? ` Each team gets ${l.trade_limit} Trade${l.trade_limit === 1 ? "" : "s"} per matchup (you've made ${tradeCount(l, me.id)} this matchup, and you have ${me.trade_tokens ?? 0} bought). Need more this matchup? Buy them in the League Shop.` : ""}
           </p>
           </>
         ) : (

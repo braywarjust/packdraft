@@ -1,7 +1,7 @@
 import { all } from "../db";
 import { addDays, etDate } from "./espn";
 import { backfillFinals, ensureSchedule, maybeSyncPlayers, refreshLive } from "./sync";
-import { dailyWaivers, getLeague, playoffInfo, rolloverLeagues, tickLeague, weekRange } from "../league";
+import { getLeague, playoffInfo, rolloverLeagues, tickLeague, weekRange } from "../league";
 import { settleBets } from "../bets";
 import { tickNews } from "../news";
 
@@ -25,7 +25,6 @@ export async function tick() {
         // Keep the rest of the season's schedule loaded too, so upcoming weeks on Matchups open instantly. A week's worth
         // of days per tick at most, so the first warm-up spreads over a few minutes instead of hammering ESPN.
         await ensureSchedule(addDays(to, 1), weekRange(l, playoffInfo(l).lastWeek)[1], { limit: 7 });
-        dailyWaivers(id);
       }
       tickLeague(id);
     }

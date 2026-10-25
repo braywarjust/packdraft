@@ -1,12 +1,13 @@
 import { CrownIcon } from "./Icons";
 import Link from "next/link";
-import { TeamBadge, type BrandLite } from "./TeamBadge";
+import { TeamBadge, LMBadge, type BrandLite } from "./TeamBadge";
 import { Fpts } from "@/components/Fpts";
 import { Headshot } from "./Headshot";
 
 export type TopPlayer = { id: number; name: string; headshot: string | null; pts: number };
 /** `top`: the side's best scorers this week (ESPN scoreboard's "Top Performers"), shown once the week has points. */
-export type MatchSide = { id: number; brand: BrandLite; record: string; score: number; proj: number; top?: TopPlayer[] };
+/** lm: this team belongs to the League Manager (shows the LM tag). */
+export type MatchSide = { id: number; brand: BrandLite; record: string; score: number; proj: number; top?: TopPlayer[]; lm?: boolean };
 
 /** A team's three best scorers so far this matchup. */
 export function topPerformers(players: { id: number; name: string; headshot: string | null; pts: number }[]): TopPlayer[] {
@@ -51,7 +52,7 @@ export function MatchupCard({ href, home, away, status, winProb, mine, big = fal
           <TeamBadge brand={s.brand} size={big ? 76 : 56} className="max-sm:!h-11 max-sm:!w-11" />
           <div className="min-w-0 max-w-full">
             <p className={`line-clamp-2 font-black leading-tight text-white sm:truncate ${big ? "text-sm sm:text-xl" : "text-sm sm:text-base"}`}>{s.brand.name}</p>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-white/60">{s.brand.abbr} · {s.record}</p>
+            <p className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-white/60 ${which === "away" ? "justify-end" : ""}`}>{s.lm && <LMBadge />}{s.brand.abbr} · {s.record}</p>
           </div>
         </div>
         <div className={`flex items-center gap-2 ${which === "away" ? "flex-row-reverse" : ""}`}>
@@ -128,6 +129,7 @@ export function MatchupStrip({ href, home, away, status, winProb, playing = true
         <p className={`mt-0.5 flex items-baseline gap-1.5 ${which === "away" ? "flex-row-reverse" : ""}`}>
           <span className="font-mono text-lg font-black leading-none text-white">{Math.round(val(s) * 10) / 10}</span>
           <span className="text-[9px] font-bold uppercase tracking-wider text-white/60">{status === "pre" ? "proj" : s.record}</span>
+          {s.lm && <LMBadge />}
         </p>
       </div>
     </div>

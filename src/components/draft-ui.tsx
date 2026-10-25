@@ -1,14 +1,14 @@
 "use client";
 
 import { ClockIcon, StarIcon } from "./Icons";
-import { TeamBadge, type BrandLite } from "./TeamBadge";
+import { TeamBadge, LMBadge, type BrandLite } from "./TeamBadge";
 import { TeamLogo } from "./TeamLogo";
 import { useMemo, useState } from "react";
 import { Headshot, InjuryTag } from "./Headshot";
 import { Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
 
-export type BoardTeam = { id: number; name: string; owner: string; color: string; cpu?: boolean; brand?: BrandLite };
+export type BoardTeam = { id: number; name: string; owner: string; color: string; cpu?: boolean; brand?: BrandLite; lm?: boolean };
 export type BoardPick = { overall: number; round: number; team_id: number; name: string; pos: string; team: string; is_keeper?: number };
 export type PoolPlayer = { id: number; name: string; pos: string; team: string; adp: number; proj: number; headshot?: string | null; injury?: string | null };
 
@@ -26,7 +26,7 @@ export function DraftBoard({ order, picks, rounds, currentOverall, myTeamId }: {
       <div className="grid min-w-[760px] gap-1" style={{ gridTemplateColumns: `repeat(${n}, minmax(92px, 1fr))` }}>
         {order.map((t) => (
           <div key={t.id} className={`truncate rounded-lg px-2 py-1.5 text-center text-xs font-bold ${t.id === myTeamId ? "bg-brand/20 text-brand" : "bg-panel2"}`}>
-            {t.brand ? <TeamBadge brand={t.brand} size={16} className="mr-1 -mt-0.5 align-middle" /> : <span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ background: t.color }} />}{t.name}
+            {t.brand ? <TeamBadge brand={t.brand} size={16} className="mr-1 -mt-0.5 align-middle" /> : <span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ background: t.color }} />}{t.name}{t.lm && <LMBadge className="ml-1" />}
           </div>
         ))}
         {Array.from({ length: rounds }).flatMap((_, r) =>

@@ -3,6 +3,27 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
+## 4.2 — My Team and instant pickups (2026-10-25)
+
+- **Acquisitions and Trades, every matchup.** Each league gives every team a set number of Acquisitions (adds) and Trades per matchup week, set by the League Manager. They reset every matchup. Need more during a matchup? Buy them in the League Shop; bought ones carry over until you use them. The per-season add limit is gone.
+- My Team on iPhone is a clean list instead of a table: each player's full name, who he plays and when (or the final score), his points, rebounds and assists, and his fantasy points with the Fantasy Points logo. Tap the points for the breakdown. Bigger screens keep the full box score.
+- My Team is more compact: the team banner (name, manager, record, standing, this week's points, roster, Acquisitions and Trades) now sits at the top of the roster card, right above Auto Manager.
+- My Team shows your **Acquisitions left** and **Trades left** for this matchup, including any you bought. They show as left out of this matchup's total, like 6/6, and bought ones add to both numbers (2 bought makes it 8/8). The League Shop shows them the same way. The top-right wallet now shows only your Fantasy Coins, since Acquisitions and Trades are per league. Tap either one to open the shop.
+- Lineup swaps on My Team happen instantly: tap a slot, tap where he goes, and the lineup changes right away while it saves in the background. The slot buttons are bigger and react the moment you press them. If a move can't go through, the lineup snaps back and says why.
+- Drop a player from his player card: tap his name, then Drop player. The Drop button is no longer on the lineup bar. Player news on the card starts collapsed to one line; tap it to read the headlines. The card's game log shows the last 5 games.
+- Every popup (player cards, points breakdowns, the phone bet slip) slides up from the bottom of the screen and fills it, leaving a strip at the top so you can still see the page behind. Tap that strip, the handle or Escape and it slides back down. Confirmations slide up the same way but only as tall as they need.
+- Tap a player's fantasy points on My Team to see how they add up: every stat he's recorded times what it's worth in your league, including any double-double or triple-double bonus. It keeps counting live during his game.
+- The Fantasy Coin is gold now, everywhere in the app.
+- League Settings uses the app's icons: Fantasy Points on Scoring, Acquisitions and Trades on their sections, and Fantasy Coins on the League Shop prices.
+- Waivers are gone. Every add is instant, and a player another team drops can be picked up by anyone straight away (if his game today has already tipped off, the next day). FAAB bidding and claims are removed.
+- With a full roster you have to pick a player to drop before you can add one, so an Acquisition is never used without room.
+- League tabs feel snappier: the blue highlight slides (with a little bounce) to the tab you tap the instant you tap it, tabs squeeze under your finger, and on phones the bar scrolls the picked tab into view.
+- The Matchups tab opens your matchup's detail page straight away. Other weeks, the playoff bracket and sim week controls are one tap away under All weeks.
+- Matchup pages switch instantly: the week's other matchups are loaded in the background, so tapping one of the small matchup buttons swaps the page right away with a quick slide-in. The buttons sit above the scoreboard, no longer get cut off, and light up and squeeze when you tap them.
+- The League Manager has an LM tag everywhere in the league: standings, matchup cards, team pages, chat and the draft room.
+- Playoff clinch tags (x, z, *, e) are gone from the standings.
+- Top performers on Home now shows the top 10 for the week. Scroll the list to see 6 to 10.
+
 ## 4.0-R — Fantasy Coins and the League Shop (2026-10-25)
 
 - Pack Points are now **Fantasy Coins**, with a new blue coin icon. Your balance carries over. Every fantasy point your starters score still pays 0.5 coins when the game goes final.

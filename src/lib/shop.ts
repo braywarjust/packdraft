@@ -1,6 +1,6 @@
 // League Shop (Update 4.0-R): each league sells two items for Fantasy Coins, at prices its League Manager sets.
-// - Acquisition: one add (free agent or waiver claim) past the league's free adds per matchup or season.
-// - Trade: one trade past the league's free trades per season (each side of a trade over its limit uses one).
+// - Acquisition: one player add past the league's Acquisitions per matchup.
+// - Trade: one trade past the league's Trades per matchup (each side of a trade over its limit uses one).
 // They belong to your team in that league and are used up automatically when you need them (activity.ts).
 import { one, run, topUpTester, tx, ACQ_PRICE, TRADE_PRICE, type League, type Team, type User } from "./db";
 import { postSystem } from "./league";
@@ -9,8 +9,8 @@ export type ShopItem = "acquisition" | "trade";
 export const MAX_QTY = 10;
 
 export const SHOP_ITEMS: Record<ShopItem, { name: string; plural: string; blurb: string; column: "acq_tokens" | "trade_tokens" }> = {
-  acquisition: { name: "Acquisition", plural: "Acquisitions", blurb: "One more player add after your free adds run out.", column: "acq_tokens" },
-  trade: { name: "Trade", plural: "Trades", blurb: "One more trade after your free trades run out.", column: "trade_tokens" },
+  acquisition: { name: "Acquisition", plural: "Acquisitions", blurb: "One more player add when you've used this matchup's Acquisitions.", column: "acq_tokens" },
+  trade: { name: "Trade", plural: "Trades", blurb: "One more trade when you've used this matchup's Trades.", column: "trade_tokens" },
 };
 
 export const shopPrice = (l: Pick<League, "acq_price" | "trade_price">, item: ShopItem) =>

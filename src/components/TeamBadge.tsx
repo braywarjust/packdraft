@@ -28,3 +28,10 @@ export function TeamName({ brand, size = 22, className = "", nameClass = "" }: {
     </span>
   );
 }
+
+/** "LM" tag for the League Manager's team or name (Update 4.2: shown everywhere in the league). */
+export function LMBadge({ className = "" }: { className?: string }) {
+  return (
+    <span title="League Manager" className={`inline-flex shrink-0 items-center rounded bg-[#0b0f17]/85 px-1 py-px align-middle text-[9px] font-black uppercase leading-tight tracking-wider text-[#fff] ring-1 ring-[#fff]/35 ${className}`}>LM</span>
+  );
+}

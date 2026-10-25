@@ -1,13 +1,13 @@
 import { LiveNumber } from "./LiveNumber";
 
-/** The Fantasy Coins icon, always in the Fantasy Points blue (pass a background class to tint it otherwise). */
+/** The Fantasy Coins icon, always in Fantasy Coins gold (pass a background class to tint it otherwise). */
 export function CoinIcon({ className = "" }: { className?: string }) {
   const mask = "url(/fantasy-coin.svg) center / contain no-repeat";
   return (
     <span
       aria-hidden
       className={`inline-block shrink-0 align-[-0.12em] ${className}`}
-      style={{ width: "1em", height: "1em", mask, WebkitMask: mask, background: "var(--coin-ink, var(--color-fpts))" }}
+      style={{ width: "1em", height: "1em", mask, WebkitMask: mask, background: "var(--coin-ink, var(--color-coin))" }}
     />
   );
 }

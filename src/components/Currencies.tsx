@@ -27,36 +27,36 @@ export function TradeIcon({ className = "" }: { className?: string }) {
 export const ACQ_COLOR = "text-emerald-400";
 export const TRADE_COLOR = "text-amber-400";
 
-export type WalletLeague = { id: number; acq: number; trades: number };
+/**
+ * One kind of move a team has: `free` left of the league's `cap` per matchup (null = no limit), plus `bought` from the
+ * League Shop. Shown as one count (Update 4.2), e.g. 6/6, with bought ones added to both sides: 2 bought makes it 8/8.
+ */
+export type MoveLeft = { free: number | null; cap: number | null; bought: number };
+
+/** "5/8" (left / this matchup's total), or ∞ when the league has no limit. */
+export function MoveCount({ m, className = "" }: { m: MoveLeft; className?: string }) {
+  if (m.free == null || m.cap == null) return <span className={`font-mono font-black ${className}`}>∞</span>;
+  return <span className={`font-mono font-black ${className}`}>{m.free + m.bought}<span className="opacity-50">/{m.cap + m.bought}</span></span>;
+}
 
 /**
- * The three currencies, top right on every page: Fantasy Coins (yours everywhere), and Acquisitions and Trades for
- * your team in the league you're looking at (or your newest league elsewhere). Tapping it opens that League Shop.
+ * Your Fantasy Coins, top right on every page. Acquisitions and Trades belong to one league each, so they live on
+ * My Team, Players and the League Shop instead (Update 4.2). Tapping it opens the League Shop of the league you're in,
+ * or the Sportsbook elsewhere.
  */
-export function Wallet({ coins: initial, leagues, compact }: { coins: number; leagues: WalletLeague[]; compact?: boolean }) {
+export function Wallet({ coins: initial, compact }: { coins: number; compact?: boolean }) {
   const coins = useLiveBalance(initial);
   const path = usePathname() ?? "";
   const here = Number(/^\/league\/(\d+)/.exec(path)?.[1]) || null;
-  const lg = leagues.find((l) => l.id === here) ?? leagues[0] ?? null;
-  const href = lg ? `/league/${lg.id}/shop` : "/leagues";
+  const href = here ? `/league/${here}/shop` : "/bets";
   const gap = compact ? "gap-1" : "gap-1.5";
   return (
-    <Link href={href} title="Fantasy Coins, Acquisitions and Trades · open the League Shop"
-      className={`pointer-events-auto inline-flex items-center rounded-full border border-line bg-panel/95 font-bold text-zinc-900 backdrop-blur transition hover:border-brand/60 ${compact ? "gap-2.5 px-3 py-1.5 text-xs" : "gap-4 px-4 py-2 text-sm shadow-lg shadow-black/20"}`}>
-      <span className={`inline-flex items-center ${gap}`} title="Fantasy Coins">
+    <Link href={href} title="Fantasy Coins"
+      className={`pointer-events-auto inline-flex items-center rounded-full border border-line bg-panel/95 font-bold text-zinc-900 backdrop-blur transition hover:border-brand/60 ${compact ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm shadow-lg shadow-black/20"}`}>
+      <span className={`inline-flex items-center ${gap}`}>
         <LiveNumber value={Math.round(coins)} kind="pp" icon={<CoinIcon />} className={gap} />
         {!compact && <span className="text-xs font-semibold text-zinc-500">Coins</span>}
       </span>
-      {lg && (
-        <>
-          <span className={`inline-flex items-center ${gap}`} title="Acquisitions (extra adds)">
-            <AcqIcon className={ACQ_COLOR} />{lg.acq}
-          </span>
-          <span className={`inline-flex items-center ${gap}`} title="Trades (extra trades)">
-            <TradeIcon className={TRADE_COLOR} />{lg.trades}
-          </span>
-        </>
-      )}
     </Link>
   );
 }

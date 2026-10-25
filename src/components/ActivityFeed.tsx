@@ -53,7 +53,7 @@ export function ActivityFeed({ items, brands, myTeamId }: { items: ActivityItem[
         </div>
       </div>
       {rows.length === 0 ? (
-        <p className="rounded-xl bg-ink/60 px-3 py-4 text-center text-sm text-zinc-500">No moves yet{team != null ? ` for ${name(team)}` : ""}. Adds, drops, waiver claims and trades show up here.</p>
+        <p className="rounded-xl bg-ink/60 px-3 py-4 text-center text-sm text-zinc-500">No moves yet{team != null ? ` for ${name(team)}` : ""}. Adds, drops and trades show up here.</p>
       ) : (
         <ul className="divide-y divide-line/60">
           {rows.map((i) => {

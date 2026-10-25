@@ -1,8 +1,10 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { LoadingLogo } from "./LoadingLogo";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { dropPlayer } from "@/app/actions";
+import { askConfirm } from "./Confirm";
 import type { PlayerInfo as BaseInfo } from "@/lib/player-info";
 import type { NewsItem } from "@/lib/news";
 import { newsAgo } from "@/lib/news-time";
@@ -13,7 +15,8 @@ import { TeamLogo } from "./TeamLogo";
 import { TeamBadge } from "./TeamBadge";
 import { Fpts } from "./Fpts";
 import { XIcon } from "./Icons";
-import { useScrollLock } from "@/components/useScrollLock";
+import { Popup, useClosePopup } from "./Popup";
+import { LoadingLogo } from "./LoadingLogo";
 
 /**
  * Player inspector popup. Mount <PlayerInspectorHost /> once (root layout), then call openPlayer(id, leagueId)
@@ -37,7 +40,7 @@ export function PlayerButton({ id, league, className = "", children }: { id: num
 const pct = (m: number, a: number) => (a ? `${Math.round((m / a) * 1000) / 10}%` : "-");
 const shortDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
 
-function Body({ d }: { d: PlayerInfo }) {
+function Body({ d, onClose }: { d: PlayerInfo; onClose: () => void }) {
   const p = d.player;
   const s = d.season?.line;
   return (
@@ -61,6 +64,7 @@ function Body({ d }: { d: PlayerInfo }) {
                 <span className="text-[10px] text-zinc-500">{d.owner.slot === "BN" ? "Bench" : d.owner.slot.replace(/\d$/, "")}</span>
               </span>
             ) : <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 font-semibold text-emerald-500 ring-1 ring-emerald-500/30">Free agent</span>)}
+            {d.league && d.owner?.mine && <DropButton leagueId={d.league.id} playerId={p.id} name={p.name} onDone={onClose} />}
           </div>
         </div>
       </div>
@@ -93,7 +97,7 @@ function Body({ d }: { d: PlayerInfo }) {
         )}
 
         <section>
-          <p className="label">Game log</p>
+          <p className="label">Game log · last 5</p>
           {d.log.length ? (
             <div className="overflow-x-auto rounded-xl ring-1 ring-white/5">
               <table className="w-full text-xs sm:min-w-[620px] sm:text-sm">
@@ -105,8 +109,8 @@ function Body({ d }: { d: PlayerInfo }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {d.log.map((g, gi) => (
-                    <tr key={g.id} className={`border-t border-line/50 ${gi >= 5 ? "max-sm:hidden" : ""}`}>
+                  {d.log.slice(0, 5).map((g) => (
+                    <tr key={g.id} className="border-t border-line/50">
                       <td className="whitespace-nowrap px-2 py-1 text-zinc-400 sm:px-3 sm:py-1.5">{shortDay(g.date)}{g.preseason && <span className="ml-1 text-[10px] text-zinc-500">PRE</span>}</td>
                       <td className="whitespace-nowrap"><span className="inline-flex items-center gap-1 text-zinc-300">{g.home ? "vs" : "@"} <TeamLogo team={g.opp} size={14} />{g.opp}</span></td>
                       <td className={`whitespace-nowrap font-semibold max-sm:hidden ${g.result.startsWith("W") ? "text-emerald-500" : g.result.startsWith("L") ? "text-red-500" : "text-zinc-400"}`}>{g.result}</td>
@@ -140,13 +144,46 @@ function Body({ d }: { d: PlayerInfo }) {
   );
 }
 
-/** ESPN news blurbs: the headline, with the analysis ("Spin") under it. Latest one open, older ones tap to expand. */
+/** Drop a player from your team, from his popup (Update 4.2: the Drop button moved here from the roster board). */
+function DropButton({ leagueId, playerId, name, onDone }: { leagueId: number; playerId: number; name: string; onDone: () => void }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [err, setErr] = useState("");
+  const go = async () => {
+    if (!(await askConfirm(`Drop ${name}?`, { confirmLabel: "Drop", danger: true }))) return;
+    start(async () => {
+      const r = (await dropPlayer(leagueId, playerId)) as { error?: string } | undefined;
+      if (r?.error) setErr(r.error);
+      else { onDone(); router.refresh(); }
+    });
+  };
+  return (
+    <>
+      <button type="button" onClick={go} disabled={pending} className="press touch-manipulation rounded-full bg-[#dc2626] px-3 py-0.5 text-xs font-bold text-[#fff] hover:bg-[#ef4444] disabled:opacity-50">
+        {pending ? "Dropping…" : "Drop player"}
+      </button>
+      {err && <span className="w-full text-xs text-red-500">{err}</span>}
+    </>
+  );
+}
+
+/**
+ * ESPN news blurbs, collapsed to one line by default: tap to show the headlines, and tap a headline for the analysis
+ * ("Spin") under it.
+ */
 function NewsList({ items }: { items: NewsItem[] }) {
+  const [shown, setShown] = useState(false);
   const [open, setOpen] = useState(items[0]?.id);
   return (
     <section>
-      <p className="label">Player news</p>
-      <ul className="space-y-1.5">
+      <button type="button" onClick={() => setShown(!shown)} aria-expanded={shown}
+        className="flex w-full items-center gap-2 rounded-xl bg-ink px-3 py-2 text-left ring-1 ring-white/5 hover:ring-white/15">
+        <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">Player news</span>
+        <span className="rounded-full bg-panel2 px-1.5 text-[10px] font-bold text-zinc-400">{items.length}</span>
+        {!shown && <span className="min-w-0 flex-1 truncate text-xs text-zinc-500">{newsAgo(items[0].published)} · {items[0].headline}</span>}
+        <span className={`ml-auto shrink-0 text-zinc-400 transition-transform ${shown ? "rotate-90" : ""}`}>›</span>
+      </button>
+      {shown && <ul className="mt-1.5 space-y-1.5">
         {items.map((n) => (
           <li key={n.id}>
             <button type="button" onClick={() => setOpen(open === n.id ? -1 : n.id)} className="w-full rounded-xl bg-ink px-3 py-2 text-left ring-1 ring-white/5 hover:ring-white/15">
@@ -156,7 +193,7 @@ function NewsList({ items }: { items: NewsItem[] }) {
             </button>
           </li>
         ))}
-      </ul>
+      </ul>}
     </section>
   );
 }
@@ -167,7 +204,6 @@ export function PlayerInspectorHost() {
   const [err, setErr] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
 
-  useScrollLock(!!req);
   useEffect(() => {
     push = (r) => { setNonce(0); setReq(r); };
     return () => { push = null; };
@@ -180,18 +216,20 @@ export function PlayerInspectorHost() {
     fetch(`/api/player/${req.id}${req.league ? `?league=${req.league}` : ""}`)
       .then(async (r) => { const j = await r.json(); if (stop) return; if (!r.ok) setErr(j.error ?? "Couldn't load player"); else setData(j); })
       .catch(() => !stop && setErr("Couldn't load player"));
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setReq(null);
-    window.addEventListener("keydown", onKey);
-    return () => { stop = true; window.removeEventListener("keydown", onKey); };
+    return () => { stop = true; };
   }, [req, nonce]);
 
   if (!req) return null;
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-2 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setReq(null)}>
-      <div className="relative my-2 w-full max-w-3xl sm:my-8 overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <button onClick={() => setReq(null)} aria-label="Close" className="hit press absolute right-1.5 top-1.5 z-10 sm:right-3 sm:top-3 rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
-        {data ? <Body d={data} /> : err ? <p className="p-10 text-center text-sm text-zinc-500">{err}</p> : <div className="grid place-items-center p-10"><LoadingLogo size={96} label="Loading player" /></div>}
-      </div>
-    </div>
+    <Popup key={req.id} onClose={() => setReq(null)} label="player" className="max-w-3xl" z="z-[60]">
+      <CloseX />
+      {data ? <Body d={data} onClose={() => setReq(null)} /> : err ? <p className="p-10 text-center text-sm text-zinc-500">{err}</p>
+        : <div className="grid place-items-center p-10"><LoadingLogo size={96} label="Loading player" /></div>}
+    </Popup>
   );
+}
+
+function CloseX() {
+  const close = useClosePopup();
+  return <button onClick={() => close()} aria-label="Close" className="hit press absolute right-1.5 top-1.5 z-10 rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white sm:right-3 sm:top-3"><XIcon /></button>;
 }

@@ -11,7 +11,8 @@ import { Coins, CoinIcon } from "@/components/Coins";
 import { TeamBadge } from "@/components/TeamBadge";
 import { TeamLogo } from "@/components/TeamLogo";
 import { MatchupStrip } from "@/components/MatchupCard";
-import { AcqIcon, ACQ_COLOR, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
+import { AcqIcon, ACQ_COLOR, MoveCount, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
+import { movesLeft } from "@/lib/activity";
 import { Headshot } from "@/components/Headshot";
 import { PlayerButton } from "@/components/PlayerInspector";
 import { Fpts } from "@/components/Fpts";
@@ -29,6 +30,7 @@ export default async function Home() {
   const today = etDate();
   // Acquisitions and Trades belong to a team, so the banner shows your newest league's.
   const home = myTeams[0] ?? null;
+  const homeMoves = home ? movesLeft(getLeague(home.league_id)!, home.id) : null;
   const bets = (() => {
     try {
       return one<{ n: number; stake: number; toWin: number }>(
@@ -57,7 +59,7 @@ export default async function Home() {
       const side = (tid: number, stored: number | null) => {
         const team = one<Team>("SELECT * FROM teams WHERE id = ?", tid)!;
         const w = tid === t.id ? tw : teamWeek(l, tid, l.current_week);
-        return { w, s: { id: tid, brand: teamBrand(team), record: `${team.wins}-${team.losses}${team.ties ? `-${team.ties}` : ""}`, score: m.final && stored != null ? stored : w.score, proj: w.score + w.remain } };
+        return { w, s: { id: tid, brand: teamBrand(team), record: `${team.wins}-${team.losses}${team.ties ? `-${team.ties}` : ""}`, score: m.final && stored != null ? stored : w.score, proj: w.score + w.remain, lm: team.user_id === l.commissioner_id } };
       };
       const h = side(m.home_team_id, m.home_score), a = side(m.away_team_id, m.away_score);
       const live = l.mode === "sim" ? !!l.week_started_at : h.w.score + a.w.score > 0;
@@ -70,7 +72,7 @@ export default async function Home() {
       .flatMap((x) => (x.id === t.id ? tw : teamWeek(l, x.id, l.current_week)).players.map((p) => ({ p, team: teamBrand(x), mine: x.id === t.id })))
       .filter((r) => r.p.pts > 0)
       .sort((a, b) => b.p.pts - a.p.pts)
-      .slice(0, 5);
+      .slice(0, 10);
     return { ...base, card, earned: earnings(l.id, user.id, l.current_week), top };
   });
 
@@ -98,9 +100,9 @@ export default async function Home() {
         </div>
         <div className="relative flex gap-px overflow-x-auto bg-black/20 text-white scrollbar-thin">
           {([
-            ["Fantasy Coins", <span key="c" style={{ "--coin-ink": "#fff" } as React.CSSProperties}><Coins n={user.coins} live /></span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
-            ["Acquisitions", <span key="a" className="inline-flex items-center gap-1"><AcqIcon className={ACQ_COLOR} />{home?.acq_tokens ?? 0}</span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
-            ["Trades", <span key="t" className="inline-flex items-center gap-1"><TradeIcon className={TRADE_COLOR} />{home?.trade_tokens ?? 0}</span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
+            ["Fantasy Coins", <Coins key="c" n={user.coins} live />, home ? `/league/${home.league_id}/shop` : "/leagues"],
+            ["Acquisitions", <span key="a" className="inline-flex items-center gap-1"><AcqIcon className={ACQ_COLOR} />{homeMoves ? <MoveCount m={homeMoves.adds} /> : 0}</span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
+            ["Trades", <span key="t" className="inline-flex items-center gap-1"><TradeIcon className={TRADE_COLOR} />{homeMoves ? <MoveCount m={homeMoves.trades} /> : 0}</span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
             ["Open bets", bets.n ? <span key="b">{bets.n}</span> : "0", "/bets"],
           ] as [string, React.ReactNode, string][]).map(([k, v, href]) => (
             <Link key={k} href={href} className="min-w-[5.5rem] flex-1 bg-black/25 px-3 py-1.5 backdrop-blur transition hover:bg-black/35">
@@ -145,7 +147,7 @@ export default async function Home() {
                     {rank ? ` · ${rank} of ${size}` : ""}
                   </span>
                 </Link>
-                {earned && <span className="flex items-center gap-1 text-xs text-zinc-500">Earned this week <span className="font-bold text-fpts"><Coins n={earned.week} live /></span></span>}
+                {earned && <span className="flex items-center gap-1 text-xs text-zinc-500">Earned this week <span className="font-bold text-coin"><Coins n={earned.week} live /></span></span>}
               </div>
               {card ? (
                 <MatchupStrip href={card.href} home={card.home} away={card.away} status={card.status} playing={card.playing} winProb={card.wp} />
@@ -168,7 +170,8 @@ export default async function Home() {
                     <h3 className="text-sm font-black uppercase tracking-widest text-zinc-400">Top performers · Week {l.current_week}</h3>
                     <Link href={`/league/${l.id}/matchups`} className="text-xs text-brand hover:underline">Matchups</Link>
                   </div>
-                  <ol className="space-y-1">
+                  {/* The top 10, about five rows tall (the sixth peeks out): scroll for the rest. */}
+                  <ol className="max-h-[17rem] space-y-1 overflow-y-auto overscroll-contain pr-1 scrollbar-thin">
                     {top.map(({ p, team, mine }, i) => (
                       <li key={p.id} className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 ${i === 0 ? "bg-amber-400/10 ring-1 ring-amber-400/30" : "bg-ink/40"}`}>
                         <span className={`w-4 text-center font-mono text-sm font-black ${i === 0 ? "text-amber-400" : "text-zinc-500"}`}>{i + 1}</span>

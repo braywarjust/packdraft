@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS matchups (
   id INTEGER PRIMARY KEY, league_id INTEGER NOT NULL, week INTEGER NOT NULL, home_team_id INTEGER NOT NULL,
   away_team_id INTEGER NOT NULL, home_score REAL, away_score REAL, final INTEGER NOT NULL DEFAULT 0
 );
+-- Waivers were removed in Update 4.2 (every add is instant); the table only keeps old claims.
 CREATE TABLE IF NOT EXISTS waiver_claims (
   id INTEGER PRIMARY KEY, league_id INTEGER NOT NULL, team_id INTEGER NOT NULL, add_player_id INTEGER NOT NULL,
   drop_player_id INTEGER, bid INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'pending', created_at INTEGER NOT NULL
@@ -286,10 +287,11 @@ export type League = {
   trade_review_hours?: number;
   /** Last week trades can be made (null = no deadline). */
   trade_deadline_week?: number | null;
-  /** Players each team can add (free agents and waiver claims) per matchup and per season; null = no limit. */
+  /** Free adds each team gets per matchup week; null = no limit. */
   acq_per_week?: number | null;
+  /** Unused since Update 4.2 (free adds are always weekly). */
   acq_per_season?: number | null;
-  /** Trades each team can make per season; null = no limit. */
+  /** Free trades each team gets per matchup week; null = no limit. */
   trade_limit?: number | null;
   /** League Shop prices in Fantasy Coins for one extra Acquisition and one extra Trade (Update 4.0-R). */
   acq_price?: number;

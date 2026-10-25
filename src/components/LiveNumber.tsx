@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
  */
 type Kind = "pp" | "fp";
 const COLORS: Record<Kind, { text: string; spark: string[] }> = {
-  pp: { text: "#38bdf8", spark: ["#38bdf8", "#7dd3fc", "#fde68a"] },
+  pp: { text: "#facc15", spark: ["#facc15", "#fde68a", "#fef3c7"] },
   fp: { text: "#ffffff", spark: ["#38bdf8", "#bae6fd", "#ffffff"] },
 };
 

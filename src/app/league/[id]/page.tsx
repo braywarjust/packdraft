@@ -1,7 +1,7 @@
 import { ForwardIcon, PlayIcon } from "@/components/Icons";
 import { MatchupCard, topPerformers } from "@/components/MatchupCard";
 import { ItemArt } from "@/components/ItemArt";
-import { TeamBadge, TeamName } from "@/components/TeamBadge";
+import { TeamBadge, LMBadge, TeamName } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand } from "@/lib/branding";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
@@ -36,7 +36,6 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
   const matchups = all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ?", l.id, l.current_week);
   const teamName = new Map(teams.map((t) => [t.id, t.name]));
   const full = l.draft_status === "done" ? fullStandings(l) : null;
-  const clinch = new Map(full?.map((r) => [r.team.id, r.clinch]) ?? []);
   const lastWeek = l.current_week > 1 ? all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ? AND final = 1", l.id, l.current_week - 1) : [];
 
   return (
@@ -118,7 +117,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                     <span className="relative"><TeamBadge brand={b} size={30} /></span>
                     <span className="relative min-w-0 flex-1">
                       <span className="block truncate text-sm font-bold text-white">{t.name}</span>
-                      <span className="block text-[10px] font-bold uppercase tracking-widest text-white/60">{b.abbr}{mine ? " · You" : ""}{clinch.get(t.id) && <span className="ml-1.5 rounded bg-black/40 px-1 font-mono normal-case tracking-normal text-amber-300">{clinch.get(t.id)}</span>}</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-widest text-white/60">{b.abbr}{mine ? " · You" : ""}{t.user_id === l.commissioner_id && <LMBadge className="ml-1.5" />}</span>
                     </span>
                     <span className="relative text-right">
                       <span className="block font-mono text-sm font-black text-white">{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""}</span>
@@ -133,7 +132,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
             const stats = l.mode === "sim" ? null : teamSeasonStats(l);
             return (
               <FullStandings leagueId={l.id} myTeamId={me?.id ?? null} playoffTeams={Math.min(l.playoff_teams ?? 4, teams.length)}
-                rows={full.map((r) => ({ id: r.team.id, brand: brand.get(r.team.id) ?? teamBrand(r.team), rank: r.rank, w: r.w, l: r.l, t: r.t, pct: r.pct, gb: r.gb, pf: r.pf, pa: r.pa, streak: r.streak, moves: r.moves, playoffPct: r.playoffPct, clinch: r.clinch }))}
+                rows={full.map((r) => ({ id: r.team.id, brand: brand.get(r.team.id) ?? teamBrand(r.team), rank: r.rank, w: r.w, l: r.l, t: r.t, pct: r.pct, gb: r.gb, pf: r.pf, pa: r.pa, streak: r.streak, moves: r.moves, playoffPct: r.playoffPct, lm: r.team.user_id === l.commissioner_id }))}
                 stats={stats && full.map((r) => {
                   const x = stats.get(r.team.id)!;
                   return { id: r.team.id, brand: brand.get(r.team.id) ?? teamBrand(r.team), fgm: x.fgm, fga: x.fga, ftm: x.ftm, fta: x.fta, tpm: x.tpm, reb: x.reb, ast: x.ast, stl: x.stl, blk: x.blk, to: x.to, pts: x.pts };
@@ -149,7 +148,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
           const sideOf = (tid: number, stored: number | null, final: number) => {
             const t = teams.find((x) => x.id === tid)!;
             const w = teamWeek(l, tid, l.current_week);
-            return { w, side: { id: tid, brand: brand.get(tid)!, record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`, score: final && stored != null ? stored : w.score, proj: w.score + w.remain, top: topPerformers(w.players) } };
+            return { w, side: { id: tid, brand: brand.get(tid)!, record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`, score: final && stored != null ? stored : w.score, proj: w.score + w.remain, top: topPerformers(w.players), lm: t.user_id === l.commissioner_id } };
           };
           const h = m && sideOf(m.home_team_id, m.home_score, m.final);
           const a = m && sideOf(m.away_team_id, m.away_score, m.final);
@@ -164,7 +163,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                   {isCommish && !l.champion_team_id && l.mode === "sim" && (!l.week_started_at
                     ? <ActionButton action={startWeekAction.bind(null, l.id)} className="btn-lime"><PlayIcon /> Kick off Week {l.current_week}</ActionButton>
                     : <ActionButton action={finishWeekNow.bind(null, l.id)} confirm="Skip to final scores?"><ForwardIcon /> Fast-forward to final</ActionButton>)}
-                  <Link href={`/league/${l.id}/matchups`} className="btn-ghost">All matchups →</Link>
+                  <Link href={`/league/${l.id}/matchups?week=${l.current_week}`} className="btn-ghost">All matchups →</Link>
                 </div>
               </div>
               {l.week_started_at && (
@@ -204,7 +203,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
         {(() => {
           const rate = weekRate();
           const mine = me && l.draft_status === "done" ? earnings(l.id, u.id, l.current_week) : null;
-          const items = [["acquisition", "Acquisition", "1 extra add", shopPrice(l, "acquisition"), me?.acq_tokens ?? 0], ["trade", "Trade", "1 extra trade", shopPrice(l, "trade"), me?.trade_tokens ?? 0]] as const;
+          const items = [["acquisition", "Acquisition", "1 more add", shopPrice(l, "acquisition"), me?.acq_tokens ?? 0], ["trade", "Trade", "1 more trade", shopPrice(l, "trade"), me?.trade_tokens ?? 0]] as const;
           return (
             <section className="relative overflow-hidden rounded-2xl border border-fpts/30 shadow-xl"
               style={{ background: "radial-gradient(120% 140% at 0% 0%, rgba(56,189,248,.2), transparent 55%), radial-gradient(120% 140% at 100% 100%, rgba(245,158,11,.16), transparent 55%), #1d2433" }}>
@@ -218,12 +217,12 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                   <PointsKey compact />
                   <div className="rounded-xl bg-fpts/10 p-3 ring-1 ring-fpts/30">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Fantasy Coins rate</p>
-                    <p className="flex items-center gap-2 whitespace-nowrap font-mono text-2xl font-black text-fpts"><FptIcon />1 = <CoinIcon />{rate.toFixed(2)}</p>
+                    <p className="flex items-center gap-2 whitespace-nowrap font-mono text-2xl font-black text-fpts"><FptIcon />1 = <span className="inline-flex items-center gap-2 text-coin"><CoinIcon />{rate.toFixed(2)}</span></p>
                     <p className="text-[10px] text-zinc-500">Fixed every week</p>
                   </div>
                   {mine && (
                     <div className="grid grid-cols-2 gap-2 text-center">
-                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">This week</p><p className="font-black text-fpts"><Coins n={mine.week} live /></p></div>
+                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">This week</p><p className="font-black text-coin"><Coins n={mine.week} live /></p></div>
                       <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">Season</p><p className="font-black text-white"><Coins n={mine.season} live /></p></div>
                     </div>
                   )}
@@ -231,7 +230,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 <div className="border-t border-white/10 bg-black/20 p-5 xl:border-l xl:border-t-0">
                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-500">League Shop</p>
                   <h2 className="text-2xl font-black tracking-tight text-white">Save up for big moves</h2>
-                  <p className="mt-1 text-sm text-zinc-500">Out of free adds or trades? Buy more with your coins.</p>
+                  <p className="mt-1 text-sm text-zinc-500">Out of Acquisitions or Trades this matchup? Buy more with your coins.</p>
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     {items.map(([k, name, sub, price, owned]) => (
                       <Link key={k} href={`/league/${l.id}/shop`} className="group flex flex-col items-center rounded-xl bg-black/20 px-2 pb-3 pt-4 text-center ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-amber-400/40">

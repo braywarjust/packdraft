@@ -30,7 +30,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     order: orderIds.map((tid) => {
       const t = teams.find((x) => x.id === tid)!;
       const owner = t.user_id ? users.get(t.user_id) : null;
-      return { id: t.id, name: t.name, cpu: !!t.is_cpu, auto: !!t.autodraft, owner: owner?.name ?? "CPU", color: teamBrand(t).color, brand: teamBrand(t) };
+      return { id: t.id, name: t.name, cpu: !!t.is_cpu, auto: !!t.autodraft, owner: owner?.name ?? "CPU", color: teamBrand(t).color, brand: teamBrand(t), lm: !!t.user_id && t.user_id === l.commissioner_id };
     }),
     picks,
     keepers,

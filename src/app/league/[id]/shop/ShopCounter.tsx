@@ -52,7 +52,7 @@ export function ShopCounter({ item, name, blurb, price, owned, coins, buy }: {
             <p className="font-mono text-lg font-black text-white"><Coins n={price} /></p>
           </div>
           <div className="rounded-xl bg-ink px-3 py-2 ring-1 ring-white/5">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">You own</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Bought</p>
             <p className={`flex items-center gap-1.5 font-mono text-lg font-black ${tint}`}><Icon />{owned}</p>
           </div>
         </div>

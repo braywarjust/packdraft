@@ -5,7 +5,7 @@ import { addDays, etDate, weekday, dayLabel } from "./nba/espn";
 import { season as nbaSeason, seasonLabel } from "./nba/season";
 import { creditGame, weekRate } from "./economy";
 import { ensureBoosts, slabbedFpts, teamBoosts } from "./boost";
-import { acquisitionBlock, logActivity, spendAcquisition, spendTrade, tradeBlock } from "./activity";
+import { logActivity, spendTrade, tradeBlock } from "./activity";
 
 export { STARTERS, ROSTER_MAX, eligible };
 /** A player's fantasy positions ("PG,SG"), falling back to his G/F/C. */
@@ -551,7 +551,7 @@ export function finishDraft(leagueId: number) {
   }
 }
 
-// ---------- Weeks, rewards, waivers ----------
+// ---------- Weeks and rewards ----------
 
 /** Sim leagues only: the commish starts each simulated week. */
 export function startWeek(l: League) {
@@ -559,7 +559,6 @@ export function startWeek(l: League) {
   if (l.draft_status !== "done") throw new Error("Finish the draft first");
   if (l.week_started_at) throw new Error("Week already in progress");
   if (l.champion_team_id) throw new Error("Season is over");
-  processWaivers(l.id);
   for (const t of leagueTeams(l.id)) if (t.is_cpu) autoLineup(l, t.id);
   run("UPDATE leagues SET week_started_at = ? WHERE id = ?", Date.now(), l.id);
   postSystem(l.id, `Simulated week ${l.current_week} tipped off! Games are live.`);
@@ -633,43 +632,8 @@ export function finalizeWeek(l: League) {
       }
     }
   });
-  processWaivers(l.id);
   const next = getLeague(l.id)!;
   for (const t of leagueTeams(l.id)) if (t.is_cpu) autoLineup(next, t.id);
-}
-
-export function processWaivers(leagueId: number) {
-  const claims = all<{ id: number; team_id: number; add_player_id: number; drop_player_id: number | null; bid: number }>(
-    `SELECT c.* FROM waiver_claims c JOIN teams t ON t.id = c.team_id WHERE c.league_id = ? AND c.status = 'pending'
-     ORDER BY c.bid DESC, t.wins ASC, t.points_for ASC, c.created_at ASC`, leagueId);
-  for (const c of claims) {
-    tx(() => {
-      const team = one<Team>("SELECT * FROM teams WHERE id = ?", c.team_id)!;
-      const taken = one("SELECT 1 FROM roster WHERE league_id = ? AND player_id = ?", leagueId, c.add_player_id);
-      const dropOk = !c.drop_player_id || one("SELECT 1 FROM roster WHERE team_id = ? AND player_id = ?", c.team_id, c.drop_player_id);
-      const size = roster(c.team_id).length - (c.drop_player_id ? 1 : 0);
-      if (taken || !dropOk || team.faab < c.bid || size >= ROSTER_MAX || acquisitionBlock(getLeague(leagueId)!, c.team_id)) {
-        run("UPDATE waiver_claims SET status = 'failed' WHERE id = ?", c.id);
-        return;
-      }
-      spendAcquisition(getLeague(leagueId)!, c.team_id);
-      if (c.drop_player_id) run("DELETE FROM roster WHERE team_id = ? AND player_id = ?", c.team_id, c.drop_player_id);
-      run("INSERT INTO roster (team_id, player_id, slot, league_id) VALUES (?, ?, 'BN', ?)", c.team_id, c.add_player_id, leagueId);
-      run("UPDATE teams SET faab = faab - ? WHERE id = ?", c.bid, c.team_id);
-      run("UPDATE waiver_claims SET status = 'won' WHERE id = ?", c.id);
-      logActivity(getLeague(leagueId)!, c.team_id, "claim", { add: c.add_player_id, drop: c.drop_player_id, bid: c.bid });
-      const p = one<Player>("SELECT * FROM players WHERE id = ?", c.add_player_id)!;
-      postSystem(leagueId, `Waivers: ${team.name} claimed ${p.name} for $${c.bid} FAAB.`);
-    });
-  }
-}
-
-/** Real leagues process FAAB claims once a day (early morning ET); sim leagues at each kickoff. */
-export function dailyWaivers(leagueId: number) {
-  const key = `waivers:${leagueId}:${etDate()}`;
-  if (one("SELECT 1 FROM meta WHERE key = ?", key)) return;
-  run("INSERT OR IGNORE INTO meta (key, value) VALUES (?, '1')", key);
-  processWaivers(leagueId);
 }
 
 // ---------- Trades ----------

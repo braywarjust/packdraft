@@ -6,6 +6,12 @@ import { getLeague, leagueTeams, ROUNDS } from "@/lib/league";
 import { shopPrice } from "@/lib/shop";
 import { scoringLabel } from "@/lib/scoring";
 import { ActionButton } from "@/components/ActionButton";
+import { AcqIcon, ACQ_COLOR, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
+import { CoinIcon } from "@/components/Coins";
+import { FptIcon } from "@/components/Fpts";
+import { ClockIcon, CrownIcon, LockIcon } from "@/components/Icons";
+import { NavIcon, NAV_ICONS } from "@/components/NavIcons";
+import { LMBadge } from "@/components/TeamBadge";
 import { SettingsForm, KeeperForm, ScoringEditor } from "./forms";
 import { removeKeeper, removeTeam, setKeeper, transferManager, updateLeagueBrandAction, updateSettings } from "../../../actions";
 
@@ -25,9 +31,22 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
   const lock = (s: string) => (pre || !lm ? s : `${s} (locked)`);
   const limitSel = (name: string, value: number | null | undefined, max: number, unit: string) => (
     <select name={name} defaultValue={value == null ? "none" : String(value)} className="input">
-      <option value="none">No limit (all free)</option>
+      <option value="none">Unlimited</option>
       {Array.from({ length: max + 1 }, (_, i) => <option key={i} value={i}>{i} {unit}{i === 1 ? "" : "s"}</option>)}
     </select>
+  );
+
+  // Section headings and labels carry the app's own icons (Update 4.2): Fantasy Points, Fantasy Coins, Acquisitions, Trades.
+  const head = (icon: React.ReactNode, title: React.ReactNode, tint = "text-brand bg-brand/15 ring-brand/30") => (
+    <h3 className="flex items-center gap-2 pt-2 font-bold">
+      <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[15px] ring-1 ${tint}`}>{icon}</span>{title}
+    </h3>
+  );
+  const coinInput = (name: string, value: number) => (
+    <div className="relative">
+      <CoinIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" />
+      <input name={name} type="number" min={0} step={100} defaultValue={value} className="input pl-9" />
+    </div>
   );
 
   ensureBranding();
@@ -51,7 +70,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
         </section>
       )}
       <SettingsForm action={updateSettings.bind(null, l.id)} readOnly={!lm}>
-        <h3 className="font-bold">Basic</h3>
+        {head(<NavIcon d={NAV_ICONS.leagues} size={15} />, "Basic")}
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">{lock("Games")}</label>
             <select name="mode" defaultValue={l.mode} disabled={!pre} className="input"><option value="real">Real NBA</option><option value="sim">Simulated</option></select></div>
@@ -59,40 +78,36 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
         </div>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_public" defaultChecked={!!l.is_public} className="h-4 w-4" /> Public league</label>
 
-        <h3 className="pt-2 font-bold">Draft</h3>
+        {head(<NavIcon d={NAV_ICONS.mock} size={15} />, "Draft")}
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Pick clock (seconds)</label><input name="pick_seconds" type="number" min={10} defaultValue={l.pick_seconds} className="input" /></div>
-          <div><label className="label">{lock("Keepers per team")}</label><input name="keeper_count" type="number" min={0} max={5} defaultValue={l.keeper_count} disabled={!pre} className="input" /></div>
+          <div><label className="label flex items-center gap-1"><ClockIcon /> Pick clock (seconds)</label><input name="pick_seconds" type="number" min={10} defaultValue={l.pick_seconds} className="input" /></div>
+          <div><label className="label flex items-center gap-1"><LockIcon /> {lock("Keepers per team")}</label><input name="keeper_count" type="number" min={0} max={5} defaultValue={l.keeper_count} disabled={!pre} className="input" /></div>
         </div>
 
-        <h3 className="pt-2 font-bold">Scoring <span className="text-sm font-normal text-zinc-500">· {scoringLabel(l.scoring)}</span></h3>
+        {head(<FptIcon tone="blue" />, <>Scoring <span className="text-sm font-normal text-zinc-500">· {scoringLabel(l.scoring)}</span></>, "bg-fpts/15 ring-fpts/30")}
         <ScoringEditor scoring={l.scoring} />
 
-        <h3 className="pt-2 font-bold">Acquisitions and waivers</h3>
+        {head(<AcqIcon />, "Acquisitions", `${ACQ_COLOR} bg-emerald-400/15 ring-emerald-400/30`)}
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Waivers</label>
-            <select name="waiver_type" defaultValue={l.waiver_type} className="input"><option value="faab">FAAB bidding</option><option value="free">Free agency</option></select></div>
-          <div><label className="label">{lock("FAAB budget")}</label><input name="faab_budget" type="number" min={0} defaultValue={l.faab_budget} disabled={!pre} className="input" /></div>
-          <div><label className="label">Free adds per matchup</label>{limitSel("acq_per_week", l.acq_per_week, 20, "add")}</div>
-          <div><label className="label">Free adds per season</label>{limitSel("acq_per_season", l.acq_per_season, 99, "add")}</div>
+          <div><label className="label flex items-center gap-1"><AcqIcon className={ACQ_COLOR} /> Acquisitions per matchup</label>{limitSel("acq_per_week", l.acq_per_week, 20, "Acquisition")}</div>
         </div>
-        <p className="text-xs text-zinc-500">Free agent adds and waiver claims count; trades don&apos;t. Past the free adds, each add uses an Acquisition from the League Shop.</p>
+        <p className="text-xs text-zinc-500">No waivers: every add is instant, and a dropped player can be picked up by anyone straight away. Each team gets this many Acquisitions every matchup week, and each player added uses one (trades don&apos;t). Teams that want more during a matchup buy them in the League Shop.</p>
 
-        <h3 className="pt-2 font-bold">Trades</h3>
+        {head(<TradeIcon />, "Trades", `${TRADE_COLOR} bg-amber-400/15 ring-amber-400/30`)}
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Free trades per team (season)</label>{limitSel("trade_limit", l.trade_limit, 30, "trade")}</div>
+          <div><label className="label flex items-center gap-1"><TradeIcon className={TRADE_COLOR} /> Trades per matchup</label>{limitSel("trade_limit", l.trade_limit, 30, "Trade")}</div>
           <div><label className="label">LM review period</label>
             <select name="trade_review_hours" defaultValue={String(l.trade_review_hours ?? 0)} className="input">
               <option value="0">None (trades go through at once)</option><option value="12">12 hours</option><option value="24">1 day</option><option value="48">2 days</option>
             </select></div>
-          <div className="col-span-2"><label className="label">Trade deadline</label>
+          <div className="col-span-2"><label className="label flex items-center gap-1"><ClockIcon /> Trade deadline</label>
             <select name="trade_deadline_week" defaultValue={String(l.trade_deadline_week ?? "")} className="input">
               <option value="">No deadline</option>
               {Array.from({ length: l.season_weeks }, (_, i) => <option key={i} value={i + 1}>End of Week {i + 1}</option>)}
             </select></div>
         </div>
 
-        <h3 className="pt-2 font-bold">Season and playoffs</h3>
+        {head(<CrownIcon />, "Season and playoffs", "text-amber-300 bg-amber-300/15 ring-amber-300/30")}
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">{lock("Regular season weeks")}</label><input name="season_weeks" type="number" min={1} max={24} defaultValue={l.season_weeks} disabled={!pre} className="input" /></div>
           <div><label className="label">{lock("Playoff teams")}</label>
@@ -101,17 +116,17 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
             </select></div>
         </div>
 
-        <h3 className="pt-2 font-bold">League Shop prices</h3>
+        {head(<CoinIcon />, "League Shop prices", "bg-coin/15 ring-coin/30")}
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Acquisition (Fantasy Coins)</label><input name="acq_price" type="number" min={0} step={100} defaultValue={shopPrice(l, "acquisition")} className="input" /></div>
-          <div><label className="label">Trade (Fantasy Coins)</label><input name="trade_price" type="number" min={0} step={100} defaultValue={shopPrice(l, "trade")} className="input" /></div>
+          <div><label className="label flex items-center gap-1"><AcqIcon className={ACQ_COLOR} /> 1 Acquisition costs</label>{coinInput("acq_price", shopPrice(l, "acquisition"))}</div>
+          <div><label className="label flex items-center gap-1"><TradeIcon className={TRADE_COLOR} /> 1 Trade costs</label>{coinInput("trade_price", shopPrice(l, "trade"))}</div>
         </div>
         <p className="text-xs text-zinc-500">A typical week pays about 1,500 to 1,800 Fantasy Coins. The defaults (3,000 and 5,000) take a couple of weeks of saving.</p>
       </SettingsForm>
 
       <div className="space-y-6">
         <div className="card p-5">
-          <h2 className="mb-1 text-lg font-bold">Teams</h2>
+          <h2 className="mb-1 flex items-center gap-2 text-lg font-bold"><NavIcon d={NAV_ICONS.studio} size={18} />Teams</h2>
           <p className="mb-3 text-sm text-zinc-500">Invite code <span className="font-mono font-bold text-brand">{l.invite_code}</span></p>
           <ul className="space-y-2">
             {teams.map((t) => (
@@ -119,7 +134,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
                 <span>
                   {t.name}{" "}
                   {t.is_cpu ? <span className="text-xs text-zinc-400">CPU</span> : <span className="text-xs text-zinc-400">{owners.get(t.user_id!)}</span>}
-                  {t.user_id === l.commissioner_id && <span className="ml-1 rounded bg-brand/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-brand">LM</span>}
+                  {t.user_id === l.commissioner_id && <LMBadge className="ml-1" />}
                 </span>
                 {lm && (
                   <span className="flex gap-3">
@@ -136,7 +151,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
         </div>
 
         <div className="card p-5">
-          <h2 className="mb-1 text-lg font-bold">Keepers</h2>
+          <h2 className="mb-1 flex items-center gap-2 text-lg font-bold"><LockIcon />Keepers</h2>
           <p className="mb-3 text-sm text-zinc-500">
             {l.keeper_count === 0 ? `Keepers are off.${lm ? " Set keepers per team to enable them." : ""}` : `Each team can keep up to ${l.keeper_count}. A keeper uses that team's pick in the round chosen.`}
           </p>

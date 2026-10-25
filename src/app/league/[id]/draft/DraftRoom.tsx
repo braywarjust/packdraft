@@ -1,5 +1,6 @@
 "use client";
 
+import { LMBadge } from "@/components/TeamBadge";
 import { PageLoading } from "@/components/LoadingLogo";
 import { StarIcon } from "@/components/Icons";
 import Link from "next/link";
@@ -84,7 +85,7 @@ export function DraftRoom({ leagueId, pick, queue, toggleAuto, start }: {
           <div className="flex-1">
             <p className="text-xs uppercase text-zinc-500">On the clock</p>
             <p className="text-xl font-black">{myTurn ? "YOU'RE UP" : onClock?.name}</p>
-            <p className="text-xs text-zinc-500">{onClock?.cpu ? "CPU picking…" : onClock?.auto ? "Autodrafting…" : onClock?.owner}</p>
+            <p className="text-xs text-zinc-500">{onClock?.cpu ? "CPU picking…" : onClock?.auto ? "Autodrafting…" : <>{onClock?.owner}{onClock?.lm && <LMBadge className="ml-1" />}</>}</p>
           </div>
           {!onClock?.cpu && !onClock?.auto && (
             <div className={`font-mono text-4xl font-black ${left <= 10 ? "text-red-600" : ""}`}>0:{String(left).padStart(2, "0")}</div>

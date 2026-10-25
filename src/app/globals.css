@@ -13,6 +13,7 @@
   --color-panel2: #2c3445;   /* hover / secondary fills */
   --color-line: #343d50;
   --color-fpts: #38bdf8;     /* Fantasy Points logo blue */
+  --color-coin: #facc15;     /* Fantasy Coins gold */
   --color-brand: #1f63b5;    /* PackDraft blue, lifted slightly for dark backgrounds */
   --color-brand-dark: #0253a4;
   --color-accent: #d6363c;   /* PackDraft red */
@@ -161,6 +162,13 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .anim-glow { animation: pulseGlow 1.6s ease-in-out infinite; }
 .anim-coin { animation: coin 0.8s ease-in forwards; }
 .anim-flash { animation: flash 1.5s ease-out; }
+@keyframes swapIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.anim-swap { animation: swapIn .22s cubic-bezier(.2, .9, .3, 1) both; }
+/* Popups (Update 4.2, components/Popup.tsx): the backdrop fades, the sheet slides up from the bottom and back down. */
+@keyframes popupFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popupFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes popupUp { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes popupDown { from { transform: none; } to { transform: translateY(100%); } }
 .foil { background-image: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.35) 45%, transparent 60%); background-size: 200% 100%; animation: shine 2.5s linear infinite; }
 
 /* ---------- Shop item art (components/ItemArt.tsx): smooth, low-key motion ---------- */

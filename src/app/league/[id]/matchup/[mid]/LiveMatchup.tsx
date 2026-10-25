@@ -37,22 +37,58 @@ function Spark({ points }: { points: number[] }) {
   );
 }
 
-export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchupId: number }) {
-  const [d, setD] = useState<Data | null>(null);
+/**
+ * One matchup, live. Switching to another of the week's matchups (Update 4.2) happens in place: the others are fetched
+ * in the background once this one loads, so a tap swaps the page instantly and only the URL changes.
+ */
+export function LiveMatchup({ leagueId, matchupId: initialId }: { leagueId: number; matchupId: number }) {
+  const [matchupId, setMatchupId] = useState(initialId);
+  const cache = useRef(new Map<number, Data>());
+  const [d, setData] = useState<Data | null>(null);
+  const [shownId, setShownId] = useState(initialId);
   const [history, setHistory] = useState<number[]>([]);
   const [flash, setFlash] = useState<Set<number>>(new Set());
   const prev = useRef<Map<number, number>>(new Map());
   const [day, setDay] = useState<string | null>(null);
 
+  const switchTo = (id: number) => {
+    if (id === matchupId) return;
+    window.history.replaceState(null, "", `/league/${leagueId}/matchup/${id}`);
+    setMatchupId(id);
+  };
+
+  // Warm the week's other matchups so switching to one is instant.
+  const others = d?.others.map((o) => o.id).join(",") ?? "";
+  useEffect(() => {
+    if (!others) return;
+    let stop = false;
+    (async () => {
+      for (const id of others.split(",").map(Number)) {
+        if (stop || cache.current.has(id)) continue;
+        const r = await fetch(`/api/live/${id}`, { cache: "no-store" }).catch(() => null);
+        if (r?.ok && !stop) cache.current.set(id, (await r.json()) as Data);
+      }
+    })();
+    return () => { stop = true; };
+  }, [others]);
+
   useEffect(() => {
     let stop = false;
     let timer: ReturnType<typeof setTimeout>;
+    // Show the cached copy straight away (if any), then refresh it.
+    const cached = cache.current.get(matchupId);
+    if (cached) { setData(cached); setShownId(matchupId); }
+    setHistory([]);
+    setFlash(new Set());
+    prev.current = new Map();
     const load = async () => {
       const r = await fetch(`/api/live/${matchupId}`, { cache: "no-store" });
       if (stop) return;
       if (r.ok) {
         const j = (await r.json()) as Data;
-        setD(j);
+        cache.current.set(matchupId, j);
+        setData(j);
+        setShownId(matchupId);
         if (!j.final) setHistory((h) => (h[h.length - 1] === j.winProb ? h : [...h.slice(-150), j.winProb]));
         const changed = new Set<number>();
         for (const side of ["home", "away"] as const) {
@@ -71,6 +107,8 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
   }, [matchupId]);
 
   if (!d) return <PageLoading text="Loading matchup…" />;
+  // Tapped a matchup that isn't loaded yet: keep the old one on screen, dimmed, until the new one arrives.
+  const switching = shownId !== matchupId;
   // Your team always on the left, like ESPN.
   const flip = d.away.id === d.mine;
   const [home, away] = flip ? [d.away, d.home] : [d.home, d.away];
@@ -110,31 +148,33 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
 
   return (
     <div className="space-y-4">
-      <Link href={`/league/${leagueId}`} className="text-sm text-zinc-500 hover:text-zinc-900">← {d.league}</Link>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-        <span className="font-black uppercase tracking-[0.25em] text-zinc-500">Week {d.week}</span>
-        {d.range && <span className="text-zinc-500">{d.range}</span>}
-        <span className={`font-bold ${d.final ? "text-white" : d.live ? "text-red-500" : "text-zinc-400"}`}>{d.final ? "Final" : d.live ? "● Live" : "In progress"}</span>
-        {d.progress != null && d.progress > 0 && !d.final && <span className="text-zinc-500">{Math.round(d.progress * 100)}% of sim week</span>}
+      {/* The week's other matchups: tap to switch in place. The highlight moves on the tap, the page follows. */}
+      <div className="flex items-center gap-2">
+      {d.others.length > 1 && (
+        <div className="-mx-1 flex min-w-0 flex-1 gap-2 overflow-x-auto px-1 py-1.5 scrollbar-thin">
+          {d.others.map((o) => {
+            const on = o.id === matchupId;
+            return (
+              <Link key={o.id} href={`/league/${d.leagueId}/matchup/${o.id}`} replace scroll={false}
+                onClick={(e) => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); switchTo(o.id); }}
+                className={`flex shrink-0 touch-manipulation select-none items-center gap-2 rounded-full py-1.5 pl-1.5 pr-1.5 text-xs ring-1 transition duration-150 active:scale-95 ${
+                  on ? "scale-[1.03] bg-brand/25 ring-2 ring-brand shadow-[0_0_14px_rgba(31,99,181,.45)]" : "bg-panel ring-line hover:-translate-y-0.5 hover:ring-white/30"}`}>
+                <TeamBadge brand={o.home.brand} size={24} />
+                <b className="min-w-[2ch] text-center font-mono text-white">{Math.round(o.home.score)}</b><span className="text-zinc-500">vs</span><b className="min-w-[2ch] text-center font-mono text-white">{Math.round(o.away.score)}</b>
+                <TeamBadge brand={o.away.brand} size={24} />
+              </Link>
+            );
+          })}
+        </div>
+      )}
+        <Link href={`/league/${leagueId}/matchups?week=${d.week}`} className="ml-auto shrink-0 rounded-full px-2.5 py-1 text-xs font-bold text-brand ring-1 ring-brand/40 transition hover:bg-brand/10 active:scale-95">All weeks</Link>
       </div>
+
+      <div key={shownId} className={`anim-swap space-y-4 transition-opacity duration-150 ${switching ? "pointer-events-none opacity-40" : ""}`}>
       <MatchupCard big home={{ id: home.id, brand: home.brand, record: home.record, score: home.score, proj: home.score + home.remain }}
         away={{ id: away.id, brand: away.brand, record: away.record, score: away.score, proj: away.score + away.remain }}
         status={d.final ? "final" : d.live || home.score + away.score > 0 ? "live" : "pre"} winProb={wp} />
       {history.length > 1 && <div className="card px-4 pb-3 pt-2"><p className="label">Win probability over the week</p><Spark points={flip ? history.map((x) => 1 - x) : history} /></div>}
-
-      {/* The week's other matchups */}
-      {d.others.length > 1 && (
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin">
-          {d.others.map((o) => (
-            <Link key={o.id} href={`/league/${d.leagueId}/matchup/${o.id}`} replace
-              className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs ring-1 transition ${o.id === matchupId ? "bg-white/10 ring-white/60" : "bg-panel ring-line hover:ring-white/30"}`}>
-              <TeamBadge brand={o.home.brand} size={22} />
-              <b className="font-mono text-white">{Math.round(o.home.score)}</b><span className="text-zinc-500">vs</span><b className="font-mono text-white">{Math.round(o.away.score)}</b>
-              <TeamBadge brand={o.away.brand} size={22} />
-            </Link>
-          ))}
-        </div>
-      )}
 
       {/* Score by day */}
       <div className="card overflow-x-auto scrollbar-thin">
@@ -204,6 +244,7 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
             </section>
           );
         })}
+      </div>
       </div>
     </div>
   );
