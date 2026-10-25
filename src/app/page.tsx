@@ -59,7 +59,7 @@ export default async function Home() {
       const side = (tid: number, stored: number | null) => {
         const team = one<Team>("SELECT * FROM teams WHERE id = ?", tid)!;
         const w = tid === t.id ? tw : teamWeek(l, tid, l.current_week);
-        return { w, s: { id: tid, brand: teamBrand(team), record: `${team.wins}-${team.losses}${team.ties ? `-${team.ties}` : ""}`, score: m.final && stored != null ? stored : w.score, proj: w.score + w.remain } };
+        return { w, s: { id: tid, brand: teamBrand(team), record: `${team.wins}-${team.losses}${team.ties ? `-${team.ties}` : ""}`, score: m.final && stored != null ? stored : w.score, proj: w.score + w.remain, lm: team.user_id === l.commissioner_id } };
       };
       const h = side(m.home_team_id, m.home_score), a = side(m.away_team_id, m.away_score);
       const live = l.mode === "sim" ? !!l.week_started_at : h.w.score + a.w.score > 0;

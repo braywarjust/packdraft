@@ -2,15 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { TeamBadge, type BrandLite } from "./TeamBadge";
+import { LMBadge, TeamBadge, type BrandLite } from "./TeamBadge";
 
 export type FullRow = {
   id: number; brand: BrandLite; rank: number; w: number; l: number; t: number; pct: number; gb: number;
-  pf: number; pa: number; streak: string; moves: number; playoffPct: number; clinch: string | null;
+  pf: number; pa: number; streak: string; moves: number; playoffPct: number; lm?: boolean;
 };
 export type StatRow = { id: number; brand: BrandLite; fgm: number; fga: number; ftm: number; fta: number; tpm: number; reb: number; ast: number; stl: number; blk: number; to: number; pts: number };
 
-const GLOSSARY = [["x", "Clinched playoffs"], ["z", "Clinched bye"], ["*", "Clinched No. 1 seed"], ["e", "Eliminated"]];
 const pct = (n: number) => n.toFixed(3).replace(/^0/, "");
 
 /** Expands the League home standings into ESPN's full table plus season team stats, in place (no separate page). */
@@ -39,9 +38,8 @@ export function FullStandings({ leagueId, rows, stats, myTeamId, playoffTeams }:
                     <td className="px-2 py-1.5">
                       <Link href={`/league/${leagueId}/team/${r.id}`} className="flex min-w-0 items-center gap-2 hover:underline">
                         <span className="w-4 text-right font-mono text-xs text-zinc-500">{r.rank}</span>
-                        <span className="w-3 font-mono text-xs font-black text-amber-400">{r.clinch ?? ""}</span>
                         <TeamBadge brand={r.brand} size={22} />
-                        <span className="truncate text-white">{r.brand.name}</span>
+                        <span className="truncate text-white">{r.brand.name}</span>{r.lm && <LMBadge />}
                       </Link>
                     </td>
                     <td className={td}>{r.w}</td><td className={td}>{r.l}</td><td className={td}>{r.t}</td>
@@ -57,7 +55,6 @@ export function FullStandings({ leagueId, rows, stats, myTeamId, playoffTeams }:
             </table>
           </div>
           <p className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-zinc-500">
-            {GLOSSARY.map(([k, v]) => <span key={k}><b className="font-mono text-amber-400">{k}</b> {v}</span>)}
             <span>Top {playoffTeams} make the playoffs (gold line). Playoff % plays out the rest of the season 2,000 times.</span>
           </p>
           {stats && (

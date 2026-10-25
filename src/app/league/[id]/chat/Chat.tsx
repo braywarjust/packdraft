@@ -2,6 +2,7 @@
 
 import { CameraIcon, MicIcon } from "@/components/Icons";
 import { Coins } from "@/components/Coins";
+import { LMBadge } from "@/components/TeamBadge";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Msg = { id: number; user_id: number | null; kind: string; body: string | null; image_url: string | null; created_at: number; name: string | null; color: string | null };
@@ -28,8 +29,8 @@ function render(text: string) {
   );
 }
 
-export function Chat({ leagueId, rivals, send, canPost }: {
-  leagueId: number; rivals: string[]; send: (body: string, image: string | null) => Promise<unknown>; canPost: boolean;
+export function Chat({ leagueId, lmUserId, rivals, send, canPost }: {
+  leagueId: number; lmUserId: number | null; rivals: string[]; send: (body: string, image: string | null) => Promise<unknown>; canPost: boolean;
 }) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [me, setMe] = useState<number | null>(null);
@@ -96,7 +97,7 @@ export function Chat({ leagueId, rivals, send, canPost }: {
             <div key={m.id} className={`flex gap-2 ${m.user_id === me ? "flex-row-reverse" : ""}`}>
               <div className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold text-white" style={{ background: m.color ?? "#64748b" }}>{m.name?.[0]?.toUpperCase()}</div>
               <div className={`max-w-[75%] ${m.user_id === me ? "text-right" : ""}`}>
-                <p className="text-xs text-zinc-400">{m.name} · {new Date(m.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p>
+                <p className="text-xs text-zinc-400">{m.name}{m.user_id != null && m.user_id === lmUserId && <LMBadge className="ml-1" />} · {new Date(m.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p>
                 {m.body && <p className={`inline-block whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${m.user_id === me ? "bg-brand text-white" : "bg-panel2"}`}>{m.body}</p>}
                 {m.image_url && (
                   // eslint-disable-next-line @next/next/no-img-element

@@ -1,4 +1,4 @@
-import { TeamBadge } from "@/components/TeamBadge";
+import { LMBadge, TeamBadge } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand, userPresets } from "@/lib/branding";
 import Link from "next/link";
 import { one, Team } from "@/lib/db";
@@ -58,7 +58,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
           <div className="min-w-0 flex-1">
             <p className="truncate text-[10px] font-black uppercase tracking-[0.25em] text-white/70 sm:text-xs sm:tracking-[0.35em]">{b.abbr} · {l.name}</p>
             <h2 className="mt-0.5 text-xl font-black leading-none tracking-tight text-white [overflow-wrap:anywhere] sm:text-3xl">{t.name}</h2>
-            <p className="mt-1 text-xs text-white/80 sm:text-sm">{owner ? `Managed by ${owner}` : "CPU team"}{l.draft_status === "done" ? ` · Week ${l.current_week}` : ""}</p>
+            <p className="mt-1 text-xs text-white/80 sm:text-sm">{owner ? <>Managed by {owner}{t.user_id === l.commissioner_id && <LMBadge className="ml-1.5" />}</> : "CPU team"}{l.draft_status === "done" ? ` · Week ${l.current_week}` : ""}</p>
           </div>
           {!editable && <Link href={`/league/${leagueId}/trades?to=${t.id}`} className="btn bg-[#fff] text-black hover:bg-[#e5e7eb]">Propose trade</Link>}
         </div>

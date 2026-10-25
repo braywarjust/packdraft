@@ -11,6 +11,7 @@ import { CoinIcon } from "@/components/Coins";
 import { FptIcon } from "@/components/Fpts";
 import { ClockIcon, CrownIcon, LockIcon } from "@/components/Icons";
 import { NavIcon, NAV_ICONS } from "@/components/NavIcons";
+import { LMBadge } from "@/components/TeamBadge";
 import { SettingsForm, KeeperForm, ScoringEditor } from "./forms";
 import { removeKeeper, removeTeam, setKeeper, transferManager, updateLeagueBrandAction, updateSettings } from "../../../actions";
 
@@ -133,7 +134,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
                 <span>
                   {t.name}{" "}
                   {t.is_cpu ? <span className="text-xs text-zinc-400">CPU</span> : <span className="text-xs text-zinc-400">{owners.get(t.user_id!)}</span>}
-                  {t.user_id === l.commissioner_id && <span className="ml-1 rounded bg-brand/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-brand">LM</span>}
+                  {t.user_id === l.commissioner_id && <LMBadge className="ml-1" />}
                 </span>
                 {lm && (
                   <span className="flex gap-3">

@@ -1,7 +1,7 @@
 import { ForwardIcon, PlayIcon } from "@/components/Icons";
 import { MatchupCard, topPerformers } from "@/components/MatchupCard";
 import { ItemArt } from "@/components/ItemArt";
-import { TeamBadge, TeamName } from "@/components/TeamBadge";
+import { TeamBadge, LMBadge, TeamName } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand } from "@/lib/branding";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
@@ -36,7 +36,6 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
   const matchups = all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ?", l.id, l.current_week);
   const teamName = new Map(teams.map((t) => [t.id, t.name]));
   const full = l.draft_status === "done" ? fullStandings(l) : null;
-  const clinch = new Map(full?.map((r) => [r.team.id, r.clinch]) ?? []);
   const lastWeek = l.current_week > 1 ? all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ? AND final = 1", l.id, l.current_week - 1) : [];
 
   return (
@@ -118,7 +117,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                     <span className="relative"><TeamBadge brand={b} size={30} /></span>
                     <span className="relative min-w-0 flex-1">
                       <span className="block truncate text-sm font-bold text-white">{t.name}</span>
-                      <span className="block text-[10px] font-bold uppercase tracking-widest text-white/60">{b.abbr}{mine ? " · You" : ""}{clinch.get(t.id) && <span className="ml-1.5 rounded bg-black/40 px-1 font-mono normal-case tracking-normal text-amber-300">{clinch.get(t.id)}</span>}</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-widest text-white/60">{b.abbr}{mine ? " · You" : ""}{t.user_id === l.commissioner_id && <LMBadge className="ml-1.5" />}</span>
                     </span>
                     <span className="relative text-right">
                       <span className="block font-mono text-sm font-black text-white">{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ""}</span>
@@ -133,7 +132,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
             const stats = l.mode === "sim" ? null : teamSeasonStats(l);
             return (
               <FullStandings leagueId={l.id} myTeamId={me?.id ?? null} playoffTeams={Math.min(l.playoff_teams ?? 4, teams.length)}
-                rows={full.map((r) => ({ id: r.team.id, brand: brand.get(r.team.id) ?? teamBrand(r.team), rank: r.rank, w: r.w, l: r.l, t: r.t, pct: r.pct, gb: r.gb, pf: r.pf, pa: r.pa, streak: r.streak, moves: r.moves, playoffPct: r.playoffPct, clinch: r.clinch }))}
+                rows={full.map((r) => ({ id: r.team.id, brand: brand.get(r.team.id) ?? teamBrand(r.team), rank: r.rank, w: r.w, l: r.l, t: r.t, pct: r.pct, gb: r.gb, pf: r.pf, pa: r.pa, streak: r.streak, moves: r.moves, playoffPct: r.playoffPct, lm: r.team.user_id === l.commissioner_id }))}
                 stats={stats && full.map((r) => {
                   const x = stats.get(r.team.id)!;
                   return { id: r.team.id, brand: brand.get(r.team.id) ?? teamBrand(r.team), fgm: x.fgm, fga: x.fga, ftm: x.ftm, fta: x.fta, tpm: x.tpm, reb: x.reb, ast: x.ast, stl: x.stl, blk: x.blk, to: x.to, pts: x.pts };
@@ -149,7 +148,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
           const sideOf = (tid: number, stored: number | null, final: number) => {
             const t = teams.find((x) => x.id === tid)!;
             const w = teamWeek(l, tid, l.current_week);
-            return { w, side: { id: tid, brand: brand.get(tid)!, record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`, score: final && stored != null ? stored : w.score, proj: w.score + w.remain, top: topPerformers(w.players) } };
+            return { w, side: { id: tid, brand: brand.get(tid)!, record: `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ""}`, score: final && stored != null ? stored : w.score, proj: w.score + w.remain, top: topPerformers(w.players), lm: t.user_id === l.commissioner_id } };
           };
           const h = m && sideOf(m.home_team_id, m.home_score, m.final);
           const a = m && sideOf(m.away_team_id, m.away_score, m.final);
