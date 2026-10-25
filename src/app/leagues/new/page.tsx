@@ -16,7 +16,7 @@ export default async function NewLeague() {
       <ActionForm action={createLeague} submit="Create league" className="card space-y-5 p-6">
         <BrandEditor fields label="League" initial={{ name: "", abbr: "", color: "#0253a4", alt_color: "#cc2b31", logo_url: null }} />
         <PresetPicker presets={presets} />
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label">Teams</label>
             <select name="max_teams" className="input" defaultValue="8">
@@ -30,12 +30,6 @@ export default async function NewLeague() {
               <option value="espn">ESPN points</option><option value="dk">DraftKings style</option>
             </select>
           </div>
-          <div>
-            <label className="label">Waivers</label>
-            <select name="waiver_type" className="input" defaultValue="faab">
-              <option value="faab">FAAB bidding</option><option value="free">Free agency (instant)</option>
-            </select>
-          </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -47,8 +41,7 @@ export default async function NewLeague() {
           </div>
           <div><label className="label">Regular season weeks</label><input name="season_weeks" type="number" min={1} max={24} defaultValue={20} className="input" /></div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-4">
-          <div><label className="label">FAAB budget</label><input name="faab_budget" type="number" min={0} defaultValue={100} className="input" /></div>
+        <div className="grid gap-4 sm:grid-cols-3">
           <div><label className="label">Keepers / team</label><input name="keeper_count" type="number" min={0} max={5} defaultValue={0} className="input" /></div>
           <div><label className="label">Pick clock (s)</label><input name="pick_seconds" type="number" min={10} max={600} defaultValue={60} className="input" /></div>
           <div><label className="label">Sim week length (min)</label><input name="sim_minutes" type="number" step="0.5" min={0.5} defaultValue={5} className="input" /></div>

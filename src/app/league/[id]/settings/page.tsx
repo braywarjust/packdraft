@@ -68,15 +68,12 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
         <h3 className="pt-2 font-bold">Scoring <span className="text-sm font-normal text-zinc-500">· {scoringLabel(l.scoring)}</span></h3>
         <ScoringEditor scoring={l.scoring} />
 
-        <h3 className="pt-2 font-bold">Acquisitions and waivers</h3>
+        <h3 className="pt-2 font-bold">Acquisitions</h3>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Waivers</label>
-            <select name="waiver_type" defaultValue={l.waiver_type} className="input"><option value="faab">FAAB bidding</option><option value="free">Free agency</option></select></div>
-          <div><label className="label">{lock("FAAB budget")}</label><input name="faab_budget" type="number" min={0} defaultValue={l.faab_budget} disabled={!pre} className="input" /></div>
           <div><label className="label">Free adds per matchup</label>{limitSel("acq_per_week", l.acq_per_week, 20, "add")}</div>
           <div><label className="label">Free adds per season</label>{limitSel("acq_per_season", l.acq_per_season, 99, "add")}</div>
         </div>
-        <p className="text-xs text-zinc-500">Free agent adds and waiver claims count; trades don&apos;t. Past the free adds, each add uses an Acquisition from the League Shop.</p>
+        <p className="text-xs text-zinc-500">No waivers: every add is instant, and a dropped player can be picked up by anyone straight away. Adds count; trades don&apos;t. Past the free adds, each add uses an Acquisition from the League Shop.</p>
 
         <h3 className="pt-2 font-bold">Trades</h3>
         <div className="grid grid-cols-2 gap-3">

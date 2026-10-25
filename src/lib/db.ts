@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS matchups (
   id INTEGER PRIMARY KEY, league_id INTEGER NOT NULL, week INTEGER NOT NULL, home_team_id INTEGER NOT NULL,
   away_team_id INTEGER NOT NULL, home_score REAL, away_score REAL, final INTEGER NOT NULL DEFAULT 0
 );
+-- Waivers were removed in Update 4.2 (every add is instant); the table only keeps old claims.
 CREATE TABLE IF NOT EXISTS waiver_claims (
   id INTEGER PRIMARY KEY, league_id INTEGER NOT NULL, team_id INTEGER NOT NULL, add_player_id INTEGER NOT NULL,
   drop_player_id INTEGER, bid INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'pending', created_at INTEGER NOT NULL

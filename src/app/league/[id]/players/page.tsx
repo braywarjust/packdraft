@@ -5,13 +5,14 @@ import { TeamLogo } from "@/components/TeamLogo";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
-import { acquisitions } from "@/lib/activity";
+import { movesLeft } from "@/lib/activity";
+import { ROSTER_MAX } from "@/lib/scoring";
+import { AcqIcon, ACQ_COLOR } from "@/components/Currencies";
 import { getLeague, roster, userTeam, isLocked, playerGames, projFor } from "@/lib/league";
 import { Player } from "@/lib/db";
 import { Headshot, InjuryTag } from "@/components/Headshot";
-import { ActionButton } from "@/components/ActionButton";
 import { AddPlayer } from "./AddPlayer";
-import { addPlayer, cancelClaim, runWaivers } from "../../../actions";
+import { addPlayer } from "../../../actions";
 import { Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
 import { newsAgo } from "@/lib/news-time";
@@ -39,11 +40,8 @@ export default async function Players({ params, searchParams }: { params: Promis
     const match = (p: Player) => (pos === "ALL" || `,${p.elig || p.pos},`.includes(`,${pos},`)) && p.name.toLowerCase().includes(q.toLowerCase());
     news = newsFeed(ids.filter((id) => byId.has(id) && match(byId.get(id)!)), 40).map((item) => ({ item, p: byId.get(item.player_id)! }));
   }
-  const myRoster = me ? roster(me.id).map((p) => ({ id: p.id, name: p.name, pos: p.pos })) : [];
-  const claims = me ? all<{ id: number; add: string; drop: string | null; bid: number; status: string }>(
-    `SELECT c.id, a.name "add", d.name "drop", c.bid, c.status FROM waiver_claims c JOIN players a ON a.id = c.add_player_id LEFT JOIN players d ON d.id = c.drop_player_id
-     WHERE c.team_id = ? ORDER BY c.id DESC LIMIT 10`, me.id) : [];
-  const faab = l.waiver_type === "faab";
+  const myRoster = me ? roster(me.id).map((p) => ({ id: p.id, name: p.name, pos: p.pos, locked: l.draft_status === "done" && isLocked(l, p) })) : [];
+  const moves = me ? movesLeft(l, me.id) : null;
   const qs = (o: Record<string, string>) => `?${new URLSearchParams({ q, pos, view, ...o })}`;
 
   return (
@@ -80,7 +78,7 @@ export default async function Players({ params, searchParams }: { params: Promis
                       <PlayerButton id={p.id} league={l.id} className="inline font-bold text-white">{p.name}</PlayerButton>
                       <span className="text-xs text-zinc-400"><TeamLogo team={p.team} size={14} className="mx-0.5 -mt-0.5 align-middle" />{p.team} {posLabel(p.elig || p.pos)}</span>
                       <InjuryTag injury={p.injury} />
-                      <span className={`rounded-full px-1.5 text-[10px] font-bold ${owner ? "bg-panel2 text-zinc-600" : "bg-emerald-500/15 text-emerald-600"}`}>{owner ?? (faab ? "Waivers" : "Free agent")}</span>
+                      <span className={`rounded-full px-1.5 text-[10px] font-bold ${owner ? "bg-panel2 text-zinc-600" : "bg-emerald-500/15 text-emerald-600"}`}>{owner ?? "Free agent"}</span>
                       <span className="ml-auto text-[11px] text-zinc-500">{newsAgo(item.published)}</span>
                     </p>
                     <p className="mt-1 text-sm font-semibold leading-snug text-white">{item.headline}</p>
@@ -92,7 +90,7 @@ export default async function Players({ params, searchParams }: { params: Promis
           </div>
         ) : (<>
         <p className="text-xs text-zinc-500">
-          {faab ? `FAAB waivers: put in blind bids. Claims process every night at midnight ET (sim leagues: at each tip-off). Highest bid wins; ties go to the worse record.` : "Free agency: adds are instant."}
+          No waivers: every add is instant, and a player another team drops is free to pick up straight away. If his game today has already tipped off, he can be added tomorrow.
         </p>
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">
@@ -119,10 +117,10 @@ export default async function Players({ params, searchParams }: { params: Promis
                     <td className="hidden text-center text-xs text-zinc-500 sm:table-cell">{avg ? `${avg.pts.toFixed(1)}/${avg.reb.toFixed(1)}/${avg.ast.toFixed(1)}` : "Rookie"}</td>
                     <td className="text-center font-mono"><Fpts n={projFor(p, l.scoring)} /></td>
                     <td className="hidden text-center text-xs sm:table-cell">{games.length ? `${left} of ${games.length} left` : "—"}</td>
-                    <td className="hidden text-zinc-500 sm:table-cell">{owner ?? (faab ? "Waivers" : "FA")}</td>
+                    <td className="hidden text-zinc-500 sm:table-cell">{owner ?? "FA"}</td>
                     <td className="py-1 pr-3 text-right">
                       {!owner && me && l.draft_status === "done" && (
-                        <AddPlayer player={{ id: p.id, name: p.name }} roster={myRoster} faab={faab ? me.faab : null} action={addPlayer.bind(null, l.id, p.id)} />
+                        <AddPlayer player={{ id: p.id, name: p.name }} roster={myRoster} action={addPlayer.bind(null, l.id, p.id)} />
                       )}
                     </td>
                   </tr>
@@ -135,35 +133,18 @@ export default async function Players({ params, searchParams }: { params: Promis
         </QueryArea>
       </div>
       <aside className="space-y-4">
-        {me && (
-          <div className="card p-4">
-            <h3 className="font-bold">My claims</h3>
-            {faab && <p className="text-xs text-zinc-500">${me.faab} FAAB remaining</p>}
-            {(l.acq_per_week != null || l.acq_per_season != null) && (() => {
-              const n = acquisitions(l, me.id);
-              return <p className="text-xs text-zinc-500">
-                {[l.acq_per_week != null && `${Math.min(n.week, l.acq_per_week)} of ${l.acq_per_week} free adds used this matchup`, l.acq_per_season != null && `${Math.min(n.season, l.acq_per_season)} of ${l.acq_per_season} this season`].filter(Boolean).join(" · ")}
-                {` · ${me.acq_tokens ?? 0} Acquisition${me.acq_tokens === 1 ? "" : "s"} for extra adds`}
-              </p>;
-            })()}
-            {claims.length === 0 && <p className="text-sm text-zinc-400">No claims yet.</p>}
-            <ul className="space-y-2 text-sm">
-              {claims.map((c) => (
-                <li key={c.id} className="rounded-lg bg-ink/60 p-2">
-                  <p>+ {c.add}{c.drop && <span className="text-zinc-500"> / − {c.drop}</span>}</p>
-                  <div className="flex items-center justify-between text-xs text-zinc-500">
-                    <span>${c.bid} · <span className={c.status === "won" ? "text-emerald-600" : c.status === "failed" ? "text-red-600" : ""}>{c.status}</span></span>
-                    {c.status === "pending" && <ActionButton action={cancelClaim.bind(null, l.id, c.id)} className="text-xs text-red-600">Cancel</ActionButton>}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {l.commissioner_id === u.id && faab && l.draft_status === "done" && (
-          <div className="card p-4">
-            <p className="mb-2 text-sm text-zinc-700">League Manager: process all pending claims right now.</p>
-            <ActionButton action={runWaivers.bind(null, l.id)}>Run waivers now</ActionButton>
+        {me && moves && (
+          <div className="card space-y-2 p-4">
+            <h3 className="font-bold">My adds</h3>
+            <p className="flex items-center gap-2 font-mono text-2xl font-black text-white">
+              <AcqIcon className={ACQ_COLOR} />{moves.adds.free == null ? "No limit" : moves.adds.free + moves.adds.bought}
+              {moves.adds.free != null && <span className="font-sans text-xs font-semibold text-zinc-500">left</span>}
+            </p>
+            <p className="text-xs text-zinc-500">
+              {moves.adds.free == null ? "Your league has no add limit." : `${moves.adds.free} free ${moves.adds.weekly ? "this matchup" : "this season"} + ${moves.adds.bought} Acquisition${moves.adds.bought === 1 ? "" : "s"} bought.`}
+              {" "}Roster {myRoster.length}/{ROSTER_MAX}{myRoster.length >= ROSTER_MAX ? ": full, so each add needs a drop." : "."}
+            </p>
+            {moves.adds.free != null && <Link href={`/league/${l.id}/shop`} className="text-xs text-brand underline">Buy Acquisitions in the League Shop</Link>}
           </div>
         )}
       </aside>

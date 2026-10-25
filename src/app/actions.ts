@@ -7,7 +7,7 @@ import { all, one, run, tx, ACQ_PRICE, TRADE_PRICE, League, Team, Player, User }
 import { clearSession, currentUser, hashPin, requireUser, setSession } from "@/lib/auth";
 import {
   getLeague, userTeam, leagueTeams, startDraft, advanceDraft, makePick, autoLineup, moveToSlot, roster, ROSTER_MAX,
-  isLocked, executeTrade, startWeek, finalizeWeek, postSystem, processWaivers, ROUNDS,
+  isLocked, executeTrade, startWeek, finalizeWeek, postSystem, ROUNDS,
   startNewSeason, canStartNewSeason, acceptTrade, vetoTrade, tradesOpen,
 } from "@/lib/league";
 import { acquisitionBlock, logActivity, spendAcquisition, tradeBlock } from "@/lib/activity";
@@ -84,7 +84,7 @@ export async function createLeague(_: Result | undefined, form: FormData): Promi
       `INSERT INTO leagues (name, commissioner_id, is_public, max_teams, scoring, mode, season_weeks, waiver_type, faab_budget, keeper_count, pick_seconds, sim_minutes, invite_code, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       name, u.id, form.get("is_public") ? 1 : 0, maxTeams, PRESET_IDS.includes(String(form.get("scoring"))) ? String(form.get("scoring")) : "espn", form.get("mode") === "sim" ? "sim" : "real",
-      Math.min(24, Math.max(1, Number(form.get("season_weeks") ?? 20))), String(form.get("waiver_type") ?? "faab"),
+      Math.min(24, Math.max(1, Number(form.get("season_weeks") ?? 20))), "free",
       faab, Number(form.get("keeper_count") ?? 0), Number(form.get("pick_seconds") ?? 60), Number(form.get("sim_minutes") ?? 5), code(), Date.now(),
     );
     const lid = Number(r.lastInsertRowid);
@@ -347,23 +347,23 @@ export async function dropPlayer(leagueId: number, playerId: number) {
   });
 }
 
-export async function addPlayer(leagueId: number, addId: number, dropId: number | null, bid: number) {
+/**
+ * Add a free agent (Update 4.2: no waivers, every add is instant, including players another team just dropped). A full
+ * roster has to drop someone in the same move; the add only uses a free add or an Acquisition once there's room.
+ */
+export async function addPlayer(leagueId: number, addId: number, dropId: number | null) {
   return wrap(async () => {
     const { l, t } = await myLeagueTeam(leagueId);
     if (l.draft_status !== "done") throw new Error("Draft hasn't finished");
     const p = one<Player>("SELECT * FROM players WHERE id = ?", addId)!;
     if (one("SELECT 1 FROM roster WHERE league_id = ? AND player_id = ?", leagueId, addId)) throw new Error("Already rostered");
-    const size = roster(t.id).length - (dropId ? 1 : 0);
-    if (size >= ROSTER_MAX) throw new Error("Roster full: pick someone to drop");
+    const mine = roster(t.id);
+    if (dropId && !mine.some((x) => x.id === dropId)) throw new Error("That player isn't on your team");
+    if (mine.length - (dropId ? 1 : 0) >= ROSTER_MAX) throw new Error(`Your roster is full (${ROSTER_MAX}/${ROSTER_MAX}). Drop a player to add ${p.name}`);
+    const drop = dropId ? one<Player>("SELECT * FROM players WHERE id = ?", dropId)! : null;
+    if (drop && isLocked(l, drop)) throw new Error(`${drop.name}'s game has started, so he can't be dropped yet`);
     const blocked = acquisitionBlock(l, t.id);
     if (blocked) throw new Error(blocked);
-    if (l.waiver_type === "faab") {
-      if (bid < 0 || bid > t.faab) throw new Error(`Bid must be between $0 and $${t.faab}`);
-      run("INSERT INTO waiver_claims (league_id, team_id, add_player_id, drop_player_id, bid, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-        leagueId, t.id, addId, dropId, bid, Date.now());
-      revalidatePath(`/league/${leagueId}/players`);
-      return { ok: true, claimed: true };
-    }
     if (isLocked(l, p)) throw new Error("Player's game has started");
     tx(() => {
       spendAcquisition(l, t.id);
@@ -371,25 +371,7 @@ export async function addPlayer(leagueId: number, addId: number, dropId: number 
       run("INSERT INTO roster (team_id, player_id, slot, league_id) VALUES (?, ?, 'BN', ?)", t.id, addId, leagueId);
       logActivity(l, t.id, "add", { add: addId, drop: dropId });
     });
-    postSystem(leagueId, `${t.name} added ${p.name}.`);
-    revalidatePath(`/league/${leagueId}`, "layout");
-    return { ok: true };
-  });
-}
-
-export async function cancelClaim(leagueId: number, claimId: number) {
-  return wrap(async () => {
-    const { t } = await myLeagueTeam(leagueId);
-    run("UPDATE waiver_claims SET status = 'cancelled' WHERE id = ? AND team_id = ? AND status = 'pending'", claimId, t.id);
-    revalidatePath(`/league/${leagueId}/players`);
-    return { ok: true };
-  });
-}
-
-export async function runWaivers(leagueId: number) {
-  return wrap(async () => {
-    await commish(leagueId);
-    processWaivers(leagueId);
+    postSystem(leagueId, drop ? `${t.name} added ${p.name} and dropped ${drop.name}.` : `${t.name} added ${p.name}.`);
     revalidatePath(`/league/${leagueId}`, "layout");
     return { ok: true };
   });

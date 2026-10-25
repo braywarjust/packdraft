@@ -60,8 +60,11 @@ export function DayStrip({ days, day, onDay, totals }: { days: DayInfo[]; day: s
   );
 }
 
-/** One player row of a box score: slot (or a custom slot cell), player, opponent and status, stat line, fantasy points. */
-export function BoxRow({ r, slotCell, highlight, compactName, fit }: { r: DayRow | null; slotCell: React.ReactNode; highlight?: string; compactName?: boolean; fit?: boolean }) {
+/**
+ * One player row of a box score: slot (or a custom slot cell), player, opponent and status, stat line, fantasy points.
+ * onPoints: makes the fantasy points tappable (the roster page opens how they add up).
+ */
+export function BoxRow({ r, slotCell, highlight, compactName, fit, onPoints }: { r: DayRow | null; slotCell: React.ReactNode; highlight?: string; compactName?: boolean; fit?: boolean; onPoints?: (r: DayRow) => void }) {
   const g = r?.game;
   const live = g?.state === "in";
   const dash = <span className="text-zinc-500">-</span>;
@@ -94,7 +97,11 @@ export function BoxRow({ r, slotCell, highlight, compactName, fit }: { r: DayRow
       {STAT_COLS.map(([k, f]) => (
         <td key={k} className={`border-l border-line/30 px-2 text-center font-mono text-xs text-white/85 first:border-l-0 ${pad} ${colHide(fit, k)}`}>{stat(f)}</td>
       ))}
-      <td className={`whitespace-nowrap border-l border-line/60 px-3 text-right font-mono text-sm font-black text-white ${fit ? "max-sm:px-1.5 max-sm:text-xs" : ""}`}>{r?.fpts != null ? <Fpts n={r.fpts} iconClass={fit ? "max-sm:hidden" : ""} /> : dash}</td>
+      <td className={`whitespace-nowrap border-l border-line/60 px-3 text-right font-mono text-sm font-black text-white ${fit ? "max-sm:px-1.5 max-sm:text-xs" : ""}`}>
+        {r?.fpts != null ? (onPoints
+          ? <button type="button" onClick={() => onPoints(r)} title="See how these points add up" className="press rounded-md underline decoration-white/30 decoration-dotted underline-offset-4 hover:bg-white/10 hover:decoration-white"><Fpts n={r.fpts} iconClass={fit ? "max-sm:hidden" : ""} /></button>
+          : <Fpts n={r.fpts} iconClass={fit ? "max-sm:hidden" : ""} />) : dash}
+      </td>
     </tr>
   );
 }

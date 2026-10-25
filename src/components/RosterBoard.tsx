@@ -8,16 +8,18 @@ import { askConfirm } from "./Confirm";
 import type { BrandLite } from "./TeamBadge";
 import { BoxHead, BoxRow, BoxTotals, DayStrip, shortName, slotPill } from "./BoxScore";
 import { Fpts } from "./Fpts";
+import { PointsBreakdown } from "./PointsBreakdown";
 
 /**
  * The roster page's lineup, ESPN style: pick a day, see every slot with the player in it, his game and full stat line,
  * and his fantasy points. On days that haven't finished, tap a slot pill to pick a player, then a green pill to swap him
  * there (a bench player's pill swaps him into the picked starter's slot). Phones show a trimmed stat line that fits
- * without scrolling sideways. The status line keeps one height so picking a player never shifts the page.
+ * without scrolling sideways. The status line keeps one height so picking a player never shifts the page. Tap a player's
+ * fantasy points to see how his stat line adds up to them.
  */
-export function RosterBoard({ days, rows, totals, initialDay, editable, brand, setSlot, drop, header }: {
+export function RosterBoard({ days, rows, totals, initialDay, editable, brand, scoring, setSlot, drop, header }: {
   days: DayInfo[]; rows: Record<string, DayRow[]>; totals: Record<string, number>; initialDay: string;
-  editable: boolean; brand: BrandLite;
+  editable: boolean; brand: BrandLite; scoring: string;
   setSlot?: (playerId: number, slot: string) => Promise<unknown>;
   drop?: (playerId: number) => Promise<unknown>;
   header?: React.ReactNode;
@@ -27,6 +29,8 @@ export function RosterBoard({ days, rows, totals, initialDay, editable, brand, s
   const [pending, start] = useTransition();
   const [err, setErr] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
+  // Whose points breakdown is open: looked up in `rows` each render so it stays live through auto-refreshes.
+  const [breakdown, setBreakdown] = useState<{ id: number; day: string } | null>(null);
   const info = days.find((d) => d.key === day) ?? days[0];
   const list = rows[day] ?? [];
   // Lineups carry forward, so moves only make sense on a day that isn't over.
@@ -60,6 +64,8 @@ export function RosterBoard({ days, rows, totals, initialDay, editable, brand, s
     if (movable) return <button type="button" onClick={() => setSelected(mine ? null : r!.id)} className={cls} style={style} title={mine ? "Cancel" : `Move ${r!.name}`}>{slotPill(slot)}</button>;
     return <span className={cls}>{slotPill(slot)}</span>;
   };
+  const openPoints = (r: DayRow) => setBreakdown({ id: r.id, day });
+  const shown = breakdown && rows[breakdown.day]?.find((r) => r.id === breakdown.id);
   const tint = (r: DayRow | null) => (r && selected === r.id ? "bg-brand/10" : "");
   const small = "press rounded-md px-2 py-1 text-xs font-bold disabled:opacity-50";
 
@@ -88,14 +94,15 @@ export function RosterBoard({ days, rows, totals, initialDay, editable, brand, s
           <table className="w-full text-sm sm:min-w-[900px]">
             <BoxHead dayLabel={info?.top ?? ""} first="Slot" fit />
             <tbody>
-              {STARTERS.map((slot) => { const r = bySlot.get(slot) ?? null; return <BoxRow key={slot} r={r} slotCell={pill(slot, r)} highlight={tint(r)} fit />; })}
+              {STARTERS.map((slot) => { const r = bySlot.get(slot) ?? null; return <BoxRow key={slot} r={r} slotCell={pill(slot, r)} highlight={tint(r)} fit onPoints={openPoints} />; })}
               <BoxTotals rows={starters} total={totals[day] ?? 0} fit />
-              {bench.map((r) => <BoxRow key={r.id} r={r} slotCell={pill("BN", r)} highlight={`opacity-80 ${tint(r)}`} fit />)}
+              {bench.map((r) => <BoxRow key={r.id} r={r} slotCell={pill("BN", r)} highlight={`opacity-80 ${tint(r)}`} fit onPoints={openPoints} />)}
             </tbody>
           </table>
         </div>
       </section>
-      <p className="text-xs text-zinc-500">G = PG/SG · F = SF/PF · UTIL = anyone · Bench doesn&apos;t score</p>
+      <p className="text-xs text-zinc-500">G = PG/SG · F = SF/PF · UTIL = anyone · Bench doesn&apos;t score · Tap a player&apos;s points to see how they add up</p>
+      {shown && <PointsBreakdown r={shown} day={days.find((d) => d.key === breakdown!.day)} scoring={scoring} onClose={() => setBreakdown(null)} />}
     </div>
   );
 }

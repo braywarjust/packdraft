@@ -73,6 +73,21 @@ export function spendTrade(l: Pick<League, "id" | "season" | "trade_limit">, tea
   if (tradeOver(l, teamId) && !teamItems(teamId).cpu) run("UPDATE teams SET trade_tokens = trade_tokens - 1 WHERE id = ? AND trade_tokens > 0", teamId);
 }
 
+/**
+ * What a team has left to spend (Update 4.2, the My Team page): free adds and free trades still unused under the
+ * league's limits (null = no limit), plus the Acquisitions and Trades it bought. Bought ones always add to the total.
+ */
+export function movesLeft(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "acq_per_season" | "trade_limit">, teamId: number) {
+  const n = acquisitions(l, teamId);
+  const caps = [l.acq_per_week != null ? l.acq_per_week - n.week : null, l.acq_per_season != null ? l.acq_per_season - n.season : null]
+    .filter((x): x is number => x != null);
+  const items = teamItems(teamId);
+  return {
+    adds: { free: caps.length ? Math.max(0, Math.min(...caps)) : null, bought: items.acquisitions, weekly: l.acq_per_week != null && (l.acq_per_season == null || l.acq_per_week - n.week <= l.acq_per_season - n.season) },
+    trades: { free: l.trade_limit != null ? Math.max(0, l.trade_limit - tradeCount(l, teamId)) : null, bought: items.trades },
+  };
+}
+
 /** Trades a team has made this season (either side). */
 export const tradeCount = (l: Pick<League, "id" | "season">, teamId: number) =>
   one<{ n: number }>(

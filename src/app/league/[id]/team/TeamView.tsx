@@ -3,12 +3,15 @@ import { ensureBranding, teamBrand, userPresets } from "@/lib/branding";
 import Link from "next/link";
 import { one, Team } from "@/lib/db";
 import { defaultDay, getLeague, standings, teamDays, teamWeek } from "@/lib/league";
+import { ROSTER_MAX } from "@/lib/scoring";
 import { currentUser } from "@/lib/auth";
 import { RosterBoard } from "@/components/RosterBoard";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { applyPresetAction, dropPlayer, renameTeam, setAutoManage, setSlot } from "../../../actions";
 import { AutoManageToggle } from "@/components/AutoManageToggle";
 import { Fpts, PointsKey } from "@/components/Fpts";
+import { AcqIcon, ACQ_COLOR, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
+import { movesLeft } from "@/lib/activity";
 
 export async function TeamView({ leagueId, teamId, editable }: { leagueId: number; teamId: number; editable: boolean }) {
   const l = getLeague(leagueId)!;
@@ -31,9 +34,14 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
     ["Standing", rank ? `${ord(rank)} of ${table.length}` : "-"],
     ["Points for", <Fpts key="pf" n={t.points_for} iconClass="text-[0.8em]" live />],
     ["This week", <Fpts key="wk" n={tw.score} iconClass="text-[0.8em]" live />],
-    ["FAAB", `$${t.faab}`],
-    ["Roster", `${players.length}/13`],
+    ["Roster", `${players.length}/${ROSTER_MAX}`],
   ];
+  // Your adds and trades left: free ones under the league's limits plus any bought in the League Shop.
+  const moves = editable ? movesLeft(l, t.id) : null;
+  const moveCells = moves && ([
+    ["Adds left", <AcqIcon key="a" className={ACQ_COLOR} />, moves.adds.free, moves.adds.bought, moves.adds.weekly ? "free this matchup" : "free this season", "Acquisition"],
+    ["Trades left", <TradeIcon key="t" className={TRADE_COLOR} />, moves.trades.free, moves.trades.bought, "free this season", "Trade"],
+  ] as const);
 
   return (
     <div className="relative space-y-6">
@@ -54,14 +62,28 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
           </div>
           {!editable && <Link href={`/league/${leagueId}/trades?to=${t.id}`} className="btn bg-[#fff] text-black hover:bg-[#e5e7eb]">Propose trade</Link>}
         </div>
-        <div className="relative grid grid-cols-3 gap-px bg-black/20 sm:grid-cols-6">
+        <div className="relative grid grid-cols-3 gap-px bg-black/20 sm:grid-cols-5">
           {stats.map(([k, v]) => (
-            <div key={k} className="min-w-0 bg-black/45 px-3 py-1.5 backdrop-blur sm:px-4 sm:py-2">
+            <div key={k} className="min-w-0 bg-black/45 px-3 max-sm:last:col-span-2 py-1.5 backdrop-blur sm:px-4 sm:py-2">
               <p className="truncate text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>
               <p className="truncate font-mono text-sm font-black text-white sm:text-base">{v}</p>
             </div>
           ))}
         </div>
+        {moveCells && (
+          <div className="relative grid grid-cols-2 gap-px border-t border-black/20 bg-black/20">
+            {moveCells.map(([k, icon, free, bought, when, item]) => (
+              <Link key={k} href={`/league/${leagueId}/shop`} className="min-w-0 bg-black/55 px-3 py-2 backdrop-blur transition hover:bg-black/45 sm:px-4" title={`Buy more ${item}s in the League Shop`}>
+                <p className="truncate text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>
+                <p className="flex items-center gap-1.5 font-mono text-lg font-black leading-tight text-white">{icon}{free == null ? "No limit" : free + bought}</p>
+                <p className="truncate text-[11px] text-white/60">
+                  {free == null ? `Your league has no ${item === "Trade" ? "trade" : "add"} limit` : <>{free} free<span className="max-sm:hidden"> {when}</span>{bought ? ` + ${bought} bought` : ""}</>}
+                  {free != null && free + bought === 0 && " · Buy more"}
+                </p>
+              </Link>
+            ))}
+          </div>
+        )}
         <div className="h-1" style={{ background: `linear-gradient(90deg, ${b.alt}, ${b.color}, ${b.alt})` }} />
       </section>
 
@@ -69,7 +91,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         {l.draft_status !== "done" || !td ? (
           <p className="card p-6 text-zinc-500">Rosters fill up during the draft.</p>
         ) : (
-          <RosterBoard days={td.days} rows={td.rows} totals={td.totals} initialDay={defaultDay(td.days)} editable={editable} brand={b}
+          <RosterBoard days={td.days} rows={td.rows} totals={td.totals} initialDay={defaultDay(td.days)} editable={editable} brand={b} scoring={l.scoring}
             setSlot={editable ? setSlot.bind(null, leagueId) : undefined} drop={editable ? dropPlayer.bind(null, leagueId) : undefined}
             header={editable ? <AutoManageToggle key="auto-manager" on={!!t.auto_manage} set={setAutoManage.bind(null, leagueId)} /> : undefined} />
         )}

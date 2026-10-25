@@ -11,7 +11,7 @@ const FEATURES = [
   ["Live drafts", "Snake drafts with a pick clock, keepers, autodraft and mock drafts."],
   ["Real NBA stats", "Rosters, box scores and live scoring straight from tonight's games."],
   ["Fantasy Coins", "Every fantasy point pays coins. Spend them on extra adds and trades, or the Sportsbook."],
-  ["League chat", "Trades, waivers, results and smack talk in one place."],
+  ["League chat", "Trades, adds, results and smack talk in one place."],
 ];
 
 export default async function LoginPage() {

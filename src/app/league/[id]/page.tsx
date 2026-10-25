@@ -218,12 +218,12 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                   <PointsKey compact />
                   <div className="rounded-xl bg-fpts/10 p-3 ring-1 ring-fpts/30">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Fantasy Coins rate</p>
-                    <p className="flex items-center gap-2 whitespace-nowrap font-mono text-2xl font-black text-fpts"><FptIcon />1 = <CoinIcon />{rate.toFixed(2)}</p>
+                    <p className="flex items-center gap-2 whitespace-nowrap font-mono text-2xl font-black text-fpts"><FptIcon />1 = <span className="inline-flex items-center gap-2 text-coin"><CoinIcon />{rate.toFixed(2)}</span></p>
                     <p className="text-[10px] text-zinc-500">Fixed every week</p>
                   </div>
                   {mine && (
                     <div className="grid grid-cols-2 gap-2 text-center">
-                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">This week</p><p className="font-black text-fpts"><Coins n={mine.week} live /></p></div>
+                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">This week</p><p className="font-black text-coin"><Coins n={mine.week} live /></p></div>
                       <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">Season</p><p className="font-black text-white"><Coins n={mine.season} live /></p></div>
                     </div>
                   )}

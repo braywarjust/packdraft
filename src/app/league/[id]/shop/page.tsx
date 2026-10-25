@@ -53,7 +53,7 @@ export default async function LeagueShop({ params }: { params: Promise<{ id: str
             </p>
           </div>
         </div>
-        <div className="relative grid grid-cols-3 gap-px bg-black/20" style={{ "--coin-ink": "#fff" } as React.CSSProperties}>
+        <div className="relative grid grid-cols-3 gap-px bg-black/20">
           {([
             ["Fantasy Coins", <Coins key="c" n={u.coins} live />],
             ["Acquisitions", <span key="a" className="inline-flex items-center gap-1.5"><AcqIcon />{me?.acq_tokens ?? 0}</span>],
@@ -90,7 +90,7 @@ export default async function LeagueShop({ params }: { params: Promise<{ id: str
             <p className={`mb-1 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider ${ACQ_COLOR}`}><AcqIcon /> Acquisitions</p>
             <p className="text-zinc-600">
               {freeAdds ? <>Free adds here: <b className="text-white">{freeAdds}</b>. </> : <>This league has no add limit yet, so adds are free until the League Manager sets one. </>}
-              Past your free adds, each free agent pickup or waiver claim uses one Acquisition.
+              Past your free adds, each player you add uses one Acquisition.
             </p>
           </div>
           <div className="rounded-xl bg-ink/40 p-3">

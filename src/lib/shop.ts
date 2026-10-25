@@ -1,5 +1,5 @@
 // League Shop (Update 4.0-R): each league sells two items for Fantasy Coins, at prices its League Manager sets.
-// - Acquisition: one add (free agent or waiver claim) past the league's free adds per matchup or season.
+// - Acquisition: one player add past the league's free adds per matchup or season.
 // - Trade: one trade past the league's free trades per season (each side of a trade over its limit uses one).
 // They belong to your team in that league and are used up automatically when you need them (activity.ts).
 import { one, run, topUpTester, tx, ACQ_PRICE, TRADE_PRICE, type League, type Team, type User } from "./db";
