@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { Coins } from "./Coins";
-import { Wallet, type WalletLeague } from "./Currencies";
+import { Wallet } from "./Currencies";
 import { Avatar } from "./ProfileView";
 
 import { NAV_ICONS as I, NavIcon as Icon } from "./NavIcons";
@@ -16,10 +16,9 @@ import { useLiveBalance } from "./useLiveBalance";
 const STORE_KEY = "pd-sidebar";
 
 export function Sidebar({
-  user, wallet, leagues, logout,
+  user, leagues, logout,
 }: {
   user: { name: string; color: string; coins: number; tester?: boolean; avatar?: string | null };
-  wallet: WalletLeague[];
   leagues: { id: number; name: string; live: boolean; brand?: BrandLite }[];
   logout: () => Promise<void>;
 }) {
@@ -136,7 +135,7 @@ export function Sidebar({
       <div className="safe-top sticky top-0 z-40 flex items-center justify-between border-b border-zinc-200 bg-white/95 px-4 pb-2.5 backdrop-blur lg:hidden">
         <Link href="/" aria-label="PackDraft home"><Logo height={34} /></Link>
         <div className="flex items-center gap-3">
-          <Wallet coins={user.coins} leagues={wallet} compact />
+          <Wallet coins={user.coins} compact />
           <button onClick={() => setOpen(true)} className="hit press rounded-md p-1.5 text-zinc-700 hover:bg-zinc-100" aria-label="Open menu">
             <Icon d="M4 6h16M4 12h16M4 18h16" />
           </button>

@@ -8,8 +8,6 @@ import Link from "next/link";
 import "./globals.css";
 import { currentUser } from "@/lib/auth";
 import { all } from "@/lib/db";
-import { movesLeft } from "@/lib/activity";
-import { getLeague } from "@/lib/league";
 import { logout } from "./actions";
 import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
@@ -48,14 +46,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     );
   }
   ensureBranding();
-  const leagues = all<{ id: number; name: string; live: number; color: string | null; alt_color: string | null; abbr: string | null; logo_url: string | null; acq_tokens: number; trade_tokens: number }>(
-    `SELECT l.id, l.name, l.color, l.alt_color, l.abbr, l.logo_url, (l.week_started_at IS NOT NULL OR l.draft_status = 'live') live, t.acq_tokens, t.trade_tokens
+  const leagues = all<{ id: number; name: string; live: number; color: string | null; alt_color: string | null; abbr: string | null; logo_url: string | null }>(
+    `SELECT l.id, l.name, l.color, l.alt_color, l.abbr, l.logo_url, (l.week_started_at IS NOT NULL OR l.draft_status = 'live') live
      FROM leagues l JOIN teams t ON t.league_id = l.id WHERE t.user_id = ? ORDER BY l.id DESC`, user.id);
-  // Acquisitions and Trades: the league's per-matchup ones still unused, and any bought (shown apart).
-  const wallet = all<{ league_id: number; id: number }>("SELECT league_id, id FROM teams WHERE user_id = ?", user.id).map((t) => {
-    const m = movesLeft(getLeague(t.league_id)!, t.id);
-    return { id: t.league_id, acq: m.adds, trades: m.trades };
-  });
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -69,15 +62,14 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <PullToRefresh />
         <Sidebar
           user={{ name: user.name, color: user.color, coins: user.coins, tester: !!user.is_tester, avatar: avatarOf(user.id) }}
-          wallet={wallet}
           leagues={leagues.map((l) => ({ id: l.id, name: l.name, live: !!l.live, brand: leagueBrand(l) }))}
           logout={logout}
         />
         <div className="tabbar-pad flex min-h-screen flex-col transition-[padding] duration-200 lg:pl-[var(--sb)]">
-          {/* Fantasy Coins, Acquisitions and Trades on every page (desktop; the mobile top bar shows them too). */}
+          {/* Fantasy Coins on every page (desktop; the mobile top bar shows them too). */}
           <div className="pointer-events-none sticky top-0 z-30 hidden lg:block">
             <div className="mx-auto flex max-w-6xl justify-end px-8 pt-4 pr-20 2xl:pr-8">
-              <Wallet coins={user.coins} leagues={wallet} />
+              <Wallet coins={user.coins} />
             </div>
           </div>
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-8 sm:py-8 lg:pt-2"><NavShell>{children}</NavShell></main>
