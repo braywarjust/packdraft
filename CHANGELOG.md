@@ -14,6 +14,7 @@ Every PackDraft update is listed here, newest first. Version numbers follow the 
 - League Settings uses the app's icons: Fantasy Points on Scoring, Acquisitions and Trades on their sections, and Fantasy Coins on the League Shop prices.
 - Waivers are gone. Every add is instant, and a player another team drops can be picked up by anyone straight away (if his game today has already tipped off, the next day). FAAB bidding and claims are removed.
 - With a full roster you have to pick a player to drop before you can add one, so an Acquisition is never used without room.
+- League tabs feel snappier: the blue highlight slides (with a little bounce) to the tab you tap the instant you tap it, tabs squeeze under your finger, and on phones the bar scrolls the picked tab into view.
 - The League Manager has an LM tag everywhere in the league: standings, matchup cards, team pages, chat and the draft room.
 - Playoff clinch tags (x, z, *, e) are gone from the standings.
 - Top performers on Home now shows the top 10 for the week. Scroll the list to see 6 to 10.
