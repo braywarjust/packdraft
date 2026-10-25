@@ -97,7 +97,7 @@ function Body({ d, onClose }: { d: PlayerInfo; onClose: () => void }) {
         )}
 
         <section>
-          <p className="label">Game log</p>
+          <p className="label">Game log · last 5</p>
           {d.log.length ? (
             <div className="overflow-x-auto rounded-xl ring-1 ring-white/5">
               <table className="w-full text-xs sm:min-w-[620px] sm:text-sm">
@@ -109,8 +109,8 @@ function Body({ d, onClose }: { d: PlayerInfo; onClose: () => void }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {d.log.map((g, gi) => (
-                    <tr key={g.id} className={`border-t border-line/50 ${gi >= 5 ? "max-sm:hidden" : ""}`}>
+                  {d.log.slice(0, 5).map((g) => (
+                    <tr key={g.id} className="border-t border-line/50">
                       <td className="whitespace-nowrap px-2 py-1 text-zinc-400 sm:px-3 sm:py-1.5">{shortDay(g.date)}{g.preseason && <span className="ml-1 text-[10px] text-zinc-500">PRE</span>}</td>
                       <td className="whitespace-nowrap"><span className="inline-flex items-center gap-1 text-zinc-300">{g.home ? "vs" : "@"} <TeamLogo team={g.opp} size={14} />{g.opp}</span></td>
                       <td className={`whitespace-nowrap font-semibold max-sm:hidden ${g.result.startsWith("W") ? "text-emerald-500" : g.result.startsWith("L") ? "text-red-500" : "text-zinc-400"}`}>{g.result}</td>
