@@ -2,10 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { LoadingLogo } from "./LoadingLogo";
-import Link from "next/link";
-import { useCallback, useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { boostPlayer, unboostPlayer } from "@/app/actions";
+import { useEffect, useState } from "react";
 import type { PlayerInfo as BaseInfo } from "@/lib/player-info";
 import type { NewsItem } from "@/lib/news";
 import { newsAgo } from "@/lib/news-time";
@@ -15,7 +12,6 @@ import { InjuryTag } from "./Headshot";
 import { TeamLogo } from "./TeamLogo";
 import { TeamBadge } from "./TeamBadge";
 import { Fpts } from "./Fpts";
-import { SlabIcon } from "./SlabIcon";
 import { XIcon } from "./Icons";
 import { useScrollLock } from "@/components/useScrollLock";
 
@@ -40,65 +36,8 @@ export function PlayerButton({ id, league, className = "", children }: { id: num
 
 const pct = (m: number, a: number) => (a ? `${Math.round((m / a) * 1000) / 10}%` : "-");
 const shortDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
-const day = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 
-const RARITY_LABEL: Record<string, string> = { common: "Common", rare: "Rare", epic: "Epic", legendary: "Mythic", grail: "Immortal" };
-const statBits = (b: { pts: number; reb: number; ast: number }) => ([["PTS", b.pts], ["REB", b.reb], ["AST", b.ast]] as const).filter(([, v]) => v > 0);
-
-/**
- * His slabs: the ones you own, what each rolled (stat boost and/or multiplier), and, when he's on your team in this
- * league, Equip / Unequip on his next game right here.
- */
-function SlabMarket({ d, reload }: { d: PlayerInfo; reload: () => void }) {
-  const router = useRouter();
-  const [pending, start] = useTransition();
-  const [err, setErr] = useState("");
-  const eq = d.equip;
-  const run = (fn: () => Promise<unknown>) => start(async () => {
-    const r = (await fn()) as { error?: string } | undefined;
-    setErr(r?.error ?? "");
-    reload();
-    router.refresh();
-  });
-  return (
-    <section>
-      <div className="mb-1.5 flex items-center justify-between">
-        <p className="label !mb-0 flex items-center gap-1.5"><SlabIcon className="text-fpts" /> His slabs · you own {d.market.mine}</p>
-        <Link href={d.league ? `/league/${d.league.id}/packs/pool` : "/packs"} className="text-xs font-semibold text-brand">Pack pool</Link>
-      </div>
-      {eq && (
-        <p className="mb-1.5 text-[11px] text-zinc-500">
-          {eq.day ? <>Next game: <b className="text-white">{eq.day}</b>. One use.</> : eq.why}
-        </p>
-      )}
-      <div className="space-y-1.5">
-        {d.mySlabs.length === 0 && <p className="rounded-lg bg-ink p-3 text-xs text-zinc-500 ring-1 ring-white/5">No slabs of him yet. Rip League Packs to find one.</p>}
-        {d.mySlabs.map((s) => {
-          const onThis = eq?.cardId === s.id;
-          const elsewhere = !!s.equipped && !onThis;
-          const canEquip = !!eq?.day && !elsewhere && !onThis && (s.mult != null || !!s.boost);
-          return (
-            <div key={s.id} className={`flex flex-wrap items-center gap-1.5 rounded-lg bg-ink px-2.5 py-2 text-xs ring-1 ${onThis ? "ring-fpts" : "ring-white/5"}`}>
-              <span className="font-bold text-white">{RARITY_LABEL[s.rarity] ?? s.rarity} #{s.serial}</span>
-              {s.mult != null && <span className="rounded-full bg-fpts/15 px-1.5 py-0.5 font-black text-fpts">{s.mult.toFixed(2)}x</span>}
-              {s.boost && statBits(s.boost).map(([k, v]) => <span key={k} className="rounded-full bg-orange-500/15 px-1.5 py-0.5 font-black text-orange-500">+{v} {k}</span>)}
-              <span className="ml-auto flex items-center gap-1.5">
-                {onThis && <span className="font-bold text-fpts">Equipped</span>}
-                {elsewhere && <span className="text-[11px] font-semibold text-zinc-500">Equipped · {s.equipped!.startsWith("sim:") ? "sim game" : day(s.equipped!)}</span>}
-                {onThis && eq && <button disabled={pending} onClick={() => run(() => unboostPlayer(eq.leagueId, d.player.id))} className="btn-ghost px-2 py-0.5 text-[11px]">Unequip</button>}
-                {canEquip && eq && <button disabled={pending} onClick={() => run(() => boostPlayer(eq.leagueId, d.player.id, s.id))} className="btn-primary px-2.5 py-0.5 text-[11px]">{eq.cardId ? "Swap in" : "Equip"}</button>}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      {err && <p className="mt-1 text-xs text-red-500">{err}</p>}
-      {d.mySlabs.some((s) => s.boost) && <p className="mt-1.5 text-[11px] text-zinc-500">Boosts add on at the final, before the multiplier.</p>}
-    </section>
-  );
-}
-
-function Body({ d, reload }: { d: PlayerInfo; reload: () => void }) {
+function Body({ d }: { d: PlayerInfo }) {
   const p = d.player;
   const s = d.season?.line;
   return (
@@ -138,8 +77,6 @@ function Body({ d, reload }: { d: PlayerInfo; reload: () => void }) {
         </div>
 
         {d.news && d.news.length > 0 && <NewsList items={d.news} />}
-
-        <SlabMarket d={d} reload={reload} />
 
         {s && (
           <section>
@@ -229,7 +166,6 @@ export function PlayerInspectorHost() {
   const [data, setData] = useState<PlayerInfo | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
-  const reload = useCallback(() => setNonce((n) => n + 1), []);
 
   useScrollLock(!!req);
   useEffect(() => {
@@ -254,7 +190,7 @@ export function PlayerInspectorHost() {
     <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-2 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setReq(null)}>
       <div className="relative my-2 w-full max-w-3xl sm:my-8 overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <button onClick={() => setReq(null)} aria-label="Close" className="hit press absolute right-1.5 top-1.5 z-10 sm:right-3 sm:top-3 rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
-        {data ? <Body d={data} reload={reload} /> : err ? <p className="p-10 text-center text-sm text-zinc-500">{err}</p> : <div className="grid place-items-center p-10"><LoadingLogo size={96} label="Loading player" /></div>}
+        {data ? <Body d={data} /> : err ? <p className="p-10 text-center text-sm text-zinc-500">{err}</p> : <div className="grid place-items-center p-10"><LoadingLogo size={96} label="Loading player" /></div>}
       </div>
     </div>
   );

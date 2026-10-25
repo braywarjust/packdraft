@@ -13,7 +13,7 @@ You ask Claude  →  Claude edits code on your Mac  →  tests it on localhost  
 
 - Code lives in GitHub (`braywarjust/packdraft`). The **live database lives only on the server** and is never
   overwritten by a deploy. Every deploy saves a backup of it first (the last 14 are kept).
-- A deploy restarts the app for about 10 seconds. Live scores, packs and Pack Points are unaffected; avoid pushing in
+- A deploy restarts the app for about 10 seconds. Live scores and Fantasy Coins are unaffected; avoid pushing in
   the middle of a live draft.
 - Watch a deploy: github.com/braywarjust/packdraft → **Actions** tab (green check = live).
 
@@ -26,7 +26,7 @@ You ask Claude  →  Claude edits code on your Mac  →  tests it on localhost  
 
 ### Big features (new game mode, trading revamp, playoffs, etc.)
 1. **Start a new thread for the feature** and describe the goal, not just the UI: who uses it, how it earns or
-   spends Pack Points, what should happen in edge cases. Ask Claude for a **plan first** for anything big.
+   spends Fantasy Coins, what should happen in edge cases. Ask Claude for a **plan first** for anything big.
 2. **Test on real data**: Claude runs `bash deploy/pull-data.sh` so localhost has a copy of the live league, then
    builds against it. Nothing done on localhost touches the live site.
 3. Claude works on a **feature branch** (`feature/update-<version>`, see [Naming conventions](#naming-conventions)) so half-done work never goes live. You can look at it on
@@ -38,8 +38,8 @@ You ask Claude  →  Claude edits code on your Mac  →  tests it on localhost  
 ### Database changes
 New features often need new tables or columns. Claude adds them as **migrations in `src/lib/db.ts`** (the
 `ALTER TABLE ... ADD COLUMN` pattern), which run automatically when the new code starts on the server. Existing
-accounts, leagues and Pack Points are never wiped by a deploy. One-off data fixes on the live site ("give everyone
-500 Pack Points", "fix this roster") are done by Claude directly on the server's database, after a backup.
+accounts, leagues and Fantasy Coins are never wiped by a deploy. One-off data fixes on the live site ("give everyone
+500 Fantasy Coins", "fix this roster") are done by Claude directly on the server's database, after a backup.
 
 ## Naming conventions
 
@@ -77,6 +77,6 @@ Every change belongs to an update, and the update's version number ties everythi
 ## Tips for asking
 
 - One feature per thread keeps things clear and lets several features move at once.
-- Say what "done" looks like ("works on my phone", "shows in league chat", "costs 50 Pack Points").
-- Mention anything that must not change (odds, the Pack Points rate, existing slabs).
+- Say what "done" looks like ("works on my phone", "shows in league chat", "costs 50 Fantasy Coins").
+- Mention anything that must not change (odds, the Fantasy Coins rate, shop prices).
 - For anything that changes money-like balances, ask Claude to test it on the local copy first and show you.

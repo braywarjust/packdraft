@@ -3,7 +3,7 @@
 // ESPN names a season by the year it ends: 2026-27 is 2027. For the current season we keep its preseason start,
 // regular-season opener and last day, the end of the NBA playoffs, and every regular-season game date (used to find
 // the All-Star break when a league plans its weeks). Once the Finals are over we look for next season's dates, and
-// as soon as ESPN publishes them, "the season" becomes next season: player sync, positions, slab photos and league
+// as soon as ESPN publishes them, "the season" becomes next season: player sync, positions and league
 // rollovers all key off this.
 import { one, run } from "../db";
 import { addDays, etDate } from "./espn";

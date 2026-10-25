@@ -1,6 +1,6 @@
 import { ForwardIcon, PlayIcon } from "@/components/Icons";
 import { MatchupCard, topPerformers } from "@/components/MatchupCard";
-import { PackThumb } from "@/components/PackThumb";
+import { ItemArt } from "@/components/ItemArt";
 import { TeamBadge, TeamName } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand } from "@/lib/branding";
 import Link from "next/link";
@@ -10,7 +10,7 @@ import { canStartNewSeason, getLeague, leagueHistory, leagueTeams, standings, te
 import { season as nbaSeason, seasonLabel } from "@/lib/nba/season";
 import { dayLabel } from "@/lib/nba/espn";
 import { winProb } from "@/lib/sim";
-import { PACK_BY_ID } from "@/lib/packs";
+import { shopPrice } from "@/lib/shop";
 import { earnings, weekRate } from "@/lib/economy";
 import { CoinIcon, Coins } from "@/components/Coins";
 import { ActionButton } from "@/components/ActionButton";
@@ -163,7 +163,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 <div className="flex flex-wrap gap-2">
                   {isCommish && !l.champion_team_id && l.mode === "sim" && (!l.week_started_at
                     ? <ActionButton action={startWeekAction.bind(null, l.id)} className="btn-lime"><PlayIcon /> Kick off Week {l.current_week}</ActionButton>
-                    : <ActionButton action={finishWeekNow.bind(null, l.id)} confirm="Skip to final scores and hand out packs?"><ForwardIcon /> Fast-forward to final</ActionButton>)}
+                    : <ActionButton action={finishWeekNow.bind(null, l.id)} confirm="Skip to final scores?"><ForwardIcon /> Fast-forward to final</ActionButton>)}
                   <Link href={`/league/${l.id}/matchups`} className="btn-ghost">All matchups →</Link>
                 </div>
               </div>
@@ -200,49 +200,50 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
           );
         })()}
 
-        {/* What you're playing for: weekly packs + every point pays Pack Points */}
+        {/* What you're playing for: every point pays Fantasy Coins, spent in the League Shop */}
         {(() => {
           const rate = weekRate();
           const mine = me && l.draft_status === "done" ? earnings(l.id, u.id, l.current_week) : null;
-          const rewards = [["Matchup win", l.reward_win, false], ["Matchup loss", l.reward_loss, false], ["Top score", l.reward_top, true], ["Champion", "goat", true]] as const;
+          const items = [["acquisition", "Acquisition", "1 extra add", shopPrice(l, "acquisition"), me?.acq_tokens ?? 0], ["trade", "Trade", "1 extra trade", shopPrice(l, "trade"), me?.trade_tokens ?? 0]] as const;
           return (
-            <section className="relative overflow-hidden rounded-2xl border border-amber-400/30 shadow-xl"
-              style={{ background: "radial-gradient(120% 140% at 0% 0%, rgba(245,193,92,.22), transparent 55%), radial-gradient(120% 140% at 100% 100%, rgba(16,185,129,.18), transparent 55%), #1d2433" }}>
-              <div className="grid gap-0 xl:grid-cols-[1.5fr_1fr]">
-                <div className="p-5">
-                  <p className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-600">Every week</p>
-                  <h2 className="text-2xl font-black tracking-tight text-white">Win packs, rip slabs</h2>
-                  <p className="mt-1 text-sm text-zinc-500">A pack for everyone each week. Bonus for top score and the champ.</p>
-                  <div className="mt-4 grid grid-cols-4 gap-2">
-                    {rewards.map(([label, id, bonus]) => (
-                      <Link key={label} href={`/league/${l.id}/packs`} className="group flex flex-col items-center rounded-xl bg-black/20 px-1 pb-2 pt-3 text-center ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-amber-400/40">
-                        <PackThumb id={id} height={84} showName={false} />
-                        <span className="mt-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500">{label}</span>
-                        <span className="text-xs font-bold leading-tight text-white">{PACK_BY_ID[id]?.name}</span>
-                        {bonus && <span className="mt-1 rounded-full bg-amber-400 px-1.5 text-[9px] font-black uppercase text-black">Bonus</span>}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-col justify-between gap-4 border-t border-white/10 bg-black/20 p-5 xl:border-l xl:border-t-0">
+            <section className="relative overflow-hidden rounded-2xl border border-fpts/30 shadow-xl"
+              style={{ background: "radial-gradient(120% 140% at 0% 0%, rgba(56,189,248,.2), transparent 55%), radial-gradient(120% 140% at 100% 100%, rgba(245,158,11,.16), transparent 55%), #1d2433" }}>
+              <div className="grid gap-0 xl:grid-cols-[1fr_1.3fr]">
+                <div className="flex flex-col justify-between gap-4 p-5">
                   <div>
-                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-600">Points pay</p>
-                    <h2 className="text-2xl font-black tracking-tight text-white">Every point pays Pack Points</h2>
-                    <p className="mt-1 text-sm text-zinc-500">Each starter&apos;s fantasy point pays ½ Pack Point at the final.</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-fpts">Points pay</p>
+                    <h2 className="text-2xl font-black tracking-tight text-white">Every point pays Fantasy Coins</h2>
+                    <p className="mt-1 text-sm text-zinc-500">Each starter&apos;s fantasy point pays ½ Fantasy Coin at the final.</p>
                   </div>
                   <PointsKey compact />
-                  <div className="rounded-xl bg-emerald-500/10 p-3 ring-1 ring-emerald-500/30">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Pack Points rate</p>
-                    <p className="flex items-center gap-2 whitespace-nowrap font-mono text-2xl font-black text-emerald-600"><FptIcon />1 = <CoinIcon />{rate.toFixed(2)}</p>
+                  <div className="rounded-xl bg-fpts/10 p-3 ring-1 ring-fpts/30">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Fantasy Coins rate</p>
+                    <p className="flex items-center gap-2 whitespace-nowrap font-mono text-2xl font-black text-fpts"><FptIcon />1 = <CoinIcon />{rate.toFixed(2)}</p>
                     <p className="text-[10px] text-zinc-500">Fixed every week</p>
                   </div>
                   {mine && (
                     <div className="grid grid-cols-2 gap-2 text-center">
-                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">This week</p><p className="font-black text-emerald-600"><Coins n={mine.week} live /></p></div>
+                      <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">This week</p><p className="font-black text-fpts"><Coins n={mine.week} live /></p></div>
                       <div className="rounded-lg bg-black/20 p-2"><p className="text-[10px] uppercase tracking-wider text-zinc-500">Season</p><p className="font-black text-white"><Coins n={mine.season} live /></p></div>
                     </div>
                   )}
-                  <Link href={`/league/${l.id}/packs`} className="btn-primary w-full">Spend them on League Packs</Link>
+                </div>
+                <div className="border-t border-white/10 bg-black/20 p-5 xl:border-l xl:border-t-0">
+                  <p className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-500">League Shop</p>
+                  <h2 className="text-2xl font-black tracking-tight text-white">Save up for big moves</h2>
+                  <p className="mt-1 text-sm text-zinc-500">Out of free adds or trades? Buy more with your coins.</p>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    {items.map(([k, name, sub, price, owned]) => (
+                      <Link key={k} href={`/league/${l.id}/shop`} className="group flex flex-col items-center rounded-xl bg-black/20 px-2 pb-3 pt-4 text-center ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-amber-400/40">
+                        <ItemArt item={k} width={96} height={134} />
+                        <span className="mt-3 text-sm font-black text-white">{name}</span>
+                        <span className="text-[11px] text-zinc-500">{sub}</span>
+                        <span className="mt-1 text-xs font-bold text-white"><Coins n={price} /></span>
+                        {me && <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">You own {owned}</span>}
+                      </Link>
+                    ))}
+                  </div>
+                  <Link href={`/league/${l.id}/shop`} className="btn-primary mt-4 w-full">Open the League Shop</Link>
                 </div>
               </div>
             </section>

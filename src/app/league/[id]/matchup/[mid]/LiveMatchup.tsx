@@ -7,8 +7,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { LivePlayer } from "@/lib/league";
 import { MatchupCard } from "@/components/MatchupCard";
-import { BoostChip } from "@/components/LineupEditor";
-import { SlabOn } from "@/components/SlabIcon";
 import { Fpts } from "@/components/Fpts";
 import { PlayerButton } from "@/components/PlayerInspector";
 import type { DayInfo, DayRow } from "@/lib/league";
@@ -96,15 +94,12 @@ export function LiveMatchup({ leagueId, matchupId }: { leagueId: number; matchup
             <>
               <p className={`flex items-center gap-1 text-[12px] font-semibold leading-tight text-white ${right ? "justify-end" : ""}`}>
                 {right && <TeamLogo team={r.team} size={14} />}
-                {right && <SlabOn boost={r.boost} />}
                 <PlayerButton id={r.id} className="truncate">{shortName(r.name)}</PlayerButton>
-                {!right && <SlabOn boost={r.boost} />}
                 {!right && <TeamLogo team={r.team} size={14} />}
               </p>
               <p className={`truncate text-[11px] ${g?.state === "in" ? "font-semibold text-red-500" : "text-zinc-500"}`}>
                 {g ? <>{g.state === "in" && "● "}{g.opp} {g.status.replace(/ ET$/, "")}</> : ""}
               </p>
-              {r.boost && <p className={`mt-0.5 flex gap-1 ${right ? "justify-end" : ""}`}><BoostChip boost={r.boost} /></p>}
             </>
           ) : <p className="text-xs text-zinc-500">Empty</p>}
         </div>

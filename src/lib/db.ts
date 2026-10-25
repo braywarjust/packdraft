@@ -4,6 +4,13 @@ import path from "node:path";
 
 export const DATA_DIR = path.join(process.cwd(), "data");
 
+/**
+ * Default League Shop prices in Fantasy Coins (a typical week pays roughly 1,500-1,800): an extra add takes about two
+ * weeks of saving and an extra trade about three. The League Manager can change them in Settings.
+ */
+export const ACQ_PRICE = 3000;
+export const TRADE_PRICE = 5000;
+
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY, name TEXT UNIQUE NOT NULL COLLATE NOCASE, pin_hash TEXT, color TEXT NOT NULL,
@@ -97,7 +104,7 @@ CREATE TABLE IF NOT EXISTS dfs_entries (
   id INTEGER PRIMARY KEY, contest_id INTEGER NOT NULL, user_id INTEGER, bot_name TEXT, lineup TEXT NOT NULL,
   points REAL, rank INTEGER, created_at INTEGER NOT NULL
 );
--- Pack Points paid out for each started player-game in a league (one row per team, player and game).
+-- Fantasy Coins (once Pack Points) paid out for each started player-game in a league (one row per team, player and game).
 CREATE TABLE IF NOT EXISTS pp_earnings (
   league_id INTEGER NOT NULL, week INTEGER NOT NULL, team_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
   player_id INTEGER NOT NULL, game_key TEXT NOT NULL, fpts REAL NOT NULL, rate REAL NOT NULL, pp INTEGER NOT NULL,
@@ -171,6 +178,14 @@ function open(): DatabaseSync {
   if (!leagueCols.includes("trade_limit")) db.exec("ALTER TABLE leagues ADD COLUMN trade_limit INTEGER");
   const actCols = (db.prepare("PRAGMA table_info(league_activity)").all() as { name: string }[]).map((c) => c.name);
   if (!actCols.includes("week")) db.exec("ALTER TABLE league_activity ADD COLUMN week INTEGER");
+  // League Shop (Update 4.0-R): Acquisitions and Trades a team has bought, and what the League Manager charges for them.
+  if (!teamCols.includes("acq_tokens")) db.exec("ALTER TABLE teams ADD COLUMN acq_tokens INTEGER NOT NULL DEFAULT 0");
+  if (!teamCols.includes("trade_tokens")) db.exec("ALTER TABLE teams ADD COLUMN trade_tokens INTEGER NOT NULL DEFAULT 0");
+  if (!leagueCols.includes("acq_price")) db.exec(`ALTER TABLE leagues ADD COLUMN acq_price INTEGER NOT NULL DEFAULT ${ACQ_PRICE}`);
+  if (!leagueCols.includes("trade_price")) db.exec(`ALTER TABLE leagues ADD COLUMN trade_price INTEGER NOT NULL DEFAULT ${TRADE_PRICE}`);
+  db.exec(`CREATE TABLE IF NOT EXISTS shop_purchases (
+    id INTEGER PRIMARY KEY, league_id INTEGER NOT NULL, team_id INTEGER NOT NULL, user_id INTEGER NOT NULL, item TEXT NOT NULL,
+    qty INTEGER NOT NULL, price INTEGER NOT NULL, created_at INTEGER NOT NULL)`);
   if (fresh) carryOverUsers(db);
   db.prepare("UPDATE users SET coins = ? WHERE is_tester = 1 AND coins < ?").run(TESTER_COINS, TESTER_FLOOR);
   db.exec("COMMIT");
@@ -220,7 +235,7 @@ export function one<T>(sql: string, ...params: Param[]): T | undefined {
   const r = db().prepare(sql).get(...params);
   return (r ? { ...r } : undefined) as T | undefined;
 }
-/** Test accounts play with a real (large) balance so every Pack Points change and animation shows; refilled when low. */
+/** Test accounts play with a real (large) balance so every Fantasy Coins change and animation shows; refilled when low. */
 export const TESTER_COINS = 1_000_000;
 const TESTER_FLOOR = 100_000;
 export function topUpTester(userId: number) {
@@ -276,6 +291,9 @@ export type League = {
   acq_per_season?: number | null;
   /** Trades each team can make per season; null = no limit. */
   trade_limit?: number | null;
+  /** League Shop prices in Fantasy Coins for one extra Acquisition and one extra Trade (Update 4.0-R). */
+  acq_price?: number;
+  trade_price?: number;
   // Branding (added by branding.ts ensureBranding)
   color?: string | null; alt_color?: string | null; abbr?: string | null; logo_url?: string | null;
 };
@@ -283,6 +301,8 @@ export type Team = {
   id: number; league_id: number; user_id: number | null; name: string; is_cpu: number; autodraft: number; faab: number;
   /** Auto Manager on (Update 2.2). */
   auto_manage?: number;
+  /** Acquisitions and Trades bought in the League Shop and not used yet (Update 4.0-R). */
+  acq_tokens?: number; trade_tokens?: number;
   wins: number; losses: number; ties: number; points_for: number; points_against: number;
   // Branding (added by branding.ts ensureBranding)
   color?: string | null; alt_color?: string | null; abbr?: string | null; logo_url?: string | null; preset_id?: number | null;

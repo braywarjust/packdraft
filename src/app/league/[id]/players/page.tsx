@@ -142,7 +142,8 @@ export default async function Players({ params, searchParams }: { params: Promis
             {(l.acq_per_week != null || l.acq_per_season != null) && (() => {
               const n = acquisitions(l, me.id);
               return <p className="text-xs text-zinc-500">
-                {[l.acq_per_week != null && `${n.week} of ${l.acq_per_week} adds this matchup`, l.acq_per_season != null && `${n.season} of ${l.acq_per_season} this season`].filter(Boolean).join(" · ")}
+                {[l.acq_per_week != null && `${Math.min(n.week, l.acq_per_week)} of ${l.acq_per_week} free adds used this matchup`, l.acq_per_season != null && `${Math.min(n.season, l.acq_per_season)} of ${l.acq_per_season} this season`].filter(Boolean).join(" · ")}
+                {` · ${me.acq_tokens ?? 0} Acquisition${me.acq_tokens === 1 ? "" : "s"} for extra adds`}
               </p>;
             })()}
             {claims.length === 0 && <p className="text-sm text-zinc-400">No claims yet.</p>}

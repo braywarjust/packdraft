@@ -3,6 +3,15 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
+## 4.0-R — Fantasy Coins and the League Shop (2026-10-25)
+
+- Pack Points are now **Fantasy Coins**, with a new blue coin icon. Your balance carries over. Every fantasy point your starters score still pays 0.5 coins when the game goes final.
+- Three currencies at the top right of every page: Fantasy Coins, Acquisitions and Trades (for the league you're in).
+- New **League Shop** tab in every league: buy Acquisitions (one extra add) and Trades (one extra trade) with Fantasy Coins. They're priced to save up for: 3,000 and 5,000 coins by default.
+- The League Manager sets the shop prices in Settings, next to the free adds per matchup/season and free trades per season. Once a team has used its free ones, each add or trade uses one of its Acquisitions or Trades (both sides of a trade pay if they're over). League chat announces every purchase.
+- Packs, slabs, the Collection, Slab Trades and the Casino are gone. Weekly pack rewards are gone too: your players' fantasy points are what pay now. Games already played with a slab equipped keep their scores.
+- The Sportsbook stays: bet your Fantasy Coins on real NBA games.
+
 ## 3.4 — League Settings and League Manager (2026-10-24)
 
 - League Manager: whoever creates a league is its League Manager (LM), shown with an LM tag under Teams. The LM can change every league setting and can hand the job to another manager with "Make LM". "Commish" is now "League Manager" everywhere.

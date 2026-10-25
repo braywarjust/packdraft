@@ -1,11 +1,8 @@
 // Player profiles: photo, username, tagline/bio, a look (colours from the favourite team preset, an NBA team or
-// custom picks; banner style; showcase layout), up to 6 featured slabs, and which sections show in what order.
+// custom picks; banner style), and which sections show in what order.
 import { all, one, run } from "./db";
 import { ensureBranding, favoritePresetId, getPreset, teamBrand, userPresets } from "./branding";
-import { userCards } from "./packs-server";
 import { PROFILE_SECTIONS, defaultLook, type ProfileLook, type ProfileSection } from "./profile-look";
-
-export const MAX_FEATURED = 6;
 
 let ready = false;
 export function ensureProfile() {
@@ -51,11 +48,6 @@ export function getProfile(userId: number) {
   const favBrand = fav ? teamBrand({ id: fav.id, name: fav.name, color: fav.color, alt_color: fav.alt_color, abbr: fav.abbr, logo_url: fav.logo_url }) : null;
   const nba = look.nba ? one<{ abbr: string; name: string; color: string | null; alt: string | null }>("SELECT abbr, name, color, alt FROM nba_teams WHERE abbr = ?", look.nba) ?? null : null;
 
-  const cards = userCards(userId);
-  const featuredIds = all<{ card_id: number }>("SELECT card_id FROM profile_featured WHERE user_id = ? ORDER BY pos", userId).map((r) => r.card_id);
-  const byId = new Map(cards.map((c) => [c.id, c]));
-  const featured = featuredIds.map((id) => byId.get(id)).filter((c): c is NonNullable<typeof c> => !!c);
-
   const teams = all<{ wins: number; losses: number; ties: number }>("SELECT wins, losses, ties FROM teams WHERE user_id = ?", userId);
   const leagues = all<{ id: number; name: string; team: string; wins: number; losses: number; ties: number; color: string | null; alt_color: string | null; abbr: string | null; logo_url: string | null; tid: number }>(
     `SELECT l.id, l.name, t.name team, t.wins, t.losses, t.ties, t.color, t.alt_color, t.abbr, t.logo_url, t.id tid
@@ -72,14 +64,9 @@ export function getProfile(userId: number) {
     nba: nba ? { abbr: nba.abbr, name: nba.name, color: `#${nba.color ?? "1f2937"}`, alt: `#${nba.alt ?? "111827"}` } : null,
     presets: userPresets(userId).map((p) => ({ id: p.id, brand: teamBrand({ id: p.id, name: p.name, color: p.color, alt_color: p.alt_color, abbr: p.abbr, logo_url: p.logo_url }) })),
     favPresetId: favId,
-    cards,
-    featured,
     leagues: leagues.map((l) => ({ id: l.id, name: l.name, record: `${l.wins}-${l.losses}${l.ties ? `-${l.ties}` : ""}`, brand: teamBrand({ id: l.tid, name: l.team, color: l.color, alt_color: l.alt_color, abbr: l.abbr, logo_url: l.logo_url }) })),
     stats: {
-      slabs: cards.length,
-      vault: cards.reduce((s, c) => s + c.value, 0),
-      best: cards[0] ?? null,
-      ripped: one<{ n: number }>("SELECT COUNT(*) n FROM user_packs WHERE user_id = ? AND opened_at IS NOT NULL", userId)?.n ?? 0,
+      coins: one<{ coins: number }>("SELECT coins FROM users WHERE id = ?", userId)?.coins ?? 0,
       wins: teams.reduce((s, t) => s + t.wins, 0),
       losses: teams.reduce((s, t) => s + t.losses, 0),
       ppEarned,
@@ -107,7 +94,7 @@ export function saveProfile(userId: number, p: { name: string; tagline: string; 
     alt: HEX.test(l.alt) ? l.alt : d.alt,
     nba: l.nba && /^[A-Z]{2,4}$/.test(l.nba) ? l.nba : null,
     banner: ["stripes", "court", "glow", "solid"].includes(l.banner) ? l.banner : d.banner,
-    showcase: ["shelf", "grid", "spotlight"].includes(l.showcase) ? l.showcase : d.showcase,
+    showcase: d.showcase,
     watermark: ["team", "nba", "none"].includes(l.watermark) ? l.watermark : d.watermark,
     ring: !!l.ring,
     sections: Object.fromEntries(PROFILE_SECTIONS.map((s) => [s, l.sections?.[s] !== false])) as ProfileLook["sections"],
@@ -116,15 +103,6 @@ export function saveProfile(userId: number, p: { name: string; tagline: string; 
   if (p.favPresetId && !getPreset(userId, p.favPresetId)) throw new Error("Team not found");
   run("UPDATE users SET name = ?, tagline = ?, bio = ?, avatar_url = ?, profile_look = ?, fav_preset_id = ? WHERE id = ?",
     name, p.tagline.trim().slice(0, 80), p.bio.trim().slice(0, 400), p.avatar, JSON.stringify(look), p.favPresetId, userId);
-}
-
-/** Pin up to MAX_FEATURED of your own unsold slabs, in order. */
-export function setFeatured(userId: number, cardIds: number[]) {
-  ensureProfile();
-  const own = new Set(all<{ id: number }>("SELECT id FROM cards WHERE user_id = ? AND sold = 0", userId).map((r) => r.id));
-  const ids = [...new Set(cardIds)].filter((id) => own.has(id)).slice(0, MAX_FEATURED);
-  run("DELETE FROM profile_featured WHERE user_id = ?", userId);
-  ids.forEach((id, i) => run("INSERT INTO profile_featured (user_id, card_id, pos) VALUES (?, ?, ?)", userId, id, i));
 }
 
 export function nbaTeams() {

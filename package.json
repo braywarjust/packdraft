@@ -1,7 +1,7 @@
 {
   "name": "packdraft",
-  "version": "3.4.0",
-  "description": "Private fantasy NBA with live stats, league pack shops and collectible slabs.",
+  "version": "4.0.0",
+  "description": "Private fantasy NBA with live stats, Fantasy Coins and a League Shop in every league.",
   "private": true,
   "repository": {
     "type": "git",

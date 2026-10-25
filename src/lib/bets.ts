@@ -1,4 +1,4 @@
-// PackDraft Sportsbook: bet Pack Points on real NBA games, pregame and live.
+// PackDraft Sportsbook: bet Fantasy Coins on real NBA games, pregame and live.
 //
 // There's no free odds feed, so the book prices its own lines from ESPN data we already sync:
 //  - Team strength = points of each team's top-9 players by minutes (season averages), normalised so an
@@ -210,8 +210,8 @@ export function placeBet(userId: number, picks: { key: string; odds: number }[],
   if (!picks.length) throw new Error("Add a pick to your slip");
   if (picks.length > MAX_LEGS) throw new Error(`Parlays max out at ${MAX_LEGS} legs`);
   stake = Math.floor(stake);
-  if (!(stake >= MIN_STAKE)) throw new Error(`Minimum bet is ${MIN_STAKE} Pack Points`);
-  if (stake > MAX_STAKE) throw new Error(`Maximum bet is ${MAX_STAKE.toLocaleString()} Pack Points`);
+  if (!(stake >= MIN_STAKE)) throw new Error(`Minimum bet is ${MIN_STAKE} Fantasy Coins`);
+  if (stake > MAX_STAKE) throw new Error(`Maximum bet is ${MAX_STAKE.toLocaleString()} Fantasy Coins`);
   const legs = picks.map((p) => {
     const { g, b, offer } = findOffer(p.key);
     if (!b.open) throw new Error(`${g.away} @ ${g.home} is closed for betting`);
@@ -227,10 +227,10 @@ export function placeBet(userId: number, picks: { key: string; odds: number }[],
     seen.add(m);
   }
   const odds = Math.round(legs.reduce((x, l) => x * l.offer.odds, 1) * 100) / 100;
-  if (stake * odds > MAX_PAYOUT) throw new Error(`Max payout is ${MAX_PAYOUT.toLocaleString()} Pack Points. Lower your stake.`);
+  if (stake * odds > MAX_PAYOUT) throw new Error(`Max payout is ${MAX_PAYOUT.toLocaleString()} Fantasy Coins. Lower your stake.`);
   return tx(() => {
     const u = one<{ coins: number }>("SELECT coins FROM users WHERE id = ?", userId)!;
-    if (u.coins < stake) throw new Error("Not enough Pack Points");
+    if (u.coins < stake) throw new Error("Not enough Fantasy Coins");
     run("UPDATE users SET coins = coins - ? WHERE id = ?", stake, userId);
     const r = run("INSERT INTO bets (user_id, stake, odds, live, created_at) VALUES (?, ?, ?, ?, ?)",
       userId, stake, odds, legs.some((l) => l.g.state === "in") ? 1 : 0, Date.now());

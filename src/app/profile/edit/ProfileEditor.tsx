@@ -1,12 +1,9 @@
 "use client";
-/* eslint-disable @next/next/no-img-element */
 
 import { Busy } from "@/components/LoadingLogo";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { Avatar, ProfileView, type ProfileViewData } from "@/components/ProfileView";
-import { SlabImage, PlayerCard, RarityBadge, slabOf, type CardData } from "@/components/PlayerCard";
-import { Slab } from "@/components/Slab";
 import { TeamBadge } from "@/components/TeamBadge";
 import { TeamLogo } from "@/components/TeamLogo";
 import { CheckIcon } from "@/components/Icons";
@@ -14,7 +11,7 @@ import { SECTION_LABEL, type ProfileLook } from "@/lib/profile-look";
 import { saveProfileAction } from "../actions";
 
 type Nba = { abbr: string; name: string; color: string; alt: string };
-type Initial = ProfileViewData & { cards: CardData[] };
+type Initial = ProfileViewData;
 
 function Choice<T extends string>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return (
@@ -35,7 +32,7 @@ function Panel({ id, title, hint, children }: { id?: string; title: string; hint
   );
 }
 
-export function ProfileEditor({ initial, nba, maxFeatured }: { initial: Initial; nba: Nba[]; maxFeatured: number }) {
+export function ProfileEditor({ initial, nba }: { initial: Initial; nba: Nba[] }) {
   const router = useRouter();
   const [name, setName] = useState(initial.user.name);
   const [tagline, setTagline] = useState(initial.user.tagline);
@@ -43,21 +40,18 @@ export function ProfileEditor({ initial, nba, maxFeatured }: { initial: Initial;
   const [avatar, setAvatar] = useState(initial.user.avatar);
   const [look, setLook] = useState<ProfileLook>(initial.look);
   const [fav, setFav] = useState<number | null>(initial.favPresetId);
-  const [featured, setFeatured] = useState<number[]>(initial.featured.map((c) => c.id));
   const [err, setErr] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pending, start] = useTransition();
   const file = useRef<HTMLInputElement>(null);
   const set = (p: Partial<ProfileLook>) => setLook((l) => ({ ...l, ...p }));
 
-  const byId = new Map(initial.cards.map((c) => [c.id, c]));
   const favBrand = initial.presets.find((p) => p.id === fav)?.brand ?? null;
   const nbaTeam = nba.find((t) => t.abbr === look.nba) ?? null;
   const preview: ProfileViewData = {
     ...initial,
     user: { ...initial.user, name: name || initial.user.name, tagline, bio, avatar },
     look, favBrand, nba: nbaTeam, favPresetId: fav,
-    featured: featured.map((id) => byId.get(id)).filter((c): c is CardData => !!c),
   };
 
   const upload = async (f: File) => {
@@ -71,12 +65,10 @@ export function ProfileEditor({ initial, nba, maxFeatured }: { initial: Initial;
     if (!r.ok) { setErr(j.error ?? "Upload failed"); return; }
     setAvatar(j.url);
   };
-  const toggleCard = (id: number) => setFeatured((f) => f.includes(id) ? f.filter((x) => x !== id) : f.length >= maxFeatured ? f : [...f, id]);
-  const moveCard = (i: number, d: number) => setFeatured((f) => { const n = [...f]; const j = i + d; if (j < 0 || j >= n.length) return f; [n[i], n[j]] = [n[j], n[i]]; return n; });
   const moveSection = (i: number, d: number) => setLook((l) => { const o = [...l.order]; const j = i + d; if (j < 0 || j >= o.length) return l; [o[i], o[j]] = [o[j], o[i]]; return { ...l, order: o }; });
   const save = () => start(async () => {
     setErr(null);
-    const r = await saveProfileAction({ name, tagline, bio, avatar, look, favPresetId: fav, featured });
+    const r = await saveProfileAction({ name, tagline, bio, avatar, look, favPresetId: fav });
     if ("error" in r && r.error) { setErr(r.error); return; }
     router.push(`/profile/${initial.user.id}`);
     router.refresh();
@@ -147,35 +139,6 @@ export function ProfileEditor({ initial, nba, maxFeatured }: { initial: Initial;
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={look.ring} onChange={(e) => set({ ring: e.target.checked })} /> Colour ring around my photo</label>
         </Panel>
       </div>
-
-      <Panel id="featured" title={`Featured slabs (${featured.length}/${maxFeatured})`} hint="Tap slabs to pin them. The first one leads the showcase.">
-        <div><label className="label">Showcase style</label><Choice value={look.showcase} onChange={(showcase) => set({ showcase })} options={[["shelf", "Shelf"], ["grid", "Grid"], ["spotlight", "Spotlight"]]} /></div>
-        {featured.length > 0 && (
-          <div className="flex flex-wrap gap-3">
-            {featured.map((id, i) => { const c = byId.get(id); if (!c) return null; return (
-              <div key={id} className="flex items-center gap-2 rounded-xl bg-black/20 p-2 ring-1 ring-white/10">
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-fpts text-xs font-black text-black">{i + 1}</span>
-                <span className="max-w-[140px] truncate text-sm font-semibold">{c.name}</span>
-                <button type="button" className="hit press rounded px-1.5 text-zinc-400 hover:text-white disabled:opacity-30" disabled={i === 0} onClick={() => moveCard(i, -1)} aria-label="Move left">&lsaquo;</button>
-                <button type="button" className="hit press rounded px-1.5 text-zinc-400 hover:text-white disabled:opacity-30" disabled={i === featured.length - 1} onClick={() => moveCard(i, 1)} aria-label="Move right">&rsaquo;</button>
-              </div>
-            ); })}
-          </div>
-        )}
-        {initial.cards.length === 0 ? <p className="text-sm text-zinc-500">Rip some packs first, then pin your best pulls here.</p> : (
-          <div className="-mx-2 grid max-h-[480px] grid-cols-3 gap-3 overflow-y-auto p-2 sm:grid-cols-5 lg:grid-cols-8">
-            {initial.cards.map((c) => { const n = featured.indexOf(c.id); return (
-              <button key={c.id} type="button" onClick={() => toggleCard(c.id)} title={c.name}
-                className={`relative flex flex-col items-center rounded-xl p-2 transition ${n >= 0 ? "bg-fpts/15 ring-2 ring-fpts" : "ring-1 ring-white/5 hover:bg-white/5"} ${n < 0 && featured.length >= maxFeatured ? "opacity-40" : ""}`}>
-                {n >= 0 && <span className="absolute right-1.5 top-1.5 z-10 grid h-5 w-5 place-items-center rounded-full bg-fpts text-[11px] font-black text-black">{n + 1}</span>}
-                {c.kind === "slab" ? <Slab s={slabOf(c)} size={120} /> : c.slab_id ? <SlabImage id={c.slab_id} alt={c.name} height={120} rarity={c.rarity} /> : <div className="flex h-[130px] w-full justify-center overflow-hidden"><div className="origin-top scale-50"><PlayerCard c={c} small /></div></div>}
-                <RarityBadge rarity={c.rarity} className="mt-1" />
-                <span className="mt-0.5 w-full truncate text-[10px] text-zinc-500">{c.name}</span>
-              </button>
-            ); })}
-          </div>
-        )}
-      </Panel>
 
       <Panel title="Sections" hint="Show or hide each part of your profile and set the order.">
         <div className="space-y-2">

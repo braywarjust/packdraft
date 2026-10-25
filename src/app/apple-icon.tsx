@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import fs from "node:fs";
 import path from "node:path";
 
-// The iPhone home-screen icon: the PackDraft logo on the Pack Shop's blue-to-red sunburst. iOS rounds the corners.
+// The iPhone home-screen icon: the PackDraft logo on a blue-to-red sunburst. iOS rounds the corners.
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 

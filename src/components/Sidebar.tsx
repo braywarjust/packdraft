@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { Coins } from "./Coins";
+import { Wallet, type WalletLeague } from "./Currencies";
 import { Avatar } from "./ProfileView";
 
 import { NAV_ICONS as I, NavIcon as Icon } from "./NavIcons";
@@ -15,12 +16,10 @@ import { useLiveBalance } from "./useLiveBalance";
 const STORE_KEY = "pd-sidebar";
 
 export function Sidebar({
-  user, packs, offers = 0, leagues, logout,
+  user, wallet, leagues, logout,
 }: {
   user: { name: string; color: string; coins: number; tester?: boolean; avatar?: string | null };
-  packs: number;
-  /** Slab trade offers waiting on this manager. */
-  offers?: number;
+  wallet: WalletLeague[];
   leagues: { id: number; name: string; live: boolean; brand?: BrandLite }[];
   logout: () => Promise<void>;
 }) {
@@ -43,19 +42,16 @@ export function Sidebar({
 
   const items = [
     { href: "/", label: "Home", icon: I.home, exact: true },
-    // Packs live inside each league (League Packs), so unopened packs show on Leagues.
-    { href: "/leagues", label: "Leagues", icon: I.leagues, badge: packs },
+    { href: "/leagues", label: "Leagues", icon: I.leagues, badge: 0 },
     { href: "/teams", label: "Team Studio", icon: I.studio },
-    { href: "/collection", label: "Collection", icon: I.collection, badge: offers },
     { href: "/bets", label: "Sportsbook", icon: I.bets },
-    { href: "/casino", label: "Casino", icon: I.casino },
     { href: "/mock-draft", label: "Mock Draft", icon: I.mock },
   ];
-  // Bottom tab bar on phones: home, your league (or the leagues list, with unopened packs), collection; the rest is under "More".
+  // Bottom tab bar on phones: home, your league (or the leagues list), the Sportsbook; the rest is under "More".
   const tabs = [
     { href: "/", label: "Home", icon: I.home, exact: true, badge: 0 },
-    { href: leagues.length === 1 ? `/league/${leagues[0].id}` : "/leagues", label: "League", icon: I.leagues, exact: false, badge: packs },
-    { href: "/collection", label: "Slabs", icon: I.collection, exact: false, badge: offers },
+    { href: leagues.length === 1 ? `/league/${leagues[0].id}` : "/leagues", label: "League", icon: I.leagues, exact: false, badge: 0 },
+    { href: "/bets", label: "Sportsbook", icon: I.bets, exact: false, badge: 0 },
   ];
   const isActive = (href: string, exact?: boolean) => tapped ? tapped === href : (exact ? path === href : path === href || path.startsWith(`${href}/`) || (href === "/leagues" && path.startsWith("/league/")));
 
@@ -140,7 +136,7 @@ export function Sidebar({
       <div className="safe-top sticky top-0 z-40 flex items-center justify-between border-b border-zinc-200 bg-white/95 px-4 pb-2.5 backdrop-blur lg:hidden">
         <Link href="/" aria-label="PackDraft home"><Logo height={34} /></Link>
         <div className="flex items-center gap-3">
-          <Link href="/packs" className="press rounded-full border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-700"><span className="text-emerald-600"><Coins n={coins} live /></span></Link>
+          <Wallet coins={user.coins} leagues={wallet} compact />
           <button onClick={() => setOpen(true)} className="hit press rounded-md p-1.5 text-zinc-700 hover:bg-zinc-100" aria-label="Open menu">
             <Icon d="M4 6h16M4 12h16M4 18h16" />
           </button>

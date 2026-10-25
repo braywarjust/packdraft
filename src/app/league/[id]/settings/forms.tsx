@@ -102,7 +102,7 @@ export function ScoringEditor({ scoring }: { scoring: string }) {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-zinc-500">A triple-double scores TD instead of DD, not both. Points per stat go from {WEIGHT_MIN} to {WEIGHT_MAX}. A change rescores the current matchup; finished matchups keep their final scores. With custom points, Pack Points are still paid on ESPN points.</p>
+      <p className="text-xs text-zinc-500">A triple-double scores TD instead of DD, not both. Points per stat go from {WEIGHT_MIN} to {WEIGHT_MAX}. A change rescores the current matchup; finished matchups keep their final scores. With custom points, Fantasy Coins are still paid on ESPN points.</p>
     </div>
   );
 }

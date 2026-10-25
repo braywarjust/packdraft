@@ -16,14 +16,14 @@ const SMACK = [
   "Hey {t}, set your lineup. Oh wait, you did. Yikes.",
   "{t} is the only manager who could turn a triple-double into a loss.",
   "{t}, I'd trash talk you but your box score already did it for me.",
-  "If losing were a pack, {t} would pull an Immortal every week.",
+  "{t} is saving Fantasy Coins for an Acquisition. Should've saved them for a new team.",
 ];
 
-/** Bold **text**, and "1,234 Pack Points" becomes the Pack Points icon + amount. */
+/** Bold **text**, and "1,234 Fantasy Coins" (or the old "Pack Points") becomes the coin icon + amount. */
 function render(text: string) {
-  return text.split(/(\*\*[^*]+\*\*|[\d,]+ Pack Points)/g).map((part, i) =>
+  return text.split(/(\*\*[^*]+\*\*|[\d,]+ (?:Fantasy Coins|Pack Points))/g).map((part, i) =>
     part.startsWith("**") && part.endsWith("**") ? <b key={i}>{part.slice(2, -2)}</b>
-      : /^[\d,]+ Pack Points$/.test(part) ? <Coins key={i} n={Number(part.replace(/\D/g, ""))} className="font-semibold text-emerald-600" />
+      : /^[\d,]+ (Fantasy Coins|Pack Points)$/.test(part) ? <Coins key={i} n={Number(part.replace(/\D/g, ""))} className="font-semibold text-fpts" />
       : <span key={i}>{part}</span>,
   );
 }

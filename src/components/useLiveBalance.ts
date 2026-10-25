@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-// Lets a page push a new Pack Points balance to the header and sidebar instantly, without router.refresh()
-// re-rendering the whole page (which made the casino stutter on every bet).
+// Lets a page push a new Fantasy Coins balance to the header and sidebar instantly, without router.refresh()
+// re-rendering the whole page.
 const EVENT = "packdraft:balance";
 
 export function announceBalance(n: number) {

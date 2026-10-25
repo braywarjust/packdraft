@@ -124,7 +124,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 @utility tab-active { @apply bg-brand text-white hover:bg-brand hover:text-white; }
 @utility navlink { @apply whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold text-zinc-700 hover:bg-blue-50 hover:text-brand; }
 
-/* ----- Pack ripping ----- */
+/* ----- Animations ----- */
 @keyframes drop { 0% { transform: translateY(-160px) rotate(-8deg); opacity: 0; } 60% { transform: translateY(12px) rotate(3deg); opacity: 1; } 80% { transform: translateY(-6px) rotate(-1deg); } 100% { transform: translateY(0) rotate(0); } }
 @keyframes shake { 0%, 100% { transform: rotate(0) scale(1); } 20% { transform: rotate(-3deg) scale(1.02); } 40% { transform: rotate(3deg) scale(1.03); } 60% { transform: rotate(-4deg) scale(1.04); } 80% { transform: rotate(4deg) scale(1.05); } }
 @keyframes dealIn { from { transform: translateY(60px) scale(0.7); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -163,9 +163,9 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .anim-flash { animation: flash 1.5s ease-out; }
 .foil { background-image: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.35) 45%, transparent 60%); background-size: 200% 100%; animation: shine 2.5s linear infinite; }
 
-/* ---------- Slabs (components/Slab.tsx) and animated packs (components/PackArt.tsx): smooth, low-key motion ---------- */
+/* ---------- Shop item art (components/ItemArt.tsx): smooth, low-key motion ---------- */
 /* Everything here animates only transform and opacity (the GPU composites those without repainting), and anything
-   inside an off-screen slab or pack ([data-paused], see useOffscreenPause) stops until it scrolls back into view. */
+   inside an off-screen item ([data-paused], see useOffscreenPause) stops until it scrolls back into view. */
 [data-paused], [data-paused] *, [data-paused] *::before, [data-paused] *::after { animation-play-state: paused !important; }
 @keyframes slabTwinkle { 0%, 100% { opacity: 0; transform: scale(.4) rotate(0); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
 @keyframes slabBall { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 12% { opacity: .95; } 50% { transform: translate(4cqw, -60cqw) rotate(180deg); } 88% { opacity: .9; } 100% { transform: translate(-2cqw, -125cqw) rotate(360deg); opacity: 0; } }
@@ -186,7 +186,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .slab-vivid { animation: slabVivid 5s ease-in-out infinite; }
 /* Immortal frame: an icy-blue conic square spun behind the card (was an animated @property angle, which repaints). */
 .slab-frame-spin { inset: -50%; background: conic-gradient(#f0f9ff, #7dd3fc, #e0f2fe, #38bdf8, #ffffff, #7dd3fc, #f0f9ff); animation: raysSpin 4s linear infinite; will-change: transform; }
-/* Pack art (PackArt.tsx): a ground shadow that breathes with the float, a glossy streak, and a tilt toward you on hover. */
+/* Item art (ItemArt.tsx): a ground shadow that breathes with the float, a glossy streak, and a tilt toward you on hover. */
 @keyframes packGround { 0%, 100% { transform: scaleX(1); opacity: .9; } 50% { transform: scaleX(.86); opacity: .6; } }
 .pack-ground { animation: packGround 4.5s ease-in-out infinite; }
 .pack-tilt { transition: transform .45s cubic-bezier(.2, .8, .2, 1); transform-origin: 50% 60%; }
@@ -194,7 +194,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .pack-gloss { background: linear-gradient(112deg, transparent 10%, rgba(255, 255, 255, .32) 17%, transparent 27%, transparent 70%, rgba(255, 255, 255, .1) 76%, transparent 82%); background-size: 160% 100%; background-position: 0% 0; transition: background-position .6s ease; }
 .logo-host:hover .pack-gloss { background-position: 45% 0; }
 
-/* Animated PackDraft logo (AnimatedLogo.tsx), played while its .logo-host (a pack) is hovered: the badge pops and
+/* Animated PackDraft logo (AnimatedLogo.tsx), played while its .logo-host (a shop item) is hovered: the badge pops and
    tilts, the blue and red halves split and snap back, the letters ripple up in turn, and a shine sweeps across. */
 .pdl-pop, .pdl-red, .pdl-blue, .pdl-letter, .pdl-ring { transform-box: fill-box; transform-origin: center; }
 @keyframes pdlPop { 0% { transform: scale(1) rotate(0); } 14% { transform: scale(1.12) rotate(-5deg); } 28% { transform: scale(1.03) rotate(3deg); } 40%, 100% { transform: scale(1.06) rotate(0); } }
@@ -210,7 +210,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .logo-host:hover .pdl-ring, .logo-play .pdl-ring { animation: pdlRing 2s ease-out infinite; }
 .logo-host:hover .pdl-shine, .logo-play .pdl-shine { animation: pdlShine 2s ease-in-out infinite; }
 
-/* Casino-style action buttons (Re-roll): bright and bold like the casino's Bet button, a shine that sweeps
+/* Action buttons (Buy): bright and bold, a shine that sweeps
    across every few seconds (faster on hover), the icon moves on hover, and it presses in. Transform and opacity only. */
 .fx-btn { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
   border-radius: .55rem; padding: .5rem 1rem; font-size: .875rem; font-weight: 800; letter-spacing: .01em; white-space: nowrap;
@@ -234,34 +234,6 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .fx-btn:hover:not(:disabled) .fx-spin { animation: fxSpin .8s cubic-bezier(.5, 0, .3, 1) infinite; }
 @media (prefers-reduced-motion: reduce) { .fx-btn::before, .fx-btn .fx-hop, .fx-btn .fx-spin { animation: none !important; } }
 
-/* Slab re-roll (collection/Reroll.tsx): the old slab spins away, the PackDraft logo plays while the new player (and his
-   photo) load, then the new slab flips in. Transform and opacity only. */
-@keyframes rerollOut { 0% { transform: rotateY(0) scale(1); opacity: 1; } 70% { opacity: .9; } 100% { transform: rotateY(1080deg) scale(.35); opacity: 0; } }
-@keyframes rerollIn { 0% { transform: perspective(900px) rotateY(-540deg) scale(.4); opacity: 0; } 60% { opacity: 1; } 82% { transform: perspective(900px) rotateY(12deg) scale(1.06); } 100% { transform: perspective(900px) rotateY(0) scale(1); opacity: 1; } }
-@keyframes rerollRing { 0% { transform: scale(.6); opacity: .7; } 100% { transform: scale(1.8); opacity: 0; } }
-@keyframes rerollFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6%); } }
-.reroll-out { animation: rerollOut 1.1s cubic-bezier(.5, 0, .75, 0) both; }
-.reroll-in { animation: rerollIn 1s cubic-bezier(.2, .8, .3, 1) both; }
-.reroll-ring { animation: rerollRing 1.6s ease-out infinite; }
-@keyframes rerollFade { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
-.reroll-float { animation: rerollFade .5s .75s cubic-bezier(.34, 1.4, .64, 1) both, rerollFloat 2s 1.25s ease-in-out infinite; }
-
-/* Pack pool banner (PoolBanner): rostered faces drift by, each bobbing a little, a shine sweeps across, the arrow nudges. */
-@keyframes poolMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@keyframes poolFace { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-6%) scale(1.04); } }
-@keyframes poolShine { 0%, 60% { transform: translateX(-120%); } 90%, 100% { transform: translateX(120%); } }
-@keyframes poolArrow { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(4px); } }
-.pool-marquee { animation: poolMarquee linear infinite; }
-.pool-face { animation: poolFace 3.2s ease-in-out infinite; }
-.pool-shine { background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.18) 50%, transparent 65%); transform: translateX(-120%); animation: poolShine 5s ease-in-out infinite; }
-.pool-arrow { animation: poolArrow 1.4s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .pool-marquee, .pool-face, .pool-shine, .pool-arrow { animation: none; } }
-
-/* Pack covers (PackArt): the slab icon (the Collection nav mark) next to "1 slab" hops and tilts on hover. */
-.pack-icon-glyph { background: currentColor; -webkit-mask: url(/collection-icon.svg) center / contain no-repeat; mask: url(/collection-icon.svg) center / contain no-repeat; transform-origin: 50% 90%; }
-@keyframes packIconHop { 0%, 100% { transform: translateY(0) rotate(0) scale(1); } 22% { transform: translateY(-14%) rotate(-7deg) scale(1.1); } 44% { transform: translateY(0) rotate(4deg) scale(.97, 1.03); } 62% { transform: translateY(-5%) rotate(-2deg) scale(1.03); } 80% { transform: translateY(0) rotate(0) scale(1); } }
-.logo-host:hover .pack-icon-glyph { animation: packIconHop 1.2s ease-in-out infinite; }
-
 @keyframes packBob { 0%, 100% { transform: translateY(0) rotate(-.6deg); } 50% { transform: translateY(-3%) rotate(.6deg); } }
 @keyframes packFan { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4%); } }
 .pack-bob { animation: packBob 4.5s ease-in-out infinite; }
@@ -269,8 +241,8 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 @media (prefers-reduced-motion: reduce) {
   .slab-comet,
   .slab-rays, .slab-twinkle, .slab-ball, .slab-shimmer::before, .slab-holo::before, .slab-vivid, .slab-frame-spin, .pack-bob, .pack-fan, .pack-ground,
-  .logo-host:hover .pdl-pop, .logo-host:hover .pdl-blue, .logo-host:hover .pdl-red, .logo-host:hover .pdl-letter, .logo-host:hover .pdl-ring, .logo-host:hover .pdl-shine, .logo-host:hover .pack-icon-glyph,
-  .logo-play .pdl-pop, .logo-play .pdl-blue, .logo-play .pdl-red, .logo-play .pdl-letter, .logo-play .pdl-ring, .logo-play .pdl-shine, .reroll-out, .reroll-in, .reroll-ring, .reroll-float { animation: none; }
+  .logo-host:hover .pdl-pop, .logo-host:hover .pdl-blue, .logo-host:hover .pdl-red, .logo-host:hover .pdl-letter, .logo-host:hover .pdl-ring, .logo-host:hover .pdl-shine,
+  .logo-play .pdl-pop, .logo-play .pdl-blue, .logo-play .pdl-red, .logo-play .pdl-letter, .logo-play .pdl-ring, .logo-play .pdl-shine { animation: none; }
 }
 
 .flip { perspective: 1000px; }
@@ -282,103 +254,10 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 6px; }
 
-/* ---------- Casino ---------- */
-/* Vehicles are centred by their lane wrapper, so these only move them vertically. */
-@keyframes carPass { from { transform: translateY(-110%); } to { transform: translateY(760px); } }
-@keyframes carRunOver { from { transform: translateY(-110%); } to { transform: translateY(760px); } }
-@keyframes tilePop { 0% { transform: scale(.3); opacity: 0; } 65% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
-@keyframes cardDeal { from { transform: translate(260px, -260px) rotate(18deg); opacity: 0; } to { transform: none; opacity: 1; } }
-.anim-car-pass { animation: carPass linear forwards; }
-.anim-car-runover { animation: carRunOver .62s linear forwards; }
-.anim-tile-pop { animation: tilePop .28s cubic-bezier(.3,.9,.4,1.3) both; }
-.anim-card-deal { animation: cardDeal .38s cubic-bezier(.2,.9,.3,1) both; }
-
-/* Chicken (Stake style): every part animates separately (transform-box makes each part's origin its own box). */
-.chk * { transform-box: fill-box; }
-.chk-leg { transform-origin: 50% 0; }
-.chk-tail { transform-origin: 100% 60%; }
-.chk-head { transform-origin: 40% 100%; }
-.chk-comb { transform-origin: 50% 100%; }
-.chk-wattle { transform-origin: 50% 0; }
-.chk-beak { transform-origin: 0 50%; }
-.chk-eyes { transform-origin: 50% 50%; }
-.chk-body { transform-origin: 50% 100%; }
-.chk-shadow { transform-origin: 50% 50%; }
-@keyframes chkBreathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.02, .975); } }
-@keyframes chkHeadBob { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(1.2px) rotate(-2deg); } 55% { transform: translateY(0) rotate(0); } 70% { transform: translateY(.8px) rotate(2.5deg); } }
-@keyframes chkTailSway { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-7deg); } }
-@keyframes chkCombWobble { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-7deg); } }
-@keyframes chkWattleSwing { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(12deg); } }
-@keyframes chkBlink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
-@keyframes chkBeakClick { 0%, 88%, 100% { transform: rotate(0); } 92% { transform: rotate(10deg); } }
-@keyframes chkFeet { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-6deg); } }
-/* Jump: anticipation squash, stretch on take-off, float at the top, squash on landing, settle. */
-@keyframes chkJump {
-  0% { transform: translateY(0) scale(1, 1); }
-  12% { transform: translateY(0) scale(1.14, .84); }
-  32% { transform: translateY(-22px) scale(.92, 1.1); }
-  52% { transform: translateY(-30px) scale(.98, 1.02); }
-  74% { transform: translateY(-12px) scale(.97, 1.04); }
-  88% { transform: translateY(0) scale(1.12, .88); }
-  100% { transform: translateY(0) scale(1, 1); }
-}
-@keyframes chkJumpShadow { 0%, 100% { transform: scale(1); opacity: .22; } 52% { transform: scale(.55); opacity: .1; } }
-@keyframes chkTuck { 0%, 100% { transform: rotate(0) scaleY(1); } 30%, 70% { transform: rotate(-24deg) scaleY(.7); } }
-@keyframes chkTailFlick { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(12deg); } }
-@keyframes chkCheer { 0%, 100% { transform: translateY(0) scale(1, 1); } 15% { transform: translateY(0) scale(1.1, .9); } 45% { transform: translateY(-16px) scale(.95, 1.06); } 80% { transform: translateY(0) scale(1.06, .94); } }
-@keyframes chkSquashOut { 0% { transform: scale(1, 1); opacity: 1; } 60% { transform: scale(1.35, .25); opacity: 1; } 100% { transform: scale(1.45, .12); opacity: 0; } }
-@keyframes chkSplatIn { 0% { transform: scale(.75, .35); opacity: 0; } 35% { transform: scale(1.12, 1.06); opacity: 1; } 65% { transform: scale(.96, .98); } 100% { transform: scale(1, 1); opacity: 1; } }
-
-.chk-idle .chk-body { animation: chkBreathe 1.5s ease-in-out infinite; }
-.chk-idle .chk-head { animation: chkHeadBob 2.6s ease-in-out infinite; }
-.chk-idle .chk-tail { animation: chkTailSway 1.8s ease-in-out infinite; }
-.chk-idle .chk-comb { animation: chkCombWobble 1.5s ease-in-out infinite; }
-.chk-idle .chk-wattle { animation: chkWattleSwing 1.5s ease-in-out infinite .15s; }
-.chk-idle .chk-eyes, .chk-won .chk-eyes { animation: chkBlink 3.6s ease-in-out infinite; }
-.chk-idle .chk-beak { animation: chkBeakClick 4.2s ease-in-out infinite; }
-.chk-idle .chk-leg-l { animation: chkFeet 1.6s ease-in-out infinite; }
-.chk-idle .chk-leg-r { animation: chkFeet 1.6s ease-in-out infinite -.8s; }
-
-.chk-hop { animation: chkJump .34s cubic-bezier(.33, 0, .25, 1); transform-origin: 50% 100%; }
-.chk-hop .chk-shadow { animation: chkJumpShadow .34s ease-in-out; }
-.chk-hop .chk-leg { animation: chkTuck .34s ease-in-out; }
-.chk-hop .chk-tail { animation: chkTailFlick .34s ease-out; }
-.chk-hop .chk-comb { animation: chkCombWobble .17s ease-in-out 2; }
-
-.chk-won { animation: chkCheer .6s ease-in-out 3; transform-origin: 50% 100%; }
-.chk-won .chk-comb { animation: chkCombWobble .3s ease-in-out 6; }
-.chk-won .chk-leg { animation: chkTuck .6s ease-in-out 3; }
-
-/* Run over: timed so the chicken squashes as the car's nose reaches it (about a quarter of carRunOver). */
-.chk-squash-out { animation: chkSquashOut .12s ease-in .15s forwards; transform-origin: 50% 100%; }
-.chk-splat-in { animation: chkSplatIn .34s cubic-bezier(.3, .9, .4, 1.2) .22s both; transform-origin: 50% 60%; }
-
-/* Casino backdrop: Pack Points icons drifting down behind the page (FallingCoins.tsx). */
-@keyframes ppFall { from { transform: translate3d(0, -12vh, 0) rotate(var(--r0)); } to { transform: translate3d(var(--dx), 112vh, 0) rotate(var(--r1)); } }
-@keyframes ppSway { from { transform: translateX(-14px); } to { transform: translateX(14px); } }
-.pp-fall { position: absolute; top: 0; animation: ppFall var(--dur) linear var(--delay) infinite; will-change: transform; }
-.pp-sway { display: block; animation: ppSway var(--sway) ease-in-out infinite alternate; }
-@media (prefers-reduced-motion: reduce) {
-  .pp-fall { animation: none; transform: translateY(var(--y)) rotate(var(--r0)); }
-  .pp-sway { animation: none; }
-}
-
-/* Casino game thumbnails: the sunburst turns on the selected and hovered tiles, the rocket's flame flickers,
-   and the chicken hops when you hover it. */
 @keyframes raysSpin { to { transform: rotate(360deg); } }
-/* Pack Shop banner (packs/ShopHeroArt.tsx): sunburst always turning, glow breathing, a sheen sweeping. */
-.casino-rays-spin { animation: raysSpin 40s linear infinite; will-change: transform; }
+/* Shop banners: glow breathing, a sheen sweeping. */
 @keyframes shopGlow { 0%, 100% { opacity: .55; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.08); } }
 @keyframes shopSheen { 0%, 60% { transform: translateX(-120%) skewX(-18deg); } 100% { transform: translateX(420%) skewX(-18deg); } }
 .shop-glow { animation: shopGlow 4s ease-in-out infinite; }
 .shop-sheen { left: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.13), transparent); animation: shopSheen 6s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .casino-rays-spin, .shop-glow, .shop-sheen { animation: none; } }
-.casino-rays { transform-origin: 50px 36px; }
-.casino-thumb.is-active .casino-rays, .casino-thumb:hover .casino-rays { animation: raysSpin 30s linear infinite; }
-@keyframes flameFlicker { from { transform: scaleY(.7); } to { transform: scaleY(1.15); } }
-.crash-flame { transform-box: fill-box; transform-origin: 50% 0; animation: flameFlicker .16s ease-in-out infinite alternate; }
-.crash-rocket { transition: transform .35s cubic-bezier(.3, .9, .4, 1.2); }
-.casino-thumb:hover .crash-rocket { transform: translateY(-3px); }
-.casino-thumb:hover .chk { animation: chkJump .34s cubic-bezier(.33, 0, .25, 1); transform-origin: 50% 100%; }
-.casino-thumb:hover .chk .chk-leg { animation: chkTuck .34s ease-in-out; }
-.casino-thumb:hover .chk .chk-shadow { animation: chkJumpShadow .34s ease-in-out; }
+@media (prefers-reduced-motion: reduce) { .shop-glow, .shop-sheen { animation: none; } }

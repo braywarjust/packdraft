@@ -6,9 +6,7 @@ import { slotLabel } from "@/lib/scoring";
 import { Fpts } from "./Fpts";
 import { Headshot, InjuryTag } from "./Headshot";
 import { TeamLogo } from "./TeamLogo";
-import { BoostChip } from "./LineupEditor";
 import { PlayerButton } from "./PlayerInspector";
-import { SlabOn } from "./SlabIcon";
 
 /** Box score columns, ESPN order. */
 export const STAT_COLS: [string, (l: Line) => number][] = [
@@ -79,13 +77,11 @@ export function BoxRow({ r, slotCell, highlight, compactName, fit }: { r: DayRow
             <div className="min-w-0">
               <p className="flex items-center gap-1 text-sm font-semibold leading-tight text-white">
                 <PlayerButton id={r.id} className="truncate">{compactName ? shortName(r.name) : <><span className="sm:hidden">{shortName(r.name)}</span><span className="hidden sm:inline">{r.name}</span></>}</PlayerButton>
-                <SlabOn boost={r.boost} />
                 <InjuryTag injury={r.injury} />
               </p>
               <p className="flex items-center gap-1 truncate text-[11px] text-zinc-500">
                 <TeamLogo team={r.team} size={13} />{r.team} <span className="truncate font-semibold text-zinc-400">{r.pos.split(",").join(", ")}</span>
               </p>
-              {r.boost && <p className="mt-0.5 flex gap-1"><BoostChip boost={r.boost} /></p>}
             </div>
           </div>
         ) : <span className="text-sm text-zinc-500">Empty</span>}

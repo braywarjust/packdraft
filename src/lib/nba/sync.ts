@@ -1,7 +1,6 @@
 import { all, one, run, tx, Game } from "../db";
 import { fpts, fromEspn, Line } from "../scoring";
 import { season as nbaSeason, syncSeason } from "./season";
-import { refreshPhotoIds } from "./photos";
 import { addDays, etDate, fetchBoxScore, fetchRoster, fetchScoreboard, fetchSeasonAverages, fetchTeams, Averages } from "./espn";
 
 const metaGet = (k: string) => one<{ value: string }>("SELECT value FROM meta WHERE key = ?", k)?.value;
@@ -113,7 +112,7 @@ export async function ensureSchedule(from: string, to: string, opts: { onlyMissi
     const last = Number(metaGet(`sched:${d}`) ?? 0);
     if (opts.onlyMissing && last) continue;
     // A past day is cached for good once every game on it is final. Until then keep re-checking it: late games run
-    // past midnight ET, and without this they'd stay "live" forever (and their slabs and Pack Points never settle).
+    // past midnight ET, and without this they'd stay "live" forever (and their Fantasy Coins never settle).
     const unfinished = d < today && !!one("SELECT 1 FROM games WHERE date_et = ? AND state != 'post' AND start_ts <= ?", d, Date.now());
     const maxAge = d === today || unfinished ? 60_000 : d < today ? 24 * 3600_000 * 365 : 6 * 3600_000;
     if (Date.now() - last >= maxAge) due.push(d);
@@ -183,10 +182,8 @@ export async function backfillFinals(from: string, to: string) {
 }
 
 export async function maybeSyncPlayers() {
-  // A new NBA season (per ESPN's calendar) refreshes everything right away: rosters, stats, positions, photo ids.
+  // A new NBA season (per ESPN's calendar) refreshes everything right away: rosters, stats, positions.
   const newSeason = await syncSeason().catch((e) => { console.warn("[packdraft] season sync failed", (e as Error).message); return false; });
-  if (newSeason) await refreshPhotoIds(true).catch((e) => console.warn("[packdraft] photo id refresh failed", (e as Error).message));
-  else await refreshPhotoIds().catch(() => {});
   const stale = (k: string) => Date.now() - Number(metaGet(k) ?? 0) >= 12 * 3600_000;
   if (newSeason || stale("players_synced_at")) await syncPlayers().catch((e) => console.warn("[packdraft] player sync failed", (e as Error).message));
   if (newSeason || stale("elig_synced_at")) await syncEligibility().catch((e) => console.warn("[packdraft] position sync failed", (e as Error).message));
