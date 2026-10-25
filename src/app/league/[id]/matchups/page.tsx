@@ -1,6 +1,7 @@
 import { QueryArea } from "@/components/NavShell";
 import { ForwardIcon, PlayIcon } from "@/components/Icons";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { all, Matchup } from "@/lib/db";
 import { bracket, getLeague, leagueTeams, playoffInfo, teamWeek, userTeam, weekName, weekProgress, weekRange, weekShort, type BracketSlot } from "@/lib/league";
@@ -30,8 +31,16 @@ export default async function MatchupsPage({ params, searchParams }: { params: P
   // loop keeps the season loaded, so this only waits on days it hasn't reached yet (and fetches those all at once).
   if (future && l.mode !== "sim") await ensureSchedule(...weekRange(l, week), { onlyMissing: true });
   const current = week === l.current_week && !l.champion_team_id;
+  const me0 = userTeam(l.id, u.id);
+  // Update 4.2: the Matchups tab opens your matchup's detail page straight away (or the week's first one). This list
+  // stays one tap away there ("All weeks"), for other weeks, the playoff bracket and sim week controls.
+  if (!wq) {
+    const week0 = all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ? ORDER BY id", l.id, week);
+    const pick = week0.find((m) => me0 && (m.home_team_id === me0.id || m.away_team_id === me0.id)) ?? week0[0];
+    if (pick) redirect(`/league/${l.id}/matchup/${pick.id}`);
+  }
   const teams = new Map(leagueTeams(l.id).map((t) => [t.id, t]));
-  const me = userTeam(l.id, u.id);
+  const me = me0;
   const isCommish = l.commissioner_id === u.id;
   const progress = weekProgress(l);
   const ms = all<Matchup>("SELECT * FROM matchups WHERE league_id = ? AND week = ?", l.id, week)

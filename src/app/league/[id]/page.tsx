@@ -163,7 +163,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                   {isCommish && !l.champion_team_id && l.mode === "sim" && (!l.week_started_at
                     ? <ActionButton action={startWeekAction.bind(null, l.id)} className="btn-lime"><PlayIcon /> Kick off Week {l.current_week}</ActionButton>
                     : <ActionButton action={finishWeekNow.bind(null, l.id)} confirm="Skip to final scores?"><ForwardIcon /> Fast-forward to final</ActionButton>)}
-                  <Link href={`/league/${l.id}/matchups`} className="btn-ghost">All matchups →</Link>
+                  <Link href={`/league/${l.id}/matchups?week=${l.current_week}`} className="btn-ghost">All matchups →</Link>
                 </div>
               </div>
               {l.week_started_at && (

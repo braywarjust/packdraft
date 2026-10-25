@@ -151,6 +151,7 @@ export function LiveMatchup({ leagueId, matchupId: initialId }: { leagueId: numb
       <Link href={`/league/${leagueId}`} className="text-sm text-zinc-500 hover:text-zinc-900">← {d.league}</Link>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <span className="font-black uppercase tracking-[0.25em] text-zinc-500">Week {d.week}</span>
+        <Link href={`/league/${leagueId}/matchups?week=${d.week}`} className="order-last ml-auto rounded-full px-2.5 py-1 font-bold text-brand ring-1 ring-brand/40 transition hover:bg-brand/10 active:scale-95">All weeks & bracket</Link>
         {d.range && <span className="text-zinc-500">{d.range}</span>}
         <span className={`font-bold ${d.final ? "text-white" : d.live ? "text-red-500" : "text-zinc-400"}`}>{d.final ? "Final" : d.live ? "● Live" : "In progress"}</span>
         {d.progress != null && d.progress > 0 && !d.final && <span className="text-zinc-500">{Math.round(d.progress * 100)}% of sim week</span>}
