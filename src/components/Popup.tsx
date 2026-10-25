@@ -1,64 +1,51 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { LoadingLogo } from "./LoadingLogo";
-import { LOADER_MS } from "./NavShell";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useScrollLock } from "./useScrollLock";
 
-/** Size of the loading card every popup opens as (px). */
-const SMALL = 112;
-const EASE = "cubic-bezier(.2, .9, .25, 1)";
+const IN_MS = 340, OUT_MS = 240;
+
+/** Close the popup you're inside with its slide-down animation, then run `after` (e.g. resolve a confirm). */
+const CloseCtx = createContext<(after?: () => void) => void>((after) => after?.());
+export const useClosePopup = () => useContext(CloseCtx);
 
 /**
- * Every popup in the app (Update 4.2): always centred on the screen, phone or computer. It opens as a small card with
- * the loading logo, plays it for LOADER_MS (the same time as every other loader, or until `ready`, whichever is
- * later), then grows into the full popup with its content fading in. Escape or a tap outside closes it.
+ * Every popup in the app (Update 4.2): a sheet that slides up from the bottom of the screen and fills it, except a
+ * strip at the top so the page behind still shows. `size="auto"` (confirmations) is only as tall as its content.
+ * A tap on the strip, Escape, or useClosePopup() slides it back down before `onClose` runs.
  */
-export function Popup({ onClose, ready = true, label, className = "max-w-md", z = "z-[70]", outer = "", children }: {
-  onClose: () => void; ready?: boolean; label?: string; className?: string; z?: string; outer?: string; children: React.ReactNode;
+export function Popup({ onClose, label, size = "full", className = "max-w-3xl", z = "z-[70]", outer = "", children }: {
+  onClose: () => void; label?: string; size?: "full" | "auto"; className?: string; z?: string; outer?: string; children: React.ReactNode;
 }) {
   useScrollLock(true);
-  const [played, setPlayed] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setPlayed(true), LOADER_MS);
-    return () => clearTimeout(t);
-  }, []);
-  const open = played && ready;
+  const [leaving, setLeaving] = useState(false);
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
 
-  const close = useRef(onClose);
-  useEffect(() => { close.current = onClose; }, [onClose]);
+  const close = useCallback((after?: () => void) => {
+    setLeaving(true);
+    setTimeout(() => { after?.(); closeRef.current(); }, OUT_MS);
+  }, []);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close.current(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  // Grow from the loading card's size into the real one (FLIP), then fade the content in.
-  const card = useRef<HTMLDivElement>(null);
-  const body = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    if (!open || !card.current) return;
-    const r = card.current.getBoundingClientRect();
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    card.current.animate(
-      [{ transform: `scale(${SMALL / r.width}, ${SMALL / r.height})`, borderRadius: "28px" }, { transform: "none" }],
-      { duration: 340, easing: EASE },
-    );
-    body.current?.animate([{ opacity: 0 }, { opacity: 0, offset: 0.35 }, { opacity: 1 }], { duration: 380, easing: "ease-out" });
-  }, [open]);
+  }, [close]);
 
   return (
-    <div className={`popup-backdrop fixed inset-0 ${z} flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm ${outer}`} onClick={() => close.current()}>
-      {open ? (
-        <div ref={card} role="dialog" aria-label={label} onClick={(e) => e.stopPropagation()}
-          className={`relative max-h-[calc(100dvh-2rem)] w-full overflow-y-auto overscroll-contain rounded-2xl border border-line bg-panel shadow-2xl ${className}`}>
-          <div ref={body}>{children}</div>
+    <CloseCtx.Provider value={close}>
+      <div className={`fixed inset-0 ${z} flex items-end justify-center bg-black/55 backdrop-blur-[2px] ${outer}`} onClick={() => close()}
+        style={{ animation: `${leaving ? "popupFadeOut" : "popupFade"} ${leaving ? OUT_MS : 200}ms ease-out both` }}>
+        <div role="dialog" aria-label={label} onClick={(e) => e.stopPropagation()}
+          className={`relative flex w-full flex-col overflow-hidden rounded-t-3xl border border-b-0 border-line bg-panel shadow-[0_-12px_40px_rgba(0,0,0,.45)] ${
+            size === "full" ? "h-[calc(100dvh-4.5rem)]" : "max-h-[calc(100dvh-4.5rem)]"} ${className}`}
+          style={{ animation: `${leaving ? `popupDown ${OUT_MS}ms cubic-bezier(.4, 0, 1, 1)` : `popupUp ${IN_MS}ms cubic-bezier(.2, .9, .25, 1)`} both` }}>
+          <button type="button" onClick={() => close()} aria-label="Close" className="flex w-full shrink-0 justify-center pb-1 pt-2.5">
+            <span className="h-1.5 w-10 rounded-full bg-zinc-500/50" />
+          </button>
+          <div className="safe-bottom min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
         </div>
-      ) : (
-        <div onClick={(e) => e.stopPropagation()} className="popup-pop grid place-items-center rounded-[28px] border border-line bg-panel shadow-2xl" style={{ width: SMALL, height: SMALL }}>
-          <LoadingLogo size={64} label={label ? `Loading ${label}` : "Loading"} />
-        </div>
-      )}
-    </div>
+      </div>
+    </CloseCtx.Provider>
   );
 }

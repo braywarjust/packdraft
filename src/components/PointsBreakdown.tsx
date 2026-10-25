@@ -5,7 +5,7 @@ import { STATS, fpts, scoringLabel, weightsOf, type Line } from "@/lib/scoring";
 import { XIcon } from "./Icons";
 import { Fpts } from "./Fpts";
 import { Headshot } from "./Headshot";
-import { Popup } from "./Popup";
+import { Popup, useClosePopup } from "./Popup";
 
 const num = (n: number) => (Math.round(n * 100) / 100).toString();
 const signed = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${num(Math.abs(n))}`;
@@ -46,7 +46,7 @@ export function PointsBreakdown({ r, day, scoring, onClose }: { r: DayRow; day: 
             {day?.label}{g ? <> · {g.opp} · <span className={live ? "font-bold text-red-500" : ""}>{live && "● "}{g.status}</span></> : " · No game"}
           </p>
         </div>
-        <button type="button" onClick={onClose} className="hit press text-zinc-400" aria-label="Close"><XIcon /></button>
+        <CloseX />
       </div>
 
       {!line ? (
@@ -93,4 +93,9 @@ export function PointsBreakdown({ r, day, scoring, onClose }: { r: DayRow; day: 
       )}
     </Popup>
   );
+}
+
+function CloseX() {
+  const close = useClosePopup();
+  return <button type="button" onClick={() => close()} className="hit press text-zinc-400" aria-label="Close"><XIcon /></button>;
 }

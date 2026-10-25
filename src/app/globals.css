@@ -164,11 +164,11 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .anim-flash { animation: flash 1.5s ease-out; }
 @keyframes swapIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .anim-swap { animation: swapIn .22s cubic-bezier(.2, .9, .3, 1) both; }
-/* Popups (Update 4.2, components/Popup.tsx): the backdrop fades in, the loading card pops in. */
+/* Popups (Update 4.2, components/Popup.tsx): the backdrop fades, the sheet slides up from the bottom and back down. */
 @keyframes popupFade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes popupPop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
-.popup-backdrop { animation: popupFade .18s ease-out both; }
-.popup-pop { animation: popupPop .26s cubic-bezier(.34, 1.4, .64, 1) both; }
+@keyframes popupFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes popupUp { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes popupDown { from { transform: none; } to { transform: translateY(100%); } }
 .foil { background-image: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.35) 45%, transparent 60%); background-size: 200% 100%; animation: shine 2.5s linear infinite; }
 
 /* ---------- Shop item art (components/ItemArt.tsx): smooth, low-key motion ---------- */

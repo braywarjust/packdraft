@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Popup } from "@/components/Popup";
+import { Popup, useClosePopup } from "@/components/Popup";
 
 /**
  * In-app confirmation (replaces the browser's confirm() popup).
@@ -35,14 +35,21 @@ export function ConfirmHost() {
   if (!req) return null;
   const done = (ok: boolean) => { req.resolve(ok); setReq(null); };
   return (
-    <Popup onClose={() => done(false)} className="max-w-sm" z="z-[100]" label="Confirm">
-      <div className="space-y-4 p-5">
-        <p className="text-base font-semibold text-zinc-900">{req.message}</p>
-        <div className="flex justify-end gap-2">
-          <button className="btn-ghost" onClick={() => done(false)}>Cancel</button>
-          <button autoFocus className={req.danger ? "btn-danger" : "btn-primary"} onClick={() => done(true)}>{req.confirmLabel}</button>
-        </div>
-      </div>
+    <Popup onClose={() => done(false)} size="auto" className="max-w-lg" z="z-[100]" label="Confirm">
+      <ConfirmBody message={req.message} confirmLabel={req.confirmLabel} danger={req.danger} done={done} />
     </Popup>
+  );
+}
+
+function ConfirmBody({ message, confirmLabel, danger, done }: { message: string; confirmLabel: string; danger: boolean; done: (ok: boolean) => void }) {
+  const close = useClosePopup();
+  return (
+    <div className="space-y-4 px-5 pb-5 pt-2">
+      <p className="text-base font-semibold text-zinc-900">{message}</p>
+      <div className="flex justify-end gap-2">
+        <button className="btn-ghost" onClick={() => close(() => done(false))}>Cancel</button>
+        <button autoFocus className={danger ? "btn-danger" : "btn-primary"} onClick={() => close(() => done(true))}>{confirmLabel}</button>
+      </div>
+    </div>
   );
 }

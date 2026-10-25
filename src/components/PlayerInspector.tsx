@@ -15,7 +15,8 @@ import { TeamLogo } from "./TeamLogo";
 import { TeamBadge } from "./TeamBadge";
 import { Fpts } from "./Fpts";
 import { XIcon } from "./Icons";
-import { Popup } from "./Popup";
+import { Popup, useClosePopup } from "./Popup";
+import { LoadingLogo } from "./LoadingLogo";
 
 /**
  * Player inspector popup. Mount <PlayerInspectorHost /> once (root layout), then call openPlayer(id, leagueId)
@@ -220,10 +221,15 @@ export function PlayerInspectorHost() {
 
   if (!req) return null;
   return (
-    // The shared Popup shows the loading card until the player has loaded (and LOADER_MS has passed), then grows.
-    <Popup key={req.id} onClose={() => setReq(null)} ready={!!data || !!err} label="player" className="max-w-3xl" z="z-[60]">
-      <button onClick={() => setReq(null)} aria-label="Close" className="hit press absolute right-1.5 top-1.5 z-10 sm:right-3 sm:top-3 rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
-      {data ? <Body d={data} onClose={() => setReq(null)} /> : <p className="p-10 text-center text-sm text-zinc-500">{err}</p>}
+    <Popup key={req.id} onClose={() => setReq(null)} label="player" className="max-w-3xl" z="z-[60]">
+      <CloseX />
+      {data ? <Body d={data} onClose={() => setReq(null)} /> : err ? <p className="p-10 text-center text-sm text-zinc-500">{err}</p>
+        : <div className="grid place-items-center p-10"><LoadingLogo size={96} label="Loading player" /></div>}
     </Popup>
   );
+}
+
+function CloseX() {
+  const close = useClosePopup();
+  return <button onClick={() => close()} aria-label="Close" className="hit press absolute right-1.5 top-1.5 z-10 rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white sm:right-3 sm:top-3"><XIcon /></button>;
 }
