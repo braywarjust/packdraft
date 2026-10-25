@@ -3,7 +3,7 @@
 import type { DayInfo, DayRow } from "@/lib/league";
 import { STATS, fpts, scoringLabel, weightsOf, type Line } from "@/lib/scoring";
 import { XIcon } from "./Icons";
-import { Fpts } from "./Fpts";
+import { FptIcon, Fpts } from "./Fpts";
 import { Headshot } from "./Headshot";
 import { Popup, useClosePopup } from "./Popup";
 
@@ -34,6 +34,14 @@ export function PointsBreakdown({ r, day, scoring, onClose }: { r: DayRow; day: 
   // Games played with an old slab equipped (before 4.0-R) keep their boost; show it so the total still adds up.
   const extra = r.fpts != null ? Math.round((r.fpts - base) * 100) / 100 : 0;
   const total = r.fpts ?? 0;
+  // Stats that earn points, then stats that cost points (Update 4.3), each with its own subtotal.
+  const groups = [
+    { title: "Earns points", rows: rows.filter((x) => x.each > 0), extras: [bonus && { label: `${bonus.label} bonus`, pts: bonus.pts }, extra > 0 && { label: "Slab boost", note: "(from before 4.0)", pts: extra }] },
+    { title: "Costs points", rows: rows.filter((x) => x.each < 0), extras: [extra < 0 && { label: "Slab boost", note: "(from before 4.0)", pts: extra }] },
+  ].map((grp) => {
+    const extras = grp.extras.filter(Boolean) as { label: string; note?: string; pts: number }[];
+    return { ...grp, extras, sum: grp.rows.reduce((a, x) => a + x.pts, 0) + extras.reduce((a, x) => a + x.pts, 0) };
+  }).filter((grp) => grp.rows.length || grp.extras.length);
   const live = g?.state === "in";
 
   return (
@@ -55,30 +63,30 @@ export function PointsBreakdown({ r, day, scoring, onClose }: { r: DayRow; day: 
         <div className="p-4">
           <table className="w-full text-sm">
             <thead className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-              <tr><th className="pb-2 text-left">Stat</th><th className="pb-2 text-center">Stat line</th><th className="pb-2 text-center">Pts each</th><th className="pb-2 text-right">Fpts</th></tr>
+              <tr><th className="pb-2 text-left">Stat</th><th className="pb-2 text-center">Stat line</th><th className="pb-2 text-center">Pts each</th><th className="pb-2 text-right"><span className="inline-flex items-center gap-1"><FptIcon className="text-xs" />Fpts</span></th></tr>
             </thead>
-            <tbody className="font-mono">
-              {rows.map((x) => (
-                <tr key={x.abbr} className={`border-t border-line/40 ${x.v ? "" : "text-zinc-500"}`}>
-                  <td className="py-1.5 font-sans"><b className={x.v ? "text-white" : ""}>{x.abbr}</b> <span className="text-xs text-zinc-500 max-sm:hidden">{x.name}</span></td>
-                  <td className="py-1.5 text-center">{x.v}</td>
-                  <td className="py-1.5 text-center">{signed(x.each)}</td>
-                  <td className={`py-1.5 text-right font-bold ${x.pts > 0 ? "text-white" : x.pts < 0 ? "text-red-400" : ""}`}>{signed(x.pts)}</td>
+            {groups.map((grp) => (
+              <tbody key={grp.title} className="font-mono">
+                <tr className="border-t border-line">
+                  <td className={`pb-1 pt-3 font-sans text-[11px] font-bold uppercase tracking-wider ${grp.sum < 0 ? "text-red-400" : "text-emerald-400"}`} colSpan={3}>{grp.title}</td>
+                  <td className={`pb-1 pt-3 text-right text-xs font-bold ${grp.sum < 0 ? "text-red-400" : "text-emerald-400"}`}><Pts n={grp.sum} /></td>
                 </tr>
-              ))}
-              {bonus && (
-                <tr className="border-t border-line/40">
-                  <td className="py-1.5 font-sans font-bold text-white" colSpan={3}>{bonus.label} bonus</td>
-                  <td className="py-1.5 text-right font-bold text-white">{signed(bonus.pts)}</td>
-                </tr>
-              )}
-              {extra !== 0 && (
-                <tr className="border-t border-line/40">
-                  <td className="py-1.5 font-sans font-bold text-white" colSpan={3}>Slab boost <span className="text-xs font-normal text-zinc-500">(from before 4.0)</span></td>
-                  <td className="py-1.5 text-right font-bold text-white">{signed(extra)}</td>
-                </tr>
-              )}
-            </tbody>
+                {grp.rows.map((x) => (
+                  <tr key={x.abbr} className={`border-t border-line/40 ${x.v ? "" : "text-zinc-500"}`}>
+                    <td className="py-1.5 font-sans"><b className={x.v ? "text-white" : ""}>{x.abbr}</b> <span className="text-xs text-zinc-500 max-sm:hidden">{x.name}</span></td>
+                    <td className="py-1.5 text-center">{x.v}</td>
+                    <td className="py-1.5 text-center">{signed(x.each)}</td>
+                    <td className={`py-1.5 text-right font-bold ${x.pts > 0 ? "text-white" : x.pts < 0 ? "text-red-400" : ""}`}><Pts n={x.pts} /></td>
+                  </tr>
+                ))}
+                {grp.extras.map((x) => (
+                  <tr key={x.label} className="border-t border-line/40">
+                    <td className="py-1.5 font-sans font-bold text-white" colSpan={3}>{x.label}{x.note && <> <span className="text-xs font-normal text-zinc-500">{x.note}</span></>}</td>
+                    <td className={`py-1.5 text-right font-bold ${x.pts < 0 ? "text-red-400" : "text-white"}`}><Pts n={x.pts} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            ))}
             <tfoot>
               <tr className="border-t border-line">
                 <td className="pt-2 text-xs font-bold uppercase tracking-widest text-zinc-400" colSpan={3}>Total</td>
@@ -93,6 +101,11 @@ export function PointsBreakdown({ r, day, scoring, onClose }: { r: DayRow; day: 
       )}
     </Popup>
   );
+}
+
+/** A row's fantasy points with the Fantasy Points logo, + or − in front. */
+function Pts({ n }: { n: number }) {
+  return <span className="inline-flex items-center justify-end gap-1 whitespace-nowrap"><FptIcon className={n ? "" : "opacity-40"} />{signed(n)}</span>;
 }
 
 function CloseX() {
