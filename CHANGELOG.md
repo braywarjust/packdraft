@@ -3,6 +3,10 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
+## 4.3 — Cleaner points breakdown (2026-10-25)
+
+- The fantasy points breakdown no longer shows a × in each row. The Pts each column just shows what each stat is worth (like +1 or −1), next to the points it adds.
+
 ## 4.2 — My Team and instant pickups (2026-10-25)
 
 - **Acquisitions and Trades, every matchup.** Each league gives every team a set number of Acquisitions (adds) and Trades per matchup week, set by the League Manager. They reset every matchup. Need more during a matchup? Buy them in the League Shop; bought ones carry over until you use them. The per-season add limit is gone.

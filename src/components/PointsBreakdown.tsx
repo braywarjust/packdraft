@@ -62,7 +62,7 @@ export function PointsBreakdown({ r, day, scoring, onClose }: { r: DayRow; day: 
                 <tr key={x.abbr} className={`border-t border-line/40 ${x.v ? "" : "text-zinc-500"}`}>
                   <td className="py-1.5 font-sans"><b className={x.v ? "text-white" : ""}>{x.abbr}</b> <span className="text-xs text-zinc-500 max-sm:hidden">{x.name}</span></td>
                   <td className="py-1.5 text-center">{x.v}</td>
-                  <td className="py-1.5 text-center">× {signed(x.each)}</td>
+                  <td className="py-1.5 text-center">{signed(x.each)}</td>
                   <td className={`py-1.5 text-right font-bold ${x.pts > 0 ? "text-white" : x.pts < 0 ? "text-red-400" : ""}`}>{signed(x.pts)}</td>
                 </tr>
               ))}
