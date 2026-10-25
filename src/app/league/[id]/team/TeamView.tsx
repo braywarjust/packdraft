@@ -7,7 +7,7 @@ import { ROSTER_MAX } from "@/lib/scoring";
 import { currentUser } from "@/lib/auth";
 import { RosterBoard } from "@/components/RosterBoard";
 import { AutoRefresh } from "@/components/AutoRefresh";
-import { applyPresetAction, dropPlayer, renameTeam, setAutoManage, setSlot } from "../../../actions";
+import { applyPresetAction, renameTeam, setAutoManage, setSlot } from "../../../actions";
 import { AutoManageToggle } from "@/components/AutoManageToggle";
 import { Fpts, PointsKey } from "@/components/Fpts";
 import { AcqIcon, ACQ_COLOR, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
@@ -92,7 +92,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
           <p className="card p-6 text-zinc-500">Rosters fill up during the draft.</p>
         ) : (
           <RosterBoard days={td.days} rows={td.rows} totals={td.totals} initialDay={defaultDay(td.days)} editable={editable} brand={b} scoring={l.scoring}
-            setSlot={editable ? setSlot.bind(null, leagueId) : undefined} drop={editable ? dropPlayer.bind(null, leagueId) : undefined}
+            setSlot={editable ? setSlot.bind(null, leagueId) : undefined}
             header={editable ? <AutoManageToggle key="auto-manager" on={!!t.auto_manage} set={setAutoManage.bind(null, leagueId)} /> : undefined} />
         )}
       </div>

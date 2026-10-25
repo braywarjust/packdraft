@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { startTransition, useState } from "react";
 import type { DayInfo, DayRow } from "@/lib/league";
 import { STARTERS, eligible } from "@/lib/scoring";
-import { askConfirm } from "./Confirm";
 import type { BrandLite } from "./TeamBadge";
 import { BoxHead, BoxRow, BoxTotals, DayStrip, shortName, slotPill } from "./BoxScore";
 import { Fpts } from "./Fpts";
@@ -37,11 +36,10 @@ function applyMove(days: DayInfo[], rows: Record<string, DayRow[]>, playerId: nu
   return out;
 }
 
-export function RosterBoard({ days, rows: serverRows, totals, initialDay, editable, brand, scoring, setSlot, drop, header }: {
+export function RosterBoard({ days, rows: serverRows, totals, initialDay, editable, brand, scoring, setSlot, header }: {
   days: DayInfo[]; rows: Record<string, DayRow[]>; totals: Record<string, number>; initialDay: string;
   editable: boolean; brand: BrandLite; scoring: string;
   setSlot?: (playerId: number, slot: string) => Promise<unknown>;
-  drop?: (playerId: number) => Promise<unknown>;
   header?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -77,9 +75,6 @@ export function RosterBoard({ days, rows: serverRows, totals, initialDay, editab
       });
   };
   const move = (playerId: number, slot: string) => act(applyMove(days, rows, playerId, slot), () => setSlot!(playerId, slot));
-  const dropNow = (playerId: number) => act(
-    Object.fromEntries(Object.entries(rows).map(([k, list]) => [k, days.find((d) => d.key === k)?.past ? list : list.filter((r) => r.id !== playerId)])),
-    () => drop!(playerId));
 
   const bySlot = new Map(list.filter((r) => r.slot !== "BN").map((r) => [r.slot, r]));
   const bench = list.filter((r) => r.slot === "BN");
@@ -122,7 +117,6 @@ export function RosterBoard({ days, rows: serverRows, totals, initialDay, editab
                   <>
                     <span className="min-w-0 truncate text-xs text-zinc-400"><b className="text-white">{shortName(sel.name)}</b><span className="max-sm:hidden">: tap a green slot</span></span>
                     {sel.slot !== "BN" && <button type="button" onClick={() => move(sel.id, "BN")} className={`${small} shrink-0 touch-manipulation bg-panel2 text-white ring-1 ring-line`}>Bench</button>}
-                    <button type="button" onClick={async () => { const id = sel.id; if (await askConfirm(`Drop ${sel.name}?`, { confirmLabel: "Drop", danger: true })) dropNow(id); }} className={`${small} shrink-0 touch-manipulation bg-red-600 text-white`}>Drop</button>
                   </>
                 ) : canEdit ? <span className="truncate text-xs text-zinc-500">Tap a slot to swap players.</span>
                   : info?.past ? <span className="truncate text-xs text-zinc-500">This day is over. Lineup shown as it played.</span> : null}
