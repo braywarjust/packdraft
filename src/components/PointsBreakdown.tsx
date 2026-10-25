@@ -44,8 +44,8 @@ export function PointsBreakdown({ r, day, scoring, onClose }: { r: DayRow; day: 
   const live = g?.state === "in";
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 p-2 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
-      <div className="card w-full max-w-md overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`${r.name} fantasy points`}>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="card max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`${r.name} fantasy points`}>
         <div className="flex items-center gap-3 border-b border-line/60 p-4">
           <Headshot src={r.headshot} name={r.name} size={44} />
           <div className="min-w-0 flex-1">
