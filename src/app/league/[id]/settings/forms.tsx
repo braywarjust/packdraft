@@ -1,5 +1,6 @@
 "use client";
 
+import { FptIcon } from "@/components/Fpts";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { STATS, WEIGHT_MAX, WEIGHT_MIN, encodeWeights, scoringLabel, weightsOf, PRESET_IDS, type Weights } from "@/lib/scoring";
@@ -86,7 +87,7 @@ export function ScoringEditor({ scoring }: { scoring: string }) {
       <div className="overflow-hidden rounded-lg border border-line">
         <table className="w-full text-sm">
           <thead className="bg-panel2 text-left text-xs uppercase tracking-wide text-zinc-500">
-            <tr><th className="px-3 py-2">Stat</th><th className="px-3 py-2 text-right">Points</th></tr>
+            <tr><th className="px-3 py-2">Stat</th><th className="px-3 py-2 text-right"><span className="inline-flex items-center gap-1"><FptIcon tone="blue" />Points</span></th></tr>
           </thead>
           <tbody>
             {STATS.map(([k, abbr, name]) => (

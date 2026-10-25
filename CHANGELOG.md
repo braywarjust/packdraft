@@ -11,6 +11,7 @@ Every PackDraft update is listed here, newest first. Version numbers follow the 
 - Drop a player from his player card: tap his name, then Drop player. The Drop button is no longer on the lineup bar. Player news on the card starts collapsed to one line; tap it to read the headlines. The card's game log shows the last 5 games.
 - Tap a player's fantasy points on My Team to see how they add up: every stat he's recorded times what it's worth in your league, including any double-double or triple-double bonus. It keeps counting live during his game.
 - The Fantasy Coin is gold now, everywhere in the app.
+- League Settings uses the app's icons: Fantasy Points on Scoring, Acquisitions and Trades on their sections, and Fantasy Coins on the League Shop prices.
 - Waivers are gone. Every add is instant, and a player another team drops can be picked up by anyone straight away (if his game today has already tipped off, the next day). FAAB bidding and claims are removed.
 - With a full roster you have to pick a player to drop before you can add one, so an Acquisition is never used without room.
 - Top performers on Home now shows the top 10 for the week. Scroll the list to see 6 to 10.
