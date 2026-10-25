@@ -36,11 +36,13 @@ function applyMove(days: DayInfo[], rows: Record<string, DayRow[]>, playerId: nu
   return out;
 }
 
-export function RosterBoard({ days, rows: serverRows, totals, initialDay, editable, brand, scoring, setSlot, header }: {
+export function RosterBoard({ days, rows: serverRows, totals, initialDay, editable, brand, scoring, setSlot, header, banner }: {
   days: DayInfo[]; rows: Record<string, DayRow[]>; totals: Record<string, number>; initialDay: string;
   editable: boolean; brand: BrandLite; scoring: string;
   setSlot?: (playerId: number, slot: string) => Promise<unknown>;
   header?: React.ReactNode;
+  /** Edge-to-edge strip at the very top of the card (My Team's team banner). */
+  banner?: React.ReactNode;
 }) {
   const router = useRouter();
   const [day, setDay] = useState(initialDay);
@@ -107,6 +109,7 @@ export function RosterBoard({ days, rows: serverRows, totals, initialDay, editab
   return (
     <div className="space-y-3">
       <section className="card overflow-hidden">
+        {banner}
         <div className="space-y-3 border-b border-line/60 p-3 sm:p-4">
           {header}
           <DayStrip days={days} day={day} onDay={(k) => { setDay(k); setSelected(null); }} totals={totals} />

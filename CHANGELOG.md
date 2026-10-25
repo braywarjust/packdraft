@@ -6,6 +6,7 @@ Every PackDraft update is listed here, newest first. Version numbers follow the 
 ## 4.2 — My Team and instant pickups
 
 - **Acquisitions and Trades, every matchup.** Each league gives every team a set number of Acquisitions (adds) and Trades per matchup week, set by the League Manager. They reset every matchup. Need more during a matchup? Buy them in the League Shop; bought ones carry over until you use them. The per-season add limit is gone.
+- My Team is more compact: the team banner (name, manager, record, standing, points, roster, Acquisitions and Trades) now sits at the top of the roster card, right above Auto Manager.
 - My Team shows your **Acquisitions left** and **Trades left** for this matchup, including any you bought. They show as left out of this matchup's total, like 6/6, and bought ones add to both numbers (2 bought makes it 8/8). The League Shop shows them the same way. The top-right wallet now shows only your Fantasy Coins, since Acquisitions and Trades are per league. Tap either one to open the shop.
 - Lineup swaps on My Team happen instantly: tap a slot, tap where he goes, and the lineup changes right away while it saves in the background. The slot buttons are bigger and react the moment you press them. If a move can't go through, the lineup snaps back and says why.
 - Drop a player from his player card: tap his name, then Drop player. The Drop button is no longer on the lineup bar. Player news on the card starts collapsed to one line; tap it to read the headlines. The card's game log shows the last 5 games.
