@@ -187,7 +187,7 @@ export async function updateSettings(leagueId: number, form: FormData) {
     run(
       `UPDATE leagues SET name = ?, is_public = ?, scoring = ?, mode = ?, waiver_type = ?, pick_seconds = ?, sim_minutes = ?,
        keeper_count = ?, faab_budget = ?, season_weeks = ?, playoff_teams = ?,
-       trade_review_hours = ?, trade_deadline_week = ?, trade_limit = ?, acq_per_week = ?, acq_per_season = ?, acq_price = ?, trade_price = ? WHERE id = ?`,
+       trade_review_hours = ?, trade_deadline_week = ?, trade_limit = ?, acq_per_week = ?, acq_price = ?, trade_price = ? WHERE id = ?`,
       String(form.get("name") || l.name).slice(0, 40), form.get("is_public") ? 1 : 0, scoring,
       pre && form.get("mode") ? (form.get("mode") === "sim" ? "sim" : "real") : l.mode,
       String(form.get("waiver_type") || l.waiver_type), Math.max(10, num("pick_seconds", l.pick_seconds)), Math.max(0.5, num("sim_minutes", l.sim_minutes)),
@@ -196,7 +196,7 @@ export async function updateSettings(leagueId: number, form: FormData) {
       pre ? Math.min(l.max_teams, Math.max(2, num("playoff_teams", l.playoff_teams ?? 4))) : l.playoff_teams ?? 4,
       Math.min(72, Math.max(0, num("trade_review_hours", l.trade_review_hours ?? 0))),
       form.get("trade_deadline_week") != null ? Number(form.get("trade_deadline_week")) || null : l.trade_deadline_week ?? null,
-      limit("trade_limit", l.trade_limit), limit("acq_per_week", l.acq_per_week), limit("acq_per_season", l.acq_per_season),
+      limit("trade_limit", l.trade_limit), limit("acq_per_week", l.acq_per_week),
       price("acq_price", l.acq_price ?? ACQ_PRICE), price("trade_price", l.trade_price ?? TRADE_PRICE), l.id,
     );
     if (pre) run("UPDATE teams SET faab = ? WHERE league_id = ?", num("faab_budget", l.faab_budget), l.id);

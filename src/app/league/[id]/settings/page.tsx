@@ -71,9 +71,8 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
         <h3 className="pt-2 font-bold">Acquisitions</h3>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Free adds per matchup</label>{limitSel("acq_per_week", l.acq_per_week, 20, "add")}</div>
-          <div><label className="label">Free adds per season</label>{limitSel("acq_per_season", l.acq_per_season, 99, "add")}</div>
         </div>
-        <p className="text-xs text-zinc-500">No waivers: every add is instant, and a dropped player can be picked up by anyone straight away. Adds count; trades don&apos;t. Past the free adds, each add uses an Acquisition from the League Shop.</p>
+        <p className="text-xs text-zinc-500">No waivers: every add is instant, and a dropped player can be picked up by anyone straight away. Free adds reset every matchup week. Adds count; trades don&apos;t. Past the free adds, each add uses an Acquisition from the League Shop.</p>
 
         <h3 className="pt-2 font-bold">Trades</h3>
         <div className="grid grid-cols-2 gap-3">

@@ -141,7 +141,7 @@ export default async function Players({ params, searchParams }: { params: Promis
               {moves.adds.free != null && <span className="font-sans text-xs font-semibold text-zinc-500">left</span>}
             </p>
             <p className="text-xs text-zinc-500">
-              {moves.adds.free == null ? "Your league has no add limit." : `${moves.adds.free} free ${moves.adds.weekly ? "this matchup" : "this season"} + ${moves.adds.bought} Acquisition${moves.adds.bought === 1 ? "" : "s"} bought.`}
+              {moves.adds.free == null ? "Your league has no add limit." : `${moves.adds.free} free this matchup + ${moves.adds.bought} Acquisition${moves.adds.bought === 1 ? "" : "s"} bought.`}
               {" "}Roster {myRoster.length}/{ROSTER_MAX}{myRoster.length >= ROSTER_MAX ? ": full, so each add needs a drop." : "."}
             </p>
             {moves.adds.free != null && <Link href={`/league/${l.id}/shop`} className="text-xs text-brand underline">Buy Acquisitions in the League Shop</Link>}

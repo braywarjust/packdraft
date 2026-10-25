@@ -27,16 +27,16 @@ export function teamItems(teamId: number) {
 }
 
 /** Why this team's next add isn't free (it has used up the league's free adds), or null if it is. */
-export function acquisitionOver(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "acq_per_season">, teamId: number): string | null {
+export function acquisitionOver(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week">, teamId: number): string | null {
   const n = acquisitions(l, teamId);
   const used = (max: number, when: string) => (max === 0 ? `This league has no free adds ${when}` : `You've used your ${max} free add${max === 1 ? "" : "s"} ${when}`);
+  // Free adds are always counted per matchup week (Update 4.2 dropped the per-season limit).
   if (l.acq_per_week != null && n.week >= l.acq_per_week) return used(l.acq_per_week, "this matchup");
-  if (l.acq_per_season != null && n.season >= l.acq_per_season) return used(l.acq_per_season, "this season");
   return null;
 }
 
 /** Why this team can't add another player right now (no free adds left and no Acquisitions), or null if it can. */
-export function acquisitionBlock(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "acq_per_season">, teamId: number): string | null {
+export function acquisitionBlock(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week">, teamId: number): string | null {
   const over = acquisitionOver(l, teamId);
   if (!over) return null;
   const items = teamItems(teamId);
@@ -44,7 +44,7 @@ export function acquisitionBlock(l: Pick<League, "id" | "season" | "current_week
 }
 
 /** Pay for an add: free while the team has free adds left, else it uses one of its Acquisitions. Call before logging the add. */
-export function spendAcquisition(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "acq_per_season">, teamId: number) {
+export function spendAcquisition(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week">, teamId: number) {
   const blocked = acquisitionBlock(l, teamId);
   if (blocked) throw new Error(blocked);
   if (acquisitionOver(l, teamId) && !teamItems(teamId).cpu) run("UPDATE teams SET acq_tokens = acq_tokens - 1 WHERE id = ? AND acq_tokens > 0", teamId);
@@ -75,15 +75,12 @@ export function spendTrade(l: Pick<League, "id" | "season" | "trade_limit">, tea
 
 /**
  * What a team has left to spend (Update 4.2, the My Team page): free adds and free trades still unused under the
- * league's limits (null = no limit), plus the Acquisitions and Trades it bought. Bought ones always add to the total.
+ * league's limits (null = no limit; adds reset every matchup week), plus the Acquisitions and Trades it bought. Bought ones always add to the total.
  */
-export function movesLeft(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "acq_per_season" | "trade_limit">, teamId: number) {
-  const n = acquisitions(l, teamId);
-  const caps = [l.acq_per_week != null ? l.acq_per_week - n.week : null, l.acq_per_season != null ? l.acq_per_season - n.season : null]
-    .filter((x): x is number => x != null);
+export function movesLeft(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "trade_limit">, teamId: number) {
   const items = teamItems(teamId);
   return {
-    adds: { free: caps.length ? Math.max(0, Math.min(...caps)) : null, bought: items.acquisitions, weekly: l.acq_per_week != null && (l.acq_per_season == null || l.acq_per_week - n.week <= l.acq_per_season - n.season) },
+    adds: { free: l.acq_per_week != null ? Math.max(0, l.acq_per_week - acquisitions(l, teamId).week) : null, bought: items.acquisitions },
     trades: { free: l.trade_limit != null ? Math.max(0, l.trade_limit - tradeCount(l, teamId)) : null, bought: items.trades },
   };
 }

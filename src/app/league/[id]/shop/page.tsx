@@ -27,10 +27,7 @@ export default async function LeagueShop({ params }: { params: Promise<{ id: str
   const trades = me ? tradeCount(l, me.id) : 0;
   // "2 per matchup (1 left)", or "none" when the League Manager allows no free ones.
   const free = (max: number, per: string, usedN: number | null) => (max === 0 ? `none ${per}` : `${max} ${per}${usedN != null ? ` (${Math.max(0, max - usedN)} left)` : ""}`);
-  const freeAdds = [
-    l.acq_per_week != null && free(l.acq_per_week, "per matchup", used?.week ?? null),
-    l.acq_per_season != null && free(l.acq_per_season, "per season", used?.season ?? null),
-  ].filter(Boolean).join(" · ");
+  const freeAdds = l.acq_per_week != null ? free(l.acq_per_week, "per matchup", used?.week ?? null) : "";
   const freeTrades = l.trade_limit != null ? free(l.trade_limit, "per season", me ? trades : null) : "";
   const recent = all<{ team: string; item: ShopItem; qty: number; price: number; created_at: number }>(
     `SELECT t.name team, s.item, s.qty, s.price, s.created_at FROM shop_purchases s JOIN teams t ON t.id = s.team_id

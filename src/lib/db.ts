@@ -287,8 +287,9 @@ export type League = {
   trade_review_hours?: number;
   /** Last week trades can be made (null = no deadline). */
   trade_deadline_week?: number | null;
-  /** Players each team can add (free agents and waiver claims) per matchup and per season; null = no limit. */
+  /** Free adds each team gets per matchup week; null = no limit. */
   acq_per_week?: number | null;
+  /** Unused since Update 4.2 (free adds are always weekly). */
   acq_per_season?: number | null;
   /** Trades each team can make per season; null = no limit. */
   trade_limit?: number | null;
