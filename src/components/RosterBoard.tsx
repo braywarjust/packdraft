@@ -8,6 +8,9 @@ import type { BrandLite } from "./TeamBadge";
 import { BoxHead, BoxRow, BoxTotals, DayStrip, shortName, slotPill } from "./BoxScore";
 import { Fpts } from "./Fpts";
 import { PointsBreakdown } from "./PointsBreakdown";
+import { Headshot, InjuryTag } from "./Headshot";
+import { TeamLogo } from "./TeamLogo";
+import { PlayerButton } from "./PlayerInspector";
 
 /**
  * The roster page's lineup, ESPN style: pick a day, see every slot with the player in it, his game and full stat line,
@@ -127,8 +130,17 @@ export function RosterBoard({ days, rows: serverRows, totals, initialDay, editab
             <span className="shrink-0 text-sm text-zinc-400"><span className="max-sm:hidden">{info?.label}: </span><b className="font-mono text-white"><Fpts n={totals[day] ?? 0} /></b></span>
           </div>
         </div>
-        <div className="sm:overflow-x-auto scrollbar-thin">
-          <table className="w-full text-sm sm:min-w-[900px]">
+        {/* iPhone (Update 4.2): a list, not a table. Full name, who he plays and when, his stat line, and his points. */}
+        <ul className="divide-y divide-line/60 sm:hidden">
+          {STARTERS.map((slot) => { const r = bySlot.get(slot) ?? null; return <PhoneRow key={slot} r={r} slot={pill(slot, r)} tint={tint(r)} onPoints={openPoints} />; })}
+          <li className="flex items-center justify-between bg-panel2/60 px-3 py-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Starters</span>
+            <span className="font-mono text-sm font-black text-white"><Fpts n={totals[day] ?? 0} /></span>
+          </li>
+          {bench.map((r) => <PhoneRow key={r.id} r={r} slot={pill("BN", r)} tint={`opacity-80 ${tint(r)}`} onPoints={openPoints} />)}
+        </ul>
+        <div className="overflow-x-auto scrollbar-thin max-sm:hidden">
+          <table className="w-full min-w-[900px] text-sm">
             <BoxHead dayLabel={info?.top ?? ""} first="Slot" fit />
             <tbody>
               {STARTERS.map((slot) => { const r = bySlot.get(slot) ?? null; return <BoxRow key={slot} r={r} slotCell={pill(slot, r)} highlight={tint(r)} fit onPoints={openPoints} />; })}
@@ -141,5 +153,39 @@ export function RosterBoard({ days, rows: serverRows, totals, initialDay, editab
       <p className="text-xs text-zinc-500">G = PG/SG · F = SF/PF · UTIL = anyone · Bench doesn&apos;t score · Tap a player&apos;s points to see how they add up</p>
       {shown && <PointsBreakdown r={shown} day={days.find((d) => d.key === breakdown!.day)} scoring={scoring} onClose={() => setBreakdown(null)} />}
     </div>
+  );
+}
+
+/** One player on the iPhone roster list: slot pill, headshot, full name, opponent and game time, stat line, points. */
+function PhoneRow({ r, slot, tint, onPoints }: { r: DayRow | null; slot: React.ReactNode; tint: string; onPoints: (r: DayRow) => void }) {
+  const g = r?.game;
+  const live = g?.state === "in";
+  const line = g?.line && g.state !== "pre" ? g.line : null;
+  const opp = g ? (g.opp.startsWith("@") ? g.opp : `vs ${g.opp}`) : null;
+  return (
+    <li className={`flex items-center gap-2.5 px-3 py-2 ${tint}`}>
+      <span className="shrink-0">{slot}</span>
+      {r ? (
+        <>
+          <Headshot src={r.headshot} name={r.name} size={34} />
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-1 text-[13px] font-semibold leading-tight text-white">
+              <PlayerButton id={r.id} className="min-w-0 break-words">{r.name}</PlayerButton>
+              <InjuryTag injury={r.injury} />
+            </p>
+            <p className={`mt-0.5 flex items-center gap-1 text-[11px] ${live ? "font-bold text-red-500" : "text-zinc-400"}`}>
+              <TeamLogo team={r.team} size={12} />
+              {g ? <><b className="font-semibold text-brand">{opp}</b><span>· {live && "● "}{g.status}</span></> : <span className="text-zinc-500">No game</span>}
+            </p>
+            {line && <p className="mt-0.5 font-mono text-[10px] text-zinc-500">{line.pts} PTS · {line.reb} REB · {line.ast} AST</p>}
+          </div>
+          <span className="shrink-0 text-right font-mono text-sm font-black text-white">
+            {r.fpts != null
+              ? <button type="button" onClick={() => onPoints(r)} title="See how these points add up" className="press rounded-md px-1 py-0.5 underline decoration-white/30 decoration-dotted underline-offset-4"><Fpts n={r.fpts} /></button>
+              : <span className="text-zinc-500">-</span>}
+          </span>
+        </>
+      ) : <span className="text-sm text-zinc-500">Empty</span>}
+    </li>
   );
 }
