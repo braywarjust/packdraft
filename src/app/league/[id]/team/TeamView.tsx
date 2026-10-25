@@ -52,7 +52,8 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
       {/* Team banner, condensed into the top of the roster card (Update 4.2): name, manager and every stat as chips. */}
       {(() => {
         const banner = (
-          <div className="relative overflow-hidden" style={{ background: `linear-gradient(115deg, ${b.color} 0%, ${b.color} 50%, ${b.alt} 135%)` }}>
+          // Keyed like the header: React wants a key on server-made elements handed to the client RosterBoard.
+          <div key="team-banner" className="relative overflow-hidden" style={{ background: `linear-gradient(115deg, ${b.color} 0%, ${b.color} 50%, ${b.alt} 135%)` }}>
             <div className="pointer-events-none absolute -right-8 -top-10 opacity-20"><TeamBadge brand={b} size={170} ghost /></div>
             <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 2px, transparent 2px 14px)" }} />
             <div className="relative flex items-center gap-3 px-3 pb-2 pt-3 sm:px-4">

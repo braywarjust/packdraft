@@ -3,6 +3,14 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
+## 4.3 — Four league tabs (2026-10-25)
+
+- Leagues have just **four tabs**: League, Roster, Matchups and Players. They fit an iPhone with no sideways scrolling. **League** holds Home, Chat, Draft and Settings, and **Roster** (formerly My Team) holds your Lineup, Trades and the Shop, as a small row under the tabs. A red dot on Draft means the draft is live.
+- The fantasy points breakdown splits a player's stats into **Earns points** and **Costs points**, each with its own subtotal, so you can see at a glance what helped and what hurt him.
+- Every number in the breakdown shows the Fantasy Points logo, and the × is gone: Pts each just shows what each stat is worth (like +1 or −1).
+- On iPhone the league banner is slim: just the league's logo and name, so the tabs and your league sit higher on the screen. Bigger screens keep the full banner.
+- Fixed league chat sometimes showing the same message twice when it loaded.
+
 ## 4.2 — My Team and instant pickups (2026-10-25)
 
 - **Acquisitions and Trades, every matchup.** Each league gives every team a set number of Acquisitions (adds) and Trades per matchup week, set by the League Manager. They reset every matchup. Need more during a matchup? Buy them in the League Shop; bought ones carry over until you use them. The per-season add limit is gone.
