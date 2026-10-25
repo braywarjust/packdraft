@@ -9,6 +9,7 @@ Every PackDraft update is listed here, newest first. Version numbers follow the 
 - The fantasy points breakdown splits a player's stats into **Earns points** and **Costs points**, each with its own subtotal, so you can see at a glance what helped and what hurt him.
 - Every number in the breakdown shows the Fantasy Points logo, and the × is gone: Pts each just shows what each stat is worth (like +1 or −1).
 - On iPhone the league banner is slim: just the league's logo and name, so the tabs and your league sit higher on the screen. Bigger screens keep the full banner.
+- Fixed league chat sometimes showing the same message twice when it loaded.
 
 ## 4.2 — My Team and instant pickups (2026-10-25)
 

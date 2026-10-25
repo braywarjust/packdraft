@@ -51,8 +51,13 @@ export function Chat({ leagueId, lmUserId, rivals, send, canPost }: {
     const j = (await r.json()) as { me: number; messages: Msg[] };
     setMe(j.me);
     if (j.messages.length) {
-      lastId.current = j.messages[j.messages.length - 1].id;
-      setMsgs((m) => [...m, ...j.messages]);
+      lastId.current = Math.max(lastId.current, j.messages[j.messages.length - 1].id);
+      // Two loads can overlap (the 2s poll and a send) and fetch the same messages: keep each message once.
+      setMsgs((m) => {
+        const seen = new Set(m.map((x) => x.id));
+        const fresh = j.messages.filter((x) => !seen.has(x.id));
+        return fresh.length ? [...m, ...fresh] : m;
+      });
       setTimeout(() => bottom.current?.scrollIntoView({ behavior: "smooth" }), 50);
     }
   }, [leagueId]);
