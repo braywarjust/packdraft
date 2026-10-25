@@ -15,11 +15,10 @@ export const STAT_COLS: [string, (l: Line) => number][] = [
 ];
 
 /**
- * fit: phones show only Opp, game, PTS, REB, AST and fantasy points, so the whole row fits without scrolling sideways.
- * The other stat columns hide below sm, and PTS gets its own phone-only cell so it leads.
+ * fit (My Team on phones, Update 4.2): every player's full name fits. The opponent and game time move under the name,
+ * the stat line condenses to one "PTS/REB/AST" cell, and fantasy points drop their icon. Bigger screens are unchanged.
  */
-const PHONE_COLS = new Set(["REB", "AST"]);
-const colHide = (fit: boolean | undefined, k: string) => (fit && !PHONE_COLS.has(k) ? "max-sm:hidden" : "");
+const colHide = (fit: boolean | undefined) => (fit ? "max-sm:hidden" : "");
 const phonePad = (fit: boolean | undefined) => (fit ? "max-sm:px-1" : "");
 
 /** "L. Doncic" for tight spaces. */
@@ -79,25 +78,33 @@ export function BoxRow({ r, slotCell, highlight, compactName, fit, onPoints }: {
             <Headshot src={r.headshot} name={r.name} size={36} className={fit ? "max-sm:hidden" : ""} />
             <div className="min-w-0">
               <p className="flex items-center gap-1 text-sm font-semibold leading-tight text-white">
-                <PlayerButton id={r.id} className="truncate">{compactName ? shortName(r.name) : <><span className="sm:hidden">{shortName(r.name)}</span><span className="hidden sm:inline">{r.name}</span></>}</PlayerButton>
+                <PlayerButton id={r.id} className={fit ? "truncate max-sm:whitespace-normal max-sm:break-words max-sm:text-[13px] max-sm:leading-tight" : "truncate"}>
+                  {fit ? r.name : compactName ? shortName(r.name) : <><span className="sm:hidden">{shortName(r.name)}</span><span className="hidden sm:inline">{r.name}</span></>}
+                </PlayerButton>
                 <InjuryTag injury={r.injury} />
               </p>
-              <p className="flex items-center gap-1 truncate text-[11px] text-zinc-500">
+              <p className={`flex items-center gap-1 truncate text-[11px] text-zinc-500 ${fit ? "max-sm:hidden" : ""}`}>
                 <TeamLogo team={r.team} size={13} />{r.team} <span className="truncate font-semibold text-zinc-400">{r.pos.split(",").join(", ")}</span>
               </p>
+              {fit && (
+                <p className={`flex items-center gap-1 truncate text-[10px] sm:hidden ${live ? "font-bold text-red-500" : "text-zinc-500"}`}>
+                  <TeamLogo team={r.team} size={12} />
+                  {g ? <><span className="font-semibold text-brand">{g.opp}</span>{live && "●"}{g.status.replace(/ ET$/, "")}</> : <span>No game</span>}
+                </p>
+              )}
             </div>
           </div>
         ) : <span className="text-sm text-zinc-500">Empty</span>}
       </td>
-      <td className={`whitespace-nowrap px-2 text-xs font-semibold text-brand ${pad}`}>{g ? g.opp : dash}</td>
-      <td className={`whitespace-nowrap px-2 text-xs ${pad} ${fit ? "max-sm:text-[10px]" : ""} ${live ? "font-bold text-red-500" : g?.state === "post" ? "font-semibold text-white/75" : "text-brand"}`}>
-        {g ? <>{live && "● "}{fit && g.status.endsWith(" ET") ? <>{g.status.slice(0, -3)}<span className="max-sm:hidden"> ET</span></> : g.status}</> : ""}
+      <td className={`whitespace-nowrap px-2 text-xs font-semibold text-brand ${pad} ${colHide(fit)}`}>{g ? g.opp : dash}</td>
+      <td className={`whitespace-nowrap px-2 text-xs ${pad} ${colHide(fit)} ${live ? "font-bold text-red-500" : g?.state === "post" ? "font-semibold text-white/75" : "text-brand"}`}>
+        {g ? <>{live && "● "}{g.status}</> : ""}
       </td>
-      {fit && <td className="border-l border-line/30 px-1 text-center font-mono text-xs text-white/85 sm:hidden">{stat((l) => l.pts)}</td>}
+      {fit && <td className="whitespace-nowrap border-l border-line/30 px-1 text-center font-mono text-[11px] text-white/85 sm:hidden">{g?.line && g.state !== "pre" ? `${g.line.pts}/${g.line.reb}/${g.line.ast}` : dash}</td>}
       {STAT_COLS.map(([k, f]) => (
-        <td key={k} className={`border-l border-line/30 px-2 text-center font-mono text-xs text-white/85 first:border-l-0 ${pad} ${colHide(fit, k)}`}>{stat(f)}</td>
+        <td key={k} className={`border-l border-line/30 px-2 text-center font-mono text-xs text-white/85 first:border-l-0 ${pad} ${colHide(fit)}`}>{stat(f)}</td>
       ))}
-      <td className={`whitespace-nowrap border-l border-line/60 px-3 text-right font-mono text-sm font-black text-white ${fit ? "max-sm:px-1.5 max-sm:text-xs" : ""}`}>
+      <td className={`whitespace-nowrap border-l border-line/60 px-3 text-right font-mono text-sm font-black text-white ${fit ? "max-sm:px-1 max-sm:text-xs" : ""}`}>
         {r?.fpts != null ? (onPoints
           ? <button type="button" onClick={() => onPoints(r)} title="See how these points add up" className="press rounded-md underline decoration-white/30 decoration-dotted underline-offset-4 hover:bg-white/10 hover:decoration-white"><Fpts n={r.fpts} iconClass={fit ? "max-sm:hidden" : ""} /></button>
           : <Fpts n={r.fpts} iconClass={fit ? "max-sm:hidden" : ""} />) : dash}
@@ -114,11 +121,11 @@ export function BoxHead({ dayLabel, first = "Slot", fit }: { dayLabel: string; f
       <tr>
         <th className="sticky left-0 z-10 bg-panel px-1.5 py-2 text-left sm:pl-3">{first}</th>
         <th className="sticky left-[56px] z-10 border-r border-line/60 bg-panel py-2 text-left sm:left-[76px]">Player</th>
-        <th className={`px-2 text-left ${pad}`}>Opp</th>
-        <th className={`px-2 text-left ${pad}`}>{dayLabel}</th>
-        {fit && <th className="px-1 text-center sm:hidden">PTS</th>}
-        {STAT_COLS.map(([k]) => <th key={k} className={`px-2 text-center ${pad} ${colHide(fit, k)}`}>{k}</th>)}
-        <th className={`border-l border-line/60 px-3 text-right ${fit ? "max-sm:px-1.5" : ""}`}>{fit ? <><span className="sm:hidden">FP</span><span className="max-sm:hidden">Fpts</span></> : "Fpts"}</th>
+        <th className={`px-2 text-left ${pad} ${colHide(fit)}`}>Opp</th>
+        <th className={`px-2 text-left ${pad} ${colHide(fit)}`}>{dayLabel}</th>
+        {fit && <th className="px-1 text-center sm:hidden">P/R/A</th>}
+        {STAT_COLS.map(([k]) => <th key={k} className={`px-2 text-center ${pad} ${colHide(fit)}`}>{k}</th>)}
+        <th className={`border-l border-line/60 px-3 text-right ${fit ? "max-sm:px-1" : ""}`}>{fit ? <><span className="sm:hidden">FP</span><span className="max-sm:hidden">Fpts</span></> : "Fpts"}</th>
       </tr>
     </thead>
   );
@@ -130,11 +137,11 @@ export function BoxTotals({ rows, total, fit }: { rows: DayRow[]; total: number;
   return (
     <tr className="border-t border-line bg-panel2/60 font-mono text-xs font-bold text-white">
       <td className="sticky left-0 z-10 bg-panel2 py-2" />
-      <td className="sticky left-[56px] z-10 border-r border-line/60 bg-panel2 py-2 text-right font-sans text-[10px] uppercase tracking-widest text-zinc-400 sm:left-[76px]">Starters</td>
-      <td /><td />
-      {fit && <td className="px-1 text-center sm:hidden">{sum((l) => l.pts)}</td>}
-      {STAT_COLS.map(([k, f]) => <td key={k} className={`px-2 text-center ${phonePad(fit)} ${colHide(fit, k)}`}>{sum(f)}</td>)}
-      <td className={`whitespace-nowrap border-l border-line/60 px-3 text-right text-sm ${fit ? "max-sm:px-1.5 max-sm:text-xs" : ""}`}><Fpts n={total} iconClass={fit ? "max-sm:hidden" : ""} /></td>
+      <td className="sticky left-[56px] z-10 border-r border-line/60 bg-panel2 py-2 pr-2 text-right font-sans text-[10px] uppercase tracking-widest text-zinc-400 sm:left-[76px]">Starters</td>
+      <td className={colHide(fit)} /><td className={colHide(fit)} />
+      {fit && <td className="whitespace-nowrap px-1 text-center text-[11px] sm:hidden">{sum((l) => l.pts)}/{sum((l) => l.reb)}/{sum((l) => l.ast)}</td>}
+      {STAT_COLS.map(([k, f]) => <td key={k} className={`px-2 text-center ${phonePad(fit)} ${colHide(fit)}`}>{sum(f)}</td>)}
+      <td className={`whitespace-nowrap border-l border-line/60 px-3 text-right text-sm ${fit ? "max-sm:px-1 max-sm:text-xs" : ""}`}><Fpts n={total} iconClass={fit ? "max-sm:hidden" : ""} /></td>
     </tr>
   );
 }
