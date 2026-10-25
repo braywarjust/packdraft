@@ -291,7 +291,7 @@ export type League = {
   acq_per_week?: number | null;
   /** Unused since Update 4.2 (free adds are always weekly). */
   acq_per_season?: number | null;
-  /** Trades each team can make per season; null = no limit. */
+  /** Free trades each team gets per matchup week; null = no limit. */
   trade_limit?: number | null;
   /** League Shop prices in Fantasy Coins for one extra Acquisition and one extra Trade (Update 4.0-R). */
   acq_price?: number;

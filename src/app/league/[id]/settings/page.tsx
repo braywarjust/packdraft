@@ -76,7 +76,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
 
         <h3 className="pt-2 font-bold">Trades</h3>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Free trades per team (season)</label>{limitSel("trade_limit", l.trade_limit, 30, "trade")}</div>
+          <div><label className="label">Free trades per matchup</label>{limitSel("trade_limit", l.trade_limit, 30, "trade")}</div>
           <div><label className="label">LM review period</label>
             <select name="trade_review_hours" defaultValue={String(l.trade_review_hours ?? 0)} className="input">
               <option value="0">None (trades go through at once)</option><option value="12">12 hours</option><option value="24">1 day</option><option value="48">2 days</option>

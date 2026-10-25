@@ -9,7 +9,7 @@ Every PackDraft update is listed here, newest first. Version numbers follow the 
 - Tap a player's fantasy points on My Team to see how they add up: every stat he's recorded times what it's worth in your league, including any double-double or triple-double bonus. It keeps counting live during his game.
 - The Fantasy Coin is gold now, everywhere in the app.
 - Waivers are gone. Every add is instant, and a player another team drops can be picked up by anyone straight away (if his game today has already tipped off, the next day). FAAB bidding and claims are removed.
-- Free adds are always counted per matchup week now. The free adds per season setting is gone.
+- Free adds and free trades both reset every matchup week now, in every league. The free adds per season setting is gone, and the trade limit is per matchup.
 - With a full roster you have to pick a player to drop before you can add one, so an add never goes through without room.
 - Top performers on Home now shows the top 10 for the week. Scroll the list to see 6 to 10.
 

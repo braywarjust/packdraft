@@ -51,14 +51,14 @@ export function spendAcquisition(l: Pick<League, "id" | "season" | "current_week
 }
 
 /** Why this team's next trade isn't free (it has used up the league's free trades), or null if it is. */
-export function tradeOver(l: Pick<League, "id" | "season" | "trade_limit">, teamId: number, who?: string): string | null {
+export function tradeOver(l: Pick<League, "id" | "season" | "current_week" | "trade_limit">, teamId: number, who?: string): string | null {
   if (l.trade_limit == null || tradeCount(l, teamId) < l.trade_limit) return null;
   if (l.trade_limit === 0) return "This league has no free trades";
-  return `${who ? `${who} has` : "You've"} used ${who ? "their" : "your"} ${l.trade_limit} free trade${l.trade_limit === 1 ? "" : "s"} this season`;
+  return `${who ? `${who} has` : "You've"} used ${who ? "their" : "your"} ${l.trade_limit} free trade${l.trade_limit === 1 ? "" : "s"} this matchup`;
 }
 
 /** Why this team (named `who`, or "You") can't make another trade (no free trades left and no Trades), or null if it can. */
-export function tradeBlock(l: Pick<League, "id" | "season" | "trade_limit">, teamId: number, who?: string): string | null {
+export function tradeBlock(l: Pick<League, "id" | "season" | "current_week" | "trade_limit">, teamId: number, who?: string): string | null {
   const over = tradeOver(l, teamId, who);
   if (!over) return null;
   const items = teamItems(teamId);
@@ -67,7 +67,7 @@ export function tradeBlock(l: Pick<League, "id" | "season" | "trade_limit">, tea
 }
 
 /** Pay for a trade on one side: free while the team has free trades left, else it uses one of its Trades. Call before logging it. */
-export function spendTrade(l: Pick<League, "id" | "season" | "trade_limit">, teamId: number, who?: string) {
+export function spendTrade(l: Pick<League, "id" | "season" | "current_week" | "trade_limit">, teamId: number, who?: string) {
   const blocked = tradeBlock(l, teamId, who);
   if (blocked) throw new Error(blocked);
   if (tradeOver(l, teamId) && !teamItems(teamId).cpu) run("UPDATE teams SET trade_tokens = trade_tokens - 1 WHERE id = ? AND trade_tokens > 0", teamId);
@@ -75,7 +75,7 @@ export function spendTrade(l: Pick<League, "id" | "season" | "trade_limit">, tea
 
 /**
  * What a team has left to spend (Update 4.2, the My Team page): free adds and free trades still unused under the
- * league's limits (null = no limit; adds reset every matchup week), plus the Acquisitions and Trades it bought. Bought ones always add to the total.
+ * league's limits (null = no limit; both reset every matchup week), plus the Acquisitions and Trades it bought. Bought ones always add to the total.
  */
 export function movesLeft(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "trade_limit">, teamId: number) {
   const items = teamItems(teamId);
@@ -85,11 +85,11 @@ export function movesLeft(l: Pick<League, "id" | "season" | "current_week" | "ac
   };
 }
 
-/** Trades a team has made this season (either side). */
-export const tradeCount = (l: Pick<League, "id" | "season">, teamId: number) =>
+/** Trades a team has made this matchup week (either side). Free trades reset every matchup, like free adds (Update 4.2). */
+export const tradeCount = (l: Pick<League, "id" | "season" | "current_week">, teamId: number) =>
   one<{ n: number }>(
-    `SELECT COUNT(*) n FROM league_activity WHERE league_id = ? AND season IS ? AND kind = 'trade'
-     AND (team_id = ? OR json_extract(data, '$.other') = ?)`, l.id, l.season ?? null, teamId, teamId)?.n ?? 0;
+    `SELECT COUNT(*) n FROM league_activity WHERE league_id = ? AND season IS ? AND week = ? AND kind = 'trade'
+     AND (team_id = ? OR json_extract(data, '$.other') = ?)`, l.id, l.season ?? null, l.current_week, teamId, teamId)?.n ?? 0;
 
 type PlayerRef = { id: number; name: string; pos: string; team: string };
 export type ActivityItem = {
