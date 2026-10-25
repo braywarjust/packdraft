@@ -75,7 +75,7 @@ export function spendTrade(l: Pick<League, "id" | "season" | "current_week" | "t
 
 /**
  * What a team has left to spend (Update 4.2, the My Team page): free adds and free trades still unused under the
- * league's limits (null = no limit; both reset every matchup week), plus the Acquisitions and Trades it bought. The matchup ones are used first; bought ones never expire.
+ * league's limits (null = no limit; both reset every matchup week), plus the Acquisitions and Trades it bought. The matchup ones are used first; bought ones carry over until used.
  */
 export function movesLeft(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "trade_limit">, teamId: number) {
   const items = teamItems(teamId);

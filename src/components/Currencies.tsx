@@ -28,34 +28,16 @@ export const ACQ_COLOR = "text-emerald-400";
 export const TRADE_COLOR = "text-amber-400";
 
 /**
- * One kind of move a team has left: `free` of the league's `cap` per matchup (null = no limit), plus `bought` from the
- * League Shop. The two are shown apart (Update 4.2): matchup ones as pips that refill every week, bought ones as a gold
- * "+N" chip that never expires and is only used once the pips run out.
+ * One kind of move a team has: `free` left of the league's `cap` per matchup (null = no limit), plus `bought` from the
+ * League Shop. Shown as one count (Update 4.2), e.g. 6/6, with bought ones added to both sides: 2 bought makes it 8/8.
  */
 export type MoveLeft = { free: number | null; cap: number | null; bought: number };
 export type WalletLeague = { id: number; acq: MoveLeft; trades: MoveLeft };
 
-/** The gold "+N" chip for bought Acquisitions or Trades. */
-export function BoughtChip({ n, label, className = "" }: { n: number; label?: boolean; className?: string }) {
-  if (n <= 0) return null;
-  return (
-    <span title={`${n} bought in the League Shop (never expire)`}
-      className={`inline-flex items-center gap-1 rounded-full bg-coin/15 px-1.5 font-mono text-[0.85em] font-black leading-[1.5] text-coin ring-1 ring-coin/50 ${className}`}>
-      +{n}{label && <span className="font-sans text-[0.8em] font-bold uppercase tracking-wider">bought</span>}
-    </span>
-  );
-}
-
-/** Matchup pips: one per move the league gives each matchup, lit while unused. Big caps fall back to "3/12". */
-export function MatchupPips({ free, cap, color }: { free: number; cap: number; color: string }) {
-  if (cap > 8 || cap === 0) return <span className="font-mono font-black">{free}<span className="text-white/40">/{cap}</span></span>;
-  return (
-    <span className="inline-flex items-center gap-1" title={`${free} of ${cap} left this matchup (refills every matchup)`}>
-      {Array.from({ length: cap }, (_, i) => (
-        <span key={i} className={`h-2.5 w-2.5 rounded-full ${i < free ? `${color} bg-current shadow-[0_0_6px_currentColor]` : "ring-1 ring-inset ring-white/30"}`} />
-      ))}
-    </span>
-  );
+/** "5/8" (left / this matchup's total), or ∞ when the league has no limit. */
+export function MoveCount({ m, className = "" }: { m: MoveLeft; className?: string }) {
+  if (m.free == null || m.cap == null) return <span className={`font-mono font-black ${className}`}>∞</span>;
+  return <span className={`font-mono font-black ${className}`}>{m.free + m.bought}<span className="opacity-50">/{m.cap + m.bought}</span></span>;
 }
 
 /**
@@ -79,11 +61,11 @@ export function Wallet({ coins: initial, leagues, compact }: { coins: number; le
       </span>
       {lg && (
         <>
-          <span className={`inline-flex items-center ${gap}`} title="Acquisitions: left this matchup, plus bought">
-            <AcqIcon className={ACQ_COLOR} />{lg.acq.free ?? "∞"}<BoughtChip n={lg.acq.bought} />
+          <span className={`inline-flex items-center ${gap}`} title="Acquisitions left this matchup">
+            <AcqIcon className={ACQ_COLOR} /><MoveCount m={lg.acq} />
           </span>
-          <span className={`inline-flex items-center ${gap}`} title="Trades: left this matchup, plus bought">
-            <TradeIcon className={TRADE_COLOR} />{lg.trades.free ?? "∞"}<BoughtChip n={lg.trades.bought} />
+          <span className={`inline-flex items-center ${gap}`} title="Trades left this matchup">
+            <TradeIcon className={TRADE_COLOR} /><MoveCount m={lg.trades} />
           </span>
         </>
       )}

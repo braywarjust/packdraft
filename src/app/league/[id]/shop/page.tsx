@@ -8,7 +8,7 @@ import { COINS_PER_POINT } from "@/lib/economy-rate";
 import { buyShopItemAction } from "../../../actions";
 import { ShopCounter } from "./ShopCounter";
 import { Coins } from "@/components/Coins";
-import { AcqIcon, ACQ_COLOR, BoughtChip, MatchupPips, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
+import { AcqIcon, ACQ_COLOR, MoveCount, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
 import { TeamBadge } from "@/components/TeamBadge";
 
 export const metadata = { title: "League Shop" };
@@ -53,8 +53,8 @@ export default async function LeagueShop({ params }: { params: Promise<{ id: str
         <div className="relative grid grid-cols-3 gap-px bg-black/20">
           {([
             ["Fantasy Coins", <Coins key="c" n={u.coins} live />],
-            ...(me ? ([["Acquisitions", movesLeft(l, me.id).adds, <AcqIcon key="i" />, ACQ_COLOR], ["Trades", movesLeft(l, me.id).trades, <TradeIcon key="i" />, TRADE_COLOR]] as const).map(([k, m, icon, color]) =>
-              [k, <span key={k} className="inline-flex flex-wrap items-center gap-1.5">{icon}{m.free == null || m.cap == null ? "∞" : <MatchupPips free={m.free} cap={m.cap} color={color} />}<BoughtChip n={m.bought} className="text-sm" /></span>] as [string, React.ReactNode]) : []),
+            ...(me ? ([["Acquisitions left", movesLeft(l, me.id).adds, <AcqIcon key="i" />], ["Trades left", movesLeft(l, me.id).trades, <TradeIcon key="i" />]] as const).map(([k, m, icon]) =>
+              [k, <span key={k} className="inline-flex items-center gap-1.5">{icon}<MoveCount m={m} /></span>] as [string, React.ReactNode]) : []),
           ] as [string, React.ReactNode][]).map(([k, v]) => (
             <div key={k} className="bg-black/25 px-4 py-3 backdrop-blur sm:px-5">
               <p className="truncate text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>

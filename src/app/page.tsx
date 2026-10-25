@@ -11,7 +11,8 @@ import { Coins, CoinIcon } from "@/components/Coins";
 import { TeamBadge } from "@/components/TeamBadge";
 import { TeamLogo } from "@/components/TeamLogo";
 import { MatchupStrip } from "@/components/MatchupCard";
-import { AcqIcon, ACQ_COLOR, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
+import { AcqIcon, ACQ_COLOR, MoveCount, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
+import { movesLeft } from "@/lib/activity";
 import { Headshot } from "@/components/Headshot";
 import { PlayerButton } from "@/components/PlayerInspector";
 import { Fpts } from "@/components/Fpts";
@@ -29,6 +30,7 @@ export default async function Home() {
   const today = etDate();
   // Acquisitions and Trades belong to a team, so the banner shows your newest league's.
   const home = myTeams[0] ?? null;
+  const homeMoves = home ? movesLeft(getLeague(home.league_id)!, home.id) : null;
   const bets = (() => {
     try {
       return one<{ n: number; stake: number; toWin: number }>(
@@ -99,8 +101,8 @@ export default async function Home() {
         <div className="relative flex gap-px overflow-x-auto bg-black/20 text-white scrollbar-thin">
           {([
             ["Fantasy Coins", <Coins key="c" n={user.coins} live />, home ? `/league/${home.league_id}/shop` : "/leagues"],
-            ["Acquisitions", <span key="a" className="inline-flex items-center gap-1"><AcqIcon className={ACQ_COLOR} />{home?.acq_tokens ?? 0}</span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
-            ["Trades", <span key="t" className="inline-flex items-center gap-1"><TradeIcon className={TRADE_COLOR} />{home?.trade_tokens ?? 0}</span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
+            ["Acquisitions", <span key="a" className="inline-flex items-center gap-1"><AcqIcon className={ACQ_COLOR} />{homeMoves ? <MoveCount m={homeMoves.adds} /> : 0}</span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
+            ["Trades", <span key="t" className="inline-flex items-center gap-1"><TradeIcon className={TRADE_COLOR} />{homeMoves ? <MoveCount m={homeMoves.trades} /> : 0}</span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
             ["Open bets", bets.n ? <span key="b">{bets.n}</span> : "0", "/bets"],
           ] as [string, React.ReactNode, string][]).map(([k, v, href]) => (
             <Link key={k} href={href} className="min-w-[5.5rem] flex-1 bg-black/25 px-3 py-1.5 backdrop-blur transition hover:bg-black/35">
