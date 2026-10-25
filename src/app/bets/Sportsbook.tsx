@@ -1,5 +1,6 @@
 "use client";
 
+import { Popup } from "@/components/Popup";
 import { XIcon } from "@/components/Icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -366,13 +367,12 @@ export function Sportsbook({ initial }: { initial: Data }) {
         </button>
       )}
       {slipOpen && (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSlipOpen(false)}>
-          <div className="safe-bottom anim-deal max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-panel p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-zinc-500/50" />
+        <Popup onClose={() => setSlipOpen(false)} label="bet slip" z="z-50" outer="lg:hidden">
+          <div className="p-3">
             {slipCard}
             <button onClick={() => setSlipOpen(false)} className="mt-2 w-full py-2 text-center text-sm text-zinc-500">Keep browsing</button>
           </div>
-        </div>
+        </Popup>
       )}
     </div>
   );

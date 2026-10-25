@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useScrollLock } from "@/components/useScrollLock";
+import { Popup } from "@/components/Popup";
 
 /**
  * In-app confirmation (replaces the browser's confirm() popup).
@@ -20,7 +20,6 @@ export function askConfirm(message: string, opts: { confirmLabel?: string; dange
 
 export function ConfirmHost() {
   const [req, setReq] = useState<Req | null>(null);
-  useScrollLock(!!req);
   useEffect(() => {
     push = setReq;
     return () => { push = null; };
@@ -28,7 +27,6 @@ export function ConfirmHost() {
   useEffect(() => {
     if (!req) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { req.resolve(false); setReq(null); }
       if (e.key === "Enter") { req.resolve(true); setReq(null); }
     };
     window.addEventListener("keydown", onKey);
@@ -37,14 +35,14 @@ export function ConfirmHost() {
   if (!req) return null;
   const done = (ok: boolean) => { req.resolve(ok); setReq(null); };
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={() => done(false)}>
-      <div className="card w-full max-w-sm space-y-4 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <Popup onClose={() => done(false)} className="max-w-sm" z="z-[100]" label="Confirm">
+      <div className="space-y-4 p-5">
         <p className="text-base font-semibold text-zinc-900">{req.message}</p>
         <div className="flex justify-end gap-2">
           <button className="btn-ghost" onClick={() => done(false)}>Cancel</button>
           <button autoFocus className={req.danger ? "btn-danger" : "btn-primary"} onClick={() => done(true)}>{req.confirmLabel}</button>
         </div>
       </div>
-    </div>
+    </Popup>
   );
 }

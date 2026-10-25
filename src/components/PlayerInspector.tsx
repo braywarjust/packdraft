@@ -1,7 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { LoadingLogo } from "./LoadingLogo";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { dropPlayer } from "@/app/actions";
@@ -16,7 +15,7 @@ import { TeamLogo } from "./TeamLogo";
 import { TeamBadge } from "./TeamBadge";
 import { Fpts } from "./Fpts";
 import { XIcon } from "./Icons";
-import { useScrollLock } from "@/components/useScrollLock";
+import { Popup } from "./Popup";
 
 /**
  * Player inspector popup. Mount <PlayerInspectorHost /> once (root layout), then call openPlayer(id, leagueId)
@@ -204,7 +203,6 @@ export function PlayerInspectorHost() {
   const [err, setErr] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
 
-  useScrollLock(!!req);
   useEffect(() => {
     push = (r) => { setNonce(0); setReq(r); };
     return () => { push = null; };
@@ -217,18 +215,15 @@ export function PlayerInspectorHost() {
     fetch(`/api/player/${req.id}${req.league ? `?league=${req.league}` : ""}`)
       .then(async (r) => { const j = await r.json(); if (stop) return; if (!r.ok) setErr(j.error ?? "Couldn't load player"); else setData(j); })
       .catch(() => !stop && setErr("Couldn't load player"));
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setReq(null);
-    window.addEventListener("keydown", onKey);
-    return () => { stop = true; window.removeEventListener("keydown", onKey); };
+    return () => { stop = true; };
   }, [req, nonce]);
 
   if (!req) return null;
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-2 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setReq(null)}>
-      <div className="relative my-2 w-full max-w-3xl sm:my-8 overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <button onClick={() => setReq(null)} aria-label="Close" className="hit press absolute right-1.5 top-1.5 z-10 sm:right-3 sm:top-3 rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
-        {data ? <Body d={data} onClose={() => setReq(null)} /> : err ? <p className="p-10 text-center text-sm text-zinc-500">{err}</p> : <div className="grid place-items-center p-10"><LoadingLogo size={96} label="Loading player" /></div>}
-      </div>
-    </div>
+    // The shared Popup shows the loading card until the player has loaded (and LOADER_MS has passed), then grows.
+    <Popup key={req.id} onClose={() => setReq(null)} ready={!!data || !!err} label="player" className="max-w-3xl" z="z-[60]">
+      <button onClick={() => setReq(null)} aria-label="Close" className="hit press absolute right-1.5 top-1.5 z-10 sm:right-3 sm:top-3 rounded-md p-2 text-zinc-400 hover:bg-panel2 hover:text-white"><XIcon /></button>
+      {data ? <Body d={data} onClose={() => setReq(null)} /> : <p className="p-10 text-center text-sm text-zinc-500">{err}</p>}
+    </Popup>
   );
 }
