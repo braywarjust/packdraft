@@ -162,6 +162,8 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .anim-glow { animation: pulseGlow 1.6s ease-in-out infinite; }
 .anim-coin { animation: coin 0.8s ease-in forwards; }
 .anim-flash { animation: flash 1.5s ease-out; }
+@keyframes swapIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.anim-swap { animation: swapIn .22s cubic-bezier(.2, .9, .3, 1) both; }
 .foil { background-image: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.35) 45%, transparent 60%); background-size: 200% 100%; animation: shine 2.5s linear infinite; }
 
 /* ---------- Shop item art (components/ItemArt.tsx): smooth, low-key motion ---------- */
