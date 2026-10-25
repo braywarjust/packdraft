@@ -9,8 +9,8 @@ import type { ShopItem } from "@/lib/shop";
 const SPARKS: [number, number, number, number][] = [[14, 22, 7, 0], [84, 30, 5.5, 1.2], [20, 62, 5, 2.1], [82, 66, 6, .6]];
 
 const LOOK: Record<ShopItem, { name: string; sub: string; bg: string; ring: string }> = {
-  acquisition: { name: "Acquisition", sub: "1 extra add", bg: "linear-gradient(135deg, #34d399 0%, #059669 48%, #064e3b 100%)", ring: "rgba(52,211,153,.9)" },
-  trade: { name: "Trade", sub: "1 extra trade", bg: "linear-gradient(135deg, #fbbf24 0%, #ea580c 52%, #7c2d12 100%)", ring: "rgba(251,191,36,.9)" },
+  acquisition: { name: "Acquisition", sub: "1 more add", bg: "linear-gradient(135deg, #34d399 0%, #059669 48%, #064e3b 100%)", ring: "rgba(52,211,153,.9)" },
+  trade: { name: "Trade", sub: "1 more trade", bg: "linear-gradient(135deg, #fbbf24 0%, #ea580c 52%, #7c2d12 100%)", ring: "rgba(251,191,36,.9)" },
 };
 
 /**

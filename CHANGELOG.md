@@ -5,12 +5,12 @@ Every PackDraft update is listed here, newest first. Version numbers follow the 
 
 ## 4.2 — My Team and instant pickups
 
-- My Team shows your **Adds left** and **Trades left**: the free ones your league allows plus any Acquisitions and Trades you bought in the League Shop. Buying more adds to those numbers straight away. Tap either one to open the shop.
+- **Acquisitions and Trades, every matchup.** Each league gives every team a set number of Acquisitions (adds) and Trades per matchup week, set by the League Manager. They reset every matchup. Need more during a matchup? Buy them in the League Shop; bought ones carry over until you use them. The per-season add limit is gone.
+- My Team shows your **Acquisitions left** and **Trades left** for this matchup, including any you bought. Buying more adds to them straight away, and the top-right wallet shows the same numbers. Tap either one to open the shop.
 - Tap a player's fantasy points on My Team to see how they add up: every stat he's recorded times what it's worth in your league, including any double-double or triple-double bonus. It keeps counting live during his game.
 - The Fantasy Coin is gold now, everywhere in the app.
 - Waivers are gone. Every add is instant, and a player another team drops can be picked up by anyone straight away (if his game today has already tipped off, the next day). FAAB bidding and claims are removed.
-- Free adds and free trades both reset every matchup week now, in every league. The free adds per season setting is gone, and the trade limit is per matchup.
-- With a full roster you have to pick a player to drop before you can add one, so an add never goes through without room.
+- With a full roster you have to pick a player to drop before you can add one, so an Acquisition is never used without room.
 - Top performers on Home now shows the top 10 for the week. Scroll the list to see 6 to 10.
 
 ## 4.0-R — Fantasy Coins and the League Shop (2026-10-25)

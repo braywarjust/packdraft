@@ -25,7 +25,7 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
   const lock = (s: string) => (pre || !lm ? s : `${s} (locked)`);
   const limitSel = (name: string, value: number | null | undefined, max: number, unit: string) => (
     <select name={name} defaultValue={value == null ? "none" : String(value)} className="input">
-      <option value="none">No limit (all free)</option>
+      <option value="none">Unlimited</option>
       {Array.from({ length: max + 1 }, (_, i) => <option key={i} value={i}>{i} {unit}{i === 1 ? "" : "s"}</option>)}
     </select>
   );
@@ -70,13 +70,13 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
 
         <h3 className="pt-2 font-bold">Acquisitions</h3>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Free adds per matchup</label>{limitSel("acq_per_week", l.acq_per_week, 20, "add")}</div>
+          <div><label className="label">Acquisitions per matchup</label>{limitSel("acq_per_week", l.acq_per_week, 20, "Acquisition")}</div>
         </div>
-        <p className="text-xs text-zinc-500">No waivers: every add is instant, and a dropped player can be picked up by anyone straight away. Free adds reset every matchup week. Adds count; trades don&apos;t. Past the free adds, each add uses an Acquisition from the League Shop.</p>
+        <p className="text-xs text-zinc-500">No waivers: every add is instant, and a dropped player can be picked up by anyone straight away. Each team gets this many Acquisitions every matchup week, and each player added uses one (trades don&apos;t). Teams that want more during a matchup buy them in the League Shop.</p>
 
         <h3 className="pt-2 font-bold">Trades</h3>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Free trades per matchup</label>{limitSel("trade_limit", l.trade_limit, 30, "trade")}</div>
+          <div><label className="label">Trades per matchup</label>{limitSel("trade_limit", l.trade_limit, 30, "Trade")}</div>
           <div><label className="label">LM review period</label>
             <select name="trade_review_hours" defaultValue={String(l.trade_review_hours ?? 0)} className="input">
               <option value="0">None (trades go through at once)</option><option value="12">12 hours</option><option value="24">1 day</option><option value="48">2 days</option>

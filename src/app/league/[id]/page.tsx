@@ -204,7 +204,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
         {(() => {
           const rate = weekRate();
           const mine = me && l.draft_status === "done" ? earnings(l.id, u.id, l.current_week) : null;
-          const items = [["acquisition", "Acquisition", "1 extra add", shopPrice(l, "acquisition"), me?.acq_tokens ?? 0], ["trade", "Trade", "1 extra trade", shopPrice(l, "trade"), me?.trade_tokens ?? 0]] as const;
+          const items = [["acquisition", "Acquisition", "1 more add", shopPrice(l, "acquisition"), me?.acq_tokens ?? 0], ["trade", "Trade", "1 more trade", shopPrice(l, "trade"), me?.trade_tokens ?? 0]] as const;
           return (
             <section className="relative overflow-hidden rounded-2xl border border-fpts/30 shadow-xl"
               style={{ background: "radial-gradient(120% 140% at 0% 0%, rgba(56,189,248,.2), transparent 55%), radial-gradient(120% 140% at 100% 100%, rgba(245,158,11,.16), transparent 55%), #1d2433" }}>
@@ -231,7 +231,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 <div className="border-t border-white/10 bg-black/20 p-5 xl:border-l xl:border-t-0">
                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-500">League Shop</p>
                   <h2 className="text-2xl font-black tracking-tight text-white">Save up for big moves</h2>
-                  <p className="mt-1 text-sm text-zinc-500">Out of free adds or trades? Buy more with your coins.</p>
+                  <p className="mt-1 text-sm text-zinc-500">Out of Acquisitions or Trades this matchup? Buy more with your coins.</p>
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     {items.map(([k, name, sub, price, owned]) => (
                       <Link key={k} href={`/league/${l.id}/shop`} className="group flex flex-col items-center rounded-xl bg-black/20 px-2 pb-3 pt-4 text-center ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-amber-400/40">

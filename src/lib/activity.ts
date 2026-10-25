@@ -29,7 +29,7 @@ export function teamItems(teamId: number) {
 /** Why this team's next add isn't free (it has used up the league's free adds), or null if it is. */
 export function acquisitionOver(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week">, teamId: number): string | null {
   const n = acquisitions(l, teamId);
-  const used = (max: number, when: string) => (max === 0 ? `This league has no free adds ${when}` : `You've used your ${max} free add${max === 1 ? "" : "s"} ${when}`);
+  const used = (max: number, when: string) => (max === 0 ? `This league gives no Acquisitions ${when}` : `You've used your ${max} Acquisition${max === 1 ? "" : "s"} ${when}`);
   // Free adds are always counted per matchup week (Update 4.2 dropped the per-season limit).
   if (l.acq_per_week != null && n.week >= l.acq_per_week) return used(l.acq_per_week, "this matchup");
   return null;
@@ -40,7 +40,7 @@ export function acquisitionBlock(l: Pick<League, "id" | "season" | "current_week
   const over = acquisitionOver(l, teamId);
   if (!over) return null;
   const items = teamItems(teamId);
-  return items.cpu || items.acquisitions > 0 ? null : `${over}. Buy an Acquisition in the League Shop to add more`;
+  return items.cpu || items.acquisitions > 0 ? null : `${over}. Buy more in the League Shop`;
 }
 
 /** Pay for an add: free while the team has free adds left, else it uses one of its Acquisitions. Call before logging the add. */
@@ -53,8 +53,8 @@ export function spendAcquisition(l: Pick<League, "id" | "season" | "current_week
 /** Why this team's next trade isn't free (it has used up the league's free trades), or null if it is. */
 export function tradeOver(l: Pick<League, "id" | "season" | "current_week" | "trade_limit">, teamId: number, who?: string): string | null {
   if (l.trade_limit == null || tradeCount(l, teamId) < l.trade_limit) return null;
-  if (l.trade_limit === 0) return "This league has no free trades";
-  return `${who ? `${who} has` : "You've"} used ${who ? "their" : "your"} ${l.trade_limit} free trade${l.trade_limit === 1 ? "" : "s"} this matchup`;
+  if (l.trade_limit === 0) return "This league gives no Trades per matchup";
+  return `${who ? `${who} has` : "You've"} used ${who ? "their" : "your"} ${l.trade_limit} Trade${l.trade_limit === 1 ? "" : "s"} this matchup`;
 }
 
 /** Why this team (named `who`, or "You") can't make another trade (no free trades left and no Trades), or null if it can. */
@@ -63,7 +63,7 @@ export function tradeBlock(l: Pick<League, "id" | "season" | "current_week" | "t
   if (!over) return null;
   const items = teamItems(teamId);
   if (items.cpu || items.trades > 0) return null;
-  return `${over}${who ? ` and ${who} has no Trades left` : ". Buy a Trade in the League Shop to make another"}`;
+  return `${over}${who ? ` and has none bought` : ". Buy more in the League Shop"}`;
 }
 
 /** Pay for a trade on one side: free while the team has free trades left, else it uses one of its Trades. Call before logging it. */

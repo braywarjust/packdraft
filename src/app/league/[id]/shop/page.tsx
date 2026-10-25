@@ -25,7 +25,7 @@ export default async function LeagueShop({ params }: { params: Promise<{ id: str
   const b = leagueBrand(l);
   const used = me ? acquisitions(l, me.id) : null;
   const trades = me ? tradeCount(l, me.id) : 0;
-  // "2 per matchup (1 left)", or "none" when the League Manager allows no free ones.
+  // "2 per matchup (1 left)", or "none" when the League Manager gives none.
   const free = (max: number, per: string, usedN: number | null) => (max === 0 ? `none ${per}` : `${max} ${per}${usedN != null ? ` (${Math.max(0, max - usedN)} left)` : ""}`);
   const freeAdds = l.acq_per_week != null ? free(l.acq_per_week, "per matchup", used?.week ?? null) : "";
   const freeTrades = l.trade_limit != null ? free(l.trade_limit, "per matchup", me ? trades : null) : "";
@@ -86,15 +86,15 @@ export default async function LeagueShop({ params }: { params: Promise<{ id: str
           <div className="rounded-xl bg-ink/40 p-3">
             <p className={`mb-1 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider ${ACQ_COLOR}`}><AcqIcon /> Acquisitions</p>
             <p className="text-zinc-600">
-              {freeAdds ? <>Free adds here: <b className="text-white">{freeAdds}</b>. </> : <>This league has no add limit yet, so adds are free until the League Manager sets one. </>}
-              Past your free adds, each player you add uses one Acquisition.
+              {freeAdds ? <>Every team gets <b className="text-white">{freeAdds}</b>. </> : <>This league has unlimited Acquisitions until the League Manager sets a number per matchup. </>}
+              Each player you add uses one. Need more during a matchup? Buy them here; bought ones carry over until you use them.
             </p>
           </div>
           <div className="rounded-xl bg-ink/40 p-3">
             <p className={`mb-1 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider ${TRADE_COLOR}`}><TradeIcon /> Trades</p>
             <p className="text-zinc-600">
-              {freeTrades ? <>Free trades here: <b className="text-white">{freeTrades}</b>. </> : <>This league has no trade limit yet, so trades are free until the League Manager sets one. </>}
-              Past that, each trade uses one Trade from every team that&apos;s over its limit.
+              {freeTrades ? <>Every team gets <b className="text-white">{freeTrades}</b>. </> : <>This league has unlimited Trades until the League Manager sets a number per matchup. </>}
+              Each trade uses one Trade from each team in it. Need more during a matchup? Buy them here; bought ones carry over until you use them.
             </p>
           </div>
         </div>

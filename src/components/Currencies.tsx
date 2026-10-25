@@ -27,11 +27,13 @@ export function TradeIcon({ className = "" }: { className?: string }) {
 export const ACQ_COLOR = "text-emerald-400";
 export const TRADE_COLOR = "text-amber-400";
 
-export type WalletLeague = { id: number; acq: number; trades: number };
+/** acq / trades: what you have left this matchup; null when the league has no limit. */
+export type WalletLeague = { id: number; acq: number | null; trades: number | null };
 
 /**
- * The three currencies, top right on every page: Fantasy Coins (yours everywhere), and Acquisitions and Trades for
- * your team in the league you're looking at (or your newest league elsewhere). Tapping it opens that League Shop.
+ * The three currencies, top right on every page: Fantasy Coins (yours everywhere), and the Acquisitions and Trades your
+ * team has left this matchup in the league you're looking at (or your newest league elsewhere). Tapping it opens that
+ * League Shop.
  */
 export function Wallet({ coins: initial, leagues, compact }: { coins: number; leagues: WalletLeague[]; compact?: boolean }) {
   const coins = useLiveBalance(initial);
@@ -49,11 +51,11 @@ export function Wallet({ coins: initial, leagues, compact }: { coins: number; le
       </span>
       {lg && (
         <>
-          <span className={`inline-flex items-center ${gap}`} title="Acquisitions (extra adds)">
-            <AcqIcon className={ACQ_COLOR} />{lg.acq}
+          <span className={`inline-flex items-center ${gap}`} title="Acquisitions left this matchup">
+            <AcqIcon className={ACQ_COLOR} />{lg.acq ?? "∞"}
           </span>
-          <span className={`inline-flex items-center ${gap}`} title="Trades (extra trades)">
-            <TradeIcon className={TRADE_COLOR} />{lg.trades}
+          <span className={`inline-flex items-center ${gap}`} title="Trades left this matchup">
+            <TradeIcon className={TRADE_COLOR} />{lg.trades ?? "∞"}
           </span>
         </>
       )}

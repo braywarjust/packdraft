@@ -349,7 +349,7 @@ export async function dropPlayer(leagueId: number, playerId: number) {
 
 /**
  * Add a free agent (Update 4.2: no waivers, every add is instant, including players another team just dropped). A full
- * roster has to drop someone in the same move; the add only uses a free add or an Acquisition once there's room.
+ * roster has to drop someone in the same move; the add only uses an Acquisition once there's room.
  */
 export async function addPlayer(leagueId: number, addId: number, dropId: number | null) {
   return wrap(async () => {

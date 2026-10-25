@@ -8,6 +8,8 @@ import Link from "next/link";
 import "./globals.css";
 import { currentUser } from "@/lib/auth";
 import { all } from "@/lib/db";
+import { movesLeft } from "@/lib/activity";
+import { getLeague } from "@/lib/league";
 import { logout } from "./actions";
 import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
@@ -49,7 +51,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const leagues = all<{ id: number; name: string; live: number; color: string | null; alt_color: string | null; abbr: string | null; logo_url: string | null; acq_tokens: number; trade_tokens: number }>(
     `SELECT l.id, l.name, l.color, l.alt_color, l.abbr, l.logo_url, (l.week_started_at IS NOT NULL OR l.draft_status = 'live') live, t.acq_tokens, t.trade_tokens
      FROM leagues l JOIN teams t ON t.league_id = l.id WHERE t.user_id = ? ORDER BY l.id DESC`, user.id);
-  const wallet = leagues.map((l) => ({ id: l.id, acq: l.acq_tokens, trades: l.trade_tokens }));
+  // Acquisitions and Trades you have left this matchup (the league's per-matchup amount still unused, plus any bought).
+  const wallet = all<{ league_id: number; id: number }>("SELECT league_id, id FROM teams WHERE user_id = ?", user.id).map((t) => {
+    const m = movesLeft(getLeague(t.league_id)!, t.id);
+    return { id: t.league_id, acq: m.adds.free == null ? null : m.adds.free + m.adds.bought, trades: m.trades.free == null ? null : m.trades.free + m.trades.bought };
+  });
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

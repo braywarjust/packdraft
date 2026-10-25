@@ -135,16 +135,15 @@ export default async function Players({ params, searchParams }: { params: Promis
       <aside className="space-y-4">
         {me && moves && (
           <div className="card space-y-2 p-4">
-            <h3 className="font-bold">My adds</h3>
+            <h3 className="font-bold">Acquisitions left</h3>
             <p className="flex items-center gap-2 font-mono text-2xl font-black text-white">
-              <AcqIcon className={ACQ_COLOR} />{moves.adds.free == null ? "No limit" : moves.adds.free + moves.adds.bought}
-              {moves.adds.free != null && <span className="font-sans text-xs font-semibold text-zinc-500">left</span>}
-            </p>
+              <AcqIcon className={ACQ_COLOR} />{moves.adds.free == null ? "Unlimited" : moves.adds.free + moves.adds.bought}
+                          </p>
             <p className="text-xs text-zinc-500">
-              {moves.adds.free == null ? "Your league has no add limit." : `${moves.adds.free} free this matchup + ${moves.adds.bought} Acquisition${moves.adds.bought === 1 ? "" : "s"} bought.`}
+              {moves.adds.free == null ? "Your league has no Acquisition limit." : `${moves.adds.free} this matchup + ${moves.adds.bought} bought. Each player you add uses one. Need more this matchup? Buy them in the League Shop.`}
               {" "}Roster {myRoster.length}/{ROSTER_MAX}{myRoster.length >= ROSTER_MAX ? ": full, so each add needs a drop." : "."}
             </p>
-            {moves.adds.free != null && <Link href={`/league/${l.id}/shop`} className="text-xs text-brand underline">Buy Acquisitions in the League Shop</Link>}
+            {moves.adds.free != null && <Link href={`/league/${l.id}/shop`} className="text-xs text-brand underline">Buy more in the League Shop</Link>}
           </div>
         )}
       </aside>
