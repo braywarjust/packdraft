@@ -39,8 +39,8 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
   // Your adds and trades left: free ones under the league's limits plus any bought in the League Shop.
   const moves = editable ? movesLeft(l, t.id) : null;
   const moveCells = moves && ([
-    ["Adds left", <AcqIcon key="a" className={ACQ_COLOR} />, moves.adds.free, moves.adds.bought, "free this matchup", "Acquisition"],
-    ["Trades left", <TradeIcon key="t" className={TRADE_COLOR} />, moves.trades.free, moves.trades.bought, "free this season", "Trade"],
+    ["Adds left", <AcqIcon key="a" className={ACQ_COLOR} />, moves.adds.free, moves.adds.bought, "this matchup", "Acquisition"],
+    ["Trades left", <TradeIcon key="t" className={TRADE_COLOR} />, moves.trades.free, moves.trades.bought, "this season", "Trade"],
   ] as const);
 
   return (
