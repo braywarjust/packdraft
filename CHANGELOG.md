@@ -15,7 +15,7 @@ Every PackDraft update is listed here, newest first. Version numbers follow the 
 - Waivers are gone. Every add is instant, and a player another team drops can be picked up by anyone straight away (if his game today has already tipped off, the next day). FAAB bidding and claims are removed.
 - With a full roster you have to pick a player to drop before you can add one, so an Acquisition is never used without room.
 - League tabs feel snappier: the blue highlight slides (with a little bounce) to the tab you tap the instant you tap it, tabs squeeze under your finger, and on phones the bar scrolls the picked tab into view.
-- The Matchups tab opens your matchup's detail page straight away. Other weeks, the playoff bracket and sim week controls are one tap away under All weeks & bracket.
+- The Matchups tab opens your matchup's detail page straight away. Other weeks, the playoff bracket and sim week controls are one tap away under All weeks.
 - Matchup pages switch instantly: the week's other matchups are loaded in the background, so tapping one of the small matchup buttons swaps the page right away with a quick slide-in. The buttons sit above the scoreboard, no longer get cut off, and light up and squeeze when you tap them.
 - The League Manager has an LM tag everywhere in the league: standings, matchup cards, team pages, chat and the draft room.
 - Playoff clinch tags (x, z, *, e) are gone from the standings.

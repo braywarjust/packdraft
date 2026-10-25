@@ -148,17 +148,10 @@ export function LiveMatchup({ leagueId, matchupId: initialId }: { leagueId: numb
 
   return (
     <div className="space-y-4">
-      <Link href={`/league/${leagueId}`} className="text-sm text-zinc-500 hover:text-zinc-900">← {d.league}</Link>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-        <span className="font-black uppercase tracking-[0.25em] text-zinc-500">Week {d.week}</span>
-        <Link href={`/league/${leagueId}/matchups?week=${d.week}`} className="order-last ml-auto rounded-full px-2.5 py-1 font-bold text-brand ring-1 ring-brand/40 transition hover:bg-brand/10 active:scale-95">All weeks & bracket</Link>
-        {d.range && <span className="text-zinc-500">{d.range}</span>}
-        <span className={`font-bold ${d.final ? "text-white" : d.live ? "text-red-500" : "text-zinc-400"}`}>{d.final ? "Final" : d.live ? "● Live" : "In progress"}</span>
-        {d.progress != null && d.progress > 0 && !d.final && <span className="text-zinc-500">{Math.round(d.progress * 100)}% of sim week</span>}
-      </div>
       {/* The week's other matchups: tap to switch in place. The highlight moves on the tap, the page follows. */}
+      <div className="flex items-center gap-2">
       {d.others.length > 1 && (
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 py-1.5 scrollbar-thin">
+        <div className="-mx-1 flex min-w-0 flex-1 gap-2 overflow-x-auto px-1 py-1.5 scrollbar-thin">
           {d.others.map((o) => {
             const on = o.id === matchupId;
             return (
@@ -174,6 +167,8 @@ export function LiveMatchup({ leagueId, matchupId: initialId }: { leagueId: numb
           })}
         </div>
       )}
+        <Link href={`/league/${leagueId}/matchups?week=${d.week}`} className="ml-auto shrink-0 rounded-full px-2.5 py-1 text-xs font-bold text-brand ring-1 ring-brand/40 transition hover:bg-brand/10 active:scale-95">All weeks</Link>
+      </div>
 
       <div key={shownId} className={`anim-swap space-y-4 transition-opacity duration-150 ${switching ? "pointer-events-none opacity-40" : ""}`}>
       <MatchupCard big home={{ id: home.id, brand: home.brand, record: home.record, score: home.score, proj: home.score + home.remain }}
