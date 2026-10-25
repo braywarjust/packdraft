@@ -7,7 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { movesLeft } from "@/lib/activity";
 import { ROSTER_MAX } from "@/lib/scoring";
-import { AcqIcon, ACQ_COLOR } from "@/components/Currencies";
+import { AcqIcon, ACQ_COLOR, BoughtChip, MatchupPips } from "@/components/Currencies";
 import { getLeague, roster, userTeam, isLocked, playerGames, projFor } from "@/lib/league";
 import { Player } from "@/lib/db";
 import { Headshot, InjuryTag } from "@/components/Headshot";
@@ -135,12 +135,14 @@ export default async function Players({ params, searchParams }: { params: Promis
       <aside className="space-y-4">
         {me && moves && (
           <div className="card space-y-2 p-4">
-            <h3 className="font-bold">Acquisitions left</h3>
-            <p className="flex items-center gap-2 font-mono text-2xl font-black text-white">
-              <AcqIcon className={ACQ_COLOR} />{moves.adds.free == null ? "Unlimited" : moves.adds.free + moves.adds.bought}
-                          </p>
+            <h3 className="font-bold">Acquisitions</h3>
+            <div className="flex flex-wrap items-center gap-2 text-xl text-white">
+              <AcqIcon className={ACQ_COLOR} />
+              {moves.adds.free == null || moves.adds.cap == null ? <span className="font-mono font-black">Unlimited</span> : <MatchupPips free={moves.adds.free} cap={moves.adds.cap} color={ACQ_COLOR} />}
+              <BoughtChip n={moves.adds.bought} label className="text-sm" />
+            </div>
             <p className="text-xs text-zinc-500">
-              {moves.adds.free == null ? "Your league has no Acquisition limit." : `${moves.adds.free} this matchup + ${moves.adds.bought} bought. Each player you add uses one. Need more this matchup? Buy them in the League Shop.`}
+              {moves.adds.free == null ? "Your league has no Acquisition limit." : `${moves.adds.free} left this matchup (refills every matchup)${moves.adds.bought ? `, then ${moves.adds.bought} bought (never expire)` : ""}. Each player you add uses one. Need more? Buy them in the League Shop.`}
               {" "}Roster {myRoster.length}/{ROSTER_MAX}{myRoster.length >= ROSTER_MAX ? ": full, so each add needs a drop." : "."}
             </p>
             {moves.adds.free != null && <Link href={`/league/${l.id}/shop`} className="text-xs text-brand underline">Buy more in the League Shop</Link>}

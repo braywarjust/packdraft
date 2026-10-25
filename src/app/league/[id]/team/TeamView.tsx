@@ -10,7 +10,7 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 import { applyPresetAction, renameTeam, setAutoManage, setSlot } from "../../../actions";
 import { AutoManageToggle } from "@/components/AutoManageToggle";
 import { Fpts, PointsKey } from "@/components/Fpts";
-import { AcqIcon, ACQ_COLOR, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
+import { AcqIcon, ACQ_COLOR, BoughtChip, MatchupPips, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
 import { movesLeft } from "@/lib/activity";
 
 export async function TeamView({ leagueId, teamId, editable }: { leagueId: number; teamId: number; editable: boolean }) {
@@ -39,8 +39,8 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
   // Acquisitions and Trades left this matchup: what the league gives every matchup, plus any bought in the League Shop.
   const moves = editable ? movesLeft(l, t.id) : null;
   const moveCells = moves && ([
-    ["Acquisitions left", <AcqIcon key="a" className={ACQ_COLOR} />, moves.adds.free, moves.adds.bought, "Acquisition"],
-    ["Trades left", <TradeIcon key="t" className={TRADE_COLOR} />, moves.trades.free, moves.trades.bought, "Trade"],
+    ["Acquisitions", <AcqIcon key="a" className={ACQ_COLOR} />, moves.adds, ACQ_COLOR, "Acquisition"],
+    ["Trades", <TradeIcon key="t" className={TRADE_COLOR} />, moves.trades, TRADE_COLOR, "Trade"],
   ] as const);
 
   return (
@@ -72,13 +72,18 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         </div>
         {moveCells && (
           <div className="relative grid grid-cols-2 gap-px border-t border-black/20 bg-black/20">
-            {moveCells.map(([k, icon, free, bought, item]) => (
+            {/* Matchup ones (pips, refill every matchup) and bought ones (gold chip, never expire) side by side. */}
+            {moveCells.map(([k, icon, m, color, item]) => (
               <Link key={k} href={`/league/${leagueId}/shop`} className="min-w-0 bg-black/55 px-3 py-2 backdrop-blur transition hover:bg-black/45 sm:px-4" title={`Buy more ${item}s in the League Shop`}>
                 <p className="truncate text-[10px] font-bold uppercase tracking-widest text-white/60">{k}</p>
-                <p className="flex items-center gap-1.5 font-mono text-lg font-black leading-tight text-white">{icon}{free == null ? "Unlimited" : free + bought}</p>
+                <div className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-1 text-lg leading-tight text-white">
+                  {icon}
+                  {m.free == null || m.cap == null ? <span className="font-mono font-black">Unlimited</span> : <MatchupPips free={m.free} cap={m.cap} color={color} />}
+                  <BoughtChip n={m.bought} label className="text-sm" />
+                </div>
                 <p className="truncate text-[11px] text-white/60">
-                  {free == null ? `Your league has no ${item} limit` : <>{free} this matchup{bought ? ` + ${bought} bought` : ""}</>}
-                  {free != null && free + bought === 0 && " · Buy more in the Shop"}
+                  {m.free == null ? `Your league has no ${item} limit` : m.free + m.bought === 0 ? "None left this matchup · Buy more in the Shop"
+                    : <>{m.free} left this matchup<span className="max-sm:hidden">, refills every week</span>{m.bought ? <span className="max-sm:hidden"> · bought ones never expire</span> : ""}</>}
                 </p>
               </Link>
             ))}
