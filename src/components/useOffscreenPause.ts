@@ -2,8 +2,8 @@
 
 import { useEffect, type RefObject } from "react";
 
-// One shared IntersectionObserver for every animated slab and pack. When an element scrolls out of view it gets
-// `data-paused`, and globals.css pauses every animation inside it, so off-screen slabs cost nothing while they look
+// One shared IntersectionObserver for every animated shop item. When an element scrolls out of view it gets
+// `data-paused`, and globals.css pauses every animation inside it, so off-screen items cost nothing while they look
 // exactly the same when they come back. It sets the attribute directly, so nothing re-renders.
 let io: IntersectionObserver | null = null;
 function observer() {

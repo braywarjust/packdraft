@@ -1,11 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all, one, Game, Matchup, Team } from "@/lib/db";
 import { beforeOpener, getLeague, maybeFinalize, standings, teamWeek } from "@/lib/league";
-import { cardsWhere, unopenedPacks } from "@/lib/packs-server";
-import { Slab } from "@/components/Slab";
-import { RARITIES, Rarity } from "@/lib/packs";
 import { ensureBranding, leagueBrand, teamBrand, userPresets } from "@/lib/branding";
 import { earnings } from "@/lib/economy";
 import { winProb } from "@/lib/sim";
@@ -15,11 +11,9 @@ import { Coins, CoinIcon } from "@/components/Coins";
 import { TeamBadge } from "@/components/TeamBadge";
 import { TeamLogo } from "@/components/TeamLogo";
 import { MatchupStrip } from "@/components/MatchupCard";
-import { PackThumb } from "@/components/PackThumb";
-import { RarityBadge, slabOf } from "@/components/PlayerCard";
+import { AcqIcon, ACQ_COLOR, TradeIcon, TRADE_COLOR } from "@/components/Currencies";
 import { Headshot } from "@/components/Headshot";
 import { PlayerButton } from "@/components/PlayerInspector";
-import { SlabOn } from "@/components/SlabIcon";
 import { Fpts } from "@/components/Fpts";
 import { claimBonus } from "./actions";
 import { getProfile } from "@/lib/profile";
@@ -31,11 +25,10 @@ export default async function Home() {
   ensureBranding();
   const presets = userPresets(user.id);
   const myTeams = all<Team>("SELECT * FROM teams WHERE user_id = ? ORDER BY id DESC", user.id);
-  const packs = unopenedPacks(user.id);
   const todayIso = new Date().toISOString().slice(0, 10);
   const today = etDate();
-  const vault = one<{ n: number }>("SELECT COUNT(*) n FROM cards WHERE user_id = ? AND sold = 0", user.id)!;
-  const bestSlabs = cardsWhere("c.user_id = ? AND c.sold = 0 AND (c.slab_id IS NOT NULL OR c.kind = 'slab') ORDER BY c.value DESC LIMIT 4", user.id);
+  // Acquisitions and Trades belong to a team, so the banner shows your newest league's.
+  const home = myTeams[0] ?? null;
   const bets = (() => {
     try {
       return one<{ n: number; stake: number; toWin: number }>(
@@ -43,10 +36,7 @@ export default async function Home() {
     } catch { return { n: 0, stake: 0, toWin: 0 }; }
   })();
   const games = all<Game>("SELECT * FROM games WHERE date_et = ? ORDER BY state = 'in' DESC, start_ts", today);
-  const pulls = all<{ user: string; name: string; rarity: Rarity; value: number; slab_id: number | null; kind: string | null }>(
-    `SELECT u.name user, COALESCE(s.player, p.name) name, c.rarity, c.value, c.slab_id, c.kind FROM cards c JOIN users u ON u.id = c.user_id LEFT JOIN slabs s ON s.id = c.slab_id LEFT JOIN players p ON p.id = c.player_id
-     WHERE u.is_tester = 0 AND c.sold = 0 ORDER BY c.value DESC LIMIT 5`);
-  // Slabs carry no Pack Points value (Update 3.0), so managers rank by Pack Points alone.
+  // Fantasy Coins leaders (testers left out).
   const leaders = all<{ name: string; color: string; coins: number }>(
     "SELECT u.name, u.color, u.coins FROM users u WHERE u.is_tester = 0 ORDER BY u.coins DESC LIMIT 6");
 
@@ -75,8 +65,7 @@ export default async function Home() {
       const playing = l.mode === "sim" || [...h.w.players, ...a.w.players].some((p) => p.now?.state === "in");
       card = { href: `/league/${l.id}/matchup/${m.id}`, home: h.s, away: a.s, status: (m.final ? "final" : live ? "live" : "pre") as "final" | "live" | "pre", playing, wp: winProb(h.w, a.w) };
     }
-    // Top performers this week: fantasy points each rostered player has earned for his team (games he started, slabs
-    // included), best first.
+    // Top performers this week: fantasy points each rostered player has earned for his team (games he started), best first.
     const top = all<Team>("SELECT * FROM teams WHERE league_id = ?", l.id)
       .flatMap((x) => (x.id === t.id ? tw : teamWeek(l, x.id, l.current_week)).players.map((p) => ({ p, team: teamBrand(x), mine: x.id === t.id })))
       .filter((r) => r.p.pts > 0)
@@ -109,9 +98,9 @@ export default async function Home() {
         </div>
         <div className="relative flex gap-px overflow-x-auto bg-black/20 text-white scrollbar-thin">
           {([
-            ["Pack Points", <Coins key="c" n={user.coins} live />, "/collection"],
-            ["Slabs", <span key="v">{vault.n}</span>, "/collection"],
-            ["Packs", String(packs.length), "/packs"],
+            ["Fantasy Coins", <span key="c" style={{ "--coin-ink": "#fff" } as React.CSSProperties}><Coins n={user.coins} live /></span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
+            ["Acquisitions", <span key="a" className="inline-flex items-center gap-1"><AcqIcon className={ACQ_COLOR} />{home?.acq_tokens ?? 0}</span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
+            ["Trades", <span key="t" className="inline-flex items-center gap-1"><TradeIcon className={TRADE_COLOR} />{home?.trade_tokens ?? 0}</span>, home ? `/league/${home.league_id}/shop` : "/leagues"],
             ["Open bets", bets.n ? <span key="b">{bets.n}</span> : "0", "/bets"],
           ] as [string, React.ReactNode, string][]).map(([k, v, href]) => (
             <Link key={k} href={href} className="min-w-[5.5rem] flex-1 bg-black/25 px-3 py-1.5 backdrop-blur transition hover:bg-black/35">
@@ -156,7 +145,7 @@ export default async function Home() {
                     {rank ? ` · ${rank} of ${size}` : ""}
                   </span>
                 </Link>
-                {earned && <span className="flex items-center gap-1 text-xs text-zinc-500">Earned this week <span className="font-bold text-emerald-600"><Coins n={earned.week} live /></span></span>}
+                {earned && <span className="flex items-center gap-1 text-xs text-zinc-500">Earned this week <span className="font-bold text-fpts"><Coins n={earned.week} live /></span></span>}
               </div>
               {card ? (
                 <MatchupStrip href={card.href} home={card.home} away={card.away} status={card.status} playing={card.playing} winProb={card.wp} />
@@ -188,7 +177,6 @@ export default async function Home() {
                           <span className="flex items-center gap-1.5 text-sm font-bold text-white">
                             <PlayerButton id={p.id} league={l.id} className="truncate">{p.name}</PlayerButton>
                             <TeamLogo team={p.team} size={14} />
-                            <SlabOn boost={p.boost} />
                           </span>
                           <span className="flex items-center gap-1 truncate text-[11px] text-zinc-500">
                             <TeamBadge brand={team} size={14} /><span className="truncate">{team.name}{mine ? " · You" : ""}</span> · {p.played} GP
@@ -228,43 +216,7 @@ export default async function Home() {
           </div>
 
           <div className="card p-4">
-            <div className="mb-3 flex items-center justify-between"><h3 className="font-bold">My best slabs</h3><Link href="/collection" className="text-xs text-brand hover:underline">Collection</Link></div>
-            {bestSlabs.length === 0 ? (
-              <p className="text-sm text-zinc-500">No slabs yet. <Link href="/packs" className="text-brand underline">Rip a pack</Link>.</p>
-            ) : (
-              <div className="grid grid-cols-4 gap-2">
-                {bestSlabs.map((c) => (
-                  <Link key={c.id} href="/collection" className="flex flex-col items-center gap-1 text-center" title={c.kind === "slab" ? `${c.name} · ${RARITIES[c.rarity].label}` : `${c.name} · ${c.s_company} ${c.s_grade}`}>
-                    {c.kind === "slab" ? <Slab s={slabOf(c)} size={64} /> : <img src={`/api/slabs/${c.slab_id}`} alt="" className="h-24 w-full object-contain drop-shadow-lg" />}
-                    <RarityBadge rarity={c.rarity} className="px-1.5 text-[8px]" />
-                  </Link>
-                ))}
-              </div>
-            )}
-            {packs.length > 0 && (
-              <Link href="/packs" className="mt-3 flex items-center gap-3 rounded-lg bg-ink/40 p-2 text-sm hover:bg-panel2">
-                <PackThumb id={packs[0].pack_type} height={40} showName={false} />
-                <span className="flex-1"><b>{packs.length}</b> unopened pack{packs.length > 1 ? "s" : ""}</span>
-                <span className="btn-primary px-3 py-1 text-xs">Rip</span>
-              </Link>
-            )}
-          </div>
-
-          <div className="card p-4">
-            <h3 className="mb-3 font-bold">Biggest pulls</h3>
-            {pulls.length === 0 && <p className="text-sm text-zinc-500">No packs ripped yet.</p>}
-            <ul className="space-y-2">
-              {pulls.map((c, i) => (
-                <li key={i} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="min-w-0 truncate"><span className={`font-semibold ${RARITIES[c.rarity].text}`}>{c.name}</span> <span className="text-zinc-400">· {c.user}</span></span>
-                  <span className={`shrink-0 text-xs font-bold ${RARITIES[c.rarity].text}`}>{RARITIES[c.rarity].label}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="card p-4">
-            <h3 className="mb-3 font-bold">Net worth</h3>
+            <h3 className="mb-3 font-bold">Coin leaders</h3>
             <ol className="space-y-2">
               {leaders.map((u, i) => (
                 <li key={u.name} className="flex items-center justify-between text-sm">
@@ -273,7 +225,7 @@ export default async function Home() {
                 </li>
               ))}
             </ol>
-            <p className="mt-2 flex items-center gap-1 text-xs text-zinc-400"><CoinIcon /> Pack Points</p>
+            <p className="mt-2 flex items-center gap-1 text-xs text-zinc-400"><CoinIcon /> Fantasy Coins</p>
           </div>
         </aside>
       </div>

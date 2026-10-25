@@ -2,7 +2,7 @@
 
 PackDraft runs on a free Oracle Cloud server, always on, at an HTTPS address you can share with your friends. The code
 lives on GitHub; every push to `main` goes live by itself in a couple of minutes. Your database (accounts, PINs,
-leagues, teams, logos, Pack Points, slabs, chat) lives only on the server, never in GitHub.
+leagues, teams, logos, Fantasy Coins, chat) lives only on the server, never in GitHub.
 
 ## 1. GitHub repo (5 minutes)
 
@@ -54,7 +54,7 @@ bash deploy/push-data.sh ubuntu@<IP>
 ```
 
 (Add `-i` key options to `~/.ssh/config` first, or run `ssh-add ~/Downloads/ssh-key-*.key`.) This copies every account
-and PIN, league and team settings, logos, Pack Points, slabs, chat and uploads, plus the login secret so nobody has to
+and PIN, league and team settings, logos, Fantasy Coins, chat and uploads, plus the login secret so nobody has to
 sign in again. From then on the server is the real copy: use the live site, not `localhost`.
 
 ## 5. Auto-deploy on push (5 minutes)

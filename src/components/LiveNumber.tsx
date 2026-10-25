@@ -11,11 +11,11 @@ import { useEffect, useRef, useState } from "react";
  */
 type Kind = "pp" | "fp";
 const COLORS: Record<Kind, { text: string; spark: string[] }> = {
-  pp: { text: "#22e36b", spark: ["#22e36b", "#86efac", "#fde68a"] },
+  pp: { text: "#38bdf8", spark: ["#38bdf8", "#7dd3fc", "#fde68a"] },
   fp: { text: "#ffffff", spark: ["#38bdf8", "#bae6fd", "#ffffff"] },
 };
 
-/** from: count up from this value when it first appears (e.g. a pack's total once every slab is flipped). */
+/** from: count up from this value when it first appears. */
 export function LiveNumber({ value, digits = 0, kind, icon, from, className = "" }: { value: number; digits?: number; kind: Kind; icon?: React.ReactNode; from?: number; className?: string }) {
   const fmt = (v: number) => (digits ? v.toFixed(digits) : Math.round(v).toLocaleString("en-US"));
   const [first] = useState(() => fmt(from ?? value)); // React only renders the starting text; changes are written directly

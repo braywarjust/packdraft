@@ -12,7 +12,7 @@ export const STATS = [
 ] as const;
 export type StatKey = (typeof STATS)[number][0];
 export type Weights = Partial<Record<StatKey, number>>;
-/** Points per stat are kept between these so a typo can't flood the league with Pack Points. */
+/** Points per stat are kept between these so a typo can't flood the league with Fantasy Coins. */
 export const WEIGHT_MIN = -10, WEIGHT_MAX = 10;
 
 const PRESETS: Record<string, { label: string; w: Weights }> = {

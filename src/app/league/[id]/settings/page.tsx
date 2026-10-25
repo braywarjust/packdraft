@@ -3,7 +3,7 @@ import { BrandEditor } from "@/components/BrandEditor";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { getLeague, leagueTeams, ROUNDS } from "@/lib/league";
-import { PACKS } from "@/lib/packs";
+import { shopPrice } from "@/lib/shop";
 import { scoringLabel } from "@/lib/scoring";
 import { ActionButton } from "@/components/ActionButton";
 import { SettingsForm, KeeperForm, ScoringEditor } from "./forms";
@@ -22,15 +22,10 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
   const players = lm ? all<{ id: number; name: string; pos: string }>("SELECT id, name, pos FROM players ORDER BY adp") : [];
   const owners = new Map(all<{ id: number; name: string }>(
     "SELECT u.id, u.name FROM users u JOIN teams t ON t.user_id = u.id WHERE t.league_id = ?", l.id).map((o) => [o.id, o.name]));
-  const sel = (name: string, value: string) => (
-    <select name={name} defaultValue={value} className="input">
-      {PACKS.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.price.toLocaleString()} Pack Points)</option>)}
-    </select>
-  );
   const lock = (s: string) => (pre || !lm ? s : `${s} (locked)`);
   const limitSel = (name: string, value: number | null | undefined, max: number, unit: string) => (
     <select name={name} defaultValue={value == null ? "none" : String(value)} className="input">
-      <option value="none">No limit</option>
+      <option value="none">No limit (all free)</option>
       {Array.from({ length: max + 1 }, (_, i) => <option key={i} value={i}>{i} {unit}{i === 1 ? "" : "s"}</option>)}
     </select>
   );
@@ -78,14 +73,14 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
           <div><label className="label">Waivers</label>
             <select name="waiver_type" defaultValue={l.waiver_type} className="input"><option value="faab">FAAB bidding</option><option value="free">Free agency</option></select></div>
           <div><label className="label">{lock("FAAB budget")}</label><input name="faab_budget" type="number" min={0} defaultValue={l.faab_budget} disabled={!pre} className="input" /></div>
-          <div><label className="label">Acquisitions per matchup</label>{limitSel("acq_per_week", l.acq_per_week, 20, "add")}</div>
-          <div><label className="label">Acquisitions per season</label>{limitSel("acq_per_season", l.acq_per_season, 99, "add")}</div>
+          <div><label className="label">Free adds per matchup</label>{limitSel("acq_per_week", l.acq_per_week, 20, "add")}</div>
+          <div><label className="label">Free adds per season</label>{limitSel("acq_per_season", l.acq_per_season, 99, "add")}</div>
         </div>
-        <p className="text-xs text-zinc-500">Free agent adds and waiver claims count; trades don&apos;t.</p>
+        <p className="text-xs text-zinc-500">Free agent adds and waiver claims count; trades don&apos;t. Past the free adds, each add uses an Acquisition from the League Shop.</p>
 
         <h3 className="pt-2 font-bold">Trades</h3>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Trade limit per team</label>{limitSel("trade_limit", l.trade_limit, 30, "trade")}</div>
+          <div><label className="label">Free trades per team (season)</label>{limitSel("trade_limit", l.trade_limit, 30, "trade")}</div>
           <div><label className="label">LM review period</label>
             <select name="trade_review_hours" defaultValue={String(l.trade_review_hours ?? 0)} className="input">
               <option value="0">None (trades go through at once)</option><option value="12">12 hours</option><option value="24">1 day</option><option value="48">2 days</option>
@@ -106,12 +101,12 @@ export default async function Settings({ params }: { params: Promise<{ id: strin
             </select></div>
         </div>
 
-        <h3 className="pt-2 font-bold">Pack rewards</h3>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div><label className="label">Win</label>{sel("reward_win", l.reward_win)}</div>
-          <div><label className="label">Loss</label>{sel("reward_loss", l.reward_loss)}</div>
-          <div><label className="label">Top score bonus</label>{sel("reward_top", l.reward_top)}</div>
+        <h3 className="pt-2 font-bold">League Shop prices</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">Acquisition (Fantasy Coins)</label><input name="acq_price" type="number" min={0} step={100} defaultValue={shopPrice(l, "acquisition")} className="input" /></div>
+          <div><label className="label">Trade (Fantasy Coins)</label><input name="trade_price" type="number" min={0} step={100} defaultValue={shopPrice(l, "trade")} className="input" /></div>
         </div>
+        <p className="text-xs text-zinc-500">A typical week pays about 1,500 to 1,800 Fantasy Coins. The defaults (3,000 and 5,000) take a couple of weeks of saving.</p>
       </SettingsForm>
 
       <div className="space-y-6">

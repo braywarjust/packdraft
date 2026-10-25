@@ -21,7 +21,7 @@ export default async function NewLeague() {
             <label className="label">Teams</label>
             <select name="max_teams" className="input" defaultValue="8">
               <option value="4">4</option><option value="6">6</option><option value="8">8 (free max)</option>
-              <option value="10">10 · 2,500 Pack Points</option><option value="12">12 · 2,500 Pack Points</option>
+              <option value="10">10 · 2,500 Fantasy Coins</option><option value="12">12 · 2,500 Fantasy Coins</option>
             </select>
           </div>
           <div>

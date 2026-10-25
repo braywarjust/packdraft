@@ -1,4 +1,3 @@
-import { BoltIcon } from "@/components/Icons";
 import { TeamBadge } from "@/components/TeamBadge";
 import { ensureBranding, teamBrand, userPresets } from "@/lib/branding";
 import Link from "next/link";
@@ -19,7 +18,6 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
   const tw = teamWeek(l, t.id, l.current_week);
   const players = tw.players;
   const live = players.some((p) => p.now?.state === "in");
-  // Slab boosts: who can still be boosted for his next game, and what each of those days is already boosted with.
   const me = editable ? await currentUser() : null;
   const presets = me ? userPresets(me.id) : [];
   const b = teamBrand(t);
@@ -71,7 +69,7 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         {l.draft_status !== "done" || !td ? (
           <p className="card p-6 text-zinc-500">Rosters fill up during the draft.</p>
         ) : (
-          <RosterBoard days={td.days} rows={td.rows} totals={td.totals} initialDay={defaultDay(td.days)} players={players} editable={editable} brand={b}
+          <RosterBoard days={td.days} rows={td.rows} totals={td.totals} initialDay={defaultDay(td.days)} editable={editable} brand={b}
             setSlot={editable ? setSlot.bind(null, leagueId) : undefined} drop={editable ? dropPlayer.bind(null, leagueId) : undefined}
             header={editable ? <AutoManageToggle key="auto-manager" on={!!t.auto_manage} set={setAutoManage.bind(null, leagueId)} /> : undefined} />
         )}
@@ -96,7 +94,6 @@ export async function TeamView({ leagueId, teamId, editable }: { leagueId: numbe
         </details>
       )}
       <PointsKey className="relative" />
-      <p className="relative text-xs text-zinc-400"><BoltIcon className="text-fpts" /> Tap a player to equip one of his slabs on his next game. Boost first, then multiplier. Locks at tip-off.</p>
       <p className="relative text-xs text-zinc-400">Daily lineups. Each player locks at his own tip-off.</p>
     </div>
   );

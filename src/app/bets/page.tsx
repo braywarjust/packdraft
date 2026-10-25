@@ -16,8 +16,8 @@ export default async function BetsPage() {
   settleBets();
   return (
     <>
-      <PageHeader icon="bets" eyebrow="Pack Points only · no real money" title="Sportsbook"
-        description="Bet Pack Points on tonight's NBA games, pregame or live. Stack picks into parlays." />
+      <PageHeader icon="bets" eyebrow="Fantasy Coins only · no real money" title="Sportsbook"
+        description="Bet Fantasy Coins on tonight's NBA games, pregame or live. Stack picks into parlays." />
       <Sportsbook initial={{ games: boardGames().map((g) => gameBoard(g)), bets: myBets(u.id), coins: one<{ coins: number }>("SELECT coins FROM users WHERE id = ?", u.id)?.coins ?? 0 }} />
     </>
   );

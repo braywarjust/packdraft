@@ -1,18 +1,15 @@
 export const NAV_ICONS = {
   home: "M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z",
   leagues: "/league-logo-icon.svg",
-  packs: "/packdraft-pack-icon.svg",
-  collection: "/collection-icon.svg",
   mock: "M4 6h16M4 12h16M4 18h10",
   studio: "/team-studio-icon.svg",
   bets: "/sportsbook-icon.svg",
-  casino: "/casino-icon.svg",
   logout: "M15 17l5-5-5-5M20 12H9M12 21H4V3h8",
   collapse: "M15 6l-6 6 6 6",
   expand: "M9 6l6 6-6 6",
 };
 /** Optical sizes for the solid image icons so they weigh the same as the 2px line icons. */
-const MASK_SIZE: Record<string, [number, number]> = { "/packdraft-pack-icon.svg": [15, 15], "/league-logo-icon.svg": [16, 15], "/team-studio-icon.svg": [16, 15], "/collection-icon.svg": [16, 15], "/casino-icon.svg": [20, 18],
+const MASK_SIZE: Record<string, [number, number]> = { "/league-logo-icon.svg": [16, 15], "/team-studio-icon.svg": [16, 15],
   // Two cards side by side: drawn twice as wide so each card matches the single-card icons (16×15).
   "/sportsbook-icon.svg": [32, 15] };
 /** A nav icon at any size (18px in the sidebar). `box` widens the slot so wide icons (Sportsbook) don't crowd the label. */

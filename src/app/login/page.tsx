@@ -10,7 +10,7 @@ export const metadata = { title: "Sign in" };
 const FEATURES = [
   ["Live drafts", "Snake drafts with a pick clock, keepers, autodraft and mock drafts."],
   ["Real NBA stats", "Rosters, box scores and live scoring straight from tonight's games."],
-  ["Mystery packs", "Win your week, earn packs, and rip graded player cards."],
+  ["Fantasy Coins", "Every fantasy point pays coins. Spend them on extra adds and trades, or the Sportsbook."],
   ["League chat", "Trades, waivers, results and smack talk in one place."],
 ];
 
@@ -25,7 +25,7 @@ export default async function LoginPage() {
         <Logo height={84} />
         <div className="relative my-12 max-w-md">
           <h1 className="text-4xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-5xl">Fantasy NBA for you and your friends.</h1>
-          <p className="mt-4 text-lg text-zinc-600">Draft, win your matchup, rip packs. Live NBA stats.</p>
+          <p className="mt-4 text-lg text-zinc-600">Draft, win your matchup, stack Fantasy Coins. Live NBA stats.</p>
         </div>
         <ul className="relative grid gap-3 sm:grid-cols-2">
           {FEATURES.map(([t, d]) => (

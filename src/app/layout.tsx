@@ -8,24 +8,20 @@ import Link from "next/link";
 import "./globals.css";
 import { currentUser } from "@/lib/auth";
 import { all } from "@/lib/db";
-import { unopenedPacks } from "@/lib/packs-server";
-import { incomingTradeCount } from "@/lib/slab-trades";
 import { logout } from "./actions";
 import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
-import { BalancePill } from "@/components/BalancePill";
+import { Wallet } from "@/components/Currencies";
 import { NavShell } from "@/components/NavShell";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { avatarOf } from "@/lib/profile";
-import { PackFacesProvider } from "@/components/PackFaces";
-import { livePackFaces } from "@/lib/pack-faces-server";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: { default: "PackDraft", template: "%s · PackDraft" },
-  description: "Fantasy NBA with your friends, plus mystery packs to rip.",
+  description: "Fantasy NBA with your friends. Earn Fantasy Coins, spend them in the League Shop and the Sportsbook.",
   // "Add to Home Screen" on iPhone opens PackDraft full screen like an app, with the icon from app/apple-icon.tsx.
   appleWebApp: { capable: true, title: "PackDraft", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },
@@ -49,11 +45,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       </html>
     );
   }
-  const packs = unopenedPacks(user.id).length;
   ensureBranding();
-  const leagues = all<{ id: number; name: string; live: number; color: string | null; alt_color: string | null; abbr: string | null; logo_url: string | null }>(
-    `SELECT l.id, l.name, l.color, l.alt_color, l.abbr, l.logo_url, (l.week_started_at IS NOT NULL OR l.draft_status = 'live') live
+  const leagues = all<{ id: number; name: string; live: number; color: string | null; alt_color: string | null; abbr: string | null; logo_url: string | null; acq_tokens: number; trade_tokens: number }>(
+    `SELECT l.id, l.name, l.color, l.alt_color, l.abbr, l.logo_url, (l.week_started_at IS NOT NULL OR l.draft_status = 'live') live, t.acq_tokens, t.trade_tokens
      FROM leagues l JOIN teams t ON t.league_id = l.id WHERE t.user_id = ? ORDER BY l.id DESC`, user.id);
+  const wallet = leagues.map((l) => ({ id: l.id, acq: l.acq_tokens, trades: l.trade_tokens }));
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -61,23 +57,21 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem("pd-sidebar")==="collapsed")document.documentElement.dataset.sidebar="collapsed"}catch(e){}` }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        <PackFacesProvider faces={livePackFaces()}>
         <ConfirmHost />
         <NoTooltips />
         <PlayerInspectorHost />
         <PullToRefresh />
         <Sidebar
           user={{ name: user.name, color: user.color, coins: user.coins, tester: !!user.is_tester, avatar: avatarOf(user.id) }}
-          packs={packs}
-          offers={incomingTradeCount(user.id)}
+          wallet={wallet}
           leagues={leagues.map((l) => ({ id: l.id, name: l.name, live: !!l.live, brand: leagueBrand(l) }))}
           logout={logout}
         />
         <div className="tabbar-pad flex min-h-screen flex-col transition-[padding] duration-200 lg:pl-[var(--sb)]">
-          {/* Pack Points balance on every page (desktop; the mobile top bar shows it too). */}
+          {/* Fantasy Coins, Acquisitions and Trades on every page (desktop; the mobile top bar shows them too). */}
           <div className="pointer-events-none sticky top-0 z-30 hidden lg:block">
             <div className="mx-auto flex max-w-6xl justify-end px-8 pt-4 pr-20 2xl:pr-8">
-              <BalancePill coins={user.coins} />
+              <Wallet coins={user.coins} leagues={wallet} />
             </div>
           </div>
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-8 sm:py-8 lg:pt-2"><NavShell>{children}</NavShell></main>
@@ -86,15 +80,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <Logo height={30} />
               <nav className="flex flex-wrap gap-4">
                 <Link href="/leagues" className="hover:text-brand">Leagues</Link>
-                <Link href="/packs" className="hover:text-brand">Packs</Link>
-                <Link href="/collection" className="hover:text-brand">Collection</Link>
                 <Link href="/bets" className="hover:text-brand">Sportsbook</Link>
               </nav>
               <p className="text-xs">Private league site · Live stats via ESPN</p>
             </div>
           </footer>
         </div>
-        </PackFacesProvider>
       </body>
     </html>
   );

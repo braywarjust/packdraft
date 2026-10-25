@@ -2,12 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import type { DayInfo, DayRow, LivePlayer } from "@/lib/league";
+import type { DayInfo, DayRow } from "@/lib/league";
 import { STARTERS, eligible } from "@/lib/scoring";
 import { askConfirm } from "./Confirm";
 import type { BrandLite } from "./TeamBadge";
 import { BoxHead, BoxRow, BoxTotals, DayStrip, shortName, slotPill } from "./BoxScore";
-import { BoostModal, EquipPanel, type BoostProps } from "./LineupEditor";
 import { Fpts } from "./Fpts";
 
 /**
@@ -16,12 +15,11 @@ import { Fpts } from "./Fpts";
  * there (a bench player's pill swaps him into the picked starter's slot). Phones show a trimmed stat line that fits
  * without scrolling sideways. The status line keeps one height so picking a player never shifts the page.
  */
-export function RosterBoard({ days, rows, totals, initialDay, players, editable, brand, setSlot, drop, boost, header }: {
+export function RosterBoard({ days, rows, totals, initialDay, editable, brand, setSlot, drop, header }: {
   days: DayInfo[]; rows: Record<string, DayRow[]>; totals: Record<string, number>; initialDay: string;
-  players: LivePlayer[]; editable: boolean; brand: BrandLite;
+  editable: boolean; brand: BrandLite;
   setSlot?: (playerId: number, slot: string) => Promise<unknown>;
   drop?: (playerId: number) => Promise<unknown>;
-  boost?: BoostProps;
   header?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -29,7 +27,6 @@ export function RosterBoard({ days, rows, totals, initialDay, players, editable,
   const [pending, start] = useTransition();
   const [err, setErr] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
-  const [boosting, setBoosting] = useState<LivePlayer | null>(null);
   const info = days.find((d) => d.key === day) ?? days[0];
   const list = rows[day] ?? [];
   // Lineups carry forward, so moves only make sense on a day that isn't over.
@@ -46,7 +43,6 @@ export function RosterBoard({ days, rows, totals, initialDay, players, editable,
   const bySlot = new Map(list.filter((r) => r.slot !== "BN").map((r) => [r.slot, r]));
   const bench = list.filter((r) => r.slot === "BN");
   const starters = STARTERS.map((s) => bySlot.get(s)).filter(Boolean) as DayRow[];
-  const canBoost = new Map((boost?.boostable ?? []).map((b) => [b.playerId, b]));
 
   const pill = (slot: string, r: DayRow | null) => {
     // A starter slot takes the picked player (its occupant goes back to his old slot, or the bench). A bench pill swaps
@@ -69,7 +65,6 @@ export function RosterBoard({ days, rows, totals, initialDay, players, editable,
 
   return (
     <div className="space-y-3">
-      {editable && boost && <EquipPanel boost={boost} players={players} onEquip={setBoosting} />}
       <section className="card overflow-hidden">
         <div className="space-y-3 border-b border-line/60 p-3 sm:p-4">
           {header}
@@ -82,7 +77,6 @@ export function RosterBoard({ days, rows, totals, initialDay, players, editable,
                     <span className="min-w-0 truncate text-xs text-zinc-400"><b className="text-white">{shortName(sel.name)}</b><span className="max-sm:hidden">: tap a green slot</span></span>
                     {sel.slot !== "BN" && <button type="button" disabled={pending} onClick={() => act(() => setSlot!(sel.id, "BN"))} className={`${small} shrink-0 bg-panel2 text-white ring-1 ring-line`}>Bench</button>}
                     <button type="button" disabled={pending} onClick={async () => { if (await askConfirm(`Drop ${sel.name}?`, { confirmLabel: "Drop", danger: true })) act(() => drop!(sel.id)); }} className={`${small} shrink-0 bg-red-600 text-white`}>Drop</button>
-                    {canBoost.has(sel.id) && <button type="button" onClick={() => { const p = players.find((x) => x.id === sel.id); if (p) setBoosting(p); }} className={`${small} shrink-0 text-white ring-1 ring-line`}>Slab</button>}
                   </>
                 ) : canEdit ? <span className="truncate text-xs text-zinc-500">Tap a slot to swap players.</span>
                   : info?.past ? <span className="truncate text-xs text-zinc-500">This day is over. Lineup shown as it played.</span> : null}
@@ -102,11 +96,6 @@ export function RosterBoard({ days, rows, totals, initialDay, players, editable,
         </div>
       </section>
       <p className="text-xs text-zinc-500">G = PG/SG · F = SF/PF · UTIL = anyone · Bench doesn&apos;t score</p>
-
-      {boost && boosting && (
-        <BoostModal boost={boost} player={boosting} info={canBoost.get(boosting.id)} pending={pending} onClose={() => setBoosting(null)}
-          run={(fn) => { setBoosting(null); act(fn); }} />
-      )}
     </div>
   );
 }

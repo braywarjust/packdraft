@@ -164,7 +164,7 @@ export function Sportsbook({ initial }: { initial: Data }) {
                 <p className="flex justify-between font-bold"><span>Potential payout</span><span className="text-emerald-600"><Coins n={toWin} /></span></p>
               </div>
               <button onClick={place} disabled={pending || stake < 10 || totalStake > d.coins} className="btn-primary w-full">
-                {pending ? "Placing…" : totalStake > d.coins ? "Not enough Pack Points" : `Place ${asParlay ? "parlay" : slip.length > 1 ? `${slip.length} bets` : "bet"}`}
+                {pending ? "Placing…" : totalStake > d.coins ? "Not enough Fantasy Coins" : `Place ${asParlay ? "parlay" : slip.length > 1 ? `${slip.length} bets` : "bet"}`}
               </button>
             </div>
           )}

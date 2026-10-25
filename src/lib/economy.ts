@@ -1,8 +1,9 @@
-// Fantasy points pay out as Pack Points at a fixed rate.
+// Fantasy points pay out as Fantasy Coins at a fixed rate.
 //
-// 1 Pack Point is worth $1 of slab market value. Every fantasy point a started player scores pays the manager
-// PP_PER_POINT Pack Points when that game goes final. Brayden set this to 0.5 and wants it fixed: never float it
-// with the market or change it without him asking.
+// Every fantasy point a started player scores pays the manager COINS_PER_POINT Fantasy Coins when that game goes final.
+// Brayden set this to 0.5 and wants it fixed: never change it without him asking. Coins are spent in each league's
+// League Shop (Acquisitions and Trades) and on the Sportsbook. They live in users.coins (once called Pack Points), and
+// pp_earnings keeps its old name.
 import { all, one, run } from "./db";
 
 // The table is also in db.ts's schema; creating it here too means a running dev server picks it up without a restart.
@@ -17,12 +18,12 @@ function ensure() {
   ready = true;
 }
 
-import { PP_PER_POINT } from "./economy-rate";
-export { PP_PER_POINT };
+import { COINS_PER_POINT } from "./economy-rate";
+export { COINS_PER_POINT };
 
-/** Pack Points per fantasy point for a league week. Always PP_PER_POINT (kept as a function for callers). */
+/** Fantasy Coins per fantasy point for a league week. Always COINS_PER_POINT (kept as a function for callers). */
 export function weekRate(_leagueId?: number, _week?: number): number {
-  return PP_PER_POINT;
+  return COINS_PER_POINT;
 }
 
 /** Pay a finished player-game once. Bad nights (negative points) pay nothing rather than costing you. */

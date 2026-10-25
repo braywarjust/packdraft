@@ -2,9 +2,7 @@ import { all } from "../db";
 import { addDays, etDate } from "./espn";
 import { backfillFinals, ensureSchedule, maybeSyncPlayers, refreshLive } from "./sync";
 import { dailyWaivers, getLeague, playoffInfo, rolloverLeagues, tickLeague, weekRange } from "../league";
-import { ensureCatalog } from "../slabs";
 import { settleBets } from "../bets";
-import { snapshotPrices } from "../slab-market";
 import { tickNews } from "../news";
 
 let busy = false;
@@ -12,7 +10,6 @@ export async function tick() {
   if (busy) return;
   busy = true;
   try {
-    ensureCatalog();
     await maybeSyncPlayers();
     // New NBA season: finished leagues reset for their next draft.
     rolloverLeagues();
@@ -33,7 +30,6 @@ export async function tick() {
       tickLeague(id);
     }
     settleBets();
-    snapshotPrices();
     await tickNews().catch(() => undefined);
   } finally {
     busy = false;

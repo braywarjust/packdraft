@@ -3,17 +3,15 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import crypto from "node:crypto";
-import { all, one, run, topUpTester, tx, League, Team, Player, User } from "@/lib/db";
+import { all, one, run, tx, ACQ_PRICE, TRADE_PRICE, League, Team, Player, User } from "@/lib/db";
 import { clearSession, currentUser, hashPin, requireUser, setSession } from "@/lib/auth";
 import {
   getLeague, userTeam, leagueTeams, startDraft, advanceDraft, makePick, autoLineup, moveToSlot, roster, ROSTER_MAX,
-  isLocked, executeTrade, startWeek, finalizeWeek, postSystem, processWaivers, ROUNDS, setBoost, clearBoost,
+  isLocked, executeTrade, startWeek, finalizeWeek, postSystem, processWaivers, ROUNDS,
   startNewSeason, canStartNewSeason, acceptTrade, vetoTrade, tradesOpen,
 } from "@/lib/league";
-import { acquisitionBlock, logActivity, tradeBlock } from "@/lib/activity";
-import { PACK_BY_ID } from "@/lib/packs";
-import { openPack, rerollSlab } from "@/lib/packs-server";
-import { proposeSlabTrade, respondSlabTrade } from "@/lib/slab-trades";
+import { acquisitionBlock, logActivity, spendAcquisition, tradeBlock } from "@/lib/activity";
+import { buyShopItem, type ShopItem } from "@/lib/shop";
 import { etDate } from "@/lib/nba/espn";
 import { placeBet } from "@/lib/bets";
 import { applyPreset, deletePreset, getPreset, saveLeagueBrand, savePreset, setFavoritePreset } from "@/lib/branding";
@@ -45,7 +43,6 @@ export async function login(_: Result | undefined, form: FormData): Promise<Resu
     const color = COLORS[all("SELECT id FROM users").length % COLORS.length];
     const r = run("INSERT INTO users (name, pin_hash, color, created_at) VALUES (?, ?, ?, ?)", name, pin ? hashPin(pin) : null, color, Date.now());
     user = one<User>("SELECT * FROM users WHERE id = ?", Number(r.lastInsertRowid))!;
-    run("INSERT INTO user_packs (user_id, pack_type, source, created_at) VALUES (?, 'starter', 'Welcome gift', ?)", user.id, Date.now());
     await setSession(user.id);
     redirect("/teams?welcome=1"); // first thing: set up your team branding
   }
@@ -79,7 +76,7 @@ export async function createLeague(_: Result | undefined, form: FormData): Promi
   const maxTeams = Number(form.get("max_teams") ?? 8);
   if (!name) return { error: "League needs a name" };
   if (![4, 6, 8, 10, 12].includes(maxTeams)) return { error: "Pick 4, 6, 8, 10 or 12 teams" };
-  if (maxTeams > 8 && u.coins < 2500) return { error: "Leagues over 8 teams cost 2,500 Pack Points" };
+  if (maxTeams > 8 && u.coins < 2500) return { error: "Leagues over 8 teams cost 2,500 Fantasy Coins" };
   const id = tx(() => {
     if (maxTeams > 8) run("UPDATE users SET coins = coins - 2500 WHERE id = ?", u.id);
     const faab = Number(form.get("faab_budget") ?? 100);
@@ -178,6 +175,8 @@ export async function updateSettings(leagueId: number, form: FormData) {
       const v = String(form.get(k)).trim();
       return v === "" || v === "none" ? null : Math.max(0, Math.min(99, Math.round(Number(v) || 0)));
     };
+    // League Shop prices in Fantasy Coins.
+    const price = (k: string, d: number) => (form.get(k) == null ? d : Math.max(0, Math.min(1_000_000, Math.round(Number(form.get(k)) || 0))));
     const weights: Weights = {};
     for (const [k] of STATS) {
       const v = Number(form.get(`w_${k}`));
@@ -187,18 +186,18 @@ export async function updateSettings(leagueId: number, form: FormData) {
     if (scoring === "c:") throw new Error("Give at least one stat some points");
     run(
       `UPDATE leagues SET name = ?, is_public = ?, scoring = ?, mode = ?, waiver_type = ?, pick_seconds = ?, sim_minutes = ?,
-       reward_win = ?, reward_loss = ?, reward_top = ?, keeper_count = ?, faab_budget = ?, season_weeks = ?, playoff_teams = ?,
-       trade_review_hours = ?, trade_deadline_week = ?, trade_limit = ?, acq_per_week = ?, acq_per_season = ? WHERE id = ?`,
+       keeper_count = ?, faab_budget = ?, season_weeks = ?, playoff_teams = ?,
+       trade_review_hours = ?, trade_deadline_week = ?, trade_limit = ?, acq_per_week = ?, acq_per_season = ?, acq_price = ?, trade_price = ? WHERE id = ?`,
       String(form.get("name") || l.name).slice(0, 40), form.get("is_public") ? 1 : 0, scoring,
       pre && form.get("mode") ? (form.get("mode") === "sim" ? "sim" : "real") : l.mode,
       String(form.get("waiver_type") || l.waiver_type), Math.max(10, num("pick_seconds", l.pick_seconds)), Math.max(0.5, num("sim_minutes", l.sim_minutes)),
-      String(form.get("reward_win") || l.reward_win), String(form.get("reward_loss") || l.reward_loss), String(form.get("reward_top") || l.reward_top),
       pre ? num("keeper_count", l.keeper_count) : l.keeper_count, pre ? num("faab_budget", l.faab_budget) : l.faab_budget,
       pre ? Math.min(24, Math.max(1, num("season_weeks", l.season_weeks))) : l.season_weeks,
       pre ? Math.min(l.max_teams, Math.max(2, num("playoff_teams", l.playoff_teams ?? 4))) : l.playoff_teams ?? 4,
       Math.min(72, Math.max(0, num("trade_review_hours", l.trade_review_hours ?? 0))),
       form.get("trade_deadline_week") != null ? Number(form.get("trade_deadline_week")) || null : l.trade_deadline_week ?? null,
-      limit("trade_limit", l.trade_limit), limit("acq_per_week", l.acq_per_week), limit("acq_per_season", l.acq_per_season), l.id,
+      limit("trade_limit", l.trade_limit), limit("acq_per_week", l.acq_per_week), limit("acq_per_season", l.acq_per_season),
+      price("acq_price", l.acq_price ?? ACQ_PRICE), price("trade_price", l.trade_price ?? TRADE_PRICE), l.id,
     );
     if (pre) run("UPDATE teams SET faab = ? WHERE league_id = ?", num("faab_budget", l.faab_budget), l.id);
     if (scoring !== l.scoring) postSystem(l.id, `The League Manager changed the scoring to ${scoringLabel(scoring)}: ${scoringBlurb(scoring)}.`);
@@ -367,6 +366,7 @@ export async function addPlayer(leagueId: number, addId: number, dropId: number 
     }
     if (isLocked(l, p)) throw new Error("Player's game has started");
     tx(() => {
+      spendAcquisition(l, t.id);
       if (dropId) run("DELETE FROM roster WHERE team_id = ? AND player_id = ?", t.id, dropId);
       run("INSERT INTO roster (team_id, player_id, slot, league_id) VALUES (?, ?, 'BN', ?)", t.id, addId, leagueId);
       logActivity(l, t.id, "add", { add: addId, drop: dropId });
@@ -512,99 +512,20 @@ export async function sendMessage(leagueId: number, body: string, imageUrl: stri
   });
 }
 
-// ---------- Packs ----------
+// ---------- League Shop (Update 4.0-R) ----------
 
-/** Buy a League Pack in one of your leagues: it opens there, with that league's pool. */
-export async function buyPack(leagueId: number, packType: string) {
+/** Buy Acquisitions or Trades for your team in this league with Fantasy Coins. */
+export async function buyShopItemAction(leagueId: number, item: ShopItem, qty: number) {
   return wrap(async () => {
-    const u = await requireUser();
-    const pack = PACK_BY_ID[packType];
-    if (!pack) throw new Error("Unknown pack");
-    if (!one("SELECT 1 FROM teams WHERE league_id = ? AND user_id = ?", leagueId, u.id)) throw new Error("Join this league to buy its packs");
-    const id = tx(() => {
-      topUpTester(u.id); // test accounts pay like everyone else, from a large balance that refills
-      const fresh = one<User>("SELECT * FROM users WHERE id = ?", u.id)!;
-      if (fresh.coins < pack.price) throw new Error("Not enough Pack Points");
-      run("UPDATE users SET coins = coins - ? WHERE id = ?", pack.price, u.id);
-      return Number(run("INSERT INTO user_packs (user_id, pack_type, source, league_id, created_at) VALUES (?, ?, ?, ?, ?)",
-        u.id, packType, fresh.is_tester ? "Test pack" : "League Pack Shop", leagueId, Date.now()).lastInsertRowid);
-    });
-    return { ok: true, packId: id };
-  });
-}
-
-export async function ripPack(leagueId: number, packId: number) {
-  return wrap(async () => {
-    const u = await requireUser();
-    const cards = await openPack(u.id, packId, leagueId);
-    return { ok: true, cards };
-  });
-}
-
-/** Pay Pack Points to turn one slab into a different player at the same rarity. */
-export async function rerollSlabAction(cardId: number) {
-  return wrap(async () => {
-    const u = await requireUser();
-    const card = rerollSlab(u.id, cardId);
+    const { l, t, u } = await myLeagueTeam(leagueId);
+    const r = buyShopItem(l, t, u.id, item, qty);
     revalidatePath("/", "layout");
-    return { ok: true, card };
-  });
-}
-
-// ---------- Slab trades (Update 3.0) ----------
-
-export async function proposeSlabTradeAction(t: { to: number; give: number[]; get: number[]; givePp: number; getPp: number; note: string }) {
-  return wrap(async () => {
-    const u = await requireUser();
-    proposeSlabTrade(u, t.to, t.give, t.get, t.givePp, t.getPp, t.note);
-    revalidatePath("/", "layout");
-    return { ok: true, message: "Offer sent" };
-  });
-}
-
-export async function respondSlabTradeAction(tradeId: number, accept: boolean) {
-  return wrap(async () => {
-    const u = await requireUser();
-    respondSlabTrade(u, tradeId, accept);
-    revalidatePath("/", "layout");
-    return { ok: true };
-  });
-}
-
-/** Test accounts can wipe their pulls and start over. */
-export async function clearTestCards() {
-  return wrap(async () => {
-    const u = await requireUser();
-    if (!u.is_tester) throw new Error("Only test accounts can do that");
-    run("DELETE FROM cards WHERE user_id = ?", u.id);
-    run("DELETE FROM user_packs WHERE user_id = ? AND opened_at IS NOT NULL", u.id);
-    revalidatePath("/", "layout");
-    return { ok: true };
+    return { ok: true, ...r };
   });
 }
 
 export async function whoami() {
   return currentUser();
-}
-
-// ---------- Slab boosts (one per team per day) ----------
-
-export async function boostPlayer(leagueId: number, playerId: number, cardId: number) {
-  return wrap(async () => {
-    const { l, t, u } = await myLeagueTeam(leagueId);
-    const r = setBoost(l, t.id, u.id, playerId, cardId);
-    revalidatePath(`/league/${leagueId}/team`);
-    return { ok: true, ...r };
-  });
-}
-
-export async function unboostPlayer(leagueId: number, playerId: number) {
-  return wrap(async () => {
-    const { l, t } = await myLeagueTeam(leagueId);
-    clearBoost(l, t.id, playerId);
-    revalidatePath(`/league/${leagueId}/team`);
-    return { ok: true };
-  });
 }
 
 // ---------- Sportsbook ----------

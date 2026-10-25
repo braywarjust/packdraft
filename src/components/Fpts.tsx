@@ -1,10 +1,10 @@
 import { CoinIcon } from "./Coins";
-import { PP_PER_POINT } from "@/lib/economy-rate";
+import { COINS_PER_POINT } from "@/lib/economy-rate";
 import { LiveNumber } from "./LiveNumber";
 
 /**
  * Fantasy points (what players score in league matchups), shown with the Fantasy Points logo so they're never
- * confused with Pack Points (the currency, CoinIcon in Coins.tsx). 1 fantasy point pays 0.5 Pack Points.
+ * confused with Fantasy Coins (the currency, CoinIcon in Coins.tsx). 1 fantasy point pays 0.5 Fantasy Coins.
  */
 /**
  * Blue on the app's dark panels by default. Any container can switch it for its own background by setting the
@@ -43,8 +43,8 @@ export function PointsKey({ className = "", compact = false }: { className?: str
         <p className="text-zinc-400"><b className="text-fpts">Fantasy points</b> win your matchups.</p>
       </div>
       <div className="flex items-start gap-2 rounded-lg bg-black/20 p-2.5 ring-1 ring-white/5">
-        <CoinIcon className="mt-0.5 text-base text-emerald-500" />
-        <p className="text-zinc-400"><b className="text-white">Pack Points</b> buy packs. Each fantasy point your starters score pays {PP_PER_POINT}.</p>
+        <CoinIcon className="mt-0.5 text-base" />
+        <p className="text-zinc-400"><b className="text-white">Fantasy Coins</b> buy Acquisitions and Trades in the League Shop. Each fantasy point your starters score pays {COINS_PER_POINT}.</p>
       </div>
     </div>
   );

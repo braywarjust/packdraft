@@ -17,20 +17,60 @@ export function acquisitions(l: Pick<League, "id" | "season" | "current_week">, 
   return { season: r?.season ?? 0, week: r?.week ?? 0 };
 }
 
-/** Why this team can't add another player right now, or null if it can. */
-export function acquisitionBlock(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "acq_per_season">, teamId: number): string | null {
+/**
+ * Acquisitions and Trades (Update 4.0-R): the league's limits are each team's free moves. Past them, every add uses one
+ * Acquisition and every trade one Trade, bought with Fantasy Coins in the League Shop. CPU teams never need them.
+ */
+export function teamItems(teamId: number) {
+  const r = one<{ acq_tokens: number; trade_tokens: number; is_cpu: number }>("SELECT acq_tokens, trade_tokens, is_cpu FROM teams WHERE id = ?", teamId);
+  return { acquisitions: r?.acq_tokens ?? 0, trades: r?.trade_tokens ?? 0, cpu: !!r?.is_cpu };
+}
+
+/** Why this team's next add isn't free (it has used up the league's free adds), or null if it is. */
+export function acquisitionOver(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "acq_per_season">, teamId: number): string | null {
   const n = acquisitions(l, teamId);
-  const used = (max: number, when: string) => (max === 0 ? `This league allows no adds ${when}` : `You've hit the limit of ${max} add${max === 1 ? "" : "s"} ${when}`);
+  const used = (max: number, when: string) => (max === 0 ? `This league has no free adds ${when}` : `You've used your ${max} free add${max === 1 ? "" : "s"} ${when}`);
   if (l.acq_per_week != null && n.week >= l.acq_per_week) return used(l.acq_per_week, "this matchup");
   if (l.acq_per_season != null && n.season >= l.acq_per_season) return used(l.acq_per_season, "this season");
   return null;
 }
 
-/** Why this team (named `who`, or "You") can't make another trade this season, or null if it can. */
-export function tradeBlock(l: Pick<League, "id" | "season" | "trade_limit">, teamId: number, who?: string): string | null {
+/** Why this team can't add another player right now (no free adds left and no Acquisitions), or null if it can. */
+export function acquisitionBlock(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "acq_per_season">, teamId: number): string | null {
+  const over = acquisitionOver(l, teamId);
+  if (!over) return null;
+  const items = teamItems(teamId);
+  return items.cpu || items.acquisitions > 0 ? null : `${over}. Buy an Acquisition in the League Shop to add more`;
+}
+
+/** Pay for an add: free while the team has free adds left, else it uses one of its Acquisitions. Call before logging the add. */
+export function spendAcquisition(l: Pick<League, "id" | "season" | "current_week" | "acq_per_week" | "acq_per_season">, teamId: number) {
+  const blocked = acquisitionBlock(l, teamId);
+  if (blocked) throw new Error(blocked);
+  if (acquisitionOver(l, teamId) && !teamItems(teamId).cpu) run("UPDATE teams SET acq_tokens = acq_tokens - 1 WHERE id = ? AND acq_tokens > 0", teamId);
+}
+
+/** Why this team's next trade isn't free (it has used up the league's free trades), or null if it is. */
+export function tradeOver(l: Pick<League, "id" | "season" | "trade_limit">, teamId: number, who?: string): string | null {
   if (l.trade_limit == null || tradeCount(l, teamId) < l.trade_limit) return null;
-  if (l.trade_limit === 0) return "This league allows no trades";
-  return `${who ? `${who} has` : "You've"} hit the limit of ${l.trade_limit} trade${l.trade_limit === 1 ? "" : "s"} this season`;
+  if (l.trade_limit === 0) return "This league has no free trades";
+  return `${who ? `${who} has` : "You've"} used ${who ? "their" : "your"} ${l.trade_limit} free trade${l.trade_limit === 1 ? "" : "s"} this season`;
+}
+
+/** Why this team (named `who`, or "You") can't make another trade (no free trades left and no Trades), or null if it can. */
+export function tradeBlock(l: Pick<League, "id" | "season" | "trade_limit">, teamId: number, who?: string): string | null {
+  const over = tradeOver(l, teamId, who);
+  if (!over) return null;
+  const items = teamItems(teamId);
+  if (items.cpu || items.trades > 0) return null;
+  return `${over}${who ? ` and ${who} has no Trades left` : ". Buy a Trade in the League Shop to make another"}`;
+}
+
+/** Pay for a trade on one side: free while the team has free trades left, else it uses one of its Trades. Call before logging it. */
+export function spendTrade(l: Pick<League, "id" | "season" | "trade_limit">, teamId: number, who?: string) {
+  const blocked = tradeBlock(l, teamId, who);
+  if (blocked) throw new Error(blocked);
+  if (tradeOver(l, teamId) && !teamItems(teamId).cpu) run("UPDATE teams SET trade_tokens = trade_tokens - 1 WHERE id = ? AND trade_tokens > 0", teamId);
 }
 
 /** Trades a team has made this season (either side). */

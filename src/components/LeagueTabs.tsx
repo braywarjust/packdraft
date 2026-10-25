@@ -13,7 +13,7 @@ export function LeagueTabs({ id, hasTeam, drafting }: { id: number; hasTeam: boo
   const tabs = [
     { href: base, label: "League" },
     ...(hasTeam ? [{ href: `${base}/team`, label: "My Team" }] : []),
-    { href: `${base}/packs`, label: "Packs" },
+    { href: `${base}/shop`, label: "Shop" },
     { href: `${base}/matchups`, label: "Matchups" },
     { href: `${base}/players`, label: "Players" },
     { href: `${base}/trades`, label: "Trades" },
