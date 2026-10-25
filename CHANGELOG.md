@@ -3,8 +3,9 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
-## 4.3 — Cleaner points breakdown (2026-10-25)
+## 4.3 — Four league tabs (2026-10-25)
 
+- Leagues have just **four tabs**: League, Roster, Matchups and Players. They fit an iPhone with no sideways scrolling. **League** holds Home, Chat, Draft and Settings, and **Roster** (formerly My Team) holds your Lineup, Trades and the Shop, as a small row under the tabs. A red dot on Draft means the draft is live.
 - The fantasy points breakdown splits a player's stats into **Earns points** and **Costs points**, each with its own subtotal, so you can see at a glance what helped and what hurt him.
 - Every number in the breakdown shows the Fantasy Points logo, and the × is gone: Pts each just shows what each stat is worth (like +1 or −1).
 - On iPhone the league banner is slim: just the league's logo and name, so the tabs and your league sit higher on the screen. Bigger screens keep the full banner.
