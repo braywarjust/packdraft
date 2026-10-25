@@ -3,7 +3,7 @@
 Every PackDraft update is listed here, newest first. Version numbers follow the naming rules in
 [docs/WORKFLOW.md](docs/WORKFLOW.md#naming-conventions): `3.1` is an update, `3.1.1` is a fix on top of it.
 
-## 4.2 — My Team and instant pickups
+## 4.2 — My Team and instant pickups (2026-10-25)
 
 - **Acquisitions and Trades, every matchup.** Each league gives every team a set number of Acquisitions (adds) and Trades per matchup week, set by the League Manager. They reset every matchup. Need more during a matchup? Buy them in the League Shop; bought ones carry over until you use them. The per-season add limit is gone.
 - My Team on iPhone is a clean list instead of a table: each player's full name, who he plays and when (or the final score), his points, rebounds and assists, and his fantasy points with the Fantasy Points logo. Tap the points for the breakdown. Bigger screens keep the full box score.
